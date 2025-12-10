@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-5">
+    <div>
+        <h1 class="h3 fw-bold text-dark mb-1">Control de Acceso</h1>
+        <p class="text-muted">Gestión de ingresos y egresos del centro</p>
+    </div>
+    <div class="btn-group">
+        <button class="btn btn-primary-custom btn-sm" data-bs-toggle="modal" data-bs-target="#modalRegistroManual">
+            <i class="bi bi-plus-circle me-1"></i>Registro Manual
+        </button>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Estadísticas de Acceso -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">En Centro Ahora</h6>
+                        <h3 class="fw-bold text-dark mb-0">0</h3>
+                        <small class="text-success">Normal</small>
+                    </div>
+                    <div class="bg-light-green rounded-3 p-3">
+                        <i class="bi bi-people-fill fs-2 text-primary-green"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Ingresos Hoy</h6>
+                        <h3 class="fw-bold text-dark mb-0">0</h3>
+                        <small class="text-success">+0%</small>
+                    </div>
+                    <div class="bg-light-green rounded-3 p-3">
+                        <i class="bi bi-door-open fs-2 text-accent-green"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Visitantes Activos</h6>
+                        <h3 class="fw-bold text-dark mb-0">0</h3>
+                        <small class="text-muted">Sin salir</small>
+                    </div>
+                    <div class="bg-light-warning rounded-3 p-3">
+                        <i class="bi bi-person-badge fs-2 text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Capacidad</h6>
+                        <h3 class="fw-bold text-dark mb-0">0%</h3>
+                        <div class="progress mt-2" style="height: 6px;">
+                            <div class="progress-bar bg-success" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="bg-light-green rounded-3 p-3">
+                        <i class="bi bi-building fs-2 text-secondary-green"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Registros de Acceso -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card card-modern">
+            <div class="card-header-modern d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">Registros de Acceso Recientes</h6>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-secondary active">Todos</button>
+                    <button class="btn btn-outline-secondary">Ingresos</button>
+                    <button class="btn btn-outline-secondary">Egresos</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Usuario</th>
+                                <th>Tipo</th>
+                                <th>Hora Ingreso</th>
+                                <th>Hora Egreso</th>
+                                <th>Método</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox fs-1 mb-2 d-block"></i>
+                                    No hay registros de acceso
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Registro Manual -->
+<div class="modal fade" id="modalRegistroManual" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-person-plus me-2"></i>
+                    Registro Manual de Acceso
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="mb-3">
+                        <label class="form-label">Tipo de Registro</label>
+                        <select class="form-select" required>
+                            <option value="">Seleccionar...</option>
+                            <option value="INGRESO">Ingreso</option>
+                            <option value="EGRESO">Egreso</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Usuario</label>
+                        <select class="form-select" required>
+                            <option value="">Seleccionar usuario...</option>
+                        <option value="1">Juan Pérez - Aprendiz</option>
+                            <option value="2">María Gómez - Instructora</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Método</label>
+                        <select class="form-select" required>
+                            <option value="MANUAL">Registro Manual</option>
+                            <option value="QR">Código QR</option>
+                            <option value="AUTOMATICO">Detección Automática</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary-custom">Registrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
