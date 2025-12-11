@@ -7,6 +7,7 @@ from django.db.models import Q, Count
 from datetime import datetime, timedelta
 import os
 from .models import ConfiguracionReporte, ReporteGenerado
+from .serializers import ConfiguracionReporteSerializer, ReporteGeneradoSerializer
 from .services import (
     ReporteAforoService,
     ReporteIncidentesService,
@@ -18,14 +19,16 @@ from emergencias.models import Emergencia
 from usuarios.models import Usuario
 
 class ReporteViewSet(viewsets.ModelViewSet):
-
-    # ViewSet para generación de reportes
+    """
+    ViewSet para generación y gestión de reportes
+    """
+    queryset = ReporteGenerado.objects.all().order_by('-fecha_generacion')
+    serializer_class = ReporteGeneradoSerializer
     permission_classes = [IsAuthenticated]
 
     @action(detail=False, methods=['get'])
     def aforo(self, request):
-
-        # Genera reporte de aforo
+        """Genera reporte de aforo"""
         fecha_inicio = request.query_params.get('fecha_inicio')
         fecha_fin = request.query_params.get('fecha_fin')
 
@@ -66,8 +69,7 @@ class ReporteViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def incidentes(self, request):
-
-        # Genera reporte de incidentes
+        """Genera reporte de incidentes"""
         fecha_inicio = request.query_params.get('fecha_inicio')
         fecha_fin = request.query_params.get('fecha_fin')
 
@@ -108,8 +110,7 @@ class ReporteViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def asistencia(self, request):
-
-        # Genera reporte de asistencia por ficha
+        """Genera reporte de asistencia por ficha"""
         ficha = request.query_params.get('ficha')
         fecha_inicio = request.query_params.get('fecha_inicio')
         fecha_fin = request.query_params.get('fecha_fin')
@@ -151,8 +152,7 @@ class ReporteViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def seguridad(self, request):
-
-        # Genera reporte de seguridad
+        """Genera reporte de seguridad"""
         fecha_inicio = request.query_params.get('fecha_inicio')
         fecha_fin = request.query_params.get('fecha_fin')
 
@@ -160,6 +160,8 @@ class ReporteViewSet(viewsets.ModelViewSet):
             # Por defecto, último mes
             fecha_fin = timezone.now().date()
             fecha_inicio = fecha_fin - timedelta(days=30)
+            periodo_inicio = fecha_inicio
+            periodo_fin = fecha_fin
         else:
             try:
                 periodo_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d')
@@ -192,8 +194,7 @@ class ReporteViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def historial(self, request):
-
-        # Obtiene el historial de reportes generados
+        """Obtiene el historial de reportes generados"""
         reportes = ReporteGenerado.objects.all().order_by('-fecha_generacion')
 
         datos_reportes = []
@@ -213,12 +214,11 @@ class ReporteViewSet(viewsets.ModelViewSet):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def dashboard_estadisticas(request):
-
-    # Retorna estadísticas para el dashboard principal
+    """Retorna estadísticas para el dashboard principal"""
     
-    # Personas en el centro ahora
+    # Personas en el centro ahora (los que NO tienen hora de egreso)
     personas_en_centro = RegistroAcceso.objects.filter(
-        fecha_hora_egreso__isnull=False
+        fecha_hora_egreso__isnull=True
     ).count()
 
     # Configuración de aforo

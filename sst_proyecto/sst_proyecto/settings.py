@@ -172,3 +172,23 @@ LEAFLET_CONFIG = {
 
 # Modelo de usuario
 AUTH_USER_MODEL = 'usuarios.Usuario'
+
+# URL de login
+LOGIN_URL = '/accounts/login/'
+
+# Después de login exitoso, redirigir al dashboard principal
+LOGIN_REDIRECT_URL = '/'  # Esto apunta a tu dashboard_view
+
+# Después de logout, redirigir al login
+LOGOUT_REDIRECT_URL = '/accounts/login/'
+
+# Configuración de mensajes de Django
+from django.contrib.messages import constants as messages_constants
+
+MESSAGE_TAGS = {
+    messages_constants.DEBUG: 'secondary',
+    messages_constants.INFO: 'info',
+    messages_constants.SUCCESS: 'success',
+    messages_constants.WARNING: 'warning',
+    messages_constants.ERROR: 'danger',
+}
