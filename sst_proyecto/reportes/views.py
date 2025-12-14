@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from django.db.models import Q, Count
 from datetime import datetime, timedelta
-import os
+
 from .models import ConfiguracionReporte, ReporteGenerado
 from .serializers import ConfiguracionReporteSerializer, ReporteGeneradoSerializer
 from .services import (
@@ -18,6 +18,7 @@ from control_acceso.models import RegistroAcceso, ConfiguracionAforo
 from emergencias.models import Emergencia
 from usuarios.models import Usuario
 
+
 class ReporteViewSet(viewsets.ModelViewSet):
     """
     ViewSet para generación y gestión de reportes
@@ -26,9 +27,55 @@ class ReporteViewSet(viewsets.ModelViewSet):
     serializer_class = ReporteGeneradoSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        """
+        Filtra reportes según el rol del usuario
+        """
+        user = self.request.user
+        
+        if not user.is_authenticated:
+            return ReporteGenerado.objects.none()
+        
+        # ADMINISTRATIVO: Ve todos los reportes
+        if user.rol == 'ADMINISTRATIVO' or user.is_superuser:
+            return super().get_queryset()
+        
+        # INSTRUCTOR: Solo ve reportes de asistencia que generó
+        elif user.rol == 'INSTRUCTOR':
+            return ReporteGenerado.objects.filter(
+                Q(generado_por=user) | 
+                Q(configuracion__tipo_reporte='ASISTENCIA')
+            ).order_by('-fecha_generacion')
+        
+        # VIGILANCIA: Solo reportes de aforo y seguridad
+        elif user.rol == 'VIGILANCIA':
+            return ReporteGenerado.objects.filter(
+                configuracion__tipo_reporte__in=['AFORO', 'SEGURIDAD']
+            ).order_by('-fecha_generacion')
+        
+        # BRIGADA: Solo reportes de incidentes/emergencias
+        elif user.rol == 'BRIGADA':
+            return ReporteGenerado.objects.filter(
+                configuracion__tipo_reporte__in=['INCIDENTES', 'SEGURIDAD']
+            ).order_by('-fecha_generacion')
+        
+        # APRENDIZ: Solo sus propios reportes
+        elif user.rol == 'APRENDIZ':
+            return ReporteGenerado.objects.filter(generado_por=user).order_by('-fecha_generacion')
+        
+        # VISITANTE: No puede ver reportes
+        return ReporteGenerado.objects.none()
+
     @action(detail=False, methods=['get'])
     def aforo(self, request):
         """Genera reporte de aforo"""
+        # Verificar permisos
+        if request.user.rol not in ['ADMINISTRATIVO', 'VIGILANCIA']:
+            return Response(
+                {'error': 'No tienes permisos para generar reportes de aforo.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
         fecha_inicio = request.query_params.get('fecha_inicio')
         fecha_fin = request.query_params.get('fecha_fin')
 
@@ -70,6 +117,12 @@ class ReporteViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def incidentes(self, request):
         """Genera reporte de incidentes"""
+        if request.user.rol not in ['ADMINISTRATIVO', 'BRIGADA', 'INSTRUCTOR']:
+            return Response(
+                {'error': 'No tienes permisos para generar reportes de incidentes.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
         fecha_inicio = request.query_params.get('fecha_inicio')
         fecha_fin = request.query_params.get('fecha_fin')
 
@@ -89,28 +142,26 @@ class ReporteViewSet(viewsets.ModelViewSet):
             )
         
         # Generar reporte
-        datos = ReporteIncidentesService.generar_reporte(periodo_inicio, periodo_fin)
-
-        # Guardar en base de datos si se solicita
-        if request.query_params.get('guardar') == 'true':
-            config, _ = ConfiguracionReporte.objects.get_or_create(
-                nombre=f'Reporte Incidentes {fecha_inicio} a {fecha_fin}',
-                tipo_reporte='INCIDENTES',
+        if request.user.rol == 'INSTRUCTOR':
+            datos = ReporteIncidentesService.generar_reporte_instruccion(
+                periodo_inicio, 
+                periodo_fin,
+                request.user
             )
-
-            ReporteGenerado.objects.create(
-                configuracion=config,
-                periodo_inicio=periodo_inicio,
-                periodo_fin=periodo_fin,
-                datos_json=datos,
-                generado_por=request.user
-            )
+        else:
+            datos = ReporteIncidentesService.generar_reporte(periodo_inicio, periodo_fin)
 
         return Response(datos)
     
     @action(detail=False, methods=['get'])
     def asistencia(self, request):
-        """Genera reporte de asistencia por ficha"""
+        """Genera reporte de asistencia"""
+        if request.user.rol not in ['INSTRUCTOR', 'ADMINISTRATIVO', 'VIGILANCIA']:
+            return Response(
+                {'error': 'No tienes permisos para generar reportes de asistencia.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
         ficha = request.query_params.get('ficha')
         fecha_inicio = request.query_params.get('fecha_inicio')
         fecha_fin = request.query_params.get('fecha_fin')
@@ -133,31 +184,21 @@ class ReporteViewSet(viewsets.ModelViewSet):
         # Generar reporte
         datos = ReporteAsistenciaService.generar_reporte(ficha, periodo_inicio, periodo_fin)
 
-        # Guardar en base de datos si se solicita
-        if request.query_params.get('guardar') == 'true':
-            config, _ = ConfiguracionReporte.objects.get_or_create(
-                nombre=f'Reporte Asistencia {ficha}',
-                tipo_reporte='ASISTENCIA',
-            )
-
-            ReporteGenerado.objects.create(
-                configuracion=config,
-                periodo_inicio=periodo_inicio,
-                periodo_fin=periodo_fin,
-                datos_json=datos,
-                generado_por=request.user
-            )
-
         return Response(datos)
     
     @action(detail=False, methods=['get'])
     def seguridad(self, request):
         """Genera reporte de seguridad"""
+        if request.user.rol not in ['ADMINISTRATIVO', 'BRIGADA', 'VIGILANCIA']:
+            return Response(
+                {'error': 'No tienes permisos para generar reportes de seguridad.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
         fecha_inicio = request.query_params.get('fecha_inicio')
         fecha_fin = request.query_params.get('fecha_fin')
 
         if not fecha_inicio or not fecha_fin:
-            # Por defecto, último mes
             fecha_fin = timezone.now().date()
             fecha_inicio = fecha_fin - timedelta(days=30)
             periodo_inicio = fecha_inicio
@@ -172,51 +213,72 @@ class ReporteViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
         
-        # Generar reporte
-        datos = ReporteSeguridadService.generar_reporte(periodo_inicio, periodo_fin)
-
-        # Guardar en base de datos si se solicita
-        if request.query_params.get('guardar') == 'true':
-            config, _ = ConfiguracionReporte.objects.get_or_create(
-                nombre=f'Reporte Seguridad {fecha_inicio} a {fecha_fin}',
-                tipo_reporte='SEGURIDAD',
-            )
-
-            ReporteGenerado.objects.create(
-                configuracion=config,
-                periodo_inicio=periodo_inicio,
-                periodo_fin=periodo_fin,
-                datos_json=datos,
-                generado_por=request.user
-            )
+        # Generar reporte según rol
+        if request.user.rol == 'VIGILANCIA':
+            datos = ReporteSeguridadService.generar_reporte_vigilancia(periodo_inicio, periodo_fin)
+        elif request.user.rol == 'BRIGADA':
+            datos = ReporteSeguridadService.generar_reporte_emergencias(periodo_inicio, periodo_fin)
+        else:
+            datos = ReporteSeguridadService.generar_reporte(periodo_inicio, periodo_fin)
         
         return Response(datos)
     
     @action(detail=False, methods=['get'])
-    def historial(self, request):
-        """Obtiene el historial de reportes generados"""
-        reportes = ReporteGenerado.objects.all().order_by('-fecha_generacion')
-
-        datos_reportes = []
-        for reporte in reportes:
-            datos_reportes.append({
-                'id': reporte.id,
-                'nombre': reporte.configuracion.nombre,
-                'tipo_reporte': reporte.configuracion.tipo_reporte,
-                'fecha_generacion': reporte.fecha_generacion,
-                'periodo_inicio': reporte.periodo_inicio,
-                'periodo_fin': reporte.periodo_fin,
-                'generado_por': reporte.generado_por.get_full_name() if reporte.generado_por else 'Sistema'
+    def mi_asistencia(self, request):
+        """Reporte de asistencia personal para aprendices"""
+        if request.user.rol != 'APRENDIZ':
+            return Response(
+                {'error': 'Esta función es solo para aprendices.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        user = request.user
+        fecha_fin = timezone.now().date()
+        fecha_inicio = fecha_fin - timedelta(days=30)
+        
+        # Obtener registros del aprendiz
+        registros = RegistroAcceso.objects.filter(
+            usuario=user,
+            fecha_hora_ingreso__date__gte=fecha_inicio,
+            fecha_hora_ingreso__date__lte=fecha_fin
+        ).order_by('fecha_hora_ingreso')
+        
+        datos_registros = []
+        total_horas = 0
+        
+        for registro in registros:
+            horas = 0
+            if registro.fecha_hora_egreso:
+                diferencia = registro.fecha_hora_egreso - registro.fecha_hora_ingreso
+                horas = diferencia.total_seconds() / 3600
+                total_horas += horas
+            
+            datos_registros.append({
+                'fecha': registro.fecha_hora_ingreso.date(),
+                'hora_ingreso': registro.fecha_hora_ingreso.time(),
+                'hora_egreso': registro.fecha_hora_egreso.time() if registro.fecha_hora_egreso else None,
+                'horas_trabajadas': round(horas, 2)
             })
+        
+        datos = {
+            'aprendiz': user.get_full_name(),
+            'ficha': user.ficha or 'No asignada',
+            'periodo': f'{fecha_inicio} a {fecha_fin}',
+            'total_dias': len(datos_registros),
+            'total_horas': round(total_horas, 2),
+            'registros': datos_registros
+        }
+        
+        return Response(datos)
 
-        return Response(datos_reportes)
-    
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def dashboard_estadisticas(request):
     """Retorna estadísticas para el dashboard principal"""
+    user = request.user
     
-    # Personas en el centro ahora (los que NO tienen hora de egreso)
+    # Personas en el centro ahora
     personas_en_centro = RegistroAcceso.objects.filter(
         fecha_hora_egreso__isnull=True
     ).count()
@@ -237,33 +299,21 @@ def dashboard_estadisticas(request):
         fecha_hora_ingreso__date=hoy
     ).count()
 
-    # Usuarios por rol
-    usuarios_por_rol = Usuario.objects.filter(activo=True).values('rol').annotate(
-        total=Count('id')
-    )
-
-    # Emergencias de los últimos 7 días
-    ultima_semana = timezone.now().date() - timedelta(days=7)
-    emergencias_recientes = Emergencia.objects.filter(
-        fecha_hora_reporte__gte=ultima_semana
-    ).count()
-
-    # Equipamiento operativo
-    from mapas.models import EquipamientoSeguridad
-    equipamiento_total = EquipamientoSeguridad.objects.count()
-    equipamiento_operativo = EquipamientoSeguridad.objects.filter(estado='OPERATIVO').count()
-    porcentaje_equipamiento = (equipamiento_operativo / equipamiento_total * 100) if equipamiento_total > 0 else 0
-
-    return Response({
+    respuesta = {
         'personas_en_centro': personas_en_centro,
         'aforo_maximo': aforo_maximo,
         'porcentaje_aforo': round(porcentaje_aforo, 2),
         'emergencias_activas': emergencias_activas,
         'ingresos_hoy': ingresos_hoy,
-        'emergencias_recientes': emergencias_recientes,
-        'equipamiento_operativo': equipamiento_operativo,
-        'equipamiento_total': equipamiento_total,
-        'porcentaje_equipamiento': round(porcentaje_equipamiento, 2),
-        'usuarios_por_rol': list(usuarios_por_rol),
-        'timestamp': timezone.now()
-    })
+        'timestamp': timezone.now(),
+        'rol_usuario': user.rol
+    }
+
+    # Limitar datos según rol
+    if user.rol == 'VISITANTE':
+        return Response({
+            'mensaje': 'Bienvenido al sistema SST',
+            'rol_usuario': 'VISITANTE'
+        })
+
+    return Response(respuesta)

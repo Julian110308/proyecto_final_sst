@@ -1,5 +1,109 @@
+# usuarios/models.py
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+
+class RolePermissions:
+    """
+    Clase para gestión centralizada de permisos por rol
+    """
+    PERMISSIONS_MAP = {
+        'APRENDIZ': {
+            'can_view_reports': True,
+            'can_view_own_data': True,
+            'can_view_capacity': True,
+            'can_report_emergency': True,
+            'can_view_alerts': True,
+            'can_view_emergencies': False,
+            'can_view_map': False,
+            'can_view_income': False,
+            'can_manage_users': False,
+            'can_manage_visitors': False,
+            'can_configure_system': False,
+            'can_export_data': False,
+        },
+        'INSTRUCTOR': {
+            'can_view_reports': True,
+            'can_view_own_data': True,
+            'can_view_apprentice_data': True,
+            'can_report_emergency': True,
+            'can_view_capacity': True,
+            'can_view_emergencies': True,
+            'can_view_map': True,
+            'can_view_income': False,
+            'can_manage_users': False,
+            'can_manage_visitors': True,
+            'can_configure_system': False,
+            'can_export_data': True,
+        },
+        'ADMINISTRATIVO': {
+            'can_view_all_reports': True,
+            'can_view_all_data': True,
+            'can_manage_all_users': True,
+            'can_report_emergency': True,
+            'can_view_capacity': True,
+            'can_view_all_emergencies': True,
+            'can_view_full_map': True,
+            'can_view_income': True,
+            'can_manage_visitors': True,
+            'can_configure_system': True,
+            'can_export_data': True,
+        },
+        'VIGILANCIA': {
+            'can_view_reports': True,
+            'can_view_access_data': True,
+            'can_register_access': True,
+            'can_manage_visitors': True,
+            'can_view_capacity': True,
+            'can_view_security_emergencies': True,
+            'can_view_security_map': True,
+            'can_block_users': True,
+            'can_view_income': False,
+            'can_configure_system': False,
+            'can_export_data': True,
+        },
+        'BRIGADA': {
+            'can_view_reports': True,
+            'can_view_emergency_data': True,
+            'can_update_emergencies': True,
+            'can_view_medical_data': True,
+            'can_view_capacity': True,
+            'can_view_all_emergencies': True,
+            'can_view_emergency_map': True,
+            'can_evacuate_zones': True,
+            'can_view_income': False,
+            'can_configure_system': False,
+            'can_export_data': True,
+        },
+        'VISITANTE': {
+            'can_view_dashboard': False,
+            'can_view_welcome': True,
+            'can_register_arrival': True,
+            'can_view_own_visit': True,
+            'can_view_reports': False,
+            'can_view_income': False,
+        }
+    }
+    
+    @classmethod
+    def has_permission(cls, user, permission_name):
+        """Verifica si un usuario tiene un permiso específico"""
+        if not user.is_authenticated:
+            return False
+            
+        user_role = user.rol
+        role_permissions = cls.PERMISSIONS_MAP.get(user_role, {})
+        
+        return role_permissions.get(permission_name, False)
+    
+    @classmethod
+    def get_user_permissions(cls, user):
+        """Obtiene todos los permisos de un usuario"""
+        if not user.is_authenticated:
+            return {}
+            
+        user_role = user.rol
+        return cls.PERMISSIONS_MAP.get(user_role, {}).copy()
+
 
 class Usuario(AbstractUser):
     
@@ -49,7 +153,6 @@ class Usuario(AbstractUser):
     
     @property
     def esta_en_centro(self):
-        
         # Verifica si el usuario está actualmente en el centro
         from control_acceso.models import RegistroAcceso
         ultimo_registro = RegistroAcceso.objects.filter(
@@ -59,10 +162,84 @@ class Usuario(AbstractUser):
         if ultimo_registro:
             return ultimo_registro.fecha_hora_egreso is None
         return False
+    
+    # Métodos para el sistema de permisos
+    def has_perm(self, perm, obj=None):
+        """Sobreescribe el método has_perm para usar nuestro sistema de permisos"""
+        return RolePermissions.has_permission(self, perm)
+    
+    def has_permission(self, permission_name):
+        """Método conveniente para verificar permisos específicos"""
+        return RolePermissions.has_permission(self, permission_name)
+    
+    def get_permissions(self):
+        """Obtiene todos los permisos del usuario"""
+        return RolePermissions.get_user_permissions(self)
+    
+    @property
+    def is_administrativo(self):
+        """Verifica si el usuario es administrativo"""
+        return self.rol == 'ADMINISTRATIVO'
+    
+    @property
+    def is_instructor(self):
+        """Verifica si el usuario es instructor"""
+        return self.rol == 'INSTRUCTOR'
+    
+    @property
+    def is_aprendiz(self):
+        """Verifica si el usuario es aprendiz"""
+        return self.rol == 'APRENDIZ'
+    
+    @property
+    def is_vigilancia(self):
+        """Verifica si el usuario es de vigilancia"""
+        return self.rol == 'VIGILANCIA'
+    
+    @property
+    def is_brigada(self):
+        """Verifica si el usuario es de brigada"""
+        return self.rol == 'BRIGADA'
+    
+    @property
+    def is_visitante(self):
+        """Verifica si el usuario es visitante"""
+        return self.rol == 'VISITANTE'
+    
+    def puede_ver_ingresos(self):
+        """Verifica si puede ver datos financieros"""
+        return self.has_permission('can_view_income')
+    
+    def puede_gestionar_usuarios(self):
+        """Verifica si puede gestionar otros usuarios"""
+        return self.has_permission('can_manage_users') or self.has_permission('can_manage_all_users')
+    
+    def puede_gestionar_visitantes(self):
+        """Verifica si puede gestionar visitantes"""
+        return self.has_permission('can_manage_visitors')
+    
+    def puede_exportar_datos(self):
+        """Verifica si puede exportar datos"""
+        return self.has_permission('can_export_data')
+    
+    def puede_ver_emergencias(self):
+        """Verifica si puede ver emergencias"""
+        return self.has_permission('can_view_emergencies') or self.has_permission('can_view_all_emergencies')
+    
+    def get_dashboard_template(self):
+        """Devuelve el template del dashboard según el rol"""
+        templates = {
+            'APRENDIZ': 'dashboard/aprendiz.html',
+            'INSTRUCTOR': 'dashboard/instructor.html',
+            'ADMINISTRATIVO': 'dashboard/administrativo.html',
+            'VIGILANCIA': 'dashboard/vigilancia.html',
+            'BRIGADA': 'dashboard/brigada.html',
+            'VISITANTE': 'dashboard/visitante.html',
+        }
+        return templates.get(self.rol, 'dashboard/base.html')
 
 
 class Visitante(models.Model):
-    
     # Modelo para visitantes externos
     
     nombre_completo = models.CharField(max_length=200)
@@ -99,3 +276,20 @@ class Visitante(models.Model):
     
     def __str__(self):
         return f'{self.nombre_completo} - {self.fecha_visita}'
+    
+    @property
+    def esta_en_centro(self):
+        """Verifica si el visitante aún está en el centro"""
+        return self.hora_salida is None
+    
+    @property
+    def duracion_visita(self):
+        """Calcula la duración de la visita si ya salió"""
+        if self.hora_salida:
+            from datetime import datetime, date
+            # Combinar fecha y hora
+            entrada = datetime.combine(self.fecha_visita, self.hora_ingreso)
+            salida = datetime.combine(self.fecha_visita, self.hora_salida)
+            duracion = salida - entrada
+            return duracion.total_seconds() / 3600  # Horas
+        return None

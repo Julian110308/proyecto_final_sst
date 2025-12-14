@@ -6,6 +6,6 @@ router = DefaultRouter()
 router.register('', ReporteViewSet, basename='reportes')    
 
 urlpatterns = [
+    path('dashboard/', dashboard_estadisticas, name='api-reportes-dashboard'),
     path('', include(router.urls)),
-    path('dashboard/', dashboard_estadisticas, name='dashboard'),
 ]
