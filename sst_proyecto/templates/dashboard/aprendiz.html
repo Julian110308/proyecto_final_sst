@@ -1,0 +1,328 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard Aprendiz - Sistema SST{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Dashboard Aprendiz</li>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 fw-bold text-dark mb-1">
+            <i class="bi bi-mortarboard-fill text-primary me-2"></i>
+            Bienvenido, {{ user.get_full_name|default:user.username }}
+        </h1>
+        <p class="text-muted mb-0">
+            Aprendiz - {{ user.programa_formacion|default:"Programa de Formación" }}
+            {% if user.ficha %} | Ficha: {{ user.ficha }}{% endif %}
+        </p>
+    </div>
+    <div class="btn-group">
+        <button class="btn btn-outline-secondary btn-sm active">Hoy</button>
+        <button class="btn btn-outline-secondary btn-sm">Semana</button>
+    </div>
+</div>
+
+<!-- Tarjetas de Información Rápida -->
+<div class="row g-4 mb-4">
+    <!-- Mi Asistencia -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Mi Asistencia</h6>
+                        <h3 class="fw-bold text-dark mb-0">95%</h3>
+                        <small class="text-success">
+                            <i class="bi bi-arrow-up-short"></i> Excelente
+                        </small>
+                    </div>
+                    <div class="bg-light-green rounded-3 p-3">
+                        <i class="bi bi-calendar-check fs-2 text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Horas en Centro -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Horas Esta Semana</h6>
+                        <h3 class="fw-bold text-dark mb-0">32h</h3>
+                        <small class="text-info">De 40h programadas</small>
+                    </div>
+                    <div class="bg-light rounded-3 p-3" style="background: #e3f2fd !important;">
+                        <i class="bi bi-clock-history fs-2 text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estado Actual -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Estado Actual</h6>
+                        <h3 class="fw-bold text-success mb-0">
+                            {% if user.esta_en_centro %}
+                            <i class="bi bi-check-circle-fill"></i> En Centro
+                            {% else %}
+                            <i class="bi bi-x-circle-fill text-muted"></i> Fuera
+                            {% endif %}
+                        </h3>
+                        <small class="text-muted">Desde las 7:00 AM</small>
+                    </div>
+                    <div class="bg-light-green rounded-3 p-3">
+                        <i class="bi bi-geo-alt fs-2 text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alertas Pendientes -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Alertas/Notificaciones</h6>
+                        <h3 class="fw-bold text-dark mb-0">2</h3>
+                        <small class="text-warning">
+                            <i class="bi bi-exclamation-triangle"></i> Pendientes
+                        </small>
+                    </div>
+                    <div class="bg-light-warning rounded-3 p-3">
+                        <i class="bi bi-bell fs-2 text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Acciones Rápidas -->
+<div class="row g-4 mb-4">
+    <div class="col-md-8">
+        <div class="card card-modern">
+            <div class="card-header-modern">
+                <h6 class="mb-0">
+                    <i class="bi bi-lightning-charge-fill me-2"></i>
+                    Acciones Rápidas
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <button class="btn btn-outline-danger w-100 py-3" onclick="reportarIncidente()">
+                            <i class="bi bi-exclamation-triangle-fill fs-4 d-block mb-2"></i>
+                            <span class="fw-bold">Reportar Incidente</span>
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-outline-primary w-100 py-3" onclick="verHorario()">
+                            <i class="bi bi-calendar3 fs-4 d-block mb-2"></i>
+                            <span class="fw-bold">Ver Mi Horario</span>
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-outline-success w-100 py-3" onclick="verMapa()">
+                            <i class="bi bi-map fs-4 d-block mb-2"></i>
+                            <span class="fw-bold">Mapa del Centro</span>
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-outline-info w-100 py-3" onclick="consultarInfo()">
+                            <i class="bi bi-info-circle fs-4 d-block mb-2"></i>
+                            <span class="fw-bold">Información SST</span>
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-outline-warning w-100 py-3" onclick="verAlertas()">
+                            <i class="bi bi-bell fs-4 d-block mb-2"></i>
+                            <span class="fw-bold">Mis Alertas</span>
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-outline-secondary w-100 py-3" onclick="window.location.href='/reportes/'">
+                            <i class="bi bi-file-earmark-text fs-4 d-block mb-2"></i>
+                            <span class="fw-bold">Ver Reportes</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mi Código QR -->
+    <div class="col-md-4">
+        <div class="card card-modern">
+            <div class="card-header-modern">
+                <h6 class="mb-0">
+                    <i class="bi bi-qr-code me-2"></i>
+                    Mi Código QR
+                </h6>
+            </div>
+            <div class="card-body text-center">
+                <div class="p-3 bg-white border rounded-3 d-inline-block mb-3">
+                    <i class="bi bi-qr-code" style="font-size: 120px; color: #1a4d2e;"></i>
+                </div>
+                <p class="text-muted small mb-2">Escanea para registrar acceso</p>
+                <button class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-download me-1"></i>Descargar QR
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alertas y Notificaciones -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card card-modern">
+            <div class="card-header-modern">
+                <h6 class="mb-0">
+                    <i class="bi bi-megaphone me-2"></i>
+                    Alertas Recientes
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning d-flex align-items-start mb-3">
+                    <i class="bi bi-exclamation-triangle-fill me-3 fs-5"></i>
+                    <div>
+                        <strong>Capacitación SST Pendiente</strong>
+                        <p class="mb-1 small">Debes completar el módulo de Seguridad Industrial antes del viernes.</p>
+                        <small class="text-muted">Hace 2 horas</small>
+                    </div>
+                </div>
+                <div class="alert alert-info d-flex align-items-start mb-3">
+                    <i class="bi bi-info-circle-fill me-3 fs-5"></i>
+                    <div>
+                        <strong>Actualización de Horarios</strong>
+                        <p class="mb-1 small">Se han actualizado los horarios para la próxima semana.</p>
+                        <small class="text-muted">Hace 5 horas</small>
+                    </div>
+                </div>
+                <div class="alert alert-success d-flex align-items-start">
+                    <i class="bi bi-check-circle-fill me-3 fs-5"></i>
+                    <div>
+                        <strong>Asistencia Registrada</strong>
+                        <p class="mb-1 small">Tu ingreso de hoy fue registrado correctamente a las 7:02 AM.</p>
+                        <small class="text-muted">Hoy, 7:02 AM</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mi Historial Reciente -->
+    <div class="col-lg-6">
+        <div class="card card-modern">
+            <div class="card-header-modern">
+                <h6 class="mb-0">
+                    <i class="bi bi-clock-history me-2"></i>
+                    Mi Historial de Acceso
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Entrada</th>
+                                <th>Salida</th>
+                                <th>Horas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Hoy</strong></td>
+                                <td>7:02 AM</td>
+                                <td><span class="badge bg-success">En centro</span></td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td>Ayer</td>
+                                <td>7:15 AM</td>
+                                <td>4:30 PM</td>
+                                <td>9h 15m</td>
+                            </tr>
+                            <tr>
+                                <td>Lun 11/12</td>
+                                <td>7:05 AM</td>
+                                <td>4:20 PM</td>
+                                <td>9h 15m</td>
+                            </tr>
+                            <tr>
+                                <td>Vie 08/12</td>
+                                <td>7:10 AM</td>
+                                <td>3:45 PM</td>
+                                <td>8h 35m</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-center mt-3">
+                    <a href="#" class="btn btn-sm btn-outline-secondary">Ver historial completo</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Información Importante -->
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card card-modern border-start border-4 border-info">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-info-circle-fill text-info fs-2 me-3"></i>
+                    <div>
+                        <h6 class="mb-1">Información Importante</h6>
+                        <p class="mb-0 text-muted">
+                            Recuerda siempre portar tu carnet de identificación y seguir los protocolos de seguridad del centro. 
+                            En caso de emergencia, dirígete a las zonas de evacuación señalizadas.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function reportarIncidente() {
+    if (confirm('¿Deseas reportar un incidente de seguridad?')) {
+        alert('Función de reporte de incidentes. Se abrirá el formulario correspondiente.');
+        // Aquí irá la lógica para abrir modal o redirigir
+    }
+}
+
+function verHorario() {
+    alert('Función para ver horario. Aquí se mostrará tu horario semanal.');
+}
+
+function verMapa() {
+    window.location.href = '/mapas/';
+}
+
+function consultarInfo() {
+    alert('Función para consultar información SST. Se mostrará documentación y guías.');
+}
+
+function verAlertas() {
+    alert('Función para ver todas las alertas. Se mostrará un listado completo.');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,553 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard Vigilancia - Sistema SST{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Dashboard Vigilancia</li>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 fw-bold text-dark mb-1">
+            <i class="bi bi-shield-check text-primary me-2"></i>
+            Control de Seguridad - {{ user.get_full_name|default:user.username }}
+        </h1>
+        <p class="text-muted mb-0">Control de acceso y vigilancia del centro</p>
+    </div>
+    <div class="btn-group">
+        <button class="btn btn-primary" onclick="registrarAcceso()">
+            <i class="bi bi-door-open me-1"></i>Registrar Acceso
+        </button>
+        <button class="btn btn-outline-danger" onclick="alertaSeguridad()">
+            <i class="bi bi-exclamation-triangle me-1"></i>Alerta
+        </button>
+    </div>
+</div>
+
+<!-- Estado del Sistema -->
+<div class="row g-4 mb-4">
+    <!-- Personas en Centro -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0 border-start border-4 border-primary">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Personas en Centro</h6>
+                        <h3 class="fw-bold text-dark mb-0">156</h3>
+                        <small class="text-success">
+                            <i class="bi bi-shield-check"></i> Normal
+                        </small>
+                    </div>
+                    <div class="bg-light rounded-3 p-3" style="background: #e3f2fd !important;">
+                        <i class="bi bi-people-fill fs-2 text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ingresos Hoy -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0 border-start border-4 border-success">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Ingresos Hoy</h6>
+                        <h3 class="fw-bold text-dark mb-0">189</h3>
+                        <small class="text-info">Última hora: 12</small>
+                    </div>
+                    <div class="bg-light-green rounded-3 p-3">
+                        <i class="bi bi-box-arrow-in-right fs-2 text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Visitantes Activos -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0 border-start border-4 border-warning">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Visitantes Activos</h6>
+                        <h3 class="fw-bold text-dark mb-0">15</h3>
+                        <small class="text-warning">
+                            <i class="bi bi-exclamation-triangle"></i> Requieren seguimiento
+                        </small>
+                    </div>
+                    <div class="bg-light-warning rounded-3 p-3">
+                        <i class="bi bi-person-badge fs-2 text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alertas de Seguridad -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0 border-start border-4 border-danger">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Alertas Activas</h6>
+                        <h3 class="fw-bold text-dark mb-0">0</h3>
+                        <small class="text-success">
+                            <i class="bi bi-check-circle"></i> Todo bajo control
+                        </small>
+                    </div>
+                    <div class="bg-light rounded-3 p-3" style="background: #ffebee !important;">
+                        <i class="bi bi-bell-fill fs-2 text-danger"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Registro de Accesos y Acciones Rápidas -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card card-modern">
+            <div class="card-header-modern">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="bi bi-clock-history me-2"></i>
+                        Registros de Acceso en Tiempo Real
+                    </h6>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-secondary active">Todos</button>
+                        <button class="btn btn-outline-success">Ingresos</button>
+                        <button class="btn btn-outline-danger">Egresos</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Hora</th>
+                                <th>Usuario</th>
+                                <th>Tipo</th>
+                                <th>Acción</th>
+                                <th>Método</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="table-success">
+                                <td><strong>11:45 AM</strong></td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar bg-primary text-white rounded-circle me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 12px;">
+                                            JP
+                                        </div>
+                                        <span>Juan Pérez</span>
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-primary">Aprendiz</span></td>
+                                <td><i class="bi bi-box-arrow-in-right text-success"></i> Ingreso</td>
+                                <td>QR Code</td>
+                                <td><span class="badge bg-success">Verificado</span></td>
+                            </tr>
+                            <tr class="table-danger">
+                                <td><strong>11:42 AM</strong></td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar bg-success text-white rounded-circle me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 12px;">
+                                            MG
+                                        </div>
+                                        <span>María González</span>
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-success">Instructor</span></td>
+                                <td><i class="bi bi-box-arrow-right text-danger"></i> Egreso</td>
+                                <td>Manual</td>
+                                <td><span class="badge bg-success">Verificado</span></td>
+                            </tr>
+                            <tr class="table-success">
+                                <td><strong>11:38 AM</strong></td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar bg-warning text-white rounded-circle me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 12px;">
+                                            CL
+                                        </div>
+                                        <span>Carlos López</span>
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-warning">Visitante</span></td>
+                                <td><i class="bi bi-box-arrow-in-right text-success"></i> Ingreso</td>
+                                <td>Manual</td>
+                                <td><span class="badge bg-warning">Pendiente Autorización</span></td>
+                            </tr>
+                            <tr class="table-success">
+                                <td><strong>11:35 AM</strong></td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar bg-info text-white rounded-circle me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 12px;">
+                                            AR
+                                        </div>
+                                        <span>Ana Rodríguez</span>
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-primary">Aprendiz</span></td>
+                                <td><i class="bi bi-box-arrow-in-right text-success"></i> Ingreso</td>
+                                <td>QR Code</td>
+                                <td><span class="badge bg-success">Verificado</span></td>
+                            </tr>
+                            <tr class="table-success">
+                                <td><strong>11:30 AM</strong></td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar bg-danger text-white rounded-circle me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 12px;">
+                                            PS
+                                        </div>
+                                        <span>Pedro Sánchez</span>
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-info">Administrativo</span></td>
+                                <td><i class="bi bi-box-arrow-in-right text-success"></i> Ingreso</td>
+                                <td>Facial</td>
+                                <td><span class="badge bg-success">Verificado</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-center mt-3">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="window.location.href='/acceso/'">
+                        Ver historial completo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Acciones Rápidas -->
+        <div class="card card-modern mb-4">
+            <div class="card-header-modern">
+                <h6 class="mb-0">
+                    <i class="bi bi-lightning-charge-fill me-2"></i>
+                    Acciones Rápidas
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-3">
+                    <button class="btn btn-primary text-start" onclick="registrarAcceso()">
+                        <i class="bi bi-door-open me-2"></i>
+                        Registrar Ingreso/Egreso
+                    </button>
+                    <button class="btn btn-outline-warning text-start" onclick="registrarVisitante()">
+                        <i class="bi bi-person-plus me-2"></i>
+                        Registrar Visitante
+                    </button>
+                    <button class="btn btn-outline-info text-start" onclick="buscarPersona()">
+                        <i class="bi bi-search me-2"></i>
+                        Buscar Persona
+                    </button>
+                    <button class="btn btn-outline-danger text-start" onclick="alertaSeguridad()">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Reportar Alerta
+                    </button>
+                    <button class="btn btn-outline-secondary text-start" onclick="window.location.href='/mapas/'">
+                        <i class="bi bi-map me-2"></i>
+                        Ver Mapa del Centro
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cámaras de Seguridad -->
+        <div class="card card-modern">
+            <div class="card-header-modern">
+                <h6 class="mb-0">
+                    <i class="bi bi-camera-video me-2"></i>
+                    Cámaras Activas
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <div class="border rounded p-2 text-center bg-light">
+                            <i class="bi bi-camera-video-fill text-success fs-3"></i>
+                            <p class="mb-0 small mt-1">Entrada Principal</p>
+                            <span class="badge bg-success">Activa</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="border rounded p-2 text-center bg-light">
+                            <i class="bi bi-camera-video-fill text-success fs-3"></i>
+                            <p class="mb-0 small mt-1">Parqueadero</p>
+                            <span class="badge bg-success">Activa</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="border rounded p-2 text-center bg-light">
+                            <i class="bi bi-camera-video-fill text-success fs-3"></i>
+                            <p class="mb-0 small mt-1">Talleres</p>
+                            <span class="badge bg-success">Activa</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="border rounded p-2 text-center bg-light">
+                            <i class="bi bi-camera-video-fill text-danger fs-3"></i>
+                            <p class="mb-0 small mt-1">Salida Trasera</p>
+                            <span class="badge bg-danger">Offline</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-sm btn-outline-primary w-100 mt-3" onclick="verTodasCamaras()">
+                    Ver Todas las Cámaras
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Visitantes y Alertas -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-7">
+        <div class="card card-modern">
+            <div class="card-header-modern d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-person-badge me-2"></i>
+                    Visitantes Activos en Centro (15)
+                </h6>
+                <button class="btn btn-sm btn-primary" onclick="registrarVisitante()">
+                    <i class="bi bi-plus-circle me-1"></i>Nuevo Visitante
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Visitante</th>
+                                <th>Entidad</th>
+                                <th>Visita a</th>
+                                <th>Ingreso</th>
+                                <th>Tiempo</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Carlos Méndez</strong></td>
+                                <td>Proveedor ABC</td>
+                                <td>Ing. Rodríguez</td>
+                                <td>8:30 AM</td>
+                                <td><span class="badge bg-warning">3h 15m</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="registrarSalidaVisitante('Carlos')">
+                                        <i class="bi bi-box-arrow-right"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Ana Vargas</strong></td>
+                                <td>Auditor Externo</td>
+                                <td>Director</td>
+                                <td>9:00 AM</td>
+                                <td><span class="badge bg-warning">2h 45m</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="registrarSalidaVisitante('Ana')">
+                                        <i class="bi bi-box-arrow-right"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Roberto López</strong></td>
+                                <td>Mantenimiento</td>
+                                <td>Coordinador</td>
+                                <td>10:15 AM</td>
+                                <td><span class="badge bg-success">1h 30m</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="registrarSalidaVisitante('Roberto')">
+                                        <i class="bi bi-box-arrow-right"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>María González</strong></td>
+                                <td>Entidad Gubernamental</td>
+                                <td>Secretaría</td>
+                                <td>11:00 AM</td>
+                                <td><span class="badge bg-success">45m</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="registrarSalidaVisitante('María')">
+                                        <i class="bi bi-box-arrow-right"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <!-- Alertas de Seguridad -->
+        <div class="card card-modern mb-4">
+            <div class="card-header-modern">
+                <h6 class="mb-0">
+                    <i class="bi bi-shield-exclamation me-2"></i>
+                    Alertas de Seguridad
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-success">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-check-circle-fill fs-4 me-3"></i>
+                        <div>
+                            <strong>Todo bajo control</strong>
+                            <p class="mb-0 small">No hay alertas activas de seguridad</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h6 class="mb-2 mt-3">Últimas Alertas Resueltas:</h6>
+                <div class="list-group">
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <span class="badge bg-warning mb-1">Menor</span>
+                                <p class="mb-1 fw-bold small">Acceso no autorizado detectado</p>
+                                <small class="text-muted">Resuelto hace 2 horas</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <span class="badge bg-info mb-1">Información</span>
+                                <p class="mb-1 fw-bold small">Cambio de turno registrado</p>
+                                <small class="text-muted">Hace 8 horas</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estadísticas del Turno -->
+        <div class="card card-modern">
+            <div class="card-header-modern">
+                <h6 class="mb-0">
+                    <i class="bi bi-graph-up me-2"></i>
+                    Estadísticas de Mi Turno
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <h4 class="text-success mb-0">45</h4>
+                        <small class="text-muted">Ingresos</small>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <h4 class="text-danger mb-0">32</h4>
+                        <small class="text-muted">Egresos</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-warning mb-0">8</h4>
+                        <small class="text-muted">Visitantes</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-info mb-0">0</h4>
+                        <small class="text-muted">Incidentes</small>
+                    </div>
+                </div>
+                <hr>
+                <p class="mb-0 text-center">
+                    <small class="text-muted">Turno iniciado: 7:00 AM</small>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mapa de Ubicaciones -->
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card card-modern">
+            <div class="card-header-modern d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-geo-alt me-2"></i>
+                    Mapa de Seguridad del Centro
+                </h6>
+                <button class="btn btn-sm btn-outline-primary" onclick="window.location.href='/mapas/'">
+                    Ver Mapa Completo
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <div id="securityMap" style="height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// Mapa de Seguridad
+const map = L.map('securityMap').setView([5.5339, -73.3674], 17);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+// Marcadores de puntos de control
+const entradaIcon = L.divIcon({
+    className: 'custom-div-icon',
+    html: '<div style="background-color:#4CAF50; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold;">E</div>',
+    iconSize: [30, 30]
+});
+
+L.marker([5.5339, -73.3674], {icon: entradaIcon}).addTo(map)
+    .bindPopup('<b>Entrada Principal</b><br>Activa - Sin incidentes');
+
+L.marker([5.5345, -73.3680], {icon: entradaIcon}).addTo(map)
+    .bindPopup('<b>Salida Trasera</b><br>Activa');
+
+// Funciones
+function registrarAcceso() {
+    alert('Función de registro de acceso. Se abrirá formulario para registrar ingreso/egreso manual.');
+}
+
+function registrarVisitante() {
+    alert('Función para registrar nuevo visitante. Se abrirá formulario con datos requeridos.');
+}
+
+function buscarPersona() {
+    const nombre = prompt('Ingrese el nombre o documento de la persona a buscar:');
+    if (nombre) {
+        alert(`Buscando información de: ${nombre}\n\nEsta función mostrará el estado actual y historial de acceso.`);
+    }
+}
+
+function alertaSeguridad() {
+    if (confirm('¿Desea reportar una ALERTA DE SEGURIDAD?\n\nEsto notificará inmediatamente al personal de emergencia.')) {
+        alert('ALERTA ACTIVADA\n\nNotificación enviada a:\n- Coordinador de Seguridad\n- Brigada de Emergencia\n- Personal Administrativo');
+    }
+}
+
+function registrarSalidaVisitante(nombre) {
+    if (confirm(`¿Registrar salida de ${nombre}?`)) {
+        alert(`Salida de ${nombre} registrada exitosamente a las ${new Date().toLocaleTimeString()}`);
+    }
+}
+
+function verTodasCamaras() {
+    alert('Sistema de cámaras de seguridad. Se mostrará vista en tiempo real de todas las cámaras activas.');
+}
+
+// Auto-actualización de hora
+setInterval(() => {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('es-CO');
+    document.querySelectorAll('.live-time').forEach(el => {
+        el.textContent = timeStr;
+    });
+}, 1000);
+</script>
+{% endblock %}

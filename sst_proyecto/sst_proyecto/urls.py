@@ -1,18 +1,5 @@
 """
 URL configuration for sst_proyecto project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/4.2/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
 from django.urls import path, include
@@ -23,11 +10,37 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import views as auth_views
 from django.views.generic import RedirectView
 
-# Vistas para usuarios autenticados (usan base.html)
+# Vista principal de dashboard que redirige según el rol
 @login_required
 def dashboard_view(request):
-    return render(request, 'dashboard.html')
+    """
+    Vista principal que redirige al dashboard específico según el rol del usuario
+    """
+    usuario = request.user
+    
+    # Mapeo de roles a templates
+    dashboard_templates = {
+        'APRENDIZ': 'dashboard/aprendiz.html',
+        'INSTRUCTOR': 'dashboard/instructor.html',
+        'ADMINISTRATIVO': 'dashboard/administrativo.html',
+        'VIGILANCIA': 'dashboard/vigilancia.html',
+        'BRIGADA': 'dashboard/brigada.html',
+        'VISITANTE': 'dashboard/visitante.html',
+    }
+    
+    # Obtener el template según el rol
+    template = dashboard_templates.get(usuario.rol, 'dashboard.html')
+    
+    # Contexto común para todos los dashboards
+    context = {
+        'usuario': usuario,
+        'rol': usuario.rol,
+        'permisos': usuario.get_permissions(),
+    }
+    
+    return render(request, template, context)
 
+# Vistas para usuarios autenticados (usan base.html)
 @login_required
 def control_acceso_view(request):
     return render(request, 'control_acceso.html')
@@ -50,7 +63,7 @@ urlpatterns = [
     # Autenticación - Rutas principales
     path('accounts/login/', auth_views.LoginView.as_view(
         template_name='login.html',
-        redirect_authenticated_user=True  # Si ya está autenticado, redirige al dashboard
+        redirect_authenticated_user=True
     ), name='login'),
     
     path('accounts/logout/', auth_views.LogoutView.as_view(
@@ -59,7 +72,7 @@ urlpatterns = [
     
     # Vistas principales del sistema (HTML templates)
     path('', dashboard_view, name='dashboard'),
-    path('dashboard/', RedirectView.as_view(url='/', permanent=False)),  # Redirección por si acaso
+    path('dashboard/', RedirectView.as_view(url='/', permanent=False)),
     path('acceso/', control_acceso_view, name='control_acceso'),
     path('mapas/', mapas_view, name='mapas'),
     path('emergencias/', emergencias_view, name='emergencias'),

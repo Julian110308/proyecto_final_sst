@@ -1,0 +1,563 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard Brigada - Sistema SST{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Dashboard Brigada de Emergencia</li>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 fw-bold text-dark mb-1">
+            <i class="bi bi-shield-fill-exclamation text-danger me-2"></i>
+            Brigada de Emergencia - {{ user.get_full_name|default:user.username }}
+        </h1>
+        <p class="text-muted mb-0">Sistema de respuesta a emergencias y evacuación</p>
+    </div>
+    <div class="btn-group">
+        <button class="btn btn-danger btn-lg" onclick="activarEmergencia()">
+            <i class="bi bi-megaphone-fill me-2"></i>ACTIVAR EMERGENCIA
+        </button>
+        <button class="btn btn-outline-warning" onclick="window.location.href='/emergencias/'">
+            <i class="bi bi-list-ul me-1"></i>Ver Todas
+        </button>
+    </div>
+</div>
+
+<!-- Estado de Emergencias -->
+<div class="row g-4 mb-4">
+    <!-- Estado Actual -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0 border-start border-4 border-success">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Estado Actual</h6>
+                        <h3 class="fw-bold text-success mb-0">NORMAL</h3>
+                        <small class="text-success">
+                            <i class="bi bi-shield-check"></i> Sin emergencias activas
+                        </small>
+                    </div>
+                    <div class="bg-light-green rounded-3 p-3">
+                        <i class="bi bi-check-circle-fill fs-2 text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Brigadistas Disponibles -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0 border-start border-4 border-primary">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Brigadistas Disponibles</h6>
+                        <h3 class="fw-bold text-dark mb-0">8/10</h3>
+                        <small class="text-success">
+                            <i class="bi bi-person-check"></i> 2 en servicio
+                        </small>
+                    </div>
+                    <div class="bg-light rounded-3 p-3" style="background: #e3f2fd !important;">
+                        <i class="bi bi-people-fill fs-2 text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Emergencias del Mes -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0 border-start border-4 border-warning">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Emergencias Este Mes</h6>
+                        <h3 class="fw-bold text-dark mb-0">8</h3>
+                        <small class="text-success">
+                            <i class="bi bi-arrow-down-short"></i> -25% vs mes anterior
+                        </small>
+                    </div>
+                    <div class="bg-light-warning rounded-3 p-3">
+                        <i class="bi bi-exclamation-triangle-fill fs-2 text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tiempo de Respuesta Promedio -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0 border-start border-4 border-info">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Tiempo Promedio</h6>
+                        <h3 class="fw-bold text-dark mb-0">3m 45s</h3>
+                        <small class="text-success">
+                            <i class="bi bi-arrow-down-short"></i> Mejor que objetivo (5m)
+                        </small>
+                    </div>
+                    <div class="bg-light rounded-3 p-3" style="background: #e3f2fd !important;">
+                        <i class="bi bi-stopwatch-fill fs-2 text-info"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Panel Principal -->
+<div class="row g-4 mb-4">
+    <!-- Emergencias Activas y Recientes -->
+    <div class="col-lg-8">
+        <div class="card card-modern">
+            <div class="card-header-modern">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="bi bi-exclamation-octagon-fill me-2"></i>
+                        Estado de Emergencias
+                    </h6>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-secondary active">Activas</button>
+                        <button class="btn btn-outline-secondary">Historial</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- No hay emergencias activas -->
+                <div class="alert alert-success mb-4">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-check-circle-fill fs-2 me-3"></i>
+                        <div>
+                            <h5 class="mb-1">Sistema en Estado Normal</h5>
+                            <p class="mb-0">No hay emergencias activas en este momento. Todos los sistemas operando correctamente.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h6 class="mb-3">Últimas Emergencias Atendidas:</h6>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Ubicación</th>
+                                <th>Nivel</th>
+                                <th>Tiempo Respuesta</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <i class="bi bi-lightning-fill text-warning me-2"></i>
+                                    <strong>Corte Eléctrico</strong>
+                                </td>
+                                <td>Bloque B - Piso 2</td>
+                                <td><span class="badge bg-warning">Menor</span></td>
+                                <td>2m 30s</td>
+                                <td><span class="badge bg-success">Resuelta</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="verDetalleEmergencia(1)">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <i class="bi bi-droplet-fill text-info me-2"></i>
+                                    <strong>Fuga de Agua</strong>
+                                </td>
+                                <td>Baños - Planta Baja</td>
+                                <td><span class="badge bg-info">Información</span></td>
+                                <td>4m 15s</td>
+                                <td><span class="badge bg-success">Resuelta</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="verDetalleEmergencia(2)">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <i class="bi bi-fire text-danger me-2"></i>
+                                    <strong>Conato de Incendio</strong>
+                                </td>
+                                <td>Cocina - Cafetería</td>
+                                <td><span class="badge bg-danger">Crítica</span></td>
+                                <td>1m 50s</td>
+                                <td><span class="badge bg-success">Resuelta</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="verDetalleEmergencia(3)">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones Rápidas y Recursos -->
+    <div class="col-lg-4">
+        <!-- Acciones Rápidas -->
+        <div class="card card-modern mb-4">
+            <div class="card-header-modern">
+                <h6 class="mb-0">
+                    <i class="bi bi-lightning-charge-fill me-2"></i>
+                    Acciones de Emergencia
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-3">
+                    <button class="btn btn-danger text-start" onclick="activarEmergencia()">
+                        <i class="bi bi-megaphone-fill me-2"></i>
+                        Activar Emergencia
+                    </button>
+                    <button class="btn btn-outline-warning text-start" onclick="evacuarZona()">
+                        <i class="bi bi-sign-stop-fill me-2"></i>
+                        Evacuar Zona
+                    </button>
+                    <button class="btn btn-outline-info text-start" onclick="window.location.href='/mapas/'">
+                        <i class="bi bi-map me-2"></i>
+                        Mapa de Evacuación
+                    </button>
+                    <button class="btn btn-outline-primary text-start" onclick="verificarEquipos()">
+                        <i class="bi bi-box-seam me-2"></i>
+                        Verificar Equipos
+                    </button>
+                    <button class="btn btn-outline-secondary text-start" onclick="comunicarBrigada()">
+                        <i class="bi bi-chat-dots me-2"></i>
+                        Comunicar Brigada
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estado de Equipos -->
+        <div class="card card-modern">
+            <div class="card-header-modern">
+                <h6 class="mb-0">
+                    <i class="bi bi-tools me-2"></i>
+                    Estado de Equipos
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span><i class="bi bi-fire-extinguisher text-danger me-2"></i>Extintores</span>
+                        <span class="badge bg-success">15/15</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span><i class="bi bi-droplet-fill text-info me-2"></i>Hidrantes</span>
+                        <span class="badge bg-success">8/8</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span><i class="bi bi-heart-pulse text-danger me-2"></i>Botiquines</span>
+                        <span class="badge bg-success">6/6</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span><i class="bi bi-radioactive text-warning me-2"></i>Alarmas</span>
+                        <span class="badge bg-warning">4/5</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-warning" style="width: 80%"></div>
+                    </div>
+                    <small class="text-muted">Alarma Bloque C requiere revisión</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Brigadistas y Mapa -->
+<div class="row g-4 mb-4">
+    <!-- Equipo de Brigada -->
+    <div class="col-lg-5">
+        <div class="card card-modern">
+            <div class="card-header-modern d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-people-fill me-2"></i>
+                    Equipo de Brigada (10 Miembros)
+                </h6>
+                <button class="btn btn-sm btn-outline-primary" onclick="comunicarBrigada()">
+                    <i class="bi bi-megaphone me-1"></i>Comunicar
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar bg-success text-white rounded-circle me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-person-check-fill"></i>
+                            </div>
+                            <div>
+                                <strong>Carlos Ramírez</strong>
+                                <p class="mb-0 small text-muted">Coordinador - Disponible</p>
+                            </div>
+                        </div>
+                        <span class="badge bg-success">Activo</span>
+                    </div>
+                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar bg-success text-white rounded-circle me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-person-check-fill"></i>
+                            </div>
+                            <div>
+                                <strong>Ana Torres</strong>
+                                <p class="mb-0 small text-muted">Primeros Auxilios - Disponible</p>
+                            </div>
+                        </div>
+                        <span class="badge bg-success">Activo</span>
+                    </div>
+                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar bg-warning text-white rounded-circle me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-person-fill"></i>
+                            </div>
+                            <div>
+                                <strong>Miguel Sánchez</strong>
+                                <p class="mb-0 small text-muted">Evacuación - En servicio</p>
+                            </div>
+                        </div>
+                        <span class="badge bg-warning">En Servicio</span>
+                    </div>
+                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar bg-success text-white rounded-circle me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-person-check-fill"></i>
+                            </div>
+                            <div>
+                                <strong>Laura Gómez</strong>
+                                <p class="mb-0 small text-muted">Control Incendios - Disponible</p>
+                            </div>
+                        </div>
+                        <span class="badge bg-success">Activo</span>
+                    </div>
+                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar bg-secondary text-white rounded-circle me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-person-x-fill"></i>
+                            </div>
+                            <div>
+                                <strong>Pedro Martínez</strong>
+                                <p class="mb-0 small text-muted">Comunicaciones - No disponible</p>
+                            </div>
+                        </div>
+                        <span class="badge bg-secondary">Fuera</span>
+                    </div>
+                </div>
+                <button class="btn btn-sm btn-outline-secondary w-100 mt-3" onclick="verTodaBrigada()">
+                    Ver todos los brigadistas
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mapa de Evacuación -->
+    <div class="col-lg-7">
+        <div class="card card-modern">
+            <div class="card-header-modern d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-geo-alt-fill me-2"></i>
+                    Mapa de Evacuación y Puntos de Encuentro
+                </h6>
+                <button class="btn btn-sm btn-outline-primary" onclick="window.location.href='/mapas/'">
+                    Ver Mapa Completo
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <div id="evacuationMap" style="height: 450px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estadísticas y Capacitaciones -->
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card card-modern">
+            <div class="card-header-modern">
+                <h6 class="mb-0">
+                    <i class="bi bi-graph-up me-2"></i>
+                    Estadísticas de Emergencias
+                </h6>
+            </div>
+            <div class="card-body">
+                <canvas id="emergenciasChart" height="80"></canvas>
+                <div class="row text-center mt-4">
+                    <div class="col-4">
+                        <h5 class="text-danger mb-0">2</h5>
+                        <small class="text-muted">Críticas</small>
+                    </div>
+                    <div class="col-4">
+                        <h5 class="text-warning mb-0">4</h5>
+                        <small class="text-muted">Menores</small>
+                    </div>
+                    <div class="col-4">
+                        <h5 class="text-info mb-0">2</h5>
+                        <small class="text-muted">Información</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card card-modern">
+            <div class="card-header-modern">
+                <h6 class="mb-0">
+                    <i class="bi bi-calendar-check me-2"></i>
+                    Próximas Capacitaciones
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">Simulacro de Evacuación</h6>
+                                <p class="mb-1 small text-muted">Práctica general de evacuación</p>
+                                <small class="text-primary"><i class="bi bi-calendar3 me-1"></i>20 de Diciembre - 9:00 AM</small>
+                            </div>
+                            <span class="badge bg-primary">Programado</span>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">Primeros Auxilios Avanzados</h6>
+                                <p class="mb-1 small text-muted">Certificación renovación</p>
+                                <small class="text-primary"><i class="bi bi-calendar3 me-1"></i>28 de Diciembre - 2:00 PM</small>
+                            </div>
+                            <span class="badge bg-primary">Programado</span>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">Manejo de Extintores</h6>
+                                <p class="mb-1 small text-muted">Capacitación teórico-práctica</p>
+                                <small class="text-success"><i class="bi bi-check-circle me-1"></i>Completado - 10 de Diciembre</small>
+                            </div>
+                            <span class="badge bg-success">Completado</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// Mapa de Evacuación
+const map = L.map('evacuationMap').setView([5.5339, -73.3674], 17);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+// Iconos personalizados
+const puntoEncuentroIcon = L.divIcon({
+    className: 'custom-div-icon',
+    html: '<div style="background-color:#4CAF50; width:35px; height:35px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">PE</div>',
+    iconSize: [35, 35]
+});
+
+const extintorIcon = L.divIcon({
+    className: 'custom-div-icon',
+    html: '<div style="background-color:#f44336; width:25px; height:25px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold;">E</div>',
+    iconSize: [25, 25]
+});
+
+// Puntos de encuentro
+L.marker([5.5342, -73.3670], {icon: puntoEncuentroIcon}).addTo(map)
+    .bindPopup('<b>Punto de Encuentro 1</b><br>Cancha Principal<br>Capacidad: 200 personas');
+L.marker([5.5336, -73.3678], {icon: puntoEncuentroIcon}).addTo(map)
+    .bindPopup('<b>Punto de Encuentro 2</b><br>Parqueadero Trasero<br>Capacidad: 150 personas');
+
+// Extintores
+L.marker([5.5339, -73.3674], {icon: extintorIcon}).addTo(map).bindPopup('Extintor - Entrada');
+L.marker([5.5341, -73.3676], {icon: extintorIcon}).addTo(map).bindPopup('Extintor - Bloque A');
+
+// Gráfico de Emergencias
+const ctx = document.getElementById('emergenciasChart');
+if (ctx) {
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+            datasets: [{
+                label: 'Emergencias',
+                data: [12, 10, 8, 15, 9, 11, 7, 13, 6, 8, 10, 8],
+                backgroundColor: 'rgba(244, 67, 54, 0.6)',
+                borderColor: '#f44336',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+}
+
+// Funciones
+function activarEmergencia() {
+    if (confirm('⚠️ ¿ACTIVAR PROTOCOLO DE EMERGENCIA?\n\nEsto alertará a todo el personal y activará los sistemas de emergencia.')) {
+        const tipo = prompt('Tipo de emergencia:\n1. Incendio\n2. Evacuación\n3. Médica\n4. Seguridad\n5. Otra\n\nIngrese el número:');
+        if (tipo) {
+            alert('🚨 EMERGENCIA ACTIVADA\n\nNotificaciones enviadas:\n✓ Todo el personal de brigada\n✓ Vigilancia\n✓ Personal administrativo\n✓ Servicios de emergencia externos');
+        }
+    }
+}
+
+function evacuarZona() {
+    const zona = prompt('Ingrese la zona a evacuar (ej: Bloque A, Piso 2, Cafetería):');
+    if (zona) {
+        if (confirm(`¿Confirma evacuar: ${zona}?`)) {
+            alert(`🚨 EVACUACIÓN ACTIVADA\n\nZona: ${zona}\n\nAcciones tomadas:\n✓ Alarma activada\n✓ Salidas habilitadas\n✓ Brigadistas notificados\n✓ Punto de encuentro: Cancha Principal`);
+        }
+    }
+}
+
+function verificarEquipos() {
+    alert('Sistema de verificación de equipos:\n\n✓ Extintores: 15/15 OK\n✓ Hidrantes: 8/8 OK\n✓ Botiquines: 6/6 OK\n⚠️ Alarmas: 4/5 (1 requiere revisión)\n\nPróxima inspección: 22 de Diciembre');
+}
+
+function comunicarBrigada() {
+    alert('Sistema de comunicación de brigada:\n\n✓ Enviar mensaje grupal\n✓ Llamada de emergencia\n✓ Activar walkie-talkies\n✓ Notificación por SMS');
+}
+
+function verDetalleEmergencia(id) {
+    alert(`Ver detalles completos de emergencia #${id}:\n\n- Reporte inicial\n- Personal asignado\n- Acciones tomadas\n- Tiempo de respuesta\n- Recursos utilizados\n- Informe final`);
+}
+
+function verTodaBrigada() {
+    alert('Lista completa de brigadistas con:\n\n- Estado actual\n- Especialidades\n- Certificaciones\n- Historial de atención\n- Datos de contacto');
+}
+</script>
+{% endblock %}

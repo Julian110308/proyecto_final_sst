@@ -1,0 +1,475 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard Instructor - Sistema SST{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Dashboard Instructor</li>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 fw-bold text-dark mb-1">
+            <i class="bi bi-person-video3 text-primary me-2"></i>
+            Panel de Instructor - {{ user.get_full_name|default:user.username }}
+        </h1>
+        <p class="text-muted mb-0">Gestión y supervisión de aprendices</p>
+    </div>
+    <div class="btn-group">
+        <button class="btn btn-primary" onclick="window.location.href='/reportes/'">
+            <i class="bi bi-file-earmark-bar-graph me-1"></i>Generar Reporte
+        </button>
+        <button class="btn btn-outline-primary" onclick="registrarVisitante()">
+            <i class="bi bi-person-plus me-1"></i>Registrar Visitante
+        </button>
+    </div>
+</div>
+
+<!-- Métricas Principales -->
+<div class="row g-4 mb-4">
+    <!-- Aprendices a Cargo -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Aprendices a Cargo</h6>
+                        <h3 class="fw-bold text-dark mb-0">28</h3>
+                        <small class="text-success">
+                            <i class="bi bi-arrow-up-short"></i> 3 fichas activas
+                        </small>
+                    </div>
+                    <div class="bg-light-green rounded-3 p-3">
+                        <i class="bi bi-people-fill fs-2" style="color: #2e7d32;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Presentes Hoy -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Presentes Hoy</h6>
+                        <h3 class="fw-bold text-dark mb-0">24</h3>
+                        <small class="text-info">85.7% asistencia</small>
+                    </div>
+                    <div class="bg-light rounded-3 p-3" style="background: #e3f2fd !important;">
+                        <i class="bi bi-person-check-fill fs-2 text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Visitantes Gestionados -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Visitantes Esta Semana</h6>
+                        <h3 class="fw-bold text-dark mb-0">7</h3>
+                        <small class="text-muted">3 activos ahora</small>
+                    </div>
+                    <div class="bg-light-warning rounded-3 p-3">
+                        <i class="bi bi-person-badge fs-2 text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reportes Pendientes -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Reportes Pendientes</h6>
+                        <h3 class="fw-bold text-dark mb-0">3</h3>
+                        <small class="text-warning">
+                            <i class="bi bi-exclamation-triangle"></i> Requieren atención
+                        </small>
+                    </div>
+                    <div class="bg-light-warning rounded-3 p-3">
+                        <i class="bi bi-file-earmark-text fs-2 text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráfico de Asistencia y Acciones Rápidas -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card card-modern">
+            <div class="card-header-modern">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="bi bi-bar-chart-line me-2"></i>
+                        Asistencia Semanal de Aprendices
+                    </h6>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-secondary active">Semana</button>
+                        <button class="btn btn-outline-secondary">Mes</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="asistenciaChart" height="80"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card card-modern">
+            <div class="card-header-modern">
+                <h6 class="mb-0">
+                    <i class="bi bi-lightning-charge-fill me-2"></i>
+                    Acciones Rápidas
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-3">
+                    <button class="btn btn-outline-primary text-start" onclick="verAprendices()">
+                        <i class="bi bi-people me-2"></i>
+                        Ver Mis Aprendices
+                    </button>
+                    <button class="btn btn-outline-success text-start" onclick="registrarAsistencia()">
+                        <i class="bi bi-check-circle me-2"></i>
+                        Registrar Asistencia
+                    </button>
+                    <button class="btn btn-outline-info text-start" onclick="window.location.href='/mapas/'">
+                        <i class="bi bi-map me-2"></i>
+                        Ver Mapa del Centro
+                    </button>
+                    <button class="btn btn-outline-warning text-start" onclick="window.location.href='/emergencias/'">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Ver Emergencias
+                    </button>
+                    <button class="btn btn-outline-secondary text-start" onclick="generarReporte()">
+                        <i class="bi bi-file-earmark-bar-graph me-2"></i>
+                        Generar Reporte
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mis Aprendices y Visitantes -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-7">
+        <div class="card card-modern">
+            <div class="card-header-modern d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-people me-2"></i>
+                    Mis Aprendices (Presentes Hoy)
+                </h6>
+                <button class="btn btn-sm btn-outline-primary" onclick="verAprendices()">
+                    Ver Todos
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Aprendiz</th>
+                                <th>Ficha</th>
+                                <th>Entrada</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar bg-primary text-white rounded-circle me-2" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
+                                            JP
+                                        </div>
+                                        <span>Juan Pérez Gómez</span>
+                                    </div>
+                                </td>
+                                <td>2543891</td>
+                                <td>7:05 AM</td>
+                                <td><span class="badge bg-success">Presente</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="verDetalle('Juan Pérez')">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar bg-info text-white rounded-circle me-2" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
+                                            MR
+                                        </div>
+                                        <span>María Rodríguez</span>
+                                    </div>
+                                </td>
+                                <td>2543891</td>
+                                <td>7:12 AM</td>
+                                <td><span class="badge bg-success">Presente</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="verDetalle('María Rodríguez')">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar bg-success text-white rounded-circle me-2" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
+                                            CL
+                                        </div>
+                                        <span>Carlos López Silva</span>
+                                    </div>
+                                </td>
+                                <td>2543892</td>
+                                <td>7:08 AM</td>
+                                <td><span class="badge bg-success">Presente</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="verDetalle('Carlos López')">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar bg-warning text-white rounded-circle me-2" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
+                                            AM
+                                        </div>
+                                        <span>Ana Martínez Cruz</span>
+                                    </div>
+                                </td>
+                                <td>2543892</td>
+                                <td>7:20 AM</td>
+                                <td><span class="badge bg-success">Presente</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="verDetalle('Ana Martínez')">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card card-modern mb-4">
+            <div class="card-header-modern d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-person-badge me-2"></i>
+                    Visitantes Activos
+                </h6>
+                <button class="btn btn-sm btn-primary" onclick="registrarVisitante()">
+                    <i class="bi bi-plus-circle me-1"></i>Nuevo
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>Roberto Sánchez</strong>
+                            <p class="mb-0 small text-muted">Empresa ABC - Ingresó 9:30 AM</p>
+                        </div>
+                        <button class="btn btn-sm btn-outline-danger" onclick="registrarSalida('Roberto')">
+                            <i class="bi bi-box-arrow-right"></i>
+                        </button>
+                    </div>
+                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>Laura Díaz</strong>
+                            <p class="mb-0 small text-muted">Proveedor XYZ - Ingresó 10:15 AM</p>
+                        </div>
+                        <button class="btn btn-sm btn-outline-danger" onclick="registrarSalida('Laura')">
+                            <i class="bi bi-box-arrow-right"></i>
+                        </button>
+                    </div>
+                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>Miguel Torres</strong>
+                            <p class="mb-0 small text-muted">Auditor - Ingresó 11:00 AM</p>
+                        </div>
+                        <button class="btn btn-sm btn-outline-danger" onclick="registrarSalida('Miguel')">
+                            <i class="bi bi-box-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alertas Importantes -->
+        <div class="card card-modern">
+            <div class="card-header-modern">
+                <h6 class="mb-0">
+                    <i class="bi bi-megaphone me-2"></i>
+                    Alertas Recientes
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning mb-3">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>4 aprendices ausentes</strong><br>
+                    <small>Sin justificación registrada</small>
+                </div>
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Reporte mensual</strong><br>
+                    <small>Vence en 3 días</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estadísticas Adicionales -->
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card card-modern">
+            <div class="card-header-modern">
+                <h6 class="mb-0">
+                    <i class="bi bi-graph-up me-2"></i>
+                    Rendimiento por Ficha
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small>Ficha 2543891</small>
+                        <small class="text-success fw-bold">92%</small>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-success" style="width: 92%"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small>Ficha 2543892</small>
+                        <small class="text-success fw-bold">88%</small>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-success" style="width: 88%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <small>Ficha 2543893</small>
+                        <small class="text-warning fw-bold">75%</small>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-warning" style="width: 75%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card card-modern">
+            <div class="card-header-modern">
+                <h6 class="mb-0">
+                    <i class="bi bi-calendar-week me-2"></i>
+                    Resumen Semanal
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <h4 class="text-success mb-0">96%</h4>
+                        <small class="text-muted">Asistencia Promedio</small>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <h4 class="text-primary mb-0">1,120</h4>
+                        <small class="text-muted">Horas Totales</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-info mb-0">7</h4>
+                        <small class="text-muted">Visitantes</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-warning mb-0">2</h4>
+                        <small class="text-muted">Incidentes</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Gráfico de asistencia
+const ctx = document.getElementById('asistenciaChart');
+if (ctx) {
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'],
+            datasets: [{
+                label: 'Asistencia (%)',
+                data: [95, 92, 88, 96, 85],
+                borderColor: '#2e7d32',
+                backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: { callback: value => value + '%' }
+                }
+            }
+        }
+    });
+}
+
+function verAprendices() {
+    alert('Función para ver todos los aprendices. Se mostrará lista completa con filtros.');
+}
+
+function registrarAsistencia() {
+    alert('Función para registrar asistencia manual de aprendices.');
+}
+
+function registrarVisitante() {
+    alert('Función para registrar un nuevo visitante. Se abrirá formulario.');
+}
+
+function registrarSalida(nombre) {
+    if (confirm(`¿Registrar salida de ${nombre}?`)) {
+        alert(`Salida de ${nombre} registrada correctamente.`);
+    }
+}
+
+function verDetalle(nombre) {
+    alert(`Ver detalles de ${nombre}. Se mostrará historial y datos completos.`);
+}
+
+function generarReporte() {
+    window.location.href = '/reportes/';
+}
+</script>
+{% endblock %}

@@ -1,0 +1,406 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard Visitante - Sistema SST{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Bienvenido Visitante</li>
+{% endblock %}
+
+{% block content %}
+<!-- Header de Bienvenida -->
+<div class="text-center mb-5">
+    <div class="mb-4">
+        <i class="bi bi-building" style="font-size: 80px; color: #2e7d32;"></i>
+    </div>
+    <h1 class="h2 fw-bold text-dark mb-2">
+        Bienvenido al Centro Minero SENA
+    </h1>
+    <p class="text-muted lead">{{ user.get_full_name|default:user.username }}</p>
+    <div class="d-flex justify-content-center gap-3 mt-3">
+        <span class="badge bg-primary px-3 py-2">
+            <i class="bi bi-person-badge me-2"></i>Visitante
+        </span>
+        {% if user.esta_en_centro %}
+        <span class="badge bg-success px-3 py-2">
+            <i class="bi bi-check-circle me-2"></i>Registrado en Centro
+        </span>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Información de la Visita -->
+<div class="row g-4 mb-4">
+    <div class="col-md-8 mx-auto">
+        <div class="card card-modern border-0 shadow-lg">
+            <div class="card-header-modern text-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-clipboard-check me-2"></i>
+                    Información de su Visita
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start">
+                            <div class="bg-light-green rounded-3 p-3 me-3">
+                                <i class="bi bi-clock-history fs-4" style="color: #2e7d32;"></i>
+                            </div>
+                            <div>
+                                <h6 class="text-muted mb-1">Hora de Ingreso</h6>
+                                <h5 class="mb-0">9:30 AM</h5>
+                                <small class="text-muted">Martes, 17 de Diciembre</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start">
+                            <div class="bg-light rounded-3 p-3 me-3" style="background: #e3f2fd !important;">
+                                <i class="bi bi-hourglass-split fs-4 text-primary"></i>
+                            </div>
+                            <div>
+                                <h6 class="text-muted mb-1">Tiempo en Centro</h6>
+                                <h5 class="mb-0">2h 15m</h5>
+                                <small class="text-muted">Desde su ingreso</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start">
+                            <div class="bg-light-warning rounded-3 p-3 me-3">
+                                <i class="bi bi-person-circle fs-4 text-warning"></i>
+                            </div>
+                            <div>
+                                <h6 class="text-muted mb-1">Persona a Visitar</h6>
+                                <h5 class="mb-0">Ing. María Rodríguez</h5>
+                                <small class="text-muted">Instructora - Área Técnica</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start">
+                            <div class="bg-light rounded-3 p-3 me-3" style="background: #fff3e0 !important;">
+                                <i class="bi bi-building fs-4" style="color: #ff9800;"></i>
+                            </div>
+                            <div>
+                                <h6 class="text-muted mb-1">Ubicación Asignada</h6>
+                                <h5 class="mb-0">Bloque A - Piso 2</h5>
+                                <small class="text-muted">Oficinas administrativas</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info mt-4 mb-0">
+                    <div class="d-flex align-items-start">
+                        <i class="bi bi-info-circle-fill fs-4 me-3"></i>
+                        <div>
+                            <strong>Importante:</strong> Por favor mantenga visible su identificación de visitante en todo momento. 
+                            Si necesita asistencia, diríjase a la recepción o contacte al personal de vigilancia.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Acciones Rápidas -->
+<div class="row g-4 mb-4">
+    <div class="col-md-8 mx-auto">
+        <div class="card card-modern">
+            <div class="card-header-modern">
+                <h6 class="mb-0">
+                    <i class="bi bi-grid-3x3-gap-fill me-2"></i>
+                    ¿En qué podemos ayudarte?
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <button class="btn btn-outline-primary w-100 py-4" onclick="verMapa()">
+                            <i class="bi bi-map fs-3 d-block mb-2"></i>
+                            <span class="fw-bold">Ver Mapa</span>
+                            <small class="d-block text-muted">del Centro</small>
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-outline-success w-100 py-4" onclick="verNormas()">
+                            <i class="bi bi-shield-check fs-3 d-block mb-2"></i>
+                            <span class="fw-bold">Normas SST</span>
+                            <small class="d-block text-muted">de Seguridad</small>
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-outline-info w-100 py-4" onclick="solicitarAyuda()">
+                            <i class="bi bi-question-circle fs-3 d-block mb-2"></i>
+                            <span class="fw-bold">Ayuda</span>
+                            <small class="d-block text-muted">Contactar Personal</small>
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-outline-warning w-100 py-4" onclick="verServicios()">
+                            <i class="bi bi-cup-hot fs-3 d-block mb-2"></i>
+                            <span class="fw-bold">Servicios</span>
+                            <small class="d-block text-muted">Cafetería, Baños</small>
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-outline-danger w-100 py-4" onclick="reportarEmergencia()">
+                            <i class="bi bi-exclamation-triangle fs-3 d-block mb-2"></i>
+                            <span class="fw-bold">Emergencia</span>
+                            <small class="d-block text-muted">Reportar Incidente</small>
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-outline-secondary w-100 py-4" onclick="registrarSalida()">
+                            <i class="bi bi-box-arrow-right fs-3 d-block mb-2"></i>
+                            <span class="fw-bold">Salida</span>
+                            <small class="d-block text-muted">Registrar Salida</small>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mapa del Centro -->
+<div class="row g-4 mb-4">
+    <div class="col-md-10 mx-auto">
+        <div class="card card-modern">
+            <div class="card-header-modern">
+                <h6 class="mb-0">
+                    <i class="bi bi-geo-alt-fill me-2"></i>
+                    Mapa del Centro Minero SENA
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                <div id="visitanteMap" style="height: 450px;"></div>
+            </div>
+            <div class="card-footer bg-light">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <i class="bi bi-geo-alt-fill text-danger fs-4"></i>
+                        <p class="mb-0 small mt-1"><strong>Ubicación Actual</strong></p>
+                    </div>
+                    <div class="col-md-3">
+                        <i class="bi bi-sign-stop-fill text-warning fs-4"></i>
+                        <p class="mb-0 small mt-1"><strong>Salida Emergencia</strong></p>
+                    </div>
+                    <div class="col-md-3">
+                        <i class="bi bi-cup-hot-fill text-info fs-4"></i>
+                        <p class="mb-0 small mt-1"><strong>Cafetería</strong></p>
+                    </div>
+                    <div class="col-md-3">
+                        <i class="bi bi-p-circle-fill text-primary fs-4"></i>
+                        <p class="mb-0 small mt-1"><strong>Parqueadero</strong></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Normas de Seguridad -->
+<div class="row g-4 mb-4">
+    <div class="col-md-10 mx-auto">
+        <div class="card card-modern border-start border-4 border-warning">
+            <div class="card-body">
+                <h5 class="mb-3">
+                    <i class="bi bi-shield-exclamation text-warning me-2"></i>
+                    Normas de Seguridad para Visitantes
+                </h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul class="list-unstyled">
+                            <li class="mb-3">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <strong>Porte su identificación</strong> de visitante en todo momento
+                            </li>
+                            <li class="mb-3">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <strong>Permanezca en las áreas</strong> autorizadas para su visita
+                            </li>
+                            <li class="mb-3">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <strong>Respete las señales</strong> de seguridad y prohibición
+                            </li>
+                            <li class="mb-3">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <strong>Use elementos de protección</strong> si ingresa a talleres
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul class="list-unstyled">
+                            <li class="mb-3">
+                                <i class="bi bi-x-circle-fill text-danger me-2"></i>
+                                <strong>No ingrese a áreas restringidas</strong> sin autorización
+                            </li>
+                            <li class="mb-3">
+                                <i class="bi bi-x-circle-fill text-danger me-2"></i>
+                                <strong>No manipule equipos</strong> o maquinaria del centro
+                            </li>
+                            <li class="mb-3">
+                                <i class="bi bi-x-circle-fill text-danger me-2"></i>
+                                <strong>Prohibido fumar</strong> en todas las instalaciones
+                            </li>
+                            <li class="mb-3">
+                                <i class="bi bi-x-circle-fill text-danger me-2"></i>
+                                <strong>No bloquee salidas</strong> de emergencia
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- En caso de Emergencia -->
+<div class="row g-4">
+    <div class="col-md-10 mx-auto">
+        <div class="card card-modern border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    En Caso de Emergencia
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <i class="bi bi-1-circle-fill text-danger fs-1 mb-2 d-block"></i>
+                            <strong>Mantenga la calma</strong>
+                            <p class="mb-0 small text-muted">No corra, camine rápido</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <i class="bi bi-2-circle-fill text-danger fs-1 mb-2 d-block"></i>
+                            <strong>Siga señalización</strong>
+                            <p class="mb-0 small text-muted">Vaya a salida más cercana</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <i class="bi bi-3-circle-fill text-danger fs-1 mb-2 d-block"></i>
+                            <strong>Punto de encuentro</strong>
+                            <p class="mb-0 small text-muted">Diríjase a zona segura</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <i class="bi bi-4-circle-fill text-danger fs-1 mb-2 d-block"></i>
+                            <strong>Espere instrucciones</strong>
+                            <p class="mb-0 small text-muted">Del personal de brigada</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="alert alert-danger mb-0 mt-3">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <strong>Teléfonos de Emergencia:</strong> Vigilancia: Ext. 100 | Brigada: Ext. 200 | Primeros Auxilios: Ext. 300
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <button class="btn btn-danger" onclick="reportarEmergencia()">
+                                <i class="bi bi-telephone-fill me-2"></i>Llamar Ahora
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// Mapa del Centro
+const map = L.map('visitanteMap').setView([5.5339, -73.3674], 17);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: 'Centro Minero SENA'
+}).addTo(map);
+
+// Iconos personalizados
+const ubicacionIcon = L.divIcon({
+    className: 'custom-div-icon',
+    html: '<div style="background-color:#f44336; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; border: 3px solid white; box-shadow: 0 3px 8px rgba(0,0,0,0.4); animation: pulse 2s infinite;">📍</div>',
+    iconSize: [40, 40]
+});
+
+const salidaIcon = L.divIcon({
+    className: 'custom-div-icon',
+    html: '<div style="background-color:#ff9800; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold;">🚪</div>',
+    iconSize: [30, 30]
+});
+
+const cafeteriaIcon = L.divIcon({
+    className: 'custom-div-icon',
+    html: '<div style="background-color:#2196f3; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold;">☕</div>',
+    iconSize: [30, 30]
+});
+
+// Marcadores
+L.marker([5.5339, -73.3674], {icon: ubicacionIcon}).addTo(map)
+    .bindPopup('<b>Su Ubicación Actual</b><br>Bloque A - Piso 2').openPopup();
+
+L.marker([5.5343, -73.3672], {icon: salidaIcon}).addTo(map)
+    .bindPopup('<b>Salida de Emergencia</b><br>Bloque A');
+
+L.marker([5.5336, -73.3676], {icon: cafeteriaIcon}).addTo(map)
+    .bindPopup('<b>Cafetería</b><br>Planta Baja');
+
+// Agregar animación CSS al mapa
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+`;
+document.head.appendChild(style);
+
+// Funciones
+function verMapa() {
+    alert('Mapa interactivo del Centro:\n\n✓ Ubicación actual\n✓ Áreas autorizadas\n✓ Servicios disponibles\n✓ Salidas de emergencia');
+}
+
+function verNormas() {
+    alert('Normas de Seguridad y Salud en el Trabajo:\n\n✓ Reglamento interno\n✓ Uso de EPP\n✓ Zonas restringidas\n✓ Protocolos de emergencia\n\nPuede consultar el manual completo en recepción.');
+}
+
+function solicitarAyuda() {
+    if (confirm('¿Necesita asistencia del personal?\n\nSeleccione Aceptar para notificar a un asistente.')) {
+        alert('✓ Solicitud enviada\n\nUn miembro del personal se acercará a su ubicación en breve.\n\nUbicación: Bloque A - Piso 2');
+    }
+}
+
+function verServicios() {
+    alert('Servicios Disponibles para Visitantes:\n\n☕ Cafetería - Planta Baja\n🚻 Baños - Todos los pisos\n📶 WiFi Visitantes - Red: "SENA_Visitantes"\n🅿️ Parqueadero - Zona Norte\n📞 Teléfono Público - Recepción');
+}
+
+function reportarEmergencia() {
+    if (confirm('⚠️ ¿ESTÁ EN UNA SITUACIÓN DE EMERGENCIA?\n\nSe notificará inmediatamente al personal de seguridad y brigada.')) {
+        const tipo = prompt('Tipo de emergencia:\n1. Médica\n2. Incendio\n3. Evacuación\n4. Seguridad\n5. Otra\n\nIngrese el número:');
+        if (tipo) {
+            alert('🚨 EMERGENCIA REPORTADA\n\n✓ Brigada de emergencia notificada\n✓ Personal de seguridad en camino\n✓ Su ubicación: Bloque A - Piso 2\n\nPor favor permanezca en su ubicación si es seguro hacerlo.');
+        }
+    }
+}
+
+function registrarSalida() {
+    if (confirm('¿Desea registrar su salida del Centro Minero SENA?\n\nDuración de su visita: 2h 15m')) {
+        alert('✓ Salida registrada exitosamente\n\nGracias por su visita al Centro Minero SENA.\n\n¡Esperamos volver a verle pronto!\n\nHora de salida: ' + new Date().toLocaleTimeString());
+        // Aquí podrías redirigir al login o hacer logout
+        setTimeout(() => {
+            if (confirm('¿Desea cerrar sesión?')) {
+                window.location.href = '/accounts/logout/';
+            }
+        }, 1000);
+    }
+}
+</script>
+{% endblock %}
