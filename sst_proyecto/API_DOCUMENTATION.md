@@ -3,8 +3,9 @@
 ## 📋 INFORMACIÓN GENERAL
 - **URL Base**: `http://localhost:8000/api/`
 - **Autenticación**: Token Authentication
-- **Token**: `e54d7383d11145390ad535d8e9a2673e3716136e`
-- **Headers**: `Authorization: Token e54d7383d11145390ad535d8e9a2673e3716136e`
+- **Headers**: `Authorization: Token <tu_token_de_autenticacion>`
+
+> **Nota:** Para obtener tu token, debes hacer login usando el endpoint `/api/auth/usuarios/login/`
 
 ---
 
@@ -42,7 +43,7 @@ curl -X POST http://localhost:8000/api/auth/usuarios/login/ \
 **Request:**
 ```bash
 curl -X GET http://localhost:8000/api/auth/usuarios/perfil/ \
-  -H "Authorization: Token e54d7383d11145390ad535d8e9a2673e3716136e"
+  -H "Authorization: Token <tu_token_de_autenticacion>"
 ```
 
 ### Listar Usuarios
@@ -53,7 +54,7 @@ curl -X GET http://localhost:8000/api/auth/usuarios/perfil/ \
 **Request:**
 ```bash
 curl -X GET http://localhost:8000/api/auth/usuarios/ \
-  -H "Authorization: Token e54d7383d11145390ad535d8e9a2673e3716136e"
+  -H "Authorization: Token <tu_token_de_autenticacion>"
 ```
 
 ### Crear Usuario
@@ -64,7 +65,7 @@ curl -X GET http://localhost:8000/api/auth/usuarios/ \
 **Request:**
 ```bash
 curl -X POST http://localhost:8000/api/auth/usuarios/ \
-  -H "Authorization: Token e54d7383d11145390ad535d8e9a2673e3716136e" \
+  -H "Authorization: Token <tu_token_de_autenticacion>" \
   -H "Content-Type: application/json" \
   -d "{\"username\": \"nuevo_usuario\", \"password\": \"clave123\", \"rol\": \"APRENDIZ\"}"
 ```
@@ -95,7 +96,7 @@ curl -X POST http://localhost:8000/api/auth/usuarios/ \
 **Request:**
 ```bash
 curl -X POST http://localhost:8000/api/acceso/registros/registrar_ingreso/ \
-  -H "Authorization: Token e54d7383d11145390ad535d8e9a2673e3716136e" \
+  -H "Authorization: Token <tu_token_de_autenticacion>" \
   -H "Content-Type: application/json" \
   -d "{\"latitud\": 5.5339, \"longitud\": -73.3674}"
 ```
@@ -120,7 +121,7 @@ curl -X POST http://localhost:8000/api/acceso/registros/registrar_ingreso/ \
 **Request:**
 ```bash
 curl -X POST http://localhost:8000/api/acceso/registros/registrar_egreso/ \
-  -H "Authorization: Token e54d7383d11145390ad535d8e9a2673e3716136e" \
+  -H "Authorization: Token <tu_token_de_autenticacion>" \
   -H "Content-Type: application/json" \
   -d "{\"latitud\": 5.5339, \"longitud\": -73.3674}"
 ```
@@ -141,7 +142,7 @@ curl -X POST http://localhost:8000/api/acceso/registros/registrar_egreso/ \
 **Request:**
 ```bash
 curl -X GET http://localhost:8000/api/acceso/registros/mi_estado/ \
-  -H "Authorization: Token e54d7383d11145390ad535d8e9a2673e3716136e"
+  -H "Authorization: Token <tu_token_de_autenticacion>"
 ```
 
 ### Verificar Geocerca
@@ -152,7 +153,7 @@ curl -X GET http://localhost:8000/api/acceso/registros/mi_estado/ \
 **Request:**
 ```bash
 curl -X POST http://localhost:8000/api/acceso/geocercas/verificar_ubicacion/ \
-  -H "Authorization: Token e54d7383d11145390ad535d8e9a2673e3716136e" \
+  -H "Authorization: Token <tu_token_de_autenticacion>" \
   -H "Content-Type: application/json" \
   -d "{\"latitud\": 5.5339, \"longitud\": -73.3674}"
 ```
@@ -177,7 +178,7 @@ curl -X POST http://localhost:8000/api/acceso/geocercas/verificar_ubicacion/ \
 **Request:**
 ```bash
 curl -X GET "http://localhost:8000/api/mapas/puntos-encuentro/mas_cercano/?lat=5.5339&lon=-73.3674" \
-  -H "Authorization: Token e54d7383d11145390ad535d8e9a2673e3716136e"
+  -H "Authorization: Token <tu_token_de_autenticacion>"
 ```
 
 **Parámetros de Query:**
@@ -192,7 +193,7 @@ curl -X GET "http://localhost:8000/api/mapas/puntos-encuentro/mas_cercano/?lat=5
 **Request:**
 ```bash
 curl -X GET "http://localhost:8000/api/mapas/equipamientos/cercanos/?lat=5.5339&lon=-73.3674&radio=500" \
-  -H "Authorization: Token e54d7383d11145390ad535d8e9a2673e3716136e"
+  -H "Authorization: Token <tu_token_de_autenticacion>"
 ```
 
 **Parámetros de Query:**
@@ -208,7 +209,7 @@ curl -X GET "http://localhost:8000/api/mapas/equipamientos/cercanos/?lat=5.5339&
 **Request:**
 ```bash
 curl -X GET http://localhost:8000/api/mapas/edificios/ \
-  -H "Authorization: Token e54d7383d11145390ad535d8e9a2673e3716136e"
+  -H "Authorization: Token <tu_token_de_autenticacion>"
 ```
 
 ---
@@ -223,7 +224,7 @@ curl -X GET http://localhost:8000/api/mapas/edificios/ \
 **Request:**
 ```bash
 curl -X POST http://localhost:8000/api/emergencias/emergencias/boton_panico/ \
-  -H "Authorization: Token e54d7383d11145390ad535d8e9a2673e3716136e" \
+  -H "Authorization: Token <tu_token_de_autenticacion>" \
   -H "Content-Type: application/json" \
   -d "{\"tipo\": 1, \"descripcion\": \"Emergencia prueba\", \"latitud\": 5.5339, \"longitud\": -73.3674}"
 ```
@@ -252,7 +253,7 @@ curl -X POST http://localhost:8000/api/emergencias/emergencias/boton_panico/ \
 **Request:**
 ```bash
 curl -X GET http://localhost:8000/api/emergencias/emergencias/activas/ \
-  -H "Authorization: Token e54d7383d11145390ad535d8e9a2673e3716136e"
+  -H "Authorization: Token <tu_token_de_autenticacion>"
 ```
 
 ### Atender Emergencia
@@ -263,7 +264,7 @@ curl -X GET http://localhost:8000/api/emergencias/emergencias/activas/ \
 **Request:**
 ```bash
 curl -X POST http://localhost:8000/api/emergencias/emergencias/1/atender/ \
-  -H "Authorization: Token e54d7383d11145390ad535d8e9a2673e3716136e"
+  -H "Authorization: Token <tu_token_de_autenticacion>"
 ```
 
 **Parámetros de URL:**
@@ -277,7 +278,7 @@ curl -X POST http://localhost:8000/api/emergencias/emergencias/1/atender/ \
 **Request:**
 ```bash
 curl -X GET http://localhost:8000/api/emergencias/contactos/ \
-  -H "Authorization: Token e54d7383d11145390ad535d8e9a2673e3716136e"
+  -H "Authorization: Token <tu_token_de_autenticacion>"
 ```
 
 ---
@@ -292,7 +293,7 @@ curl -X GET http://localhost:8000/api/emergencias/contactos/ \
 **Request:**
 ```bash
 curl -X GET http://localhost:8000/api/reportes/dashboard/ \
-  -H "Authorization: Token e54d7383d11145390ad535d8e9a2673e3716136e"
+  -H "Authorization: Token <tu_token_de_autenticacion>"
 ```
 
 ### Reporte Aforo
@@ -303,7 +304,7 @@ curl -X GET http://localhost:8000/api/reportes/dashboard/ \
 **Request:**
 ```bash
 curl -X GET "http://localhost:8000/api/reportes/aforo/?fecha_inicio=2024-01-01&fecha_fin=2024-01-31" \
-  -H "Authorization: Token e54d7383d11145390ad535d8e9a2673e3716136e"
+  -H "Authorization: Token <tu_token_de_autenticacion>"
 ```
 
 **Parámetros de Query:**
@@ -318,7 +319,7 @@ curl -X GET "http://localhost:8000/api/reportes/aforo/?fecha_inicio=2024-01-01&f
 **Request:**
 ```bash
 curl -X GET "http://localhost:8000/api/reportes/incidentes/?fecha_inicio=2024-01-01&fecha_fin=2024-01-31" \
-  -H "Authorization: Token e54d7383d11145390ad535d8e9a2673e3716136e"
+  -H "Authorization: Token <tu_token_de_autenticacion>"
 ```
 
 **Parámetros de Query:**
@@ -333,7 +334,7 @@ curl -X GET "http://localhost:8000/api/reportes/incidentes/?fecha_inicio=2024-01
 **Request:**
 ```bash
 curl -X GET "http://localhost:8000/api/reportes/asistencia/?ficha=2558106&fecha_inicio=2024-01-01&fecha_fin=2024-01-31" \
-  -H "Authorization: Token e54d7383d11145390ad535d8e9a2673e3716136e"
+  -H "Authorization: Token <tu_token_de_autenticacion>"
 ```
 
 **Parámetros de Query:**
@@ -377,14 +378,18 @@ curl -X GET "http://localhost:8000/api/reportes/asistencia/?ficha=2558106&fecha_
 | **500** | ❌ Error del servidor | Error interno del servidor |
 
 ### 🔑 Autenticación Requerida
-**Token:** `e54d7383d11145390ad535d8e9a2673e3716136e`
 
 **Headers requeridos:**
 ```
-Authorization: Token e54d7383d11145390ad535d8e9a2673e3716136e
+Authorization: Token <tu_token_de_autenticacion>
 ```
 
 Para todos los endpoints (excepto login), debes incluir este header de autenticación en cada petición.
+
+**Cómo obtener tu token:**
+1. Haz login en `/api/auth/usuarios/login/` con tus credenciales
+2. El servidor te devolverá un token único
+3. Usa ese token en todas las peticiones subsecuentes
 
 ---
 
@@ -410,7 +415,7 @@ curl -X POST http://localhost:8000/api/auth/usuarios/login/ \
 ### 2. Registrar Ingreso
 ```bash
 curl -X POST http://localhost:8000/api/acceso/registros/registrar_ingreso/ \
-  -H "Authorization: Token e54d7383d11145390ad535d8e9a2673e3716136e" \
+  -H "Authorization: Token <tu_token_de_autenticacion>" \
   -H "Content-Type: application/json" \
   -d '{"latitud": 5.5339, "longitud": -73.3674}'
 ```
@@ -418,13 +423,13 @@ curl -X POST http://localhost:8000/api/acceso/registros/registrar_ingreso/ \
 ### 3. Consultar Estado
 ```bash
 curl -X GET http://localhost:8000/api/acceso/registros/mi_estado/ \
-  -H "Authorization: Token e54d7383d11145390ad535d8e9a2673e3716136e"
+  -H "Authorization: Token <tu_token_de_autenticacion>"
 ```
 
 ### 4. Registrar Egreso
 ```bash
 curl -X POST http://localhost:8000/api/acceso/registros/registrar_egreso/ \
-  -H "Authorization: Token e54d7383d11145390ad535d8e9a2673e3716136e" \
+  -H "Authorization: Token <tu_token_de_autenticacion>" \
   -H "Content-Type: application/json" \
   -d '{"latitud": 5.5339, "longitud": -73.3674}'
 ```

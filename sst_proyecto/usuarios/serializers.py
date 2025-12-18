@@ -63,4 +63,4 @@ class VisitanteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Visitante
         fields = '__all__'
-        ready_only_fields = ['fecha_visita', 'hora_ingreso', 'registrado_por']
+        read_only_fields = ['fecha_visita', 'hora_ingreso', 'registrado_por']

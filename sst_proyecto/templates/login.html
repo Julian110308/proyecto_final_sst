@@ -1122,7 +1122,7 @@
                 return;
             }
 
-            const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/;
+            const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
             if (!strongRegex.test(password1)) {
                 alertDiv.innerHTML = `
                     <div class="alert">

@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
 from usuarios.models import Usuario
 
 class UbicacionBase(models.Model):
@@ -6,8 +7,14 @@ class UbicacionBase(models.Model):
     # Modelo base para ubicaciones con latitud y longitud
     nombre = models.CharField(max_length=100)
     descripcion = models.TextField(blank=True)
-    latitud = models.FloatField()
-    longitud = models.FloatField()
+    latitud = models.FloatField(
+        validators=[MinValueValidator(-90), MaxValueValidator(90)],
+        help_text='Latitud debe estar entre -90 y 90 grados'
+    )
+    longitud = models.FloatField(
+        validators=[MinValueValidator(-180), MaxValueValidator(180)],
+        help_text='Longitud debe estar entre -180 y 180 grados'
+    )
     activo = models.BooleanField(default=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 

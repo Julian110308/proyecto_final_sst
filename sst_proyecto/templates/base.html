@@ -543,9 +543,58 @@
         });
         
         // Botón de emergencia
-        document.getElementById('botonPanico')?.addEventListener('click', function() {
-            if (confirm('¿ESTÁS EN UNA SITUACIÓN DE EMERGENCIA?\n\nSe notificará al personal de seguridad.')) {
-                alert('✅ Alerta enviada\n\nLa brigada de emergencia y vigilancia han sido notificados.\nPermanezca en su ubicación si es seguro.');
+        document.getElementById('botonPanico')?.addEventListener('click', async function() {
+            if (!confirm('¿ESTÁS EN UNA SITUACIÓN DE EMERGENCIA?\n\nSe notificará inmediatamente al personal de seguridad.')) {
+                return;
+            }
+
+            try {
+                // Obtener ubicación del usuario
+                if (!navigator.geolocation) {
+                    alert('❌ Tu navegador no soporta geolocalización.\nLlama al personal de seguridad directamente.');
+                    return;
+                }
+
+                const position = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    });
+                });
+
+                const { latitude, longitude } = position.coords;
+
+                // Enviar emergencia al servidor
+                const response = await fetch('/api/emergencias/emergencias/boton_panico/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+                    },
+                    body: JSON.stringify({
+                        tipo: 1, // Tipo de emergencia genérica
+                        descripcion: 'Emergencia activada desde botón de pánico',
+                        latitud: latitude,
+                        longitud: longitude
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    alert('✅ ALERTA DE EMERGENCIA ENVIADA\n\n' +
+                          'La brigada de emergencia y personal de seguridad han sido notificados.\n' +
+                          'Ayuda en camino a tu ubicación.\n\n' +
+                          'Permanezca seguro y siga las instrucciones del personal.');
+                } else {
+                    throw new Error('Error al enviar la alerta');
+                }
+            } catch (error) {
+                console.error('Error en botón de pánico:', error);
+                alert('⚠️ No se pudo enviar la alerta automáticamente.\n\n' +
+                      'Por favor contacta directamente:\n' +
+                      '- Emergencias: 123\n' +
+                      '- Vigilancia SENA: Ext. 100');
             }
         });
         

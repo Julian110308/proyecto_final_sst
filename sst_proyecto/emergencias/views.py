@@ -66,7 +66,7 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
         # Marcar emergencia como en atención
         emergencia = self.get_object()
 
-        if emergencia.estado != 'REPORTADA':
+        if emergencia.estado == 'REPORTADA':
             emergencia.estado = 'EN_ATENCION'
             emergencia.fecha_hora_atencion = timezone.now()
             emergencia.atendida_por.add(self.request.user)
@@ -76,9 +76,9 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
                 'mensaje': 'Emergencia marcada como en atención',
                 'tiempo_respuesta_minutos': emergencia.tiempo_respuesta
             })
-        
+
         return Response(
-            {'error': 'La emergencia ya está siendo atendida.'},
+            {'error': 'La emergencia ya está siendo atendida o no está en estado reportada.'},
             status=status.HTTP_400_BAD_REQUEST
         )
     
