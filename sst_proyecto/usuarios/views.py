@@ -6,6 +6,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import login, logout
 from .models import Usuario, Visitante
 from .serializers import UsuarioSerializer, LoginSerializer, VisitanteSerializer
+from control_acceso.utils import generar_qr_usuario, generar_qr_visitante
 
 class UsuarioViewSet(viewsets.ModelViewSet):
     queryset = Usuario.objects.all()
@@ -132,6 +133,37 @@ class UsuarioViewSet(viewsets.ModelViewSet):
     def perfil(self, request):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['get'])
+    def generar_qr(self, request, pk=None):
+        """
+        Genera el código QR para un usuario
+        """
+        usuario = self.get_object()
+        qr_base64 = generar_qr_usuario(usuario)
+
+        return Response({
+            'usuario_id': usuario.id,
+            'nombre': usuario.get_full_name(),
+            'documento': usuario.numero_documento,
+            'rol': usuario.get_rol_display(),
+            'qr_image': qr_base64
+        })
+
+    @action(detail=False, methods=['get'])
+    def mi_qr(self, request):
+        """
+        Genera el código QR del usuario autenticado
+        """
+        qr_base64 = generar_qr_usuario(request.user)
+
+        return Response({
+            'usuario_id': request.user.id,
+            'nombre': request.user.get_full_name(),
+            'documento': request.user.numero_documento,
+            'rol': request.user.get_rol_display(),
+            'qr_image': qr_base64
+        })
     
 class VisitanteViewSet(viewsets.ModelViewSet):
     queryset = Visitante.objects.all()
@@ -140,3 +172,19 @@ class VisitanteViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(registrado_por=self.request.user)
+
+    @action(detail=True, methods=['get'])
+    def generar_qr(self, request, pk=None):
+        """
+        Genera el código QR para un visitante
+        """
+        visitante = self.get_object()
+        qr_base64 = generar_qr_visitante(visitante)
+
+        return Response({
+            'visitante_id': visitante.id,
+            'nombre': visitante.nombre_completo,
+            'documento': visitante.numero_documento,
+            'entidad': visitante.entidad,
+            'qr_image': qr_base64
+        })
