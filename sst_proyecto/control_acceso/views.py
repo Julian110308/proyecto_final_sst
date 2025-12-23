@@ -22,15 +22,31 @@ from .utils import (
     obtener_estadisticas_hoy
 )
 from usuarios.models import Usuario, Visitante
+from usuarios.permissions import (
+    EsVigilanciaOAdministrativo,
+    EsAdministrativo,
+    NoEsVisitante
+)
 
 
 class GeocercaViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gestionar geocercas del centro
+    PERMISOS: Solo ADMINISTRATIVO puede crear/editar, otros solo ver
     """
     queryset = Geocerca.objects.filter(activo=True)
     serializer_class = GeocercaSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        """
+        Permisos personalizados según la acción
+        """
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            # Solo ADMINISTRATIVO puede modificar geocercas
+            return [EsAdministrativo()]
+        # Todos los autenticados pueden ver
+        return [IsAuthenticated()]
 
     @action(detail=True, methods=['post'])
     def verificar_ubicacion(self, request, pk=None):
@@ -59,10 +75,11 @@ class GeocercaViewSet(viewsets.ModelViewSet):
 class RegistroAccesoViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gestionar registros de acceso
+    PERMISOS: VIGILANCIA, ADMINISTRATIVO e INSTRUCTOR pueden registrar acceso
     """
     queryset = RegistroAcceso.objects.all()
     serializer_class = RegistroAccesoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [EsVigilanciaOAdministrativo]
 
     def get_queryset(self):
         """

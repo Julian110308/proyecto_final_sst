@@ -7,15 +7,32 @@ from django.contrib.auth import login, logout
 from .models import Usuario, Visitante
 from .serializers import UsuarioSerializer, LoginSerializer, VisitanteSerializer
 from control_acceso.utils import generar_qr_usuario, generar_qr_visitante
+from .permissions import PuedeGestionarUsuarios, EsAdministrativoOInstructor
 
 class UsuarioViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar usuarios
+    PERMISOS:
+    - Login/Registro: Todos (sin autenticación)
+    - Ver perfil propio: Todos autenticados
+    - Listar/Modificar usuarios: Solo ADMINISTRATIVO
+    """
     queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
 
     def get_permissions(self):
-        # Permitir registro sin autenticación
+        # Permitir login y registro sin autenticación
         if self.action in ['login', 'create']:
             return [AllowAny()]
+
+        # Ver perfil propio: todos
+        if self.action in ['perfil', 'mi_qr']:
+            return [IsAuthenticated()]
+
+        # Gestionar usuarios: solo ADMINISTRATIVO
+        if self.action in ['list', 'update', 'partial_update', 'destroy', 'generar_qr']:
+            return [PuedeGestionarUsuarios()]
+
         return [IsAuthenticated()]
     
     def create(self, request, *args, **kwargs):
@@ -166,9 +183,16 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         })
     
 class VisitanteViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar visitantes
+    PERMISOS: VIGILANCIA, ADMINISTRATIVO e INSTRUCTOR
+    """
     queryset = Visitante.objects.all()
     serializer_class = VisitanteSerializer
-    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        # Solo VIGILANCIA, ADMINISTRATIVO e INSTRUCTOR pueden gestionar visitantes
+        return [EsAdministrativoOInstructor()]
 
     def perform_create(self, serializer):
         serializer.save(registrado_por=self.request.user)

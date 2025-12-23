@@ -9,6 +9,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import views as auth_views
 from django.views.generic import RedirectView
+from usuarios.permissions import rol_requerido, excluir_visitantes
 
 # Vista principal de dashboard que redirige según el rol
 @login_required
@@ -41,20 +42,36 @@ def dashboard_view(request):
     return render(request, template, context)
 
 # Vistas para usuarios autenticados (usan base.html)
-@login_required
+@rol_requerido('ADMINISTRATIVO', 'VIGILANCIA', 'INSTRUCTOR')
 def control_acceso_view(request):
+    """
+    Vista de Control de Acceso
+    PERMISOS: Solo ADMINISTRATIVO, VIGILANCIA e INSTRUCTOR
+    """
     return render(request, 'control_acceso.html')
 
-@login_required
+@excluir_visitantes
 def mapas_view(request):
+    """
+    Vista de Mapas
+    PERMISOS: Todos excepto VISITANTE
+    """
     return render(request, 'mapas.html')
 
-@login_required
+@excluir_visitantes
 def emergencias_view(request):
+    """
+    Vista de Emergencias
+    PERMISOS: Todos excepto VISITANTE
+    """
     return render(request, 'emergencias.html')
 
-@login_required
+@excluir_visitantes
 def reportes_view(request):
+    """
+    Vista de Reportes
+    PERMISOS: Todos excepto VISITANTE
+    """
     return render(request, 'reportes.html')
 
 urlpatterns = [

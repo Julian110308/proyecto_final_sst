@@ -44,13 +44,14 @@
                 </div>
             </div>
             <div class="card-body p-0">
-                <div id="mapaPrincipal" style="height: 500px; border-radius: 0 0 12px 12px; background: #f8f9fa; display: flex; align-items: center; justify-content: center;">
-                    <div class="text-center text-muted">
-                        <i class="bi bi-map fs-1 d-block mb-2"></i>
-                        <p>Mapa del Centro Minero</p>
-                        <small>Área: 50,000 m² | Capacidad: 2,000 personas</small>
-                    </div>
+                <!-- Información de mi ubicación -->
+                <div class="px-3 py-2 bg-light border-bottom">
+                    <small id="infoUbicacion" class="text-muted">
+                        <i class="bi bi-geo-alt-fill me-1"></i> Cargando ubicación...
+                    </small>
                 </div>
+                <!-- Mapa -->
+                <div id="mapaPrincipal" style="height: 500px; border-radius: 0 0 12px 12px;"></div>
             </div>
         </div>
     </div>
@@ -135,4 +136,269 @@
         </div>
     </div>
 </div>
+
+<script>
+    // ====================================================================
+    // CONFIGURACIÓN BÁSICA DEL MAPA
+    // ====================================================================
+
+    // Coordenadas del Centro Minero SENA en Sogamoso, Boyacá
+    const centroMinero = {
+        latitud: 5.5339,
+        longitud: -73.3674,
+        nombre: 'Centro Minero SENA Sogamoso'
+    };
+
+    // Radio de la geocerca en metros (200 metros)
+    const radioGeocerca = 200;
+
+    // Variable para guardar el marcador de mi ubicación
+    let miMarcador = null;
+
+    // Variable para guardar el círculo de precisión
+    let circuloPrecision = null;
+
+    // ====================================================================
+    // PASO 1: CREAR EL MAPA
+    // ====================================================================
+
+    // Crear el mapa centrado en el Centro Minero
+    const mapa = L.map('mapaPrincipal').setView(
+        [centroMinero.latitud, centroMinero.longitud],
+        17  // Nivel de zoom (17 = muy cerca)
+    );
+
+    // Agregar las imágenes del mapa (OpenStreetMap es gratis)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(mapa);
+
+    // ====================================================================
+    // PASO 2: MARCAR EL CENTRO MINERO EN EL MAPA
+    // ====================================================================
+
+    // Ícono personalizado para el Centro Minero (rojo)
+    const iconoCentroMinero = L.icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+    });
+
+    // Crear marcador del Centro Minero
+    const marcadorCentro = L.marker(
+        [centroMinero.latitud, centroMinero.longitud],
+        { icon: iconoCentroMinero }
+    ).addTo(mapa);
+
+    // Agregar mensaje emergente al hacer clic en el marcador
+    marcadorCentro.bindPopup(`
+        <strong>${centroMinero.nombre}</strong><br>
+        Lat: ${centroMinero.latitud}<br>
+        Lng: ${centroMinero.longitud}
+    `);
+
+    // ====================================================================
+    // PASO 3: DIBUJAR LA GEOCERCA (PERÍMETRO CIRCULAR)
+    // ====================================================================
+
+    // Crear círculo que representa la geocerca
+    const circuloGeocerca = L.circle(
+        [centroMinero.latitud, centroMinero.longitud],
+        {
+            color: 'blue',        // Color del borde
+            fillColor: '#3388ff', // Color de relleno
+            fillOpacity: 0.1,     // Transparencia (0.1 = muy transparente)
+            radius: radioGeocerca // Radio en metros
+        }
+    ).addTo(mapa);
+
+    // Agregar información al círculo
+    circuloGeocerca.bindPopup(`
+        <strong>Perímetro del Centro</strong><br>
+        Radio: ${radioGeocerca} metros
+    `);
+
+    // ====================================================================
+    // PASO 4: OBTENER MI UBICACIÓN EN TIEMPO REAL
+    // ====================================================================
+
+    // Función que se ejecuta cuando se obtiene la ubicación
+    function cuandoObtengoUbicacion(posicion) {
+        // Obtener coordenadas
+        const miLatitud = posicion.coords.latitude;
+        const miLongitud = posicion.coords.longitude;
+        const precision = posicion.coords.accuracy; // Precisión en metros
+
+        console.log('Mi ubicación:', miLatitud, miLongitud);
+
+        // Actualizar texto de información
+        document.getElementById('infoUbicacion').innerHTML = `
+            <i class="bi bi-geo-alt-fill me-1"></i>
+            <strong>Lat:</strong> ${miLatitud.toFixed(6)} |
+            <strong>Lng:</strong> ${miLongitud.toFixed(6)} |
+            <strong>Precisión:</strong> ${precision.toFixed(0)} m
+        `;
+
+        // ====================================================================
+        // PASO 5: MOSTRAR MI UBICACIÓN EN EL MAPA
+        // ====================================================================
+
+        // Si ya existe mi marcador, solo actualizar la posición
+        if (miMarcador) {
+            miMarcador.setLatLng([miLatitud, miLongitud]);
+        } else {
+            // Si no existe, crear un nuevo marcador verde (mi ubicación)
+            const iconoMiUbicacion = L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            });
+
+            miMarcador = L.marker(
+                [miLatitud, miLongitud],
+                { icon: iconoMiUbicacion }
+            ).addTo(mapa);
+
+            miMarcador.bindPopup('<strong>Estoy aquí</strong>');
+        }
+
+        // Actualizar círculo de precisión
+        if (circuloPrecision) {
+            circuloPrecision.setLatLng([miLatitud, miLongitud]);
+            circuloPrecision.setRadius(precision);
+        } else {
+            circuloPrecision = L.circle(
+                [miLatitud, miLongitud],
+                {
+                    color: 'green',
+                    fillColor: '#00ff00',
+                    fillOpacity: 0.15,
+                    radius: precision
+                }
+            ).addTo(mapa);
+        }
+
+        // ====================================================================
+        // PASO 6: CALCULAR SI ESTOY DENTRO DE LA GEOCERCA
+        // ====================================================================
+
+        // Calcular distancia entre mi ubicación y el centro minero
+        const distancia = mapa.distance(
+            [miLatitud, miLongitud],
+            [centroMinero.latitud, centroMinero.longitud]
+        );
+
+        console.log('Distancia al centro:', distancia.toFixed(0), 'metros');
+
+        // Verificar si estoy dentro de la geocerca
+        if (distancia <= radioGeocerca) {
+            console.log('¡Estoy dentro del Centro Minero!');
+            miMarcador.bindPopup(`
+                <strong>Estoy aquí</strong><br>
+                <span style="color: green;">✓ Dentro del centro</span><br>
+                Distancia: ${distancia.toFixed(0)} m
+            `);
+        } else {
+            console.log('Estoy fuera del Centro Minero');
+            miMarcador.bindPopup(`
+                <strong>Estoy aquí</strong><br>
+                <span style="color: orange;">⚠ Fuera del centro</span><br>
+                Distancia: ${distancia.toFixed(0)} m
+            `);
+        }
+    }
+
+    // Función que se ejecuta si hay un error
+    function cuandoHayError(error) {
+        console.error('Error al obtener ubicación:', error);
+
+        let mensaje = '';
+        if (error.code === 1) {
+            mensaje = 'No diste permiso para acceder a tu ubicación';
+        } else if (error.code === 2) {
+            mensaje = 'No se pudo determinar tu ubicación';
+        } else {
+            mensaje = 'Tiempo de espera agotado';
+        }
+
+        document.getElementById('infoUbicacion').innerHTML = `
+            <i class="bi bi-exclamation-circle me-1"></i>
+            <span class="text-danger">Error: ${mensaje}</span>
+        `;
+    }
+
+    // ====================================================================
+    // PASO 7: ACTIVAR SEGUIMIENTO EN TIEMPO REAL
+    // ====================================================================
+
+    // Verificar si el navegador soporta geolocalización
+    if (navigator.geolocation) {
+        console.log('Activando seguimiento de ubicación...');
+
+        // Opciones de geolocalización
+        const opciones = {
+            enableHighAccuracy: true,  // Usar GPS si está disponible
+            timeout: 10000,           // Esperar máximo 10 segundos
+            maximumAge: 0             // No usar ubicación guardada en caché
+        };
+
+        // Iniciar seguimiento continuo (se actualiza automáticamente)
+        navigator.geolocation.watchPosition(
+            cuandoObtengoUbicacion,  // Función cuando se obtiene ubicación
+            cuandoHayError,          // Función cuando hay error
+            opciones                 // Opciones de configuración
+        );
+
+        // También obtener la ubicación una vez al cargar
+        navigator.geolocation.getCurrentPosition(
+            cuandoObtengoUbicacion,
+            cuandoHayError,
+            opciones
+        );
+    } else {
+        // El navegador no soporta geolocalización
+        document.getElementById('infoUbicacion').innerHTML = `
+            <i class="bi bi-exclamation-circle me-1"></i>
+            <span class="text-danger">Tu navegador no soporta geolocalización</span>
+        `;
+    }
+
+    // ====================================================================
+    // BOTÓN "MI UBICACIÓN" - Centrar el mapa en mi posición
+    // ====================================================================
+    document.querySelector('.btn-outline-secondary').addEventListener('click', function() {
+        if (miMarcador) {
+            // Centrar el mapa en mi ubicación
+            mapa.setView(miMarcador.getLatLng(), 18);
+            // Mostrar el popup
+            miMarcador.openPopup();
+        } else {
+            alert('Aún no se ha detectado tu ubicación. Por favor espera un momento.');
+        }
+    });
+
+    // ====================================================================
+    // EXPLICACIÓN DE LO QUE HACE ESTE CÓDIGO:
+    // ====================================================================
+    //
+    // 1. Crea un mapa usando Leaflet (librería de mapas)
+    // 2. Muestra el Centro Minero SENA con un marcador rojo
+    // 3. Dibuja un círculo de 200 metros (geocerca) alrededor del centro
+    // 4. Pide permiso para acceder a tu ubicación GPS
+    // 5. Muestra tu ubicación con un marcador verde
+    // 6. Actualiza tu posición automáticamente en tiempo real
+    // 7. Calcula si estás dentro o fuera del centro
+    // 8. Muestra la información en la parte superior del mapa
+    //
+    // NOTA: Para que funcione, debes dar permiso cuando el navegador
+    // te pregunte si puede acceder a tu ubicación.
+    // ====================================================================
+</script>
 {% endblock %}

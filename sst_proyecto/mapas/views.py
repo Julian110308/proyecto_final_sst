@@ -18,20 +18,33 @@ from .serializers import (
     RutaEvacuacionSerializer,
 )
 from .services import encontrar_mas_cercano
+from usuarios.permissions import NoEsVisitante, EsAdministrativo
 
 class EdificioBloqueViewSet(viewsets.ModelViewSet):
-
-    # ViewSet para edificios/bloques
+    """
+    ViewSet para edificios/bloques
+    PERMISOS: Todos excepto VISITANTE pueden ver, solo ADMINISTRATIVO puede modificar
+    """
     queryset = EdificioBloque.objects.filter(activo=True)
     serializer_class = EdificioBloqueSerializer
-    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [EsAdministrativo()]
+        return [NoEsVisitante()]
 
 class PuntoEncuentroViewSet(viewsets.ModelViewSet):
-
-    # ViewSet para puntos de encuentro
+    """
+    ViewSet para puntos de encuentro
+    PERMISOS: Todos excepto VISITANTE
+    """
     queryset = PuntoEncuentro.objects.filter(activo=True)
     serializer_class = PuntoEncuentroSerializer
-    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [EsAdministrativo()]
+        return [NoEsVisitante()]
 
     @action(detail=True, methods=['get'])
     def mas_cercano(self, request):
@@ -63,11 +76,17 @@ class PuntoEncuentroViewSet(viewsets.ModelViewSet):
         return Response({'mensaje': 'No hay puntos de encuentro cercanos.'})
     
 class EquipamientoSeguridadViewSet(viewsets.ModelViewSet):
-
-    # ViewSet para equipamientos de seguridad
+    """
+    ViewSet para equipamientos de seguridad
+    PERMISOS: Todos excepto VISITANTE
+    """
     queryset = EquipamientoSeguridad.objects.all()
     serializer_class = EquipamientoSeguridadSerializer
-    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [EsAdministrativo()]
+        return [NoEsVisitante()]
 
     @action(detail=False, methods=['get'])
     def cercanos(self, request):
@@ -102,8 +121,14 @@ class EquipamientoSeguridadViewSet(viewsets.ModelViewSet):
         return Response(equipos_cercanos)
     
 class RutaEvacuacionViewSet(viewsets.ModelViewSet):
-
-    # ViewSet para rutas de evacuación
+    """
+    ViewSet para rutas de evacuación
+    PERMISOS: Todos excepto VISITANTE
+    """
     queryset = RutaEvacuacion.objects.filter(activa=True)
     serializer_class = RutaEvacuacionSerializer
-    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [EsAdministrativo()]
+        return [NoEsVisitante()]
