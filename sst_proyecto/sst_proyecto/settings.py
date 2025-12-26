@@ -205,3 +205,34 @@ MESSAGE_TAGS = {
     messages_constants.WARNING: 'warning',
     messages_constants.ERROR: 'danger',
 }
+
+# ====================================================================
+# CONFIGURACIÓN DE EMAIL - Recuperación de Contraseña
+# ====================================================================
+
+# Configuración de email desde variables de entorno
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+
+# Si no hay credenciales configuradas, usar backend de consola para desarrollo
+if not EMAIL_HOST_USER or not EMAIL_HOST_PASSWORD:
+    # Backend de consola - Los emails se muestran en la terminal
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    print("\n" + "="*70)
+    print("MODO DESARROLLO: Emails se mostraran en la consola")
+    print("Para usar Gmail, configura EMAIL_HOST_USER y EMAIL_HOST_PASSWORD en .env")
+    print("="*70 + "\n")
+else:
+    # Backend SMTP - Envío real de emails
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
+    EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+    EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+    print("\n" + "="*70)
+    print(f"SMTP configurado correctamente: {EMAIL_HOST_USER}")
+    print("="*70 + "\n")
+
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='SST Centro Minero <noreply@centrominerosst.com>')
+
+# Configuración para recuperación de contraseña
+PASSWORD_RESET_TIMEOUT = 3600  # 1 hora (en segundos)

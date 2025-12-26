@@ -55,10 +55,10 @@
             <div class="card-body p-4">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Brigadistas Disponibles</h6>
-                        <h3 class="fw-bold text-dark mb-0">8/10</h3>
+                        <h6 class="text-muted mb-2">Personas en Centro</h6>
+                        <h3 class="fw-bold text-dark mb-0">{{ personas_en_centro|default:0 }}</h3>
                         <small class="text-success">
-                            <i class="bi bi-person-check"></i> 2 en servicio
+                            <i class="bi bi-building"></i> {{ porcentaje_ocupacion|default:0 }}% ocupación
                         </small>
                     </div>
                     <div class="bg-light rounded-3 p-3" style="background: #e3f2fd !important;">
@@ -75,10 +75,10 @@
             <div class="card-body p-4">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Emergencias Este Mes</h6>
-                        <h3 class="fw-bold text-dark mb-0">8</h3>
+                        <h6 class="text-muted mb-2">Visitantes Hoy</h6>
+                        <h3 class="fw-bold text-dark mb-0">{{ visitantes_hoy|default:0 }}</h3>
                         <small class="text-success">
-                            <i class="bi bi-arrow-down-short"></i> -25% vs mes anterior
+                            <i class="bi bi-person-badge"></i> Registrados
                         </small>
                     </div>
                     <div class="bg-light-warning rounded-3 p-3">
@@ -95,10 +95,10 @@
             <div class="card-body p-4">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Tiempo Promedio</h6>
-                        <h3 class="fw-bold text-dark mb-0">3m 45s</h3>
+                        <h6 class="text-muted mb-2">Ingresos Hoy</h6>
+                        <h3 class="fw-bold text-dark mb-0">{{ ingresos_hoy|default:0 }}</h3>
                         <small class="text-success">
-                            <i class="bi bi-arrow-down-short"></i> Mejor que objetivo (5m)
+                            <i class="bi bi-door-open-fill"></i> Total del día
                         </small>
                     </div>
                     <div class="bg-light rounded-3 p-3" style="background: #e3f2fd !important;">

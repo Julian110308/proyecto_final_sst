@@ -36,9 +36,9 @@
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
                         <h6 class="text-muted mb-2">Personas en Centro</h6>
-                        <h3 class="fw-bold text-dark mb-0">156</h3>
+                        <h3 class="fw-bold text-dark mb-0">{{ personas_en_centro|default:0 }}</h3>
                         <small class="text-success">
-                            <i class="bi bi-shield-check"></i> Normal
+                            <i class="bi bi-shield-check"></i> {{ porcentaje_ocupacion|default:0 }}% ocupación
                         </small>
                     </div>
                     <div class="bg-light rounded-3 p-3" style="background: #e3f2fd !important;">
@@ -56,8 +56,8 @@
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
                         <h6 class="text-muted mb-2">Ingresos Hoy</h6>
-                        <h3 class="fw-bold text-dark mb-0">189</h3>
-                        <small class="text-info">Última hora: 12</small>
+                        <h3 class="fw-bold text-dark mb-0">{{ ingresos_hoy|default:0 }}</h3>
+                        <small class="text-info">Total del día</small>
                     </div>
                     <div class="bg-light-green rounded-3 p-3">
                         <i class="bi bi-box-arrow-in-right fs-2 text-success"></i>
@@ -73,10 +73,10 @@
             <div class="card-body p-4">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Visitantes Activos</h6>
-                        <h3 class="fw-bold text-dark mb-0">15</h3>
+                        <h6 class="text-muted mb-2">Visitantes Hoy</h6>
+                        <h3 class="fw-bold text-dark mb-0">{{ visitantes_hoy|default:0 }}</h3>
                         <small class="text-warning">
-                            <i class="bi bi-exclamation-triangle"></i> Requieren seguimiento
+                            <i class="bi bi-person-badge"></i> Registrados
                         </small>
                     </div>
                     <div class="bg-light-warning rounded-3 p-3">
@@ -93,10 +93,10 @@
             <div class="card-body p-4">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Alertas Activas</h6>
-                        <h3 class="fw-bold text-dark mb-0">0</h3>
+                        <h6 class="text-muted mb-2">Total Usuarios</h6>
+                        <h3 class="fw-bold text-dark mb-0">{{ total_usuarios|default:0 }}</h3>
                         <small class="text-success">
-                            <i class="bi bi-check-circle"></i> Todo bajo control
+                            <i class="bi bi-people-fill"></i> Registrados
                         </small>
                     </div>
                     <div class="bg-light rounded-3 p-3" style="background: #ffebee !important;">

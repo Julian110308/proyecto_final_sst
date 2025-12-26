@@ -35,10 +35,10 @@
             <div class="card-body p-4">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Aprendices a Cargo</h6>
-                        <h3 class="fw-bold text-dark mb-0">28</h3>
+                        <h6 class="text-muted mb-2">Total Usuarios</h6>
+                        <h3 class="fw-bold text-dark mb-0">{{ total_usuarios|default:0 }}</h3>
                         <small class="text-success">
-                            <i class="bi bi-arrow-up-short"></i> 3 fichas activas
+                            <i class="bi bi-people-fill"></i> Registrados
                         </small>
                     </div>
                     <div class="bg-light-green rounded-3 p-3">
@@ -55,9 +55,9 @@
             <div class="card-body p-4">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Presentes Hoy</h6>
-                        <h3 class="fw-bold text-dark mb-0">24</h3>
-                        <small class="text-info">85.7% asistencia</small>
+                        <h6 class="text-muted mb-2">Personas en Centro</h6>
+                        <h3 class="fw-bold text-dark mb-0">{{ personas_en_centro|default:0 }}</h3>
+                        <small class="text-info">{{ porcentaje_ocupacion|default:0 }}% de ocupación</small>
                     </div>
                     <div class="bg-light rounded-3 p-3" style="background: #e3f2fd !important;">
                         <i class="bi bi-person-check-fill fs-2 text-primary"></i>
@@ -73,9 +73,9 @@
             <div class="card-body p-4">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Visitantes Esta Semana</h6>
-                        <h3 class="fw-bold text-dark mb-0">7</h3>
-                        <small class="text-muted">3 activos ahora</small>
+                        <h6 class="text-muted mb-2">Visitantes Hoy</h6>
+                        <h3 class="fw-bold text-dark mb-0">{{ visitantes_hoy|default:0 }}</h3>
+                        <small class="text-muted">Registrados</small>
                     </div>
                     <div class="bg-light-warning rounded-3 p-3">
                         <i class="bi bi-person-badge fs-2 text-warning"></i>
@@ -91,10 +91,10 @@
             <div class="card-body p-4">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Reportes Pendientes</h6>
-                        <h3 class="fw-bold text-dark mb-0">3</h3>
+                        <h6 class="text-muted mb-2">Ingresos Hoy</h6>
+                        <h3 class="fw-bold text-dark mb-0">{{ ingresos_hoy|default:0 }}</h3>
                         <small class="text-warning">
-                            <i class="bi bi-exclamation-triangle"></i> Requieren atención
+                            <i class="bi bi-door-open-fill"></i> Total del día
                         </small>
                     </div>
                     <div class="bg-light-warning rounded-3 p-3">

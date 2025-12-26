@@ -34,10 +34,10 @@
             <div class="card-body p-4">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Mi Asistencia</h6>
-                        <h3 class="fw-bold text-dark mb-0">95%</h3>
+                        <h6 class="text-muted mb-2">Mis Ingresos Este Mes</h6>
+                        <h3 class="fw-bold text-dark mb-0">{{ usuarios_mes|default:0 }}</h3>
                         <small class="text-success">
-                            <i class="bi bi-arrow-up-short"></i> Excelente
+                            <i class="bi bi-calendar-check"></i> Días asistidos
                         </small>
                     </div>
                     <div class="bg-light-green rounded-3 p-3">
@@ -54,9 +54,9 @@
             <div class="card-body p-4">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Horas Esta Semana</h6>
-                        <h3 class="fw-bold text-dark mb-0">32h</h3>
-                        <small class="text-info">De 40h programadas</small>
+                        <h6 class="text-muted mb-2">Ingresos Totales Hoy</h6>
+                        <h3 class="fw-bold text-dark mb-0">{{ ingresos_hoy|default:0 }}</h3>
+                        <small class="text-info">Personas en el centro</small>
                     </div>
                     <div class="bg-light rounded-3 p-3" style="background: #e3f2fd !important;">
                         <i class="bi bi-clock-history fs-2 text-primary"></i>
@@ -96,10 +96,10 @@
             <div class="card-body p-4">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Alertas/Notificaciones</h6>
-                        <h3 class="fw-bold text-dark mb-0">2</h3>
+                        <h6 class="text-muted mb-2">Visitantes Hoy</h6>
+                        <h3 class="fw-bold text-dark mb-0">{{ visitantes_hoy|default:0 }}</h3>
                         <small class="text-warning">
-                            <i class="bi bi-exclamation-triangle"></i> Pendientes
+                            <i class="bi bi-person-badge"></i> Registrados
                         </small>
                     </div>
                     <div class="bg-light-warning rounded-3 p-3">
