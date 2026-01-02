@@ -162,33 +162,33 @@ urlpatterns = [
         next_page='login'
     ), name='logout'),
 
-    # Recuperación de Contraseña
+    # Recuperar Clave
     path('accounts/password-reset/',
         auth_views.PasswordResetView.as_view(
-            template_name='registration/password_reset_form.html',
-            email_template_name='registration/password_reset_email.html',
-            subject_template_name='registration/password_reset_subject.txt',
+            template_name='registration/recuperar_clave.html',
+            email_template_name='registration/email_recuperacion.html',
+            subject_template_name='registration/asunto_email.txt',
         ),
         name='password_reset'
     ),
 
     path('accounts/password-reset/done/',
         auth_views.PasswordResetDoneView.as_view(
-            template_name='registration/password_reset_done.html'
+            template_name='registration/correo_enviado.html'
         ),
         name='password_reset_done'
     ),
 
     path('accounts/reset/<uidb64>/<token>/',
         auth_views.PasswordResetConfirmView.as_view(
-            template_name='registration/password_reset_confirm.html'
+            template_name='registration/nueva_clave.html'
         ),
         name='password_reset_confirm'
     ),
 
     path('accounts/reset/done/',
         auth_views.PasswordResetCompleteView.as_view(
-            template_name='registration/password_reset_complete.html'
+            template_name='registration/clave_cambiada.html'
         ),
         name='password_reset_complete'
     ),
@@ -199,14 +199,15 @@ urlpatterns = [
     path('acceso/', control_acceso_view, name='control_acceso'),
     path('mapas/', mapas_view, name='mapas'),
     path('emergencias/', emergencias_view, name='emergencias'),
-    path('reportes/', reportes_view, name='reportes'),
 
     # APIs REST (para operaciones AJAX/fetch desde el frontend)
     path('api/auth/', include('usuarios.urls')),
     path('api/acceso/', include('control_acceso.urls')),
     path('api/mapas/', include('mapas.urls')),
     path('api/emergencias/', include('emergencias.urls')),
-    path('api/reportes/', include('reportes.urls')),
+
+    # Módulo de reportes (incluye vistas HTML de incidentes y API)
+    path('reportes/', include('reportes.urls')),
 ]
 
 if settings.DEBUG:

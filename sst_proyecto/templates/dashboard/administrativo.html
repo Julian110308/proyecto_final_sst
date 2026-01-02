@@ -508,31 +508,53 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-// Gráfico de Actividad
+// Gráfico de Actividad - CON DATOS REALES
 const ctxActividad = document.getElementById('actividadChart');
 if (ctxActividad) {
+    // Datos de Django (últimos 7 días)
+    const fechas = [
+        {% for dia in ultimos_7_dias %}
+        '{{ dia.fecha }}'{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    const cantidades = [
+        {% for dia in ultimos_7_dias %}
+        {{ dia.cantidad }}{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+
     new Chart(ctxActividad, {
         type: 'line',
         data: {
-            labels: ['00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00', '21:00'],
+            labels: fechas,  // Fechas reales
             datasets: [{
-                label: 'Ingresos',
-                data: [5, 8, 45, 120, 95, 85, 60, 25],
+                label: 'Ingresos por Día',
+                data: cantidades,  // Cantidades reales
                 borderColor: '#4caf50',
                 backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                tension: 0.4
-            }, {
-                label: 'Egresos',
-                data: [2, 5, 20, 60, 80, 110, 90, 40],
-                borderColor: '#ff9800',
-                backgroundColor: 'rgba(255, 152, 0, 0.1)',
-                tension: 0.4
+                tension: 0.4,
+                fill: true
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: true,
-            plugins: { legend: { position: 'top' } }
+            plugins: {
+                legend: { position: 'top' },
+                title: {
+                    display: true,
+                    text: 'Ingresos de los Últimos 7 Días'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
         }
     });
 }

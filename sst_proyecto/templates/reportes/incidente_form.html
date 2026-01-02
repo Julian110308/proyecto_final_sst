@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+
+{% block title %}Reportar Incidente - Sistema SST{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{% url 'listar_incidentes' %}">Incidentes</a></li>
+<li class="breadcrumb-item active">Reportar Incidente</li>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="mb-4">
+    <h1 class="h3 fw-bold text-dark mb-1">
+        <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>
+        Reportar Nuevo Incidente
+    </h1>
+    <p class="text-muted mb-0">Completa el formulario para reportar un incidente o condición insegura</p>
+</div>
+
+<!-- Formulario -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-file-earmark-text me-2"></i>
+            Información del Incidente
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- Mostrar errores generales -->
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger" role="alert">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+
+            <!-- Título -->
+            <div class="mb-3">
+                <label for="{{ form.titulo.id_for_label }}" class="form-label fw-bold">
+                    Título del Incidente <span class="text-danger">*</span>
+                </label>
+                {{ form.titulo }}
+                {% if form.titulo.errors %}
+                <div class="text-danger small mt-1">
+                    {{ form.titulo.errors }}
+                </div>
+                {% endif %}
+                <small class="text-muted">Resumen breve del incidente</small>
+            </div>
+
+            <!-- Tipo de Incidente -->
+            <div class="mb-3">
+                <label for="{{ form.tipo.id_for_label }}" class="form-label fw-bold">
+                    Tipo de Incidente <span class="text-danger">*</span>
+                </label>
+                {{ form.tipo }}
+                {% if form.tipo.errors %}
+                <div class="text-danger small mt-1">
+                    {{ form.tipo.errors }}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Gravedad -->
+            <div class="mb-3">
+                <label for="{{ form.gravedad.id_for_label }}" class="form-label fw-bold">
+                    Gravedad <span class="text-danger">*</span>
+                </label>
+                {{ form.gravedad }}
+                {% if form.gravedad.errors %}
+                <div class="text-danger small mt-1">
+                    {{ form.gravedad.errors }}
+                </div>
+                {% endif %}
+                <small class="text-muted">
+                    <strong>Baja:</strong> Sin riesgo inmediato |
+                    <strong>Media:</strong> Requiere atención |
+                    <strong>Alta:</strong> Riesgo significativo |
+                    <strong>Crítica:</strong> Peligro inminente
+                </small>
+            </div>
+
+            <!-- Descripción -->
+            <div class="mb-3">
+                <label for="{{ form.descripcion.id_for_label }}" class="form-label fw-bold">
+                    Descripción Detallada <span class="text-danger">*</span>
+                </label>
+                {{ form.descripcion }}
+                {% if form.descripcion.errors %}
+                <div class="text-danger small mt-1">
+                    {{ form.descripcion.errors }}
+                </div>
+                {% endif %}
+                <small class="text-muted">Describe qué sucedió, cómo sucedió y las circunstancias</small>
+            </div>
+
+            <!-- Ubicación -->
+            <div class="mb-3">
+                <label for="{{ form.ubicacion.id_for_label }}" class="form-label fw-bold">
+                    Ubicación
+                </label>
+                {{ form.ubicacion }}
+                {% if form.ubicacion.errors %}
+                <div class="text-danger small mt-1">
+                    {{ form.ubicacion.errors }}
+                </div>
+                {% endif %}
+                <small class="text-muted">Ej: Taller de Minería, Área de Soldadura, Entrada Principal, etc.</small>
+            </div>
+
+            <!-- Fecha del Incidente -->
+            <div class="mb-3">
+                <label for="{{ form.fecha_incidente.id_for_label }}" class="form-label fw-bold">
+                    Fecha y Hora del Incidente <span class="text-danger">*</span>
+                </label>
+                {{ form.fecha_incidente }}
+                {% if form.fecha_incidente.errors %}
+                <div class="text-danger small mt-1">
+                    {{ form.fecha_incidente.errors }}
+                </div>
+                {% endif %}
+                <small class="text-muted">¿Cuándo ocurrió el incidente?</small>
+            </div>
+
+            <!-- Foto/Evidencia -->
+            <div class="mb-4">
+                <label for="{{ form.foto.id_for_label }}" class="form-label fw-bold">
+                    Foto o Evidencia
+                </label>
+                {{ form.foto }}
+                {% if form.foto.errors %}
+                <div class="text-danger small mt-1">
+                    {{ form.foto.errors }}
+                </div>
+                {% endif %}
+                <small class="text-muted">Opcional: Adjunta una foto que ayude a entender el incidente</small>
+            </div>
+
+            <!-- Botones -->
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-send me-1"></i>
+                    Reportar Incidente
+                </button>
+                <a href="{% url 'listar_incidentes' %}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle me-1"></i>
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Información Adicional -->
+<div class="alert alert-info mt-4" role="alert">
+    <h5 class="alert-heading">
+        <i class="bi bi-info-circle me-2"></i>
+        Información Importante
+    </h5>
+    <hr>
+    <ul class="mb-0">
+        <li>Los incidentes críticos serán asignados automáticamente al personal administrativo</li>
+        <li>Todos los reportes son confidenciales y se usarán solo para mejorar la seguridad</li>
+        <li>Recibirás notificaciones sobre el estado de tu reporte</li>
+    </ul>
+</div>
+{% endblock %}

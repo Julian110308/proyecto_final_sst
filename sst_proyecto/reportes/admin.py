@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ConfiguracionReporte, ReporteGenerado
+from .models import ConfiguracionReporte, ReporteGenerado, Incidente
 
 @admin.register(ConfiguracionReporte)
 class ConfiguracionReporteAdmin(admin.ModelAdmin):
@@ -22,3 +22,27 @@ class ReporteGeneradoAdmin(admin.ModelAdmin):
     
     def has_add_permission(self, request):
         return False  # No permitir agregar manualmente
+
+
+# Admin SIMPLE para Incidentes
+@admin.register(Incidente)
+class IncidenteAdmin(admin.ModelAdmin):
+    list_display = ['titulo', 'tipo', 'gravedad', 'estado', 'reportado_por', 'fecha_reporte']
+    list_filter = ['tipo', 'gravedad', 'estado', 'fecha_reporte']
+    search_fields = ['titulo', 'descripcion', 'ubicacion']
+    readonly_fields = ['fecha_reporte']
+
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('titulo', 'descripcion', 'tipo', 'gravedad', 'estado')
+        }),
+        ('Ubicación y Fecha', {
+            'fields': ('ubicacion', 'fecha_incidente', 'fecha_reporte')
+        }),
+        ('Responsables', {
+            'fields': ('reportado_por', 'asignado_a')
+        }),
+        ('Evidencia y Acciones', {
+            'fields': ('foto', 'acciones_tomadas', 'fecha_resolucion')
+        }),
+    )

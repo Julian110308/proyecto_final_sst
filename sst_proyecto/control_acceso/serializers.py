@@ -67,7 +67,7 @@ class RegistrarAccesoSerializer(serializers.Serializer):
     latitud = serializers.FloatField(required=False, allow_null=True)
     longitud = serializers.FloatField(required=False, allow_null=True)
     metodo = serializers.ChoiceField(
-        choices=['MANUAL', 'QR', 'AUTOMATICO'],
+        choices=['MANUAL', 'AUTOMATICO'],  # Removido 'QR' - solo registro físico
         default='MANUAL',
         required=False
     )
@@ -81,16 +81,17 @@ class RegistrarAccesoSerializer(serializers.Serializer):
         return value
 
 
-class EscanearQRSerializer(serializers.Serializer):
-    """
-    Serializer para procesar el escaneo de códigos QR
-    """
-    codigo_qr = serializers.CharField(required=True)
-    latitud = serializers.FloatField(required=False, allow_null=True)
-    longitud = serializers.FloatField(required=False, allow_null=True)
-
-    def validate_codigo_qr(self, value):
-        """Valida el formato del código QR"""
-        if not value or len(value) < 10:
-            raise serializers.ValidationError('Código QR inválido')
-        return value
+# DESHABILITADO - Solo registro físico/manual
+# class EscanearQRSerializer(serializers.Serializer):
+#     """
+#     Serializer para procesar el escaneo de códigos QR
+#     """
+#     codigo_qr = serializers.CharField(required=True)
+#     latitud = serializers.FloatField(required=False, allow_null=True)
+#     longitud = serializers.FloatField(required=False, allow_null=True)
+#
+#     def validate_codigo_qr(self, value):
+#         """Valida el formato del código QR"""
+#         if not value or len(value) < 10:
+#             raise serializers.ValidationError('Código QR inválido')
+#         return value

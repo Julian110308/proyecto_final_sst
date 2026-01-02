@@ -65,8 +65,8 @@
             <div class="p-4">
                 <div class="alert alert-info">
                     <i class="bi bi-info-circle me-2"></i>
-                    <strong>¿Olvidaste tu contraseña?</strong><br>
-                    <small>Ingresa tu correo electrónico y te enviaremos instrucciones para restablecerla.</small>
+                    <strong>¿Olvidaste tu clave?</strong><br>
+                    <small>Escribe tu correo y te enviaremos un link para cambiarla.</small>
                 </div>
 
                 {% if messages %}
@@ -84,33 +84,33 @@
                     <div class="mb-4">
                         <label for="id_email" class="form-label">
                             <i class="bi bi-envelope me-1"></i>
-                            Correo Electrónico
+                            Correo
                         </label>
                         <input
                             type="email"
                             name="email"
                             class="form-control form-control-lg"
                             id="id_email"
-                            placeholder="tu_correo@ejemplo.com"
+                            placeholder="micorreo@ejemplo.com"
                             required
                             autofocus
                         >
                         <div class="form-text">
-                            Ingresa el correo asociado a tu cuenta
+                            Escribe tu correo registrado
                         </div>
                     </div>
 
                     <div class="d-grid gap-2 mb-3">
                         <button type="submit" class="btn btn-primary-custom btn-lg">
                             <i class="bi bi-send me-2"></i>
-                            Enviar Instrucciones
+                            Enviar
                         </button>
                     </div>
 
                     <div class="text-center">
                         <a href="{% url 'login' %}" class="text-decoration-none">
                             <i class="bi bi-arrow-left me-1"></i>
-                            Volver al inicio de sesión
+                            Volver a login
                         </a>
                     </div>
                 </form>

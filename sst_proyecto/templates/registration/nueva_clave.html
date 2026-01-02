@@ -65,14 +65,14 @@
             {% if validlink %}
             <div class="reset-header">
                 <i class="bi bi-shield-lock reset-icon"></i>
-                <h3 class="mb-0">Crear Nueva Contraseña</h3>
+                <h3 class="mb-0">Nueva Contraseña</h3>
                 <p class="mb-0 mt-2 opacity-75">Sistema SST - Centro Minero SENA</p>
             </div>
 
             <div class="p-4">
                 <div class="alert alert-info">
                     <i class="bi bi-info-circle me-2"></i>
-                    Ingresa tu nueva contraseña. Debe ser segura y diferente a la anterior.
+                    Escribe tu nueva clave. Debe ser diferente a la anterior.
                 </div>
 
                 {% if form.errors %}
@@ -95,14 +95,14 @@
                     <div class="mb-3">
                         <label for="id_new_password1" class="form-label">
                             <i class="bi bi-lock me-1"></i>
-                            Nueva Contraseña
+                            Nueva Clave
                         </label>
                         <input
                             type="password"
                             name="new_password1"
                             class="form-control form-control-lg"
                             id="id_new_password1"
-                            placeholder="Ingresa tu nueva contraseña"
+                            placeholder="Escribe tu nueva clave"
                             required
                             autocomplete="new-password"
                         >
@@ -114,14 +114,14 @@
                     <div class="mb-4">
                         <label for="id_new_password2" class="form-label">
                             <i class="bi bi-lock-fill me-1"></i>
-                            Confirmar Nueva Contraseña
+                            Confirmar Clave
                         </label>
                         <input
                             type="password"
                             name="new_password2"
                             class="form-control form-control-lg"
                             id="id_new_password2"
-                            placeholder="Confirma tu nueva contraseña"
+                            placeholder="Escribe de nuevo la clave"
                             required
                             autocomplete="new-password"
                         >
@@ -131,13 +131,13 @@
                         <div class="card-body">
                             <h6 class="card-title">
                                 <i class="bi bi-shield-check me-2"></i>
-                                Requisitos de la contraseña:
+                                Requisitos:
                             </h6>
                             <ul class="mb-0 small">
                                 <li>Mínimo 8 caracteres</li>
-                                <li>No puede ser completamente numérica</li>
-                                <li>No puede ser muy común</li>
-                                <li>Las dos contraseñas deben coincidir</li>
+                                <li>No solo números</li>
+                                <li>No muy común (ej: 12345678)</li>
+                                <li>Las dos claves deben ser iguales</li>
                             </ul>
                         </div>
                     </div>
@@ -145,40 +145,40 @@
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary-custom btn-lg">
                             <i class="bi bi-check-circle me-2"></i>
-                            Restablecer Contraseña
+                            Cambiar Clave
                         </button>
                     </div>
                 </form>
             </div>
 
             {% else %}
-            <!-- Enlace inválido o expirado -->
+            <!-- Link no funciona -->
             <div class="reset-header">
                 <i class="bi bi-x-circle reset-icon text-danger" style="color: white !important;"></i>
-                <h3 class="mb-0">Enlace Inválido</h3>
+                <h3 class="mb-0">Link No Válido</h3>
             </div>
 
             <div class="p-4">
                 <div class="alert alert-danger">
                     <h5 class="alert-heading">
                         <i class="bi bi-exclamation-triangle me-2"></i>
-                        Este enlace no es válido
+                        Este link no sirve
                     </h5>
                     <hr>
                     <p class="mb-0">
-                        El enlace puede haber expirado (válido por 1 hora) o ya fue utilizado.
-                        Por favor, solicita un nuevo enlace de recuperación.
+                        El link ya expiró (dura 1 hora) o ya lo usaste.
+                        Pide uno nuevo.
                     </p>
                 </div>
 
                 <div class="d-grid gap-2">
                     <a href="{% url 'password_reset' %}" class="btn btn-primary-custom btn-lg">
                         <i class="bi bi-arrow-clockwise me-2"></i>
-                        Solicitar Nuevo Enlace
+                        Pedir Nuevo Link
                     </a>
                     <a href="{% url 'login' %}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left me-2"></i>
-                        Volver al Inicio de Sesión
+                        Volver al Login
                     </a>
                 </div>
             </div>

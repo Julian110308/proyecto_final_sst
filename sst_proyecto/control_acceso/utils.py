@@ -1,142 +1,146 @@
 # control_acceso/utils.py
-import qrcode
-import io
-import base64
-from django.core.files.base import ContentFile
-from PIL import Image, ImageDraw, ImageFont
+# DESHABILITADO - Solo registro físico/manual
+# import qrcode
+# import io
+# import base64
+# from django.core.files.base import ContentFile
+# from PIL import Image, ImageDraw, ImageFont
 
 
-def generar_qr_usuario(usuario):
-    """
-    Genera un código QR único para un usuario
-    Retorna la imagen del QR en base64
-    """
-    # Crear datos del QR con información del usuario
-    datos_qr = f"SST-USUARIO-{usuario.id}-{usuario.numero_documento}"
-
-    # Configurar el QR
-    qr = qrcode.QRCode(
-        version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_H,
-        box_size=10,
-        border=4,
-    )
-
-    qr.add_data(datos_qr)
-    qr.make(fit=True)
-
-    # Crear la imagen
-    img = qr.make_image(fill_color="black", back_color="white")
-
-    # Agregar información adicional (nombre del usuario)
-    img_pil = img.convert('RGB')
-    width, height = img_pil.size
-
-    # Crear una nueva imagen con espacio para el texto
-    new_height = height + 80
-    final_img = Image.new('RGB', (width, new_height), 'white')
-    final_img.paste(img_pil, (0, 0))
-
-    # Agregar texto
-    draw = ImageDraw.Draw(final_img)
-
-    # Información del usuario
-    texto_nombre = usuario.get_full_name() or usuario.username
-    texto_documento = f"Doc: {usuario.numero_documento}"
-    texto_rol = usuario.get_rol_display()
-
-    # Calcular posición central para el texto
-    text_y = height + 10
-
-    # Dibujar los textos (sin fuente personalizada para evitar problemas)
-    draw.text((width//2, text_y), texto_nombre, fill='black', anchor='mt')
-    draw.text((width//2, text_y + 25), texto_documento, fill='gray', anchor='mt')
-    draw.text((width//2, text_y + 45), texto_rol, fill='green', anchor='mt')
-
-    # Convertir a bytes
-    buffer = io.BytesIO()
-    final_img.save(buffer, format='PNG')
-    buffer.seek(0)
-
-    # Convertir a base64 para mostrar en HTML
-    img_base64 = base64.b64encode(buffer.getvalue()).decode()
-
-    return img_base64
-
-
-def generar_qr_visitante(visitante):
-    """
-    Genera un código QR único para un visitante
-    Retorna la imagen del QR en base64
-    """
-    # Crear datos del QR
-    datos_qr = f"SST-VISITANTE-{visitante.id}-{visitante.numero_documento}"
-
-    # Configurar el QR
-    qr = qrcode.QRCode(
-        version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_H,
-        box_size=10,
-        border=4,
-    )
-
-    qr.add_data(datos_qr)
-    qr.make(fit=True)
-
-    # Crear la imagen
-    img = qr.make_image(fill_color="black", back_color="white")
-
-    # Agregar información adicional
-    img_pil = img.convert('RGB')
-    width, height = img_pil.size
-
-    # Crear una nueva imagen con espacio para el texto
-    new_height = height + 80
-    final_img = Image.new('RGB', (width, new_height), 'white')
-    final_img.paste(img_pil, (0, 0))
-
-    # Agregar texto
-    draw = ImageDraw.Draw(final_img)
-
-    texto_nombre = visitante.nombre_completo
-    texto_documento = f"Doc: {visitante.numero_documento}"
-    texto_tipo = "VISITANTE"
-
-    text_y = height + 10
-
-    draw.text((width//2, text_y), texto_nombre, fill='black', anchor='mt')
-    draw.text((width//2, text_y + 25), texto_documento, fill='gray', anchor='mt')
-    draw.text((width//2, text_y + 45), texto_tipo, fill='orange', anchor='mt')
-
-    # Convertir a bytes
-    buffer = io.BytesIO()
-    final_img.save(buffer, format='PNG')
-    buffer.seek(0)
-
-    # Convertir a base64
-    img_base64 = base64.b64encode(buffer.getvalue()).decode()
-
-    return img_base64
+# DESHABILITADO - Solo registro físico/manual
+# def generar_qr_usuario(usuario):
+#     """
+#     Genera un código QR único para un usuario
+#     Retorna la imagen del QR en base64
+#     """
+#     # Crear datos del QR con información del usuario
+#     datos_qr = f"SST-USUARIO-{usuario.id}-{usuario.numero_documento}"
+#
+#     # Configurar el QR
+#     qr = qrcode.QRCode(
+#         version=1,
+#         error_correction=qrcode.constants.ERROR_CORRECT_H,
+#         box_size=10,
+#         border=4,
+#     )
+#
+#     qr.add_data(datos_qr)
+#     qr.make(fit=True)
+#
+#     # Crear la imagen
+#     img = qr.make_image(fill_color="black", back_color="white")
+#
+#     # Agregar información adicional (nombre del usuario)
+#     img_pil = img.convert('RGB')
+#     width, height = img_pil.size
+#
+#     # Crear una nueva imagen con espacio para el texto
+#     new_height = height + 80
+#     final_img = Image.new('RGB', (width, new_height), 'white')
+#     final_img.paste(img_pil, (0, 0))
+#
+#     # Agregar texto
+#     draw = ImageDraw.Draw(final_img)
+#
+#     # Información del usuario
+#     texto_nombre = usuario.get_full_name() or usuario.username
+#     texto_documento = f"Doc: {usuario.numero_documento}"
+#     texto_rol = usuario.get_rol_display()
+#
+#     # Calcular posición central para el texto
+#     text_y = height + 10
+#
+#     # Dibujar los textos (sin fuente personalizada para evitar problemas)
+#     draw.text((width//2, text_y), texto_nombre, fill='black', anchor='mt')
+#     draw.text((width//2, text_y + 25), texto_documento, fill='gray', anchor='mt')
+#     draw.text((width//2, text_y + 45), texto_rol, fill='green', anchor='mt')
+#
+#     # Convertir a bytes
+#     buffer = io.BytesIO()
+#     final_img.save(buffer, format='PNG')
+#     buffer.seek(0)
+#
+#     # Convertir a base64 para mostrar en HTML
+#     img_base64 = base64.b64encode(buffer.getvalue()).decode()
+#
+#     return img_base64
 
 
-def decodificar_qr(codigo_qr):
-    """
-    Decodifica un código QR y retorna el tipo y ID
-    Retorna: (tipo, id) donde tipo puede ser 'USUARIO' o 'VISITANTE'
-    """
-    try:
-        partes = codigo_qr.split('-')
-        if len(partes) >= 4:
-            prefijo = partes[0]  # SST
-            tipo = partes[1]     # USUARIO o VISITANTE
-            id_persona = partes[2]  # ID
+# DESHABILITADO - Solo registro físico/manual
+# def generar_qr_visitante(visitante):
+#     """
+#     Genera un código QR único para un visitante
+#     Retorna la imagen del QR en base64
+#     """
+#     # Crear datos del QR
+#     datos_qr = f"SST-VISITANTE-{visitante.id}-{visitante.numero_documento}"
+#
+#     # Configurar el QR
+#     qr = qrcode.QRCode(
+#         version=1,
+#         error_correction=qrcode.constants.ERROR_CORRECT_H,
+#         box_size=10,
+#         border=4,
+#     )
+#
+#     qr.add_data(datos_qr)
+#     qr.make(fit=True)
+#
+#     # Crear la imagen
+#     img = qr.make_image(fill_color="black", back_color="white")
+#
+#     # Agregar información adicional
+#     img_pil = img.convert('RGB')
+#     width, height = img_pil.size
+#
+#     # Crear una nueva imagen con espacio para el texto
+#     new_height = height + 80
+#     final_img = Image.new('RGB', (width, new_height), 'white')
+#     final_img.paste(img_pil, (0, 0))
+#
+#     # Agregar texto
+#     draw = ImageDraw.Draw(final_img)
+#
+#     texto_nombre = visitante.nombre_completo
+#     texto_documento = f"Doc: {visitante.numero_documento}"
+#     texto_tipo = "VISITANTE"
+#
+#     text_y = height + 10
+#
+#     draw.text((width//2, text_y), texto_nombre, fill='black', anchor='mt')
+#     draw.text((width//2, text_y + 25), texto_documento, fill='gray', anchor='mt')
+#     draw.text((width//2, text_y + 45), texto_tipo, fill='orange', anchor='mt')
+#
+#     # Convertir a bytes
+#     buffer = io.BytesIO()
+#     final_img.save(buffer, format='PNG')
+#     buffer.seek(0)
+#
+#     # Convertir a base64
+#     img_base64 = base64.b64encode(buffer.getvalue()).decode()
+#
+#     return img_base64
 
-            if prefijo == 'SST':
-                return (tipo, int(id_persona))
 
-        return (None, None)
-    except (ValueError, IndexError):
-        return (None, None)
+# DESHABILITADO - Solo registro físico/manual
+# def decodificar_qr(codigo_qr):
+#     """
+#     Decodifica un código QR y retorna el tipo y ID
+#     Retorna: (tipo, id) donde tipo puede ser 'USUARIO' o 'VISITANTE'
+#     """
+#     try:
+#         partes = codigo_qr.split('-')
+#         if len(partes) >= 4:
+#             prefijo = partes[0]  # SST
+#             tipo = partes[1]     # USUARIO o VISITANTE
+#             id_persona = partes[2]  # ID
+#
+#             if prefijo == 'SST':
+#                 return (tipo, int(id_persona))
+#
+#         return (None, None)
+#     except (ValueError, IndexError):
+#         return (None, None)
 
 
 def verificar_aforo_actual():
