@@ -90,20 +90,20 @@
         </div>
     </div>
 
-    <!-- Alertas Pendientes -->
+    <!-- Mis Capacitaciones - ✅ NUEVO -->
     <div class="col-xl-3 col-md-6">
         <div class="card card-modern border-0">
             <div class="card-body p-4">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Visitantes Hoy</h6>
-                        <h3 class="fw-bold text-dark mb-0">{{ visitantes_hoy|default:0 }}</h3>
+                        <h6 class="text-muted mb-2">Mis Capacitaciones</h6>
+                        <h3 class="fw-bold text-dark mb-0">3</h3>
                         <small class="text-warning">
-                            <i class="bi bi-person-badge"></i> Registrados
+                            <i class="bi bi-mortarboard"></i> 1 pendiente
                         </small>
                     </div>
                     <div class="bg-light-warning rounded-3 p-3">
-                        <i class="bi bi-bell fs-2 text-warning"></i>
+                        <i class="bi bi-award fs-2 text-warning"></i>
                     </div>
                 </div>
             </div>
@@ -135,28 +135,31 @@
                             <span class="fw-bold">Ver Mi Horario</span>
                         </button>
                     </div>
+                    <!-- ✅ CAMBIO: Ahora SÍ puede ver el mapa -->
                     <div class="col-md-4">
-                        <button class="btn btn-outline-success w-100 py-3" onclick="verMapa()">
+                        <button class="btn btn-outline-success w-100 py-3" onclick="window.location.href='/mapas/'">
                             <i class="bi bi-map fs-4 d-block mb-2"></i>
-                            <span class="fw-bold">Mapa del Centro</span>
+                            <span class="fw-bold">Mapa y Evacuación</span>
+                        </button>
+                    </div>
+                    <!-- ✅ NUEVO: Normas SST -->
+                    <div class="col-md-4">
+                        <button class="btn btn-outline-info w-100 py-3" onclick="verNormasSST()">
+                            <i class="bi bi-shield-check fs-4 d-block mb-2"></i>
+                            <span class="fw-bold">Normas SST</span>
+                        </button>
+                    </div>
+                    <!-- ✅ NUEVO: Mis Capacitaciones -->
+                    <div class="col-md-4">
+                        <button class="btn btn-outline-warning w-100 py-3" onclick="verCapacitaciones()">
+                            <i class="bi bi-mortarboard fs-4 d-block mb-2"></i>
+                            <span class="fw-bold">Mis Capacitaciones</span>
                         </button>
                     </div>
                     <div class="col-md-4">
-                        <button class="btn btn-outline-info w-100 py-3" onclick="consultarInfo()">
-                            <i class="bi bi-info-circle fs-4 d-block mb-2"></i>
-                            <span class="fw-bold">Información SST</span>
-                        </button>
-                    </div>
-                    <div class="col-md-4">
-                        <button class="btn btn-outline-warning w-100 py-3" onclick="verAlertas()">
-                            <i class="bi bi-bell fs-4 d-block mb-2"></i>
-                            <span class="fw-bold">Mis Alertas</span>
-                        </button>
-                    </div>
-                    <div class="col-md-4">
-                        <button class="btn btn-outline-secondary w-100 py-3" onclick="window.location.href='/reportes/'">
+                        <button class="btn btn-outline-secondary w-100 py-3" onclick="verMisReportes()">
                             <i class="bi bi-file-earmark-text fs-4 d-block mb-2"></i>
-                            <span class="fw-bold">Ver Reportes</span>
+                            <span class="fw-bold">Mis Reportes</span>
                         </button>
                     </div>
                 </div>
@@ -186,39 +189,41 @@
     </div>
 </div>
 
-<!-- Alertas y Notificaciones -->
+<!-- ✅ NUEVO: Mis Capacitaciones Pendientes -->
 <div class="row g-4 mb-4">
     <div class="col-lg-6">
         <div class="card card-modern">
             <div class="card-header-modern">
                 <h6 class="mb-0">
-                    <i class="bi bi-megaphone me-2"></i>
-                    Alertas Recientes
+                    <i class="bi bi-mortarboard me-2"></i>
+                    Capacitaciones SST Pendientes
                 </h6>
             </div>
             <div class="card-body">
-                <div class="alert alert-warning d-flex align-items-start mb-3">
-                    <i class="bi bi-exclamation-triangle-fill me-3 fs-5"></i>
-                    <div>
-                        <strong>Capacitación SST Pendiente</strong>
-                        <p class="mb-1 small">Debes completar el módulo de Seguridad Industrial antes del viernes.</p>
-                        <small class="text-muted">Hace 2 horas</small>
-                    </div>
+                <div class="alert alert-warning mb-3">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>Capacitación SST Pendiente</strong>
+                    <p class="mb-1 small">Debes completar el módulo de Seguridad Industrial antes del viernes.</p>
+                    <small class="text-muted">Vence en 3 días</small>
                 </div>
-                <div class="alert alert-info d-flex align-items-start mb-3">
-                    <i class="bi bi-info-circle-fill me-3 fs-5"></i>
-                    <div>
-                        <strong>Actualización de Horarios</strong>
-                        <p class="mb-1 small">Se han actualizado los horarios para la próxima semana.</p>
-                        <small class="text-muted">Hace 5 horas</small>
+                <div class="list-group">
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">✅ Primeros Auxilios Básicos</h6>
+                                <small class="text-muted">Completado el 15/11/2024</small>
+                            </div>
+                            <span class="badge bg-success">Completado</span>
+                        </div>
                     </div>
-                </div>
-                <div class="alert alert-success d-flex align-items-start">
-                    <i class="bi bi-check-circle-fill me-3 fs-5"></i>
-                    <div>
-                        <strong>Asistencia Registrada</strong>
-                        <p class="mb-1 small">Tu ingreso de hoy fue registrado correctamente a las 7:02 AM.</p>
-                        <small class="text-muted">Hoy, 7:02 AM</small>
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">✅ Uso de Extintores</h6>
+                                <small class="text-muted">Completado el 10/11/2024</small>
+                            </div>
+                            <span class="badge bg-success">Completado</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -281,19 +286,28 @@
     </div>
 </div>
 
-<!-- Información Importante -->
+<!-- ✅ NUEVO: Información de Seguridad -->
 <div class="row g-4">
     <div class="col-12">
         <div class="card card-modern border-start border-4 border-info">
             <div class="card-body">
                 <div class="d-flex align-items-center">
-                    <i class="bi bi-info-circle-fill text-info fs-2 me-3"></i>
-                    <div>
-                        <h6 class="mb-1">Información Importante</h6>
-                        <p class="mb-0 text-muted">
+                    <i class="bi bi-shield-check fs-2 text-info me-3"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">
+                            <i class="bi bi-info-circle-fill text-info me-2"></i>
+                            Información Importante de Seguridad
+                        </h6>
+                        <p class="mb-2 text-muted">
                             Recuerda siempre portar tu carnet de identificación y seguir los protocolos de seguridad del centro. 
                             En caso de emergencia, dirígete a las zonas de evacuación señalizadas.
                         </p>
+                        <button class="btn btn-sm btn-outline-info" onclick="verNormasSST()">
+                            <i class="bi bi-book me-1"></i>Ver Normas Completas
+                        </button>
+                        <button class="btn btn-sm btn-outline-success ms-2" onclick="window.location.href='/mapas/'">
+                            <i class="bi bi-map me-1"></i>Ver Rutas de Evacuación
+                        </button>
                     </div>
                 </div>
             </div>
@@ -305,7 +319,7 @@
 function reportarIncidente() {
     if (confirm('¿Deseas reportar un incidente de seguridad?')) {
         alert('Función de reporte de incidentes. Se abrirá el formulario correspondiente.');
-        // Aquí irá la lógica para abrir modal o redirigir
+        // Aquí iría la lógica para abrir modal o redirigir
     }
 }
 
@@ -313,16 +327,18 @@ function verHorario() {
     alert('Función para ver horario. Aquí se mostrará tu horario semanal.');
 }
 
-function verMapa() {
-    window.location.href = '/mapas/';
+// ✅ NUEVA FUNCIÓN
+function verNormasSST() {
+    alert('Normas de Seguridad y Salud en el Trabajo:\n\n✓ Uso de EPP\n✓ Protocolo de emergencias\n✓ Rutas de evacuación\n✓ Puntos de encuentro\n✓ Contactos de emergencia\n\nPuedes acceder al manual completo en el módulo de información.');
 }
 
-function consultarInfo() {
-    alert('Función para consultar información SST. Se mostrará documentación y guías.');
+// ✅ NUEVA FUNCIÓN
+function verCapacitaciones() {
+    alert('Mis Capacitaciones SST:\n\n📚 Capacitaciones completadas\n⏳ Capacitaciones pendientes\n📅 Próximas capacitaciones\n🎓 Certificados obtenidos\n\nMantén tus capacitaciones al día para garantizar tu seguridad.');
 }
 
-function verAlertas() {
-    alert('Función para ver todas las alertas. Se mostrará un listado completo.');
+function verMisReportes() {
+    alert('Mis Reportes:\n\n✓ Ver reportes que he creado\n✓ Estado de mis reportes\n✓ Crear nuevo reporte\n\nSolo puedes ver tus propios reportes.');
 }
 </script>
 {% endblock %}
