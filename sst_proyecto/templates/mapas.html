@@ -5,8 +5,8 @@
 <!-- Header del Mapa -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h1 class="h3 fw-bold text-dark mb-1">Mapa Interactivo</h1>
-        <p class="text-muted">Visualización en tiempo real del Centro Minero</p>
+        <h1 class="h3 fw-bold text-dark mb-1">Mapa Interactivo - Centro Minero</h1>
+        <p class="text-muted">Visualización en tiempo real con geolocalización y datos dinámicos</p>
     </div>
     <div class="btn-group" role="group">
         <input type="radio" class="btn-check" name="mapaVista" id="vistaNormal" autocomplete="off" checked>
@@ -34,10 +34,10 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <h6 class="mb-0">Centro Minero SENA - Boyacá</h6>
                     <div class="d-flex gap-2">
-                        <button class="btn btn-sm btn-outline-secondary">
+                        <button id="btnMiUbicacion" class="btn btn-sm btn-outline-secondary">
                             <i class="bi bi-crosshair2"></i> Mi ubicación
                         </button>
-                        <button class="btn btn-sm btn-outline-secondary">
+                        <button id="btnPantallaCompleta" class="btn btn-sm btn-outline-secondary">
                             <i class="bi bi-arrows-fullscreen"></i>
                         </button>
                     </div>
@@ -46,12 +46,42 @@
             <div class="card-body p-0">
                 <!-- Información de mi ubicación -->
                 <div class="px-3 py-2 bg-light border-bottom">
-                    <small id="infoUbicacion" class="text-muted">
-                        <i class="bi bi-geo-alt-fill me-1"></i> Cargando ubicación...
-                    </small>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <small id="infoUbicacion" class="text-muted">
+                                <i class="bi bi-geo-alt-fill me-1"></i> Cargando ubicación...
+                            </small>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <small id="estadoGeocerca" class="text-muted">
+                                <i class="bi bi-shield-check me-1"></i> Verificando...
+                            </small>
+                        </div>
+                    </div>
                 </div>
-                <!-- Mapa -->
-                <div id="mapaPrincipal" style="height: 500px; border-radius: 0 0 12px 12px;"></div>
+                <!-- Mapa con leyenda -->
+                <div id="mapaPrincipal" style="height: 500px; border-radius: 0 0 12px 12px; position: relative;"></div>
+                
+                <!-- Leyenda del Mapa -->
+                <div class="leyenda-mapa" style="position: absolute; bottom: 20px; right: 20px; z-index: 1000; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);">
+                    <strong style="display: block; margin-bottom: 8px; font-size: 14px;">Leyenda:</strong>
+                    <div class="leyenda-item" style="display: flex; align-items: center; margin-bottom: 5px; font-size: 12px;">
+                        <div class="leyenda-color" style="width: 15px; height: 15px; border-radius: 50%; margin-right: 8px; background: #4CAF50; border: 2px solid white;"></div>
+                        <span>Punto de Encuentro</span>
+                    </div>
+                    <div class="leyenda-item" style="display: flex; align-items: center; margin-bottom: 5px; font-size: 12px;">
+                        <div class="leyenda-color" style="width: 15px; height: 15px; border-radius: 50%; margin-right: 8px; background: #f44336; border: 2px solid white;"></div>
+                        <span>Extintor</span>
+                    </div>
+                    <div class="leyenda-item" style="display: flex; align-items: center; margin-bottom: 5px; font-size: 12px;">
+                        <div class="leyenda-color" style="width: 15px; height: 15px; border-radius: 50%; margin-right: 8px; background: #2196F3; border: 2px solid white;"></div>
+                        <span>Botiquín</span>
+                    </div>
+                    <div class="leyenda-item" style="display: flex; align-items: center; font-size: 12px;">
+                        <div class="leyenda-color" style="width: 15px; height: 15px; border-radius: 50%; margin-right: 8px; background: #FF9800; border: 2px solid white;"></div>
+                        <span>Tu ubicación</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -61,30 +91,35 @@
         <!-- Filtros de Capas -->
         <div class="card card-modern mb-4">
             <div class="card-header-modern">
-                <h6 class="mb-0">Capas del Mapa</h6>
+                <h6 class="mb-0">
+                    <i class="bi bi-layers me-2"></i>
+                    Capas del Mapa
+                </h6>
             </div>
             <div class="card-body">
                 <div class="form-check form-switch mb-3">
-                    <input class="form-check-input" type="checkbox" checked>
-                    <label class="form-check-label">
+                    <input class="form-check-input" type="checkbox" id="capaEdificios" checked disabled>
+                    <label class="form-check-label" for="capaEdificios">
                         <i class="bi bi-building me-2"></i>Edificios y Bloques
                     </label>
                 </div>
                 <div class="form-check form-switch mb-3">
-                    <input class="form-check-input" type="checkbox" checked>
-                    <label class="form-check-label">
+                    <input class="form-check-input" type="checkbox" id="capaPuntos" checked>
+                    <label class="form-check-label" for="capaPuntos">
                         <i class="bi bi-signpost me-2"></i>Puntos de Encuentro
+                        <span id="contadorPuntos" class="badge bg-success ms-2">0</span>
                     </label>
                 </div>
                 <div class="form-check form-switch mb-3">
-                    <input class="form-check-input" type="checkbox" checked>
-                    <label class="form-check-label">
+                    <input class="form-check-input" type="checkbox" id="capaEquipos" checked>
+                    <label class="form-check-label" for="capaEquipos">
                         <i class="bi bi-fire-extinguisher me-2"></i>Equipamientos
+                        <span id="contadorEquipos" class="badge bg-danger ms-2">0</span>
                     </label>
                 </div>
                 <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox">
-                    <label class="form-check-label">
+                    <input class="form-check-input" type="checkbox" id="capaRutas">
+                    <label class="form-check-label" for="capaRutas">
                         <i class="bi bi-arrow-right-circle me-2"></i>Rutas de Evacuación
                     </label>
                 </div>
@@ -94,14 +129,20 @@
         <!-- Búsqueda -->
         <div class="card card-modern mb-4">
             <div class="card-header-modern">
-                <h6 class="mb-0">Buscar Ubicación</h6>
+                <h6 class="mb-0">
+                    <i class="bi bi-search me-2"></i>
+                    Buscar Ubicación
+                </h6>
             </div>
             <div class="card-body">
                 <div class="input-group mb-3">
-                    <input type="text" class="form-control" placeholder="Buscar edificio, punto...">
-                    <button class="btn btn-primary-custom" type="button">
+                    <input type="text" id="inputBusqueda" class="form-control" placeholder="Buscar edificio, punto...">
+                    <button id="btnBuscar" class="btn btn-primary-custom" type="button">
                         <i class="bi bi-search"></i>
                     </button>
+                </div>
+                <div id="resultadosBusqueda" class="mt-2" style="max-height: 150px; overflow-y: auto; display: none;">
+                    <!-- Resultados dinámicos -->
                 </div>
             </div>
         </div>
@@ -109,76 +150,113 @@
         <!-- Información de Ubicación Seleccionada -->
         <div class="card card-modern mb-4">
             <div class="card-header-modern">
-                <h6 class="mb-0">Información de Ubicación</h6>
+                <h6 class="mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Información de Ubicación
+                </h6>
             </div>
             <div class="card-body">
-                <p class="text-muted mb-0">
-                    <i class="bi bi-info-circle me-1"></i>
-                    Selecciona un punto en el mapa para ver información detallada
-                </p>
+                <div id="infoSeleccionada">
+                    <p class="text-muted mb-0">
+                        <i class="bi bi-mouse me-1"></i>
+                        Selecciona un punto en el mapa para ver información detallada
+                    </p>
+                </div>
             </div>
         </div>
 
         <!-- Ruta de Evacuación Rápida -->
         <div class="card card-modern">
             <div class="card-header-modern">
-                <h6 class="mb-0">Ruta de Evacuación</h6>
+                <h6 class="mb-0">
+                    <i class="bi bi-lightning-charge me-2"></i>
+                    Acciones Rápidas
+                </h6>
             </div>
             <div class="card-body">
-                <button class="btn btn-warning w-100 mb-3">
+                <button id="btnRutaEvacuacion" class="btn btn-warning w-100 mb-3">
                     <i class="bi bi-arrow-right-circle me-2"></i>
-                    Mostrar Ruta Más Cercana
+                    Ruta de Evacuación Más Cercana
                 </button>
-                <div class="text-center text-muted">
-                    <small>Presiona el botón para calcular la ruta de evacuación más cercana a tu ubicación</small>
+                <button id="btnZoomCentro" class="btn btn-outline-primary w-100 mb-2">
+                    <i class="bi bi-geo-alt me-2"></i>
+                    Centrar en el SENA
+                </button>
+                <button id="btnLimpiarRutas" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-trash me-2"></i>
+                    Limpiar Rutas
+                </button>
+                <div class="text-center text-muted mt-3">
+                    <small>
+                        <i class="bi bi-info-circle me-1"></i>
+                        Calcula la ruta más segura hacia el punto de encuentro
+                    </small>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Pasar datos de Django a JavaScript -->
+{{ puntos_encuentro|json_script:"puntos-encuentro-data" }}
+{{ equipamiento|json_script:"equipamiento-data" }}
+
 <script>
-    // ====================================================================
-    // CONFIGURACIÓN BÁSICA DEL MAPA
-    // ====================================================================
+// ====================================================================
+// CONFIGURACIÓN Y VARIABLES GLOBALES
+// ====================================================================
 
-    // Coordenadas del Centro Minero SENA en Sogamoso, Boyacá
-    const centroMinero = {
-        latitud: 5.5339,
-        longitud: -73.3674,
-        nombre: 'Centro Minero SENA Sogamoso'
-    };
+// Coordenadas del Centro Minero SENA en Sogamoso, Boyacá
+const centroMinero = {
+    latitud: 5.5339,
+    longitud: -73.3674,
+    nombre: 'Centro Minero SENA Sogamoso'
+};
 
-    // Radio de la geocerca en metros (200 metros)
-    const radioGeocerca = 200;
+// Radio de la geocerca en metros
+const radioGeocerca = 200;
 
-    // Variable para guardar el marcador de mi ubicación
-    let miMarcador = null;
+// Variables globales
+let mapa;
+let miMarcador = null;
+let circuloPrecision = null;
+let rutaActiva = null;
+let capaPuntosEncuentro = L.layerGroup();
+let capaEquipamiento = L.layerGroup();
 
-    // Variable para guardar el círculo de precisión
-    let circuloPrecision = null;
+// Cargar datos de Django
+let puntosEncuentroData = [];
+let equipamientoData = [];
 
-    // ====================================================================
-    // PASO 1: CREAR EL MAPA
-    // ====================================================================
+try {
+    puntosEncuentroData = JSON.parse(
+        document.getElementById('puntos-encuentro-data')?.textContent || '[]'
+    );
+    equipamientoData = JSON.parse(
+        document.getElementById('equipamiento-data')?.textContent || '[]'
+    );
+} catch (error) {
+    console.warn('Error cargando datos de Django:', error);
+}
 
-    // Crear el mapa centrado en el Centro Minero
-    const mapa = L.map('mapaPrincipal').setView(
+// ====================================================================
+// INICIALIZACIÓN DEL MAPA
+// ====================================================================
+
+function inicializarMapa() {
+    // Crear el mapa
+    mapa = L.map('mapaPrincipal').setView(
         [centroMinero.latitud, centroMinero.longitud],
-        17  // Nivel de zoom (17 = muy cerca)
+        17
     );
 
-    // Agregar las imágenes del mapa (OpenStreetMap es gratis)
+    // Agregar capa base de OpenStreetMap
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors',
         maxZoom: 19
     }).addTo(mapa);
 
-    // ====================================================================
-    // PASO 2: MARCAR EL CENTRO MINERO EN EL MAPA
-    // ====================================================================
-
-    // Ícono personalizado para el Centro Minero (rojo)
+    // Agregar marcador del Centro Minero
     const iconoCentroMinero = L.icon({
         iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
@@ -188,217 +266,789 @@
         shadowSize: [41, 41]
     });
 
-    // Crear marcador del Centro Minero
     const marcadorCentro = L.marker(
         [centroMinero.latitud, centroMinero.longitud],
         { icon: iconoCentroMinero }
     ).addTo(mapa);
 
-    // Agregar mensaje emergente al hacer clic en el marcador
     marcadorCentro.bindPopup(`
-        <strong>${centroMinero.nombre}</strong><br>
-        Lat: ${centroMinero.latitud}<br>
-        Lng: ${centroMinero.longitud}
+        <div style="min-width: 200px;">
+            <h6 style="margin: 0 0 8px 0; color: #C62828;">
+                <i class="bi bi-geo-alt-fill"></i> ${centroMinero.nombre}
+            </h6>
+            <p style="margin: 0 0 5px 0;">
+                <strong>Coordenadas:</strong><br>
+                Lat: ${centroMinero.latitud}<br>
+                Lng: ${centroMinero.longitud}
+            </p>
+            <p style="margin: 0; font-size: 13px; color: #666;">
+                <i class="bi bi-shield-check"></i> Área de seguridad del centro
+            </p>
+        </div>
     `);
 
-    // ====================================================================
-    // PASO 3: DIBUJAR LA GEOCERCA (PERÍMETRO CIRCULAR)
-    // ====================================================================
-
-    // Crear círculo que representa la geocerca
+    // Dibujar geocerca
     const circuloGeocerca = L.circle(
         [centroMinero.latitud, centroMinero.longitud],
         {
-            color: 'blue',        // Color del borde
-            fillColor: '#3388ff', // Color de relleno
-            fillOpacity: 0.1,     // Transparencia (0.1 = muy transparente)
-            radius: radioGeocerca // Radio en metros
+            color: '#1565C0',
+            fillColor: '#2196F3',
+            fillOpacity: 0.1,
+            radius: radioGeocerca
         }
     ).addTo(mapa);
 
-    // Agregar información al círculo
     circuloGeocerca.bindPopup(`
-        <strong>Perímetro del Centro</strong><br>
-        Radio: ${radioGeocerca} metros
+        <div style="min-width: 180px;">
+            <h6 style="margin: 0 0 8px 0; color: #1565C0;">
+                <i class="bi bi-geo-fill"></i> Geocerca del Centro
+            </h6>
+            <p style="margin: 0 0 5px 0;">
+                <strong>Radio:</strong> ${radioGeocerca} metros<br>
+                <strong>Área:</strong> ${(Math.PI * radioGeocerca * radioGeocerca / 10000).toFixed(2)} hectáreas
+            </p>
+        </div>
     `);
 
-    // ====================================================================
-    // PASO 4: OBTENER MI UBICACIÓN EN TIEMPO REAL
-    // ====================================================================
+    return mapa;
+}
 
-    // Función que se ejecuta cuando se obtiene la ubicación
-    function cuandoObtengoUbicacion(posicion) {
-        // Obtener coordenadas
-        const miLatitud = posicion.coords.latitude;
-        const miLongitud = posicion.coords.longitude;
-        const precision = posicion.coords.accuracy; // Precisión en metros
+// ====================================================================
+// GEOLOCALIZACIÓN DEL USUARIO
+// ====================================================================
 
-        console.log('Mi ubicación:', miLatitud, miLongitud);
-
-        // Actualizar texto de información
+function inicializarGeolocalizacion() {
+    if (!navigator.geolocation) {
         document.getElementById('infoUbicacion').innerHTML = `
-            <i class="bi bi-geo-alt-fill me-1"></i>
-            <strong>Lat:</strong> ${miLatitud.toFixed(6)} |
-            <strong>Lng:</strong> ${miLongitud.toFixed(6)} |
-            <strong>Precisión:</strong> ${precision.toFixed(0)} m
+            <span class="text-danger">
+                <i class="bi bi-exclamation-circle me-1"></i>
+                Tu navegador no soporta geolocalización
+            </span>
         `;
-
-        // ====================================================================
-        // PASO 5: MOSTRAR MI UBICACIÓN EN EL MAPA
-        // ====================================================================
-
-        // Si ya existe mi marcador, solo actualizar la posición
-        if (miMarcador) {
-            miMarcador.setLatLng([miLatitud, miLongitud]);
-        } else {
-            // Si no existe, crear un nuevo marcador verde (mi ubicación)
-            const iconoMiUbicacion = L.icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41]
-            });
-
-            miMarcador = L.marker(
-                [miLatitud, miLongitud],
-                { icon: iconoMiUbicacion }
-            ).addTo(mapa);
-
-            miMarcador.bindPopup('<strong>Estoy aquí</strong>');
-        }
-
-        // Actualizar círculo de precisión
-        if (circuloPrecision) {
-            circuloPrecision.setLatLng([miLatitud, miLongitud]);
-            circuloPrecision.setRadius(precision);
-        } else {
-            circuloPrecision = L.circle(
-                [miLatitud, miLongitud],
-                {
-                    color: 'green',
-                    fillColor: '#00ff00',
-                    fillOpacity: 0.15,
-                    radius: precision
-                }
-            ).addTo(mapa);
-        }
-
-        // ====================================================================
-        // PASO 6: CALCULAR SI ESTOY DENTRO DE LA GEOCERCA
-        // ====================================================================
-
-        // Calcular distancia entre mi ubicación y el centro minero
-        const distancia = mapa.distance(
-            [miLatitud, miLongitud],
-            [centroMinero.latitud, centroMinero.longitud]
-        );
-
-        console.log('Distancia al centro:', distancia.toFixed(0), 'metros');
-
-        // Verificar si estoy dentro de la geocerca
-        if (distancia <= radioGeocerca) {
-            console.log('¡Estoy dentro del Centro Minero!');
-            miMarcador.bindPopup(`
-                <strong>Estoy aquí</strong><br>
-                <span style="color: green;">✓ Dentro del centro</span><br>
-                Distancia: ${distancia.toFixed(0)} m
-            `);
-        } else {
-            console.log('Estoy fuera del Centro Minero');
-            miMarcador.bindPopup(`
-                <strong>Estoy aquí</strong><br>
-                <span style="color: orange;">⚠ Fuera del centro</span><br>
-                Distancia: ${distancia.toFixed(0)} m
-            `);
-        }
+        return;
     }
 
-    // Función que se ejecuta si hay un error
-    function cuandoHayError(error) {
-        console.error('Error al obtener ubicación:', error);
+    const opciones = {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+    };
 
-        let mensaje = '';
-        if (error.code === 1) {
-            mensaje = 'No diste permiso para acceder a tu ubicación';
-        } else if (error.code === 2) {
-            mensaje = 'No se pudo determinar tu ubicación';
-        } else {
-            mensaje = 'Tiempo de espera agotado';
-        }
+    navigator.geolocation.watchPosition(
+        cuandoObtengoUbicacion,
+        cuandoHayError,
+        opciones
+    );
 
-        document.getElementById('infoUbicacion').innerHTML = `
-            <i class="bi bi-exclamation-circle me-1"></i>
-            <span class="text-danger">Error: ${mensaje}</span>
-        `;
-    }
+    navigator.geolocation.getCurrentPosition(
+        cuandoObtengoUbicacion,
+        cuandoHayError,
+        opciones
+    );
+}
 
-    // ====================================================================
-    // PASO 7: ACTIVAR SEGUIMIENTO EN TIEMPO REAL
-    // ====================================================================
+function cuandoObtengoUbicacion(posicion) {
+    const miLatitud = posicion.coords.latitude;
+    const miLongitud = posicion.coords.longitude;
+    const precision = posicion.coords.accuracy;
 
-    // Verificar si el navegador soporta geolocalización
-    if (navigator.geolocation) {
-        console.log('Activando seguimiento de ubicación...');
+    // Actualizar información de ubicación
+    document.getElementById('infoUbicacion').innerHTML = `
+        <i class="bi bi-geo-alt-fill me-1"></i>
+        <strong>Lat:</strong> ${miLatitud.toFixed(6)} |
+        <strong>Lng:</strong> ${miLongitud.toFixed(6)} |
+        <strong>Precisión:</strong> ±${precision.toFixed(0)} m
+    `;
 
-        // Opciones de geolocalización
-        const opciones = {
-            enableHighAccuracy: true,  // Usar GPS si está disponible
-            timeout: 10000,           // Esperar máximo 10 segundos
-            maximumAge: 0             // No usar ubicación guardada en caché
-        };
-
-        // Iniciar seguimiento continuo (se actualiza automáticamente)
-        navigator.geolocation.watchPosition(
-            cuandoObtengoUbicacion,  // Función cuando se obtiene ubicación
-            cuandoHayError,          // Función cuando hay error
-            opciones                 // Opciones de configuración
-        );
-
-        // También obtener la ubicación una vez al cargar
-        navigator.geolocation.getCurrentPosition(
-            cuandoObtengoUbicacion,
-            cuandoHayError,
-            opciones
-        );
+    // Actualizar o crear marcador de ubicación
+    if (miMarcador) {
+        miMarcador.setLatLng([miLatitud, miLongitud]);
     } else {
-        // El navegador no soporta geolocalización
-        document.getElementById('infoUbicacion').innerHTML = `
-            <i class="bi bi-exclamation-circle me-1"></i>
-            <span class="text-danger">Tu navegador no soporta geolocalización</span>
-        `;
+        const iconoMiUbicacion = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+
+        miMarcador = L.marker(
+            [miLatitud, miLongitud],
+            { 
+                icon: iconoMiUbicacion,
+                title: 'Mi ubicación actual'
+            }
+        ).addTo(mapa);
+
+        miMarcador.bindPopup(`
+            <div style="min-width: 180px;">
+                <h6 style="margin: 0 0 8px 0; color: #2E7D32;">
+                    <i class="bi bi-person-circle"></i> Mi ubicación
+                </h6>
+                <p style="margin: 0 0 5px 0;">
+                    Lat: ${miLatitud.toFixed(6)}<br>
+                    Lng: ${miLongitud.toFixed(6)}
+                </p>
+                <p style="margin: 0; font-size: 13px;">
+                    <i class="bi bi-crosshair2"></i> Precisión: ±${precision.toFixed(0)} m
+                </p>
+            </div>
+        `);
     }
 
-    // ====================================================================
-    // BOTÓN "MI UBICACIÓN" - Centrar el mapa en mi posición
-    // ====================================================================
-    document.querySelector('.btn-outline-secondary').addEventListener('click', function() {
+    // Actualizar círculo de precisión
+    if (circuloPrecision) {
+        circuloPrecision.setLatLng([miLatitud, miLongitud]);
+        circuloPrecision.setRadius(precision);
+    } else {
+        circuloPrecision = L.circle(
+            [miLatitud, miLongitud],
+            {
+                color: '#4CAF50',
+                fillColor: '#4CAF50',
+                fillOpacity: 0.15,
+                radius: precision
+            }
+        ).addTo(mapa);
+    }
+
+    // Verificar si está dentro de la geocerca
+    verificarDentroGeocerca(miLatitud, miLongitud);
+}
+
+function cuandoHayError(error) {
+    let mensaje = '';
+    if (error.code === 1) {
+        mensaje = 'No diste permiso para acceder a tu ubicación';
+    } else if (error.code === 2) {
+        mensaje = 'No se pudo determinar tu ubicación';
+    } else {
+        mensaje = 'Tiempo de espera agotado';
+    }
+
+    document.getElementById('infoUbicacion').innerHTML = `
+        <span class="text-danger">
+            <i class="bi bi-exclamation-circle me-1"></i>
+            ${mensaje}
+        </span>
+    `;
+}
+
+function verificarDentroGeocerca(latitud, longitud) {
+    const distancia = mapa.distance(
+        [latitud, longitud],
+        [centroMinero.latitud, centroMinero.longitud]
+    );
+
+    const estadoElemento = document.getElementById('estadoGeocerca');
+    
+    if (distancia <= radioGeocerca) {
+        estadoElemento.innerHTML = `
+            <span class="text-success">
+                <i class="bi bi-check-circle-fill me-1"></i>
+                Dentro del centro (${distancia.toFixed(0)} m)
+            </span>
+        `;
         if (miMarcador) {
-            // Centrar el mapa en mi ubicación
+            miMarcador.bindPopup(`
+                <div style="min-width: 180px;">
+                    <h6 style="margin: 0 0 8px 0; color: #2E7D32;">
+                        <i class="bi bi-person-circle"></i> Mi ubicación
+                    </h6>
+                    <p style="margin: 0 0 5px 0;">
+                        <span class="badge bg-success">✓ Dentro del centro</span><br>
+                        Distancia: ${distancia.toFixed(0)} m
+                    </p>
+                </div>
+            `);
+        }
+    } else {
+        estadoElemento.innerHTML = `
+            <span class="text-warning">
+                <i class="bi bi-exclamation-triangle me-1"></i>
+                Fuera del centro (${distancia.toFixed(0)} m)
+            </span>
+        `;
+        if (miMarcador) {
+            miMarcador.bindPopup(`
+                <div style="min-width: 180px;">
+                    <h6 style="margin: 0 0 8px 0; color: #F57C00;">
+                        <i class="bi bi-person-circle"></i> Mi ubicación
+                    </h6>
+                    <p style="margin: 0 0 5px 0;">
+                        <span class="badge bg-warning">⚠ Fuera del centro</span><br>
+                        Distancia: ${distancia.toFixed(0)} m
+                    </p>
+                </div>
+            `);
+        }
+    }
+}
+
+// ====================================================================
+// DATOS DINÁMICOS - PUNTOS DE ENCUENTRO Y EQUIPAMIENTO
+// ====================================================================
+
+function inicializarDatosDinamicos() {
+    // Actualizar contadores
+    document.getElementById('contadorPuntos').textContent = puntosEncuentroData.length;
+    document.getElementById('contadorEquipos').textContent = equipamientoData.length;
+
+    // Crear iconos personalizados
+    const iconos = {
+        puntoEncuentro: L.divIcon({
+            className: 'custom-div-icon',
+            html: '<div style="background:#4CAF50;width:35px;height:35px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;border:3px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3);"><i class="bi bi-people-fill"></i></div>',
+            iconSize: [35, 35],
+            iconAnchor: [17, 35]
+        }),
+        extintor: L.divIcon({
+            className: 'custom-div-icon',
+            html: '<div style="background:#f44336;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3);"><i class="bi bi-fire-extinguisher"></i></div>',
+            iconSize: [30, 30],
+            iconAnchor: [15, 30]
+        }),
+        botiquin: L.divIcon({
+            className: 'custom-div-icon',
+            html: '<div style="background:#2196F3;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3);"><i class="bi bi-heart-pulse"></i></div>',
+            iconSize: [30, 30],
+            iconAnchor: [15, 30]
+        })
+    };
+
+    // Agregar puntos de encuentro
+    puntosEncuentroData.forEach(punto => {
+        const marker = L.marker(
+            [punto.latitud, punto.longitud],
+            { 
+                icon: iconos.puntoEncuentro,
+                title: punto.nombre
+            }
+        ).addTo(capaPuntosEncuentro);
+        
+        marker.bindPopup(`
+            <div style="min-width: 220px;">
+                <h6 style="margin: 0 0 8px 0; color: #2E7D32;">
+                    <i class="bi bi-signpost"></i> ${punto.nombre}
+                </h6>
+                <p style="margin: 0 0 5px 0; font-size: 14px;">
+                    <strong><i class="bi bi-people"></i> Capacidad:</strong> ${punto.capacidad} personas
+                </p>
+                <p style="margin: 0 0 10px 0; font-size: 13px; color: #666;">
+                    <i class="bi bi-info-circle"></i> ${punto.descripcion || 'Sin descripción'}
+                </p>
+                <div style="display: flex; justify-content: space-between; gap: 5px;">
+                    <button class="btn btn-sm btn-success" onclick="calcularRutaHaciaPunto(${punto.id})" style="flex: 1;">
+                        <i class="bi bi-arrow-right-circle"></i> Ruta
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="mostrarDetallesPunto(${punto.id})" style="flex: 1;">
+                        <i class="bi bi-info-circle"></i> Detalles
+                    </button>
+                </div>
+            </div>
+        `);
+    });
+
+    // Agregar equipamiento
+    equipamientoData.forEach(equipo => {
+        const icono = equipo.tipo === 'EXTINTOR' ? iconos.extintor : iconos.botiquin;
+        const marker = L.marker(
+            [equipo.latitud, equipo.longitud],
+            { 
+                icon: icono,
+                title: equipo.tipo
+            }
+        ).addTo(capaEquipamiento);
+        
+        const color = equipo.tipo === 'EXTINTOR' ? '#D32F2F' : '#1976D2';
+        const iconoClase = equipo.tipo === 'EXTINTOR' ? 'bi-fire-extinguisher' : 'bi-heart-pulse';
+        
+        marker.bindPopup(`
+            <div style="min-width: 200px;">
+                <h6 style="margin: 0 0 8px 0; color: ${color};">
+                    <i class="bi ${iconoClase}"></i> ${equipo.tipo}
+                </h6>
+                <p style="margin: 0 0 5px 0; font-size: 14px;">
+                    <strong><i class="bi bi-calendar-check"></i> Última revisión:</strong><br>
+                    ${equipo.ultima_revision || 'No registrada'}
+                </p>
+                ${equipo.descripcion ? `
+                <p style="margin: 0 0 10px 0; font-size: 13px; color: #666;">
+                    <i class="bi bi-card-text"></i> ${equipo.descripcion}
+                </p>` : ''}
+                <span class="badge bg-success">OPERATIVO</span>
+            </div>
+        `);
+    });
+
+    // Agregar capas al mapa inicialmente
+    capaPuntosEncuentro.addTo(mapa);
+    capaEquipamiento.addTo(mapa);
+}
+
+// ====================================================================
+// FUNCIONALIDADES DE INTERFAZ
+// ====================================================================
+
+function inicializarControles() {
+    // Botón "Mi ubicación"
+    document.getElementById('btnMiUbicacion').addEventListener('click', function() {
+        if (miMarcador) {
             mapa.setView(miMarcador.getLatLng(), 18);
-            // Mostrar el popup
             miMarcador.openPopup();
         } else {
-            alert('Aún no se ha detectado tu ubicación. Por favor espera un momento.');
+            alert('📍 Aún no se ha detectado tu ubicación. Por favor espera un momento o verifica los permisos del navegador.');
         }
     });
 
-    // ====================================================================
-    // EXPLICACIÓN DE LO QUE HACE ESTE CÓDIGO:
-    // ====================================================================
-    //
-    // 1. Crea un mapa usando Leaflet (librería de mapas)
-    // 2. Muestra el Centro Minero SENA con un marcador rojo
-    // 3. Dibuja un círculo de 200 metros (geocerca) alrededor del centro
-    // 4. Pide permiso para acceder a tu ubicación GPS
-    // 5. Muestra tu ubicación con un marcador verde
-    // 6. Actualiza tu posición automáticamente en tiempo real
-    // 7. Calcula si estás dentro o fuera del centro
-    // 8. Muestra la información en la parte superior del mapa
-    //
-    // NOTA: Para que funcione, debes dar permiso cuando el navegador
-    // te pregunte si puede acceder a tu ubicación.
-    // ====================================================================
+    // Botón "Centrar en el SENA"
+    document.getElementById('btnZoomCentro').addEventListener('click', function() {
+        mapa.setView([centroMinero.latitud, centroMinero.longitud], 17);
+    });
+
+    // Botón pantalla completa
+    document.getElementById('btnPantallaCompleta').addEventListener('click', function() {
+        const mapaElement = document.getElementById('mapaPrincipal');
+        if (!document.fullscreenElement) {
+            mapaElement.requestFullscreen().catch(err => {
+                console.log(`Error al activar pantalla completa: ${err.message}`);
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    });
+
+    // Checkbox puntos de encuentro
+    document.getElementById('capaPuntos').addEventListener('change', function() {
+        if (this.checked) {
+            mapa.addLayer(capaPuntosEncuentro);
+        } else {
+            mapa.removeLayer(capaPuntosEncuentro);
+        }
+    });
+
+    // Checkbox equipamiento
+    document.getElementById('capaEquipos').addEventListener('change', function() {
+        if (this.checked) {
+            mapa.addLayer(capaEquipamiento);
+        } else {
+            mapa.removeLayer(capaEquipamiento);
+        }
+    });
+
+    // Checkbox rutas
+    document.getElementById('capaRutas').addEventListener('click', function() {
+        if (this.checked && rutaActiva) {
+            mapa.addLayer(rutaActiva);
+        } else if (rutaActiva) {
+            mapa.removeLayer(rutaActiva);
+        }
+    });
+
+    // Búsqueda
+    document.getElementById('btnBuscar').addEventListener('click', realizarBusqueda);
+    document.getElementById('inputBusqueda').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') realizarBusqueda();
+    });
+
+    // Ruta de evacuación
+    document.getElementById('btnRutaEvacuacion').addEventListener('click', mostrarRutaEvacuacionCercana);
+    
+    // Limpiar rutas
+    document.getElementById('btnLimpiarRutas').addEventListener('click', function() {
+        if (rutaActiva) {
+            mapa.removeLayer(rutaActiva);
+            rutaActiva = null;
+            document.getElementById('capaRutas').checked = false;
+        }
+    });
+}
+
+// ====================================================================
+// BÚSQUEDA Y FILTRADO
+// ====================================================================
+
+function realizarBusqueda() {
+    const termino = document.getElementById('inputBusqueda').value.toLowerCase().trim();
+    const resultadosDiv = document.getElementById('resultadosBusqueda');
+    
+    if (!termino) {
+        resultadosDiv.style.display = 'none';
+        return;
+    }
+
+    // Buscar en puntos de encuentro
+    const puntosEncontrados = puntosEncuentroData.filter(punto =>
+        punto.nombre.toLowerCase().includes(termino) ||
+        (punto.descripcion && punto.descripcion.toLowerCase().includes(termino))
+    );
+
+    // Buscar en equipamiento
+    const equiposEncontrados = equipamientoData.filter(equipo =>
+        equipo.tipo.toLowerCase().includes(termino) ||
+        (equipo.descripcion && equipo.descripcion.toLowerCase().includes(termino))
+    );
+
+    const todosResultados = [...puntosEncontrados, ...equiposEncontrados];
+    
+    if (todosResultados.length === 0) {
+        resultadosDiv.innerHTML = `
+            <div class="alert alert-warning py-2 mb-0">
+                <i class="bi bi-search me-2"></i>
+                No se encontraron resultados para: "${termino}"
+            </div>
+        `;
+        resultadosDiv.style.display = 'block';
+        return;
+    }
+
+    // Mostrar resultados
+    let htmlResultados = '<div class="list-group list-group-flush">';
+    
+    todosResultados.forEach((item, index) => {
+        const esPunto = item.capacidad !== undefined;
+        const icono = esPunto ? 'bi-signpost' : 
+                     item.tipo === 'EXTINTOR' ? 'bi-fire-extinguisher' : 'bi-heart-pulse';
+        const color = esPunto ? 'success' : 
+                     item.tipo === 'EXTINTOR' ? 'danger' : 'primary';
+        
+        htmlResultados += `
+            <a href="#" class="list-group-item list-group-item-action py-2" 
+               onclick="centrarEnResultado(${index}, ${esPunto})">
+                <div class="d-flex align-items-center">
+                    <i class="bi ${icono} text-${color} me-2"></i>
+                    <div class="flex-grow-1">
+                        <strong>${esPunto ? item.nombre : item.tipo}</strong>
+                        <div class="text-muted small">
+                            ${esPunto ? `Capacidad: ${item.capacidad} personas` : 
+                            `Última revisión: ${item.ultima_revision || 'No registrada'}`}
+                        </div>
+                    </div>
+                    <i class="bi bi-chevron-right text-muted"></i>
+                </div>
+            </a>
+        `;
+    });
+    
+    htmlResultados += '</div>';
+    resultadosDiv.innerHTML = htmlResultados;
+    resultadosDiv.style.display = 'block';
+}
+
+function centrarEnResultado(indice, esPunto) {
+    const resultados = esPunto ? puntosEncuentroData : equipamientoData;
+    const item = resultados[indice];
+    
+    if (item) {
+        mapa.setView([item.latitud, item.longitud], 18);
+        document.getElementById('resultadosBusqueda').style.display = 'none';
+        
+        // Mostrar información en el panel
+        const infoDiv = document.getElementById('infoSeleccionada');
+        if (esPunto) {
+            infoDiv.innerHTML = `
+                <h6 class="text-success">
+                    <i class="bi bi-signpost"></i> ${item.nombre}
+                </h6>
+                <p class="mb-1"><strong>Capacidad:</strong> ${item.capacidad} personas</p>
+                <p class="mb-1"><strong>Descripción:</strong> ${item.descripcion || 'Sin descripción'}</p>
+                <button class="btn btn-sm btn-success mt-2" onclick="calcularRutaHaciaPunto(${item.id})">
+                    <i class="bi bi-arrow-right-circle"></i> Calcular ruta
+                </button>
+            `;
+        } else {
+            infoDiv.innerHTML = `
+                <h6 class="${item.tipo === 'EXTINTOR' ? 'text-danger' : 'text-primary'}">
+                    <i class="bi ${item.tipo === 'EXTINTOR' ? 'bi-fire-extinguisher' : 'bi-heart-pulse'}"></i>
+                    ${item.tipo}
+                </h6>
+                <p class="mb-1"><strong>Última revisión:</strong> ${item.ultima_revision || 'No registrada'}</p>
+                ${item.descripcion ? `<p class="mb-1"><strong>Descripción:</strong> ${item.descripcion}</p>` : ''}
+                <span class="badge bg-success">OPERATIVO</span>
+            `;
+        }
+    }
+}
+
+// ====================================================================
+// RUTAS DE EVACUACIÓN
+// ====================================================================
+
+function mostrarRutaEvacuacionCercana() {
+    if (!miMarcador) {
+        alert('🚨 Necesitamos tu ubicación actual para calcular la ruta más segura.');
+        return;
+    }
+
+    if (puntosEncuentroData.length === 0) {
+        alert('⚠️ No hay puntos de encuentro registrados en el sistema.');
+        return;
+    }
+
+    // Encontrar el punto de encuentro más cercano
+    let puntoMasCercano = null;
+    let distanciaMinima = Infinity;
+    
+    puntosEncuentroData.forEach(punto => {
+        const distancia = mapa.distance(
+            miMarcador.getLatLng(),
+            [punto.latitud, punto.longitud]
+        );
+        
+        if (distancia < distanciaMinima) {
+            distanciaMinima = distancia;
+            puntoMasCercano = punto;
+        }
+    });
+
+    // Limpiar ruta anterior
+    if (rutaActiva) {
+        mapa.removeLayer(rutaActiva);
+    }
+
+    // Dibujar nueva ruta
+    rutaActiva = L.polyline([
+        miMarcador.getLatLng(),
+        [puntoMasCercano.latitud, puntoMasCercano.longitud]
+    ], {
+        color: '#FF5722',
+        weight: 5,
+        opacity: 0.8,
+        dashArray: '10, 10',
+        lineCap: 'round'
+    }).addTo(mapa);
+
+    // Activar checkbox de rutas
+    document.getElementById('capaRutas').checked = true;
+
+    // Calcular tiempo estimado (a pie, 5 km/h promedio)
+    const tiempoMinutos = (distanciaMinima / 5000) * 60;
+    
+    // Mostrar información
+    const infoDiv = document.getElementById('infoSeleccionada');
+    infoDiv.innerHTML = `
+        <div class="alert alert-warning">
+            <h6 class="alert-heading">
+                <i class="bi bi-arrow-right-circle-fill"></i> Ruta de Evacuación
+            </h6>
+            <p class="mb-1"><strong>Destino:</strong> ${puntoMasCercano.nombre}</p>
+            <p class="mb-1"><strong>Distancia:</strong> ${distanciaMinima.toFixed(0)} metros</p>
+            <p class="mb-1"><strong>Tiempo estimado:</strong> ${tiempoMinutos.toFixed(0)} minutos (a pie)</p>
+            <p class="mb-0"><strong>Capacidad:</strong> ${puntoMasCercano.capacidad} personas</p>
+            <hr>
+            <p class="mb-0 small">
+                <i class="bi bi-info-circle"></i>
+                Sigue la línea naranja en el mapa para llegar al punto de encuentro más cercano.
+            </p>
+        </div>
+    `;
+
+    // Centrar mapa para ver toda la ruta
+    const bounds = L.latLngBounds([
+        miMarcador.getLatLng(),
+        [puntoMasCercano.latitud, puntoMasCercano.longitud]
+    ]);
+    mapa.fitBounds(bounds, { padding: [100, 100] });
+}
+
+function calcularRutaHaciaPunto(puntoId) {
+    if (!miMarcador) {
+        alert('📍 Primero necesitamos conocer tu ubicación actual.');
+        return;
+    }
+    
+    const punto = puntosEncuentroData.find(p => p.id === puntoId);
+    if (!punto) {
+        alert('❌ No se encontró el punto de encuentro seleccionado.');
+        return;
+    }
+    
+    // Limpiar ruta anterior
+    if (rutaActiva) {
+        mapa.removeLayer(rutaActiva);
+    }
+    
+    // Dibujar nueva ruta
+    rutaActiva = L.polyline([
+        miMarcador.getLatLng(),
+        [punto.latitud, punto.longitud]
+    ], {
+        color: '#4CAF50',
+        weight: 4,
+        opacity: 0.7,
+        dashArray: '15, 10'
+    }).addTo(mapa);
+    
+    // Calcular distancia
+    const distancia = mapa.distance(
+        miMarcador.getLatLng(),
+        [punto.latitud, punto.longitud]
+    );
+    
+    // Activar checkbox de rutas
+    document.getElementById('capaRutas').checked = true;
+    
+    // Mostrar información
+    document.getElementById('infoSeleccionada').innerHTML = `
+        <div class="alert alert-success">
+            <h6 class="alert-heading">
+                <i class="bi bi-signpost"></i> Ruta calculada
+            </h6>
+            <p class="mb-1"><strong>Destino:</strong> ${punto.nombre}</p>
+            <p class="mb-1"><strong>Distancia:</strong> ${distancia.toFixed(0)} metros</p>
+            <p class="mb-0"><strong>Capacidad:</strong> ${punto.capacidad} personas</p>
+        </div>
+    `;
+}
+
+function mostrarDetallesPunto(puntoId) {
+    const punto = puntosEncuentroData.find(p => p.id === puntoId);
+    if (!punto) return;
+    
+    document.getElementById('infoSeleccionada').innerHTML = `
+        <h6 class="text-success">
+            <i class="bi bi-signpost"></i> ${punto.nombre}
+        </h6>
+        <p class="mb-1"><strong>Capacidad:</strong> ${punto.capacidad} personas</p>
+        <p class="mb-1"><strong>Coordenadas:</strong> ${punto.latitud}, ${punto.longitud}</p>
+        <p class="mb-2"><strong>Descripción:</strong> ${punto.descripcion || 'Sin descripción'}</p>
+        <div class="d-grid gap-2">
+            <button class="btn btn-sm btn-success" onclick="calcularRutaHaciaPunto(${punto.id})">
+                <i class="bi bi-arrow-right-circle"></i> Calcular ruta desde mi ubicación
+            </button>
+            <button class="btn btn-sm btn-outline-primary" onclick="centrarMapaEnPunto(${punto.id})">
+                <i class="bi bi-geo-alt"></i> Centrar en este punto
+            </button>
+        </div>
+    `;
+}
+
+function centrarMapaEnPunto(puntoId) {
+    const punto = puntosEncuentroData.find(p => p.id === puntoId);
+    if (punto) {
+        mapa.setView([punto.latitud, punto.longitud], 18);
+    }
+}
+
+// ====================================================================
+// INICIALIZACIÓN COMPLETA
+// ====================================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Inicializar mapa
+    mapa = inicializarMapa();
+    
+    // 2. Inicializar geolocalización
+    inicializarGeolocalizacion();
+    
+    // 3. Cargar datos dinámicos
+    inicializarDatosDinamicos();
+    
+    // 4. Configurar controles
+    inicializarControles();
+    
+    // 5. Configurar eventos del mapa
+    mapa.on('click', function(e) {
+        document.getElementById('infoSeleccionada').innerHTML = `
+            <p class="text-muted mb-1">
+                <i class="bi bi-geo-alt"></i>
+                <strong>Coordenadas:</strong> ${e.latlng.lat.toFixed(6)}, ${e.latlng.lng.toFixed(6)}
+            </p>
+            <p class="mb-0 small text-muted">
+                <i class="bi bi-info-circle"></i>
+                Haz clic en un marcador para ver más información
+            </p>
+        `;
+    });
+    
+    console.log('✅ Mapa interactivo inicializado correctamente');
+    console.log(`📊 Puntos de encuentro: ${puntosEncuentroData.length}`);
+    console.log(`📊 Equipamiento: ${equipamientoData.length}`);
+});
+
+// ====================================================================
+// EVENTOS DE PANTALLA COMPLETA
+// ====================================================================
+
+document.addEventListener('fullscreenchange', function() {
+    const btnIcon = document.querySelector('#btnPantallaCompleta i');
+    if (document.fullscreenElement) {
+        btnIcon.className = 'bi bi-fullscreen-exit';
+    } else {
+        btnIcon.className = 'bi bi-arrows-fullscreen';
+    }
+});
+
 </script>
+
+<!-- Estilos adicionales -->
+<style>
+/* Animaciones */
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.pulse-animation {
+    animation: pulse 2s infinite;
+}
+
+/* Mejoras para el mapa */
+.leaflet-control-container .leaflet-top {
+    top: 70px;
+}
+
+.leaflet-control-zoom {
+    border: 2px solid rgba(0,0,0,0.1) !important;
+    border-radius: 8px !important;
+    overflow: hidden;
+}
+
+.leaflet-popup-content {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+}
+
+/* Leyenda mejorada */
+.leyenda-mapa {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Scroll personalizado para resultados de búsqueda */
+#resultadosBusqueda::-webkit-scrollbar {
+    width: 6px;
+}
+
+#resultadosBusqueda::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+#resultadosBusqueda::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+#resultadosBusqueda::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .leyenda-mapa {
+        bottom: 10px !important;
+        right: 10px !important;
+        padding: 8px !important;
+        font-size: 11px !important;
+    }
+    
+    .leyenda-color {
+        width: 12px !important;
+        height: 12px !important;
+    }
+}
+</style>
 {% endblock %}
