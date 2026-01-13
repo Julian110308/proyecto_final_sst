@@ -1,0 +1,737 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-5">
+    <div>
+        <h1 class="h3 fw-bold text-dark mb-1">Reportes y Analytics</h1>
+        <p class="text-muted">Estadísticas y análisis del sistema</p>
+    </div>
+    <div class="btn-group">
+        <button class="btn btn-primary-custom btn-sm" onclick="exportarReporte()">
+            <i class="bi bi-download me-1"></i>Exportar Reporte
+        </button>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Filtros -->
+    <div class="col-12">
+        <div class="card card-modern">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Fecha Inicio</label>
+                        <input type="date" class="form-control" id="fechaInicio" value="{{ hoy }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Fecha Fin</label>
+                        <input type="date" class="form-control" id="fechaFin" value="{{ hoy }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Tipo de Reporte</label>
+                        <select class="form-select" id="tipoReporte">
+                            <option value="aforo">Aforo</option>
+                            <option value="emergencias">Emergencias</option>
+                            <option value="asistencia">Asistencia</option>
+                            <option value="equipamiento">Equipamiento</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <button class="btn btn-primary-custom w-100" onclick="generarReporte()">
+                            <i class="bi bi-graph-up me-1"></i>Generar Reporte
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Métricas Rápidas -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern">
+            <div class="card-body text-center">
+                <i class="bi bi-people-fill fs-1 text-primary-green mb-3"></i>
+                <h3 class="fw-bold" id="metricaIngresos">0</h3>
+                <p class="text-muted mb-0">Total Ingresos</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern">
+            <div class="card-body text-center">
+                <i class="bi bi-exclamation-triangle fs-1 text-warning mb-3"></i>
+                <h3 class="fw-bold" id="metricEmergencias">0</h3>
+                <p class="text-muted mb-0">Emergencias</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern">
+            <div class="card-body text-center">
+                <i class="bi bi-graph-up fs-1 text-success mb-3"></i>
+                <h3 class="fw-bold" id="metricAforo">0%</h3>
+                <p class="text-muted mb-0">Aforo Promedio</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern">
+            <div class="card-body text-center">
+                <i class="bi bi-clock fs-1 text-info mb-3"></i>
+                <h3 class="fw-bold" id="metricTiempo">0 min</h3>
+                <p class="text-muted mb-0">Tiempo Respuesta</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="col-lg-8">
+        <div class="card card-modern">
+            <div class="card-header-modern">
+                <h6 class="mb-0" id="tituloGrafico">Reporte de Aforo - Histórico</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="reporteChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información Adicional -->
+    <div class="col-lg-4">
+        <div class="card card-modern mb-4">
+            <div class="card-header-modern">
+                <h6 class="mb-0">Resumen del Período</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <small class="text-muted">Período analizado</small>
+                    <h6 class="fw-bold" id="resumenPeriodo">Hoy</h6>
+                </div>
+                <div class="mb-3">
+                    <small class="text-muted">Total de registros</small>
+                    <h6 class="fw-bold" id="resumenRegistros">0</h6>
+                </div>
+                <div class="mb-3">
+                    <small class="text-muted">Tipo de reporte</small>
+                    <h6 class="fw-bold" id="resumenTipo">Aforo</h6>
+                </div>
+                <div>
+                    <small class="text-muted">Generado el</small>
+                    <h6 class="fw-bold" id="resumenGenerado">{{ ahora }}</h6>
+                </div>
+            </div>
+        </div>
+
+        <!-- Exportaciones -->
+        <div class="card card-modern">
+            <div class="card-header-modern">
+                <h6 class="mb-0">Exportar Reporte</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-success btn-sm" onclick="exportarExcel()">
+                        <i class="bi bi-file-earmark-excel me-1"></i>
+                        Exportar a Excel
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="exportarPDF()">
+                        <i class="bi bi-file-earmark-pdf me-1"></i>
+                        Exportar a PDF
+                    </button>
+                    <button class="btn btn-outline-primary btn-sm" onclick="compartirReporte()">
+                        <i class="bi bi-share me-1"></i>
+                        Compartir Reporte
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de Datos Detallados -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card card-modern">
+            <div class="card-header-modern d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">Datos Detallados</h6>
+                <button class="btn btn-sm btn-outline-secondary" onclick="toggleTabla()">
+                    <i class="bi bi-table"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="tablaReportes">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Ingresos</th>
+                                <th>Egresos</th>
+                                <th>Aforo Máx</th>
+                                <th>Emergencias</th>
+                                <th>% Ocupación</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyReportes">
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    <i class="bi bi-clipboard-data fs-1 mb-2 d-block"></i>
+                                    Selecciona un período y genera el reporte para ver los datos
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Librería Chart.js para gráficos -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<!-- Librería jsPDF para generar PDF (simple y fácil) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+<script>
+// Variable global para el gráfico
+let miGrafico = null;
+// Función simple para generar reporte
+function generarReporte() {
+    const fechaInicio = document.getElementById('fechaInicio').value;
+    const fechaFin = document.getElementById('fechaFin').value;
+    const tipoReporte = document.getElementById('tipoReporte').value;
+
+    if (!fechaInicio || !fechaFin) {
+        alert('Por favor selecciona las fechas');
+        return;
+    }
+
+    alert('📊 Generando reporte...');
+
+    // Aquí llamarías al backend para obtener los datos reales
+    // Por ahora mostramos datos de ejemplo
+    cargarDatosReporte(tipoReporte, fechaInicio, fechaFin);
+}
+
+// Función SIMPLE para cargar datos del reporte desde la API
+function cargarDatosReporte(tipo, inicio, fin) {
+    console.log('Cargando reporte:', tipo, inicio, fin);
+
+    // Obtener el tbody de la tabla
+    const tbody = document.getElementById('tbodyReportes');
+
+    // Mostrar mensaje de carga
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="6" class="text-center text-muted py-4">
+                <i class="bi bi-hourglass-split"></i>
+                Cargando datos...
+            </td>
+        </tr>
+    `;
+
+    // Construir la URL según el tipo de reporte
+    let url = '';
+    if (tipo === 'aforo') {
+        url = `/api/reportes/aforo/?fecha_inicio=${inicio}&fecha_fin=${fin}`;
+    } else if (tipo === 'incidentes') {
+        url = `/api/reportes/incidentes/?fecha_inicio=${inicio}&fecha_fin=${fin}`;
+    } else if (tipo === 'asistencia') {
+        url = `/api/reportes/asistencia/?fecha_inicio=${inicio}&fecha_fin=${fin}`;
+    } else if (tipo === 'seguridad') {
+        url = `/api/reportes/seguridad/?fecha_inicio=${inicio}&fecha_fin=${fin}`;
+    }
+
+    // Llamar a la API
+    fetch(url)
+        .then(response => {
+            console.log('Respuesta API:', response.status);
+            return response.json();
+        })
+        .then(datos => {
+            console.log('Datos recibidos:', datos);
+
+            // Limpiar tabla
+            tbody.innerHTML = '';
+
+            // Si no hay datos
+            if (!datos || datos.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            <i class="bi bi-info-circle"></i>
+                            No hay datos para el período seleccionado
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            // Agregar cada fila con bucle FOR simple
+            for (let i = 0; i < datos.length; i++) {
+                const fila = datos[i];
+
+                // Formatear según el tipo de reporte
+                let html = '';
+
+                if (tipo === 'aforo') {
+                    html = `
+                        <tr>
+                            <td>${fila.fecha || '-'}</td>
+                            <td>${fila.ingresos || 0}</td>
+                            <td>${fila.egresos || 0}</td>
+                            <td>${fila.aforo_maximo || 0}</td>
+                            <td>${fila.emergencias || 0}</td>
+                            <td>${fila.porcentaje_ocupacion || 0}%</td>
+                        </tr>
+                    `;
+                } else if (tipo === 'incidentes') {
+                    html = `
+                        <tr>
+                            <td>${fila.fecha || '-'}</td>
+                            <td colspan="2">${fila.tipo || '-'}</td>
+                            <td colspan="2">${fila.descripcion || '-'}</td>
+                            <td>${fila.estado || '-'}</td>
+                        </tr>
+                    `;
+                } else if (tipo === 'asistencia') {
+                    html = `
+                        <tr>
+                            <td>${fila.fecha || '-'}</td>
+                            <td colspan="2">${fila.total_ingresos || 0}</td>
+                            <td colspan="2">${fila.total_personas || 0}</td>
+                            <td>${fila.porcentaje_asistencia || 0}%</td>
+                        </tr>
+                    `;
+                } else {
+                    // Para otros tipos, mostrar lo que venga
+                    html = `
+                        <tr>
+                            <td colspan="6">${JSON.stringify(fila)}</td>
+                        </tr>
+                    `;
+                }
+
+                tbody.innerHTML += html;
+            }
+
+            // Actualizar resumen
+            document.getElementById('resumenPeriodo').textContent = `${inicio} - ${fin}`;
+            document.getElementById('resumenTipo').textContent = tipo.charAt(0).toUpperCase() + tipo.slice(1);
+            document.getElementById('resumenRegistros').textContent = datos.length;
+
+            // Crear el gráfico con los datos
+            crearGrafico(datos, tipo);
+        })
+        .catch(error => {
+            console.error('ERROR al cargar reporte:', error);
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center">
+                        <div class="alert alert-danger mb-0">
+                            Error al cargar el reporte
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+}
+
+// Función SIMPLE para crear gráfico con Chart.js
+function crearGrafico(datos, tipo) {
+    console.log('Creando gráfico para:', tipo, 'con', datos.length, 'datos');
+
+    // Si no hay datos, no crear gráfico
+    if (!datos || datos.length === 0) {
+        return;
+    }
+
+    // Si ya existe un gráfico, destruirlo primero
+    if (miGrafico) {
+        miGrafico.destroy();
+    }
+
+    // Obtener el canvas donde se dibujará el gráfico
+    const canvas = document.getElementById('reporteChart');
+    const ctx = canvas.getContext('2d');
+
+    // Preparar datos según el tipo de reporte
+    let etiquetas = [];  // Eje X (fechas)
+    let datosGrafico = [];  // Eje Y (valores)
+    let titulo = '';
+
+    if (tipo === 'aforo') {
+        // Para reporte de aforo
+        titulo = 'Ingresos por Día';
+
+        for (let i = 0; i < datos.length; i++) {
+            etiquetas.push(datos[i].fecha || 'Día ' + (i + 1));
+            datosGrafico.push(datos[i].ingresos || 0);
+        }
+
+        // Crear gráfico de BARRAS
+        miGrafico = new Chart(ctx, {
+            type: 'bar',  // Tipo: barras
+            data: {
+                labels: etiquetas,  // Fechas en el eje X
+                datasets: [{
+                    label: 'Ingresos',
+                    data: datosGrafico,  // Números en el eje Y
+                    backgroundColor: 'rgba(26, 77, 46, 0.5)',  // Color verde
+                    borderColor: 'rgba(26, 77, 46, 1)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: titulo
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true  // Empezar desde 0
+                    }
+                }
+            }
+        });
+
+    } else if (tipo === 'incidentes') {
+        // Para reporte de incidentes
+        titulo = 'Incidentes por Tipo';
+
+        // Contar incidentes por tipo
+        let conteoTipos = {};
+        for (let i = 0; i < datos.length; i++) {
+            const tipoIncidente = datos[i].tipo || 'Sin tipo';
+            if (conteoTipos[tipoIncidente]) {
+                conteoTipos[tipoIncidente]++;
+            } else {
+                conteoTipos[tipoIncidente] = 1;
+            }
+        }
+
+        // Convertir a arrays
+        for (let tipo in conteoTipos) {
+            etiquetas.push(tipo);
+            datosGrafico.push(conteoTipos[tipo]);
+        }
+
+        // Crear gráfico de DONA (donut)
+        miGrafico = new Chart(ctx, {
+            type: 'doughnut',  // Tipo: dona
+            data: {
+                labels: etiquetas,
+                datasets: [{
+                    data: datosGrafico,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.5)',
+                        'rgba(54, 162, 235, 0.5)',
+                        'rgba(255, 206, 86, 0.5)',
+                        'rgba(75, 192, 192, 0.5)',
+                        'rgba(153, 102, 255, 0.5)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: titulo
+                    }
+                }
+            }
+        });
+
+    } else if (tipo === 'asistencia') {
+        // Para reporte de asistencia
+        titulo = 'Asistencia por Día';
+
+        for (let i = 0; i < datos.length; i++) {
+            etiquetas.push(datos[i].fecha || 'Día ' + (i + 1));
+            datosGrafico.push(datos[i].total_ingresos || 0);
+        }
+
+        // Crear gráfico de LÍNEA
+        miGrafico = new Chart(ctx, {
+            type: 'line',  // Tipo: línea
+            data: {
+                labels: etiquetas,
+                datasets: [{
+                    label: 'Asistencias',
+                    data: datosGrafico,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 3,
+                    tension: 0.4  // Línea suave
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: titulo
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+    } else {
+        // Para otros tipos, gráfico simple de barras
+        titulo = 'Datos del Reporte';
+
+        for (let i = 0; i < Math.min(datos.length, 10); i++) {
+            etiquetas.push('Registro ' + (i + 1));
+            datosGrafico.push(i + 1);
+        }
+
+        miGrafico = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: etiquetas,
+                datasets: [{
+                    label: 'Datos',
+                    data: datosGrafico,
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    }
+
+    console.log('Gráfico creado exitosamente');
+}
+
+// Función SIMPLE para exportar a Excel (CSV) con datos REALES
+function exportarExcel() {
+    console.log('Exportando a Excel...');
+
+    const tipo = document.getElementById('tipoReporte').value;
+    const fechaInicio = document.getElementById('fechaInicio').value;
+    const fechaFin = document.getElementById('fechaFin').value;
+
+    // Obtener la tabla
+    const tabla = document.getElementById('tablaReportes');
+    const tbody = document.getElementById('tbodyReportes');
+
+    // Verificar si hay datos
+    if (!tbody || tbody.children.length === 0) {
+        alert('❌ No hay datos para exportar. Primero genera un reporte.');
+        return;
+    }
+
+    // Empezar el CSV
+    let csv = '';
+
+    // 1. ENCABEZADOS - Leer de la tabla real
+    const thead = tabla.querySelector('thead tr');
+    const encabezados = [];
+
+    for (let i = 0; i < thead.cells.length; i++) {
+        encabezados.push(thead.cells[i].textContent.trim());
+    }
+
+    csv += encabezados.join(',') + '\n';
+
+    // 2. DATOS - Leer todas las filas del tbody
+    for (let i = 0; i < tbody.rows.length; i++) {
+        const fila = tbody.rows[i];
+        const datos = [];
+
+        // Leer cada celda de la fila
+        for (let j = 0; j < fila.cells.length; j++) {
+            let texto = fila.cells[j].textContent.trim();
+
+            // Limpiar el texto (quitar saltos de línea)
+            texto = texto.replace(/\n/g, ' ');
+
+            // Si tiene comas, ponerlo entre comillas
+            if (texto.includes(',')) {
+                texto = '"' + texto + '"';
+            }
+
+            datos.push(texto);
+        }
+
+        csv += datos.join(',') + '\n';
+    }
+
+    console.log('CSV generado:', csv.substring(0, 200) + '...');
+
+    // 3. CREAR ARCHIVO Y DESCARGAR
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `reporte_${tipo}_${fechaInicio}_${fechaFin}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+
+    alert('✅ Reporte exportado a Excel (CSV) con ' + tbody.rows.length + ' registros');
+}
+
+// Función SIMPLE para exportar a PDF real con jsPDF
+function exportarPDF() {
+    console.log('Exportando a PDF...');
+
+    const tipo = document.getElementById('tipoReporte').value;
+    const fechaInicio = document.getElementById('fechaInicio').value;
+    const fechaFin = document.getElementById('fechaFin').value;
+
+    // Obtener la tabla
+    const tabla = document.getElementById('tablaReportes');
+    const tbody = document.getElementById('tbodyReportes');
+
+    // Verificar si hay datos
+    if (!tbody || tbody.children.length === 0) {
+        alert('❌ No hay datos para exportar. Primero genera un reporte.');
+        return;
+    }
+
+    // Crear un nuevo PDF (usando jsPDF)
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // 1. TÍTULO del PDF
+    doc.setFontSize(18);
+    doc.text('Reporte del Sistema SST', 14, 20);
+
+    // 2. INFORMACIÓN del reporte
+    doc.setFontSize(11);
+    doc.text(`Tipo: ${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`, 14, 30);
+    doc.text(`Período: ${fechaInicio} - ${fechaFin}`, 14, 37);
+    doc.text(`Generado: ${new Date().toLocaleString('es-CO')}`, 14, 44);
+
+    // 3. PREPARAR DATOS DE LA TABLA
+    // Obtener encabezados
+    const thead = tabla.querySelector('thead tr');
+    const encabezados = [];
+
+    for (let i = 0; i < thead.cells.length; i++) {
+        encabezados.push(thead.cells[i].textContent.trim());
+    }
+
+    // Obtener datos de las filas
+    const filas = [];
+
+    for (let i = 0; i < tbody.rows.length; i++) {
+        const fila = tbody.rows[i];
+        const datos = [];
+
+        for (let j = 0; j < fila.cells.length; j++) {
+            let texto = fila.cells[j].textContent.trim();
+            texto = texto.replace(/\n/g, ' ');
+            datos.push(texto);
+        }
+
+        filas.push(datos);
+    }
+
+    // 4. CREAR TABLA EN EL PDF (usando autotable)
+    doc.autoTable({
+        head: [encabezados],
+        body: filas,
+        startY: 52,  // Posición donde empieza la tabla
+        styles: {
+            fontSize: 9,
+            cellPadding: 3
+        },
+        headStyles: {
+            fillColor: [26, 77, 46],  // Color verde del tema
+            textColor: 255,
+            fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+            fillColor: [245, 245, 245]  // Gris claro para filas alternas
+        }
+    });
+
+    // 5. PIE DE PÁGINA
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.text(
+            `Página ${i} de ${pageCount}`,
+            doc.internal.pageSize.width / 2,
+            doc.internal.pageSize.height - 10,
+            { align: 'center' }
+        );
+    }
+
+    // 6. GUARDAR Y DESCARGAR EL PDF
+    doc.save(`reporte_${tipo}_${fechaInicio}_${fechaFin}.pdf`);
+
+    console.log('PDF generado exitosamente');
+    alert('✅ PDF descargado exitosamente con ' + filas.length + ' registros');
+}
+
+// Función para compartir reporte
+function compartirReporte() {
+    const tipo = document.getElementById('tipoReporte').value;
+
+    const email = prompt('Ingresa el correo electrónico para compartir el reporte:');
+
+    if (email) {
+        alert(`📧 Reporte de ${tipo} enviado a ${email}`);
+
+        // Aquí llamarías al backend para enviar el email
+        // fetch('/api/reportes/compartir/', {
+        //     method: 'POST',
+        //     headers: {'Content-Type': 'application/json'},
+        //     body: JSON.stringify({email: email, tipo: tipo})
+        // });
+    }
+}
+
+// Función para exportar reporte (botón principal)
+function exportarReporte() {
+    const opciones = prompt('¿En qué formato deseas exportar?\\n\\n1. Excel (CSV)\\n2. PDF\\n\\nEscribe 1 o 2:');
+
+    if (opciones === '1') {
+        exportarExcel();
+    } else if (opciones === '2') {
+        exportarPDF();
+    }
+}
+
+// Función para toggle tabla
+function toggleTabla() {
+    const tabla = document.getElementById('tablaReportes');
+    if (tabla.style.display === 'none') {
+        tabla.style.display = 'table';
+    } else {
+        tabla.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

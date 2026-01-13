@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Header Mejorado -->
+<div class="d-flex justify-content-between align-items-center mb-5">
+    <div>
+        <h1 class="h3 fw-bold text-dark mb-1">Dashboard Principal</h1>
+        <p class="text-muted">Resumen en tiempo real del Centro Minero</p>
+    </div>
+    <div class="btn-group">
+        <button class="btn btn-outline-secondary btn-sm active">Hoy</button>
+        <button class="btn btn-outline-secondary btn-sm">Semana</button>
+        <button class="btn btn-outline-secondary btn-sm">Mes</button>
+    </div>
+</div>
+
+<!-- Grid de Métricas Mejorado -->
+<div class="row g-4 mb-5">
+    <!-- Personas en Centro -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Personas en Centro</h6>
+                        <h3 class="fw-bold text-dark mb-0">0</h3>
+                        <small class="text-success">
+                            <i class="bi bi-arrow-up-short"></i>
+                            <span>0%</span> vs ayer
+                        </small>
+                    </div>
+                    <div class="bg-light-green rounded-3 p-3">
+                        <i class="bi bi-people-fill fs-2 text-primary-green"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ingresos Hoy -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Ingresos Hoy</h6>
+                        <h3 class="fw-bold text-dark mb-0">0</h3>
+                        <small class="text-success">
+                            <i class="bi bi-arrow-up-short"></i>
+                            <span>0%</span> promedio
+                        </small>
+                    </div>
+                    <div class="bg-light-green rounded-3 p-3">
+                        <i class="bi bi-door-open fs-2 text-accent-green"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Emergencias Activas -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Emergencias Activas</h6>
+                        <h3 class="fw-bold text-dark mb-0">0</h3>
+                        <small class="text-success">Todo normal</small>
+                    </div>
+                    <div class="bg-light-warning rounded-3 p-3">
+                        <i class="bi bi-exclamation-triangle fs-2 text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Capacidad del Centro -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Capacidad del Centro</h6>
+                        <h3 class="fw-bold text-dark mb-0">0%</h3>
+                        <div class="progress progress-modern mt-2">
+                            <div class="progress-bar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="bg-light-green rounded-3 p-3">
+                        <i class="bi bi-building fs-2 text-secondary-green"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sección de Gráficos Mejorada -->
+<div class="row g-4">
+    <!-- Gráfico Principal -->
+    <div class="col-lg-8">
+        <div class="card card-modern">
+            <div class="card-header-modern">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Actividad en Tiempo Real</h6>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                            Últimas 24h
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#">Últimas 24h</a></li>
+                            <li><a class="dropdown-item" href="#">Última semana</a></li>
+                            <li><a class="dropdown-item" href="#">Último mes</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="actividadChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mapa y Alertas -->
+    <div class="col-lg-4">
+        <!-- Mapa Mini -->
+        <div class="card card-modern mb-4">
+            <div class="card-header-modern">
+                <h6 class="mb-0">Mapa del Centro</h6>
+            </div>
+            <div class="card-body p-0">
+                <div id="miniMap" style="height: 200px; border-radius: 0 0 12px 12px;"></div>
+            </div>
+        </div>
+
+        <!-- Alertas Rápidas -->
+        <div class="card card-modern">
+            <div class="card-header-modern">
+                <h6 class="mb-0">Alertas Recientes</h6>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <strong>Sistema estable</strong> - Todo funcionando normalmente
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Aforo al 85%</strong> - Se acerca capacidad máxima
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Últimas Emergencias Mejorado -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card card-modern">
+            <div class="card-header-modern d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">Últimas Emergencias Reportadas</h6>
+                <a href="/emergencias/" class="btn btn-sm btn-primary-custom">Ver Todas</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Ubicación</th>
+                                <th>Reportado por</th>
+                                <th>Estado</th>
+                                <th>Tiempo</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    <i class="bi bi-check-circle fs-1 mb-2 d-block text-success"></i>
+                                    No hay emergencias reportadas
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
