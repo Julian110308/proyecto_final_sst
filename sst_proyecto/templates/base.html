@@ -170,7 +170,7 @@
                 <i class="bi bi-list"></i>
             </button>
             
-            <a class="navbar-brand text-white fw-bold" href="/">
+            <a class="navbar-brand text-white fw-bold" href="{% url 'dashboard' %}">
                 <i class="bi bi-shield-check me-2"></i>
                 SENA SST - Centro Minero
             </a>
@@ -243,7 +243,7 @@
                 <ul class="nav flex-column">
                 <!-- Dashboard - Todos los roles -->
                 <li class="nav-item mb-2">
-                    <a class="nav-link active" href="/">
+                    <a class="nav-link active" href="{% url 'dashboard' %}">
                         <i class="bi bi-speedometer2 me-2"></i>Dashboard
                     </a>
                 </li>
@@ -400,25 +400,25 @@
                         </a>
                     </li>
 
-                <!-- OPCIONES PARA APRENDIZ -->
+                <!-- OPCIONES PARA APRENDIZ - ✅ CORREGIDO CON URLs FUNCIONALES -->
                 {% elif user.rol == 'APRENDIZ' %}
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="{% url 'mi_horario' %}">
                             <i class="bi bi-calendar-check me-2"></i>Mi Horario
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="{% url 'mi_asistencia' %}">
                             <i class="bi bi-clock-history me-2"></i>Mi Asistencia
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="{% url 'informacion_sst' %}">
                             <i class="bi bi-info-circle me-2"></i>Información SST
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="{% url 'mis_alertas' %}">
                             <i class="bi bi-bell me-2"></i>Mis Alertas
                         </a>
                     </li>
@@ -492,10 +492,10 @@
                             <i class="bi bi-tools me-1"></i>Verificar Equipos
                         </button>
                     {% elif user.rol == 'APRENDIZ' %}
-                        <button class="btn btn-sm btn-outline-danger">
+                        <button class="btn btn-sm btn-outline-danger" onclick="window.location.href='/reportes/incidentes/'">
                             <i class="bi bi-exclamation-triangle me-1"></i>Reportar Incidente
                         </button>
-                        <button class="btn btn-sm btn-outline-info">
+                        <button class="btn btn-sm btn-outline-info" onclick="mostrarQR()">
                             <i class="bi bi-qr-code me-1"></i>Mi Código QR
                         </button>
                     {% endif %}
@@ -510,7 +510,7 @@
         <!-- Breadcrumb -->
         <nav aria-label="breadcrumb" class="mb-4">
             <ol class="breadcrumb bg-white p-3 rounded shadow-sm">
-                <li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door"></i></a></li>
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}"><i class="bi bi-house-door"></i></a></li>
                 {% block breadcrumb %}{% endblock %}
             </ol>
         </nav>
@@ -629,6 +629,11 @@
                 bsAlert.close();
             });
         }, 5000);
+        
+        // Función para mostrar QR (aprendiz)
+        function mostrarQR() {
+            alert('Tu código QR para acceso está disponible en tu dashboard.\nPuedes descargarlo desde la tarjeta "Mi Código QR".');
+        }
     </script>
     
     {% block extra_js %}{% endblock %}

@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Información SST - Sistema SST{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+<li class="breadcrumb-item active">Información SST</li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-4">
+        <div class="card card-modern mb-4">
+            <div class="card-header-modern bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Emergencias
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6>Números de Emergencia</h6>
+                <ul class="list-unstyled">
+                    <li class="mb-2"><strong>Bomberos:</strong> 119</li>
+                    <li class="mb-2"><strong>Policía:</strong> 123</li>
+                    <li class="mb-2"><strong>Ambulancia:</strong> 132</li>
+                    <li class="mb-2"><strong>Vigilancia SENA:</strong> Ext. 100</li>
+                </ul>
+                <h6 class="mt-4">Procedimientos</h6>
+                <ul>
+                    <li>Conservar la calma</li>
+                    <li>Seguir rutas de evacuación</li>
+                    <li>Acudir a puntos de encuentro</li>
+                    <li>No usar ascensores</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card card-modern mb-4">
+            <div class="card-header-modern bg-warning">
+                <h5 class="mb-0">
+                    <i class="bi bi-shield-check me-2"></i>
+                    Equipos de Protección
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6>EPP Obligatorio</h6>
+                <div class="row g-2 mb-3">
+                    <div class="col-6 text-center">
+                        <i class="bi bi-hat-cowboy fs-1 text-primary"></i>
+                        <p class="small mb-0">Casco</p>
+                    </div>
+                    <div class="col-6 text-center">
+                        <i class="bi bi-earbuds fs-1 text-primary"></i>
+                        <p class="small mb-0">Auditivos</p>
+                    </div>
+                    <div class="col-6 text-center">
+                        <i class="bi bi-glasses fs-1 text-primary"></i>
+                        <p class="small mb-0">Gafas</p>
+                    </div>
+                    <div class="col-6 text-center">
+                        <i class="bi bi-hand-index-thumb fs-1 text-primary"></i>
+                        <p class="small mb-0">Guantes</p>
+                    </div>
+                </div>
+                <h6>Normas de Uso</h6>
+                <ul class="small">
+                    <li>Verificar estado antes de usar</li>
+                    <li>Usar correctamente ajustado</li>
+                    <li>Reportar daños inmediatamente</li>
+                    <li>Limpieza y almacenamiento adecuado</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card card-modern mb-4">
+            <div class="card-header-modern bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-file-text me-2"></i>
+                    Documentación
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6>Documentos Importantes</h6>
+                <div class="list-group list-group-flush">
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <i class="bi bi-file-pdf text-danger me-2"></i>
+                        Manual de Seguridad
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <i class="bi bi-file-pdf text-danger me-2"></i>
+                        Protocolos de Emergencia
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <i class="bi bi-file-pdf text-danger me-2"></i>
+                        Reglamento Interno
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <i class="bi bi-file-pdf text-danger me-2"></i>
+                        Uso de Equipos
+                    </a>
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-sm btn-outline-primary w-100">
+                        <i class="bi bi-download me-1"></i>Descargar Todos
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

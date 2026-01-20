@@ -119,6 +119,77 @@ def dashboard_view(request):
 
     return render(request, template, context)
 
+# ==============================================
+# VISTAS ESPECÍFICAS PARA APRENDIZ
+# ==============================================
+
+@login_required
+@rol_requerido('APRENDIZ')
+def mi_horario_view(request):
+    """
+    Vista del horario del aprendiz
+    """
+    return render(request, 'dashboard/aprendiz/mi_horario.html')
+
+@login_required
+@rol_requerido('APRENDIZ')
+def mi_asistencia_view(request):
+    """
+    Vista de asistencia del aprendiz
+    """
+    # Aquí puedes agregar lógica para obtener datos reales de asistencia
+    from control_acceso.models import RegistroAcceso
+    from django.utils import timezone
+    from datetime import timedelta
+    
+    usuario = request.user
+    hoy = timezone.now().date()
+    
+    # Obtener registros de este mes
+    inicio_mes = hoy.replace(day=1)
+    registros_mes = RegistroAcceso.objects.filter(
+        usuario=usuario,
+        tipo='INGRESO',
+        fecha_hora_ingreso__gte=inicio_mes
+    ).order_by('-fecha_hora_ingreso')
+    
+    context = {
+        'usuario': usuario,
+        'registros_mes': registros_mes,
+        'dias_asistidos': registros_mes.count(),
+        'total_dias_mes': hoy.day,
+    }
+    
+    return render(request, 'dashboard/aprendiz/mi_asistencia.html', context)
+
+@login_required
+@rol_requerido('APRENDIZ')
+def informacion_sst_view(request):
+    """
+    Vista de información SST para el aprendiz
+    """
+    return render(request, 'dashboard/aprendiz/informacion_sst.html')
+
+@login_required
+@rol_requerido('APRENDIZ')
+def mis_alertas_view(request):
+    """
+    Vista de alertas del aprendiz
+    """
+    return render(request, 'dashboard/aprendiz/mis_alertas.html')
+
+@login_required
+@rol_requerido('APRENDIZ')
+def mis_reportes_view(request):
+    """
+    Vista de reportes del aprendiz
+    """
+    return render(request, '/aprendiz/mis_reportes.html')
+
+# ==============================================
+# FIN VISTAS PARA APRENDIZ
+# ==============================================
+
 # Vistas para usuarios autenticados (usan base.html)
 @rol_requerido('ADMINISTRATIVO', 'VIGILANCIA', 'INSTRUCTOR')
 def control_acceso_view(request):
@@ -199,6 +270,16 @@ urlpatterns = [
     path('acceso/', control_acceso_view, name='control_acceso'),
     path('mapas/', mapas_view, name='mapas'),
     path('emergencias/', emergencias_view, name='emergencias'),
+
+    # ==============================================
+    # URLs ESPECÍFICAS PARA APRENDIZ
+    # ==============================================
+    path('aprendiz/horario/', mi_horario_view, name='mi_horario'),
+    path('aprendiz/asistencia/', mi_asistencia_view, name='mi_asistencia'),
+    path('aprendiz/informacion-sst/', informacion_sst_view, name='informacion_sst'),
+    path('aprendiz/alertas/', mis_alertas_view, name='mis_alertas'),
+    path('aprendiz/mis-reportes/', mis_reportes_view, name='mis_reportes'),
+    # ==============================================
 
     # APIs REST (para operaciones AJAX/fetch desde el frontend)
     path('api/auth/', include('usuarios.urls')),

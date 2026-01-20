@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mi Horario - Sistema SST{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+<li class="breadcrumb-item active">Mi Horario</li>
+{% endblock %}
+
+{% block content %}
+<div class="card card-modern">
+    <div class="card-header-modern">
+        <h5 class="mb-0">
+            <i class="bi bi-calendar-week me-2"></i>
+            Mi Horario Semanal
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>
+            Este es tu horario asignado para la formación. Asegúrate de cumplir con los horarios establecidos.
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Día</th>
+                        <th>Hora</th>
+                        <th>Materia/Actividad</th>
+                        <th>Instructor</th>
+                        <th>Aula/Ambiente</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Lunes</strong></td>
+                        <td>7:00 AM - 12:00 PM</td>
+                        <td>Seguridad Industrial Básica</td>
+                        <td>Carlos Rodríguez</td>
+                        <td>Aula 101</td>
+                        <td><span class="badge bg-success">Activo</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Martes</strong></td>
+                        <td>7:00 AM - 12:00 PM</td>
+                        <td>Operación de Equipos Mineros</td>
+                        <td>María González</td>
+                        <td>Taller 3</td>
+                        <td><span class="badge bg-success">Activo</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Miércoles</strong></td>
+                        <td>7:00 AM - 12:00 PM</td>
+                        <td>Primeros Auxilios en Minería</td>
+                        <td>Ana Martínez</td>
+                        <td>Aula 102</td>
+                        <td><span class="badge bg-success">Activo</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Jueves</strong></td>
+                        <td>7:00 AM - 12:00 PM</td>
+                        <td>Prevención de Riesgos</td>
+                        <td>Juan Pérez</td>
+                        <td>Laboratorio 2</td>
+                        <td><span class="badge bg-success">Activo</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Viernes</strong></td>
+                        <td>7:00 AM - 12:00 PM</td>
+                        <td>Prácticas de Campo</td>
+                        <td>Carlos Rodríguez</td>
+                        <td>Campo Minero</td>
+                        <td><span class="badge bg-success">Activo</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
