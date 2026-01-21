@@ -1,164 +1,107 @@
 {% extends 'base.html' %}
 
-{% block title %}Reportes de Incidentes - Sistema SST{% endblock %}
+{% block title %}Gestión de Incidentes - Sistema SST{% endblock %}
 
 {% block breadcrumb %}
-<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{% url 'reportes_general' %}">Reportes</a></li>
 <li class="breadcrumb-item active">Incidentes</li>
 {% endblock %}
 
 {% block content %}
-<!-- Header -->
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="h3 fw-bold text-dark mb-1">
-            <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
-            Reportes de Incidentes
-        </h1>
-        <p class="text-muted mb-0">Gestión de incidentes y condiciones inseguras</p>
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-primary-green fw-bold mb-0">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>Reporte de Incidentes
+            </h2>
+            <p class="text-muted">Seguimiento y gestión de eventos de seguridad.</p>
+        </div>
+        <a href="{% url 'crear_incidente' %}" class="btn btn-danger">
+            <i class="bi bi-plus-lg me-2"></i>Reportar Nuevo
+        </a>
     </div>
-    <a href="{% url 'crear_incidente' %}" class="btn btn-danger">
-        <i class="bi bi-plus-circle me-1"></i>
-        Reportar Incidente
-    </a>
-</div>
 
-<!-- Tarjetas de Resumen -->
-<div class="row g-4 mb-4">
-    <div class="col-md-3">
-        <div class="card border-start border-4 border-primary">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1">Total Incidentes</h6>
-                        <h3 class="fw-bold mb-0">{{ total }}</h3>
-                    </div>
-                    <i class="bi bi-list-ul fs-2 text-primary"></i>
+    <!-- Tarjetas de Estado -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body text-center">
+                    <h1>{{ total }}</h1>
+                    <small>Total Incidentes</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white h-100">
+                <div class="card-body text-center">
+                    <h1>{{ reportados }}</h1>
+                    <small>Pendientes</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark h-100">
+                <div class="card-body text-center">
+                    <h1>{{ en_proceso }}</h1>
+                    <small>En Proceso</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body text-center">
+                    <h1>{{ resueltos }}</h1>
+                    <small>Resueltos</small>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="col-md-3">
-        <div class="card border-start border-4 border-warning">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1">Reportados</h6>
-                        <h3 class="fw-bold mb-0">{{ reportados }}</h3>
-                    </div>
-                    <i class="bi bi-exclamation-circle fs-2 text-warning"></i>
-                </div>
+    <!-- Tabla de Incidentes -->
+    <div class="card card-modern">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">ID</th>
+                            <th>Título / Descripción</th>
+                            <th>Gravedad</th>
+                            <th>Estado</th>
+                            <th>Fecha Reporte</th>
+                            <th>Reportado Por</th>
+                            <th class="text-end pe-4">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for incidente in incidentes %}
+                        <tr>
+                            <td class="ps-4 fw-bold">#{{ incidente.id }}</td>
+                            <td>
+                                <div class="fw-bold">{{ incidente.titulo }}</div>
+                                <small class="text-muted text-truncate d-block" style="max-width: 250px;">{{ incidente.descripcion }}</small>
+                            </td>
+                            <td>
+                                <span class="badge {% if incidente.gravedad == 'CRITICA' %}bg-danger{% elif incidente.gravedad == 'ALTA' %}bg-warning text-dark{% else %}bg-info{% endif %}">
+                                    {{ incidente.gravedad }}
+                                </span>
+                            </td>
+                            <td><span class="badge bg-secondary">{{ incidente.estado }}</span></td>
+                            <td>{{ incidente.fecha_reporte|date:"d/m/Y H:i" }}</td>
+                            <td>{{ incidente.reportado_por.get_full_name }}</td>
+                            <td class="text-end pe-4">
+                                <a href="{% url 'detalle_incidente' incidente.id %}" class="btn btn-sm btn-outline-primary" title="Ver Detalle"><i class="bi bi-eye"></i></a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">No hay incidentes registrados.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
-    </div>
-
-    <div class="col-md-3">
-        <div class="card border-start border-4 border-info">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1">En Proceso</h6>
-                        <h3 class="fw-bold mb-0">{{ en_proceso }}</h3>
-                    </div>
-                    <i class="bi bi-gear fs-2 text-info"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-3">
-        <div class="card border-start border-4 border-success">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-1">Resueltos</h6>
-                        <h3 class="fw-bold mb-0">{{ resueltos }}</h3>
-                    </div>
-                    <i class="bi bi-check-circle fs-2 text-success"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Tabla de Incidentes -->
-<div class="card">
-    <div class="card-header">
-        <h5 class="mb-0">
-            <i class="bi bi-table me-2"></i>
-            Lista de Incidentes
-        </h5>
-    </div>
-    <div class="card-body">
-        {% if incidentes %}
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>Título</th>
-                        <th>Tipo</th>
-                        <th>Gravedad</th>
-                        <th>Estado</th>
-                        <th>Reportado Por</th>
-                        <th>Fecha</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for incidente in incidentes %}
-                    <tr>
-                        <td>
-                            <strong>{{ incidente.titulo }}</strong>
-                            {% if incidente.ubicacion %}
-                            <br><small class="text-muted"><i class="bi bi-geo-alt"></i> {{ incidente.ubicacion }}</small>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <span class="badge bg-secondary">{{ incidente.get_tipo_display }}</span>
-                        </td>
-                        <td>
-                            {% if incidente.gravedad == 'CRITICA' %}
-                            <span class="badge bg-danger">Crítica</span>
-                            {% elif incidente.gravedad == 'ALTA' %}
-                            <span class="badge bg-warning">Alta</span>
-                            {% elif incidente.gravedad == 'MEDIA' %}
-                            <span class="badge bg-info">Media</span>
-                            {% else %}
-                            <span class="badge bg-secondary">Baja</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if incidente.estado == 'REPORTADO' %}
-                            <span class="badge bg-warning">{{ incidente.get_estado_display }}</span>
-                            {% elif incidente.estado == 'EN_REVISION' or incidente.estado == 'EN_PROCESO' %}
-                            <span class="badge bg-info">{{ incidente.get_estado_display }}</span>
-                            {% else %}
-                            <span class="badge bg-success">{{ incidente.get_estado_display }}</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ incidente.reportado_por.get_full_name|default:incidente.reportado_por.username }}</td>
-                        <td>{{ incidente.fecha_reporte|date:"d/m/Y H:i" }}</td>
-                        <td>
-                            <a href="{% url 'detalle_incidente' incidente.pk %}" class="btn btn-sm btn-primary">
-                                <i class="bi bi-eye"></i> Ver
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <div class="text-center py-5">
-            <i class="bi bi-inbox fs-1 text-muted"></i>
-            <p class="text-muted mt-3">No hay incidentes reportados</p>
-            <a href="{% url 'crear_incidente' %}" class="btn btn-danger">
-                <i class="bi bi-plus-circle me-1"></i>
-                Reportar Primer Incidente
-            </a>
-        </div>
-        {% endif %}
     </div>
 </div>
 {% endblock %}

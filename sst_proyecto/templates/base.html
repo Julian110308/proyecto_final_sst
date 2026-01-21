@@ -276,12 +276,12 @@
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="{% url 'gestion_usuarios' %}">
                             <i class="bi bi-people me-2"></i>Gestión Usuarios
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="{% url 'configuracion_sistema' %}">
                             <i class="bi bi-gear me-2"></i>Configuración
                         </a>
                     </li>
@@ -289,12 +289,12 @@
                 <!-- OPCIONES PARA INSTRUCTOR -->
                 {% elif user.rol == 'INSTRUCTOR' %}
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="{% url 'mis_aprendices' %}">
                             <i class="bi bi-people me-2"></i>Mis Aprendices
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="/acceso/">
+                        <a class="nav-link" href="{% url 'registrar_asistencia' %}">
                             <i class="bi bi-person-check me-2"></i>Registrar Asistencia
                         </a>
                     </li>
@@ -318,11 +318,6 @@
                             <i class="bi bi-exclamation-triangle me-2"></i>Incidentes
                         </a>
                     </li>
-                    <li class="nav-item mb-2">
-                        <a class="nav-link" href="#">
-                            <i class="bi bi-person-badge me-2"></i>Visitantes
-                        </a>
-                    </li>
 
                 <!-- OPCIONES PARA VIGILANCIA -->
                 {% elif user.rol == 'VIGILANCIA' %}
@@ -332,7 +327,7 @@
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="{% url 'gestion_visitantes' %}">
                             <i class="bi bi-person-badge me-2"></i>Gestionar Visitantes
                         </a>
                     </li>
@@ -343,7 +338,7 @@
                     </li>
                     <li class="nav-item mb-2">
                         <a class="nav-link" href="/emergencias/">
-                            <i class="bi bi-exclamation-triangle me-2"></i>Alertas
+                            <i class="bi bi-exclamation-triangle me-2"></i>Gestión de Emergencias
                         </a>
                     </li>
                     <li class="nav-item mb-2">
@@ -352,12 +347,12 @@
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="/reportes/">
+                        <a class="nav-link" href="{% url 'reportes_general' %}">
                             <i class="bi bi-file-text me-2"></i>Reportes
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="/reportes/incidentes/">
+                        <a class="nav-link" href="{% url 'listar_incidentes' %}">
                             <i class="bi bi-exclamation-triangle me-2"></i>Incidentes
                         </a>
                     </li>
@@ -375,27 +370,27 @@
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="{% url 'equipos_brigada' %}">
                             <i class="bi bi-tools me-2"></i>Equipos
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="{% url 'mi_brigada' %}">
                             <i class="bi bi-people me-2"></i>Mi Brigada
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="/reportes/">
+                    <a class="nav-link" href="{% url 'reportes_general' %}">
                             <i class="bi bi-file-medical me-2"></i>Reportes
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="/reportes/incidentes/">
+                    <a class="nav-link" href="{% url 'listar_incidentes' %}">
                             <i class="bi bi-exclamation-triangle me-2"></i>Incidentes
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="{% url 'capacitaciones_brigada' %}">
                             <i class="bi bi-book me-2"></i>Capacitaciones
                         </a>
                     </li>

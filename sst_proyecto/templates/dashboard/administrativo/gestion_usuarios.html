@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestión de Usuarios - Sistema SST{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Gestión de Usuarios</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-primary-green fw-bold mb-0">
+                <i class="bi bi-people-fill me-2"></i>Directorio de Usuarios
+            </h2>
+            <p class="text-muted">Administración de cuentas y roles del sistema</p>
+        </div>
+        <button class="btn btn-success">
+            <i class="bi bi-person-plus-fill me-2"></i>Nuevo Usuario
+        </button>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card card-modern mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" id="buscadorUsuario" placeholder="Buscar por nombre, documento o correo...">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="filtroRol">
+                        <option value="">Todos los Roles</option>
+                        <option value="APRENDIZ">Aprendiz</option>
+                        <option value="INSTRUCTOR">Instructor</option>
+                        <option value="ADMINISTRATIVO">Administrativo</option>
+                        <option value="VIGILANCIA">Vigilancia</option>
+                        <option value="BRIGADA">Brigada</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="filtroEstado">
+                        <option value="">Todos los Estados</option>
+                        <option value="Activo">Activo</option>
+                        <option value="Inactivo">Inactivo</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="card card-modern">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="tablaUsuarios">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Usuario</th>
+                            <th>Rol</th>
+                            <th>Documento</th>
+                            <th>Estado</th>
+                            <th>Registro</th>
+                            <th class="text-end pe-4">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for usuario in usuarios %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-initials bg-light rounded-circle p-2 me-3 fw-bold text-primary-green border">
+                                        {{ usuario.first_name|slice:":1" }}{{ usuario.last_name|slice:":1" }}
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold">{{ usuario.get_full_name }}</div>
+                                        <small class="text-muted">{{ usuario.email }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge rounded-pill 
+                                    {% if usuario.rol == 'ADMINISTRATIVO' %}bg-danger
+                                    {% elif usuario.rol == 'INSTRUCTOR' %}bg-primary
+                                    {% elif usuario.rol == 'VIGILANCIA' %}bg-warning text-dark
+                                    {% elif usuario.rol == 'BRIGADA' %}bg-info text-dark
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ usuario.get_rol_display }}
+                                </span>
+                            </td>
+                            <td>{{ usuario.numero_documento }}</td>
+                            <td>
+                                {% if usuario.activo %}
+                                    <span class="badge bg-success-subtle text-success border border-success">Activo</span>
+                                {% else %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger">Inactivo</span>
+                                {% endif %}
+                            </td>
+                            <td><small class="text-muted">{{ usuario.fecha_registro|date:"d/m/Y" }}</small></td>
+                            <td class="text-end pe-4">
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-secondary" title="Editar"><i class="bi bi-pencil"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger" title="Desactivar"><i class="bi bi-slash-circle"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="bi bi-people fs-1 d-block mb-2"></i>
+                                No hay usuarios registrados en el sistema.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

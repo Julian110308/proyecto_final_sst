@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}Capacitaciones - Brigada SST{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Brigada</a></li>
+<li class="breadcrumb-item active">Capacitaciones</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="text-primary-green fw-bold mb-4">
+        <i class="bi bi-book-half me-2"></i>Programa de Capacitación para Brigadistas
+    </h2>
+
+    <div class="row g-4">
+        <!-- Capacitaciones Disponibles -->
+        <div class="col-lg-7">
+            <div class="card card-modern h-100">
+                <div class="card-header-modern">
+                    <h5 class="mb-0"><i class="bi bi-calendar-event me-2"></i>Próximas Capacitaciones</h5>
+                </div>
+                <div class="card-body">
+                    {% for cap in capacitaciones_disponibles %}
+                    <div class="d-flex align-items-start mb-4 pb-3 border-bottom">
+                        <div class="bg-light-green p-3 rounded me-3">
+                            <i class="bi bi-calendar2-check text-primary-green fs-3"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="fw-bold">{{ cap.nombre }}</h6>
+                            <p class="text-muted mb-1">
+                                <i class="bi bi-person-video3 me-1"></i> Instructor: {{ cap.instructor }} <br>
+                                <i class="bi bi-clock me-1"></i> Fecha: {{ cap.fecha }}
+                            </p>
+                        </div>
+                        <button class="btn btn-sm btn-success align-self-center">
+                            <i class="bi bi-check-circle me-1"></i> Inscribirme
+                        </button>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted text-center">No hay capacitaciones programadas por el momento.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Historial de Capacitaciones -->
+        <div class="col-lg-5">
+            <div class="card card-modern h-100">
+                <div class="card-header bg-light text-dark">
+                    <h5 class="mb-0"><i class="bi bi-journal-check me-2"></i>Mi Historial</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for cap in capacitaciones_completadas %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <div>
+                                <div class="fw-bold">{{ cap.nombre }}</div>
+                                <small class="text-muted">Completada el {{ cap.fecha }}</small>
+                            </div>
+                            <span class="badge bg-primary rounded-pill">{{ cap.calificacion }}</span>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item text-muted text-center">Aún no has completado ninguna capacitación.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

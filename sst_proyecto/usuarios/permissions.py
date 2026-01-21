@@ -202,7 +202,7 @@ def usuario_puede_acceder_modulo(usuario, modulo):
         'emergencias': ['ADMINISTRATIVO', 'BRIGADA', 'INSTRUCTOR', 'VIGILANCIA'],
         'reportes': ['ADMINISTRATIVO', 'INSTRUCTOR', 'VIGILANCIA', 'BRIGADA', 'APRENDIZ'],
         'usuarios': ['ADMINISTRATIVO'],
-        'visitantes': ['ADMINISTRATIVO', 'VIGILANCIA', 'INSTRUCTOR'],
+        'visitantes': ['ADMINISTRATIVO', 'VIGILANCIA'],
     }
 
     roles_permitidos = PERMISOS_MODULOS.get(modulo, [])

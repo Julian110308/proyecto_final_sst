@@ -190,12 +190,150 @@ def mis_reportes_view(request):
 # FIN VISTAS PARA APRENDIZ
 # ==============================================
 
+# ==============================================
+# VISTAS ESPECÍFICAS PARA INSTRUCTOR
+# ==============================================
+
+@login_required
+@rol_requerido('INSTRUCTOR')
+def mis_aprendices_view(request):
+    """
+    Vista para que el instructor vea el listado de aprendices
+    """
+    from usuarios.models import Usuario
+    # Obtenemos todos los aprendices activos, ordenados por ficha y apellido
+    aprendices = Usuario.objects.filter(rol='APRENDIZ', activo=True).order_by('ficha', 'last_name')
+    
+    context = {
+        'aprendices': aprendices,
+        'total_aprendices': aprendices.count()
+    }
+    return render(request, 'dashboard/instructor/mis_aprendices.html', context)
+
+@login_required
+@rol_requerido('INSTRUCTOR')
+def registrar_asistencia_view(request):
+    """
+    Vista específica para que el instructor registre asistencia
+    """
+    from usuarios.models import Usuario
+    # Obtener fichas únicas para filtrar
+    fichas = Usuario.objects.filter(rol='APRENDIZ', activo=True).values_list('ficha', flat=True).distinct().order_by('ficha')
+    
+    context = {
+        'fichas': fichas
+    }
+    return render(request, 'dashboard/instructor/registrar_asistencia.html', context)
+
+# ==============================================
+# VISTAS ESPECÍFICAS PARA ADMINISTRATIVO
+# ==============================================
+
+@login_required
+@rol_requerido('ADMINISTRATIVO')
+def gestion_usuarios_view(request):
+    """
+    Vista para gestión de usuarios (Administrativo)
+    """
+    from usuarios.models import Usuario
+    # Excluir superusuarios para seguridad básica en la vista
+    usuarios = Usuario.objects.all().exclude(is_superuser=True).order_by('-fecha_registro')
+    
+    context = {
+        'usuarios': usuarios,
+        'total_usuarios': usuarios.count()
+    }
+    return render(request, 'dashboard/administrativo/gestion_usuarios.html', context)
+
+@login_required
+@rol_requerido('ADMINISTRATIVO')
+def configuracion_view(request):
+    """
+    Vista de configuración del sistema
+    """
+    from control_acceso.models import ConfiguracionAforo
+    config_aforo = ConfiguracionAforo.objects.filter(activo=True).first()
+    
+    context = {
+        'config_aforo': config_aforo
+    }
+    return render(request, 'dashboard/administrativo/configuracion.html', context)
+
+# ==============================================
+# VISTAS ESPECÍFICAS PARA VIGILANCIA
+# ==============================================
+
+@login_required
+@rol_requerido('VIGILANCIA')
+def gestion_visitantes_view(request):
+    """
+    Vista para gestión de visitantes (Vigilancia)
+    """
+    from usuarios.models import Visitante
+    from django.utils import timezone
+    
+    hoy = timezone.now().date()
+    # Visitantes registrados hoy
+    visitantes_hoy = Visitante.objects.filter(fecha_visita=hoy).order_by('-hora_ingreso')
+    
+    context = {
+        'visitantes': visitantes_hoy,
+        'total_hoy': visitantes_hoy.count(),
+        'activos_ahora': visitantes_hoy.filter(hora_salida__isnull=True).count()
+    }
+    return render(request, 'dashboard/vigilancia/gestion_visitantes.html', context)
+
+@login_required
+@rol_requerido('BRIGADA')
+def equipos_brigada_view(request):
+    """
+    Vista para gestión de equipos de emergencia (Brigada)
+    """
+    # Placeholder data
+    context = {
+        'equipos': [
+            {'id': 1, 'nombre': 'Extintor ABC (PQS)', 'ubicacion': 'Pasillo A-1', 'estado': 'ÓPTIMO', 'ultima_revision': '2026-01-15'},
+            {'id': 2, 'nombre': 'Botiquín de Primeros Auxilios', 'ubicacion': 'Taller de Soldadura', 'estado': 'REQUIERE REVISIÓN', 'ultima_revision': '2025-12-10'},
+            {'id': 3, 'nombre': 'Camilla de Emergencia', 'ubicacion': 'Punto de Encuentro 2', 'estado': 'ÓPTIMO', 'ultima_revision': '2026-01-20'},
+            {'id': 4, 'nombre': 'Gabinete Contra Incendios', 'ubicacion': 'Bloque B', 'estado': 'FUERA DE SERVICIO', 'ultima_revision': '2025-11-01'},
+        ]
+    }
+    return render(request, 'dashboard/brigada/equipos.html', context)
+
+@login_required
+@rol_requerido('BRIGADA')
+def mi_brigada_view(request):
+    """
+    Vista para ver los miembros de la brigada
+    """
+    from usuarios.models import Usuario
+    miembros = Usuario.objects.filter(rol='BRIGADA', activo=True).exclude(id=request.user.id)
+    context = {
+        'miembros': miembros,
+        'total_miembros': miembros.count() + 1 # Contando al usuario actual
+    }
+    return render(request, 'dashboard/brigada/mi_brigada.html', context)
+
+@login_required
+@rol_requerido('BRIGADA')
+def capacitaciones_brigada_view(request):
+    """
+    Vista para capacitaciones de la brigada
+    """
+    # Placeholder data
+    context = {
+        'capacitaciones_disponibles': [],
+        'capacitaciones_completadas': []
+    }
+    return render(request, 'dashboard/brigada/capacitaciones.html', context)
+# ==============================================
+
 # Vistas para usuarios autenticados (usan base.html)
-@rol_requerido('ADMINISTRATIVO', 'VIGILANCIA', 'INSTRUCTOR')
+@rol_requerido('ADMINISTRATIVO', 'VIGILANCIA')
 def control_acceso_view(request):
     """
     Vista de Control de Acceso
-    PERMISOS: Solo ADMINISTRATIVO, VIGILANCIA e INSTRUCTOR
+    PERMISOS: Solo ADMINISTRATIVO y VIGILANCIA
     """
     return render(request, 'control_acceso.html')
 
@@ -280,6 +418,25 @@ urlpatterns = [
     path('aprendiz/alertas/', mis_alertas_view, name='mis_alertas'),
     path('aprendiz/mis-reportes/', mis_reportes_view, name='mis_reportes'),
     # ==============================================
+
+    # URLs PARA INSTRUCTOR
+    path('instructor/mis-aprendices/', mis_aprendices_view, name='mis_aprendices'),
+    path('instructor/asistencia/', registrar_asistencia_view, name='registrar_asistencia'),
+
+    # URLs PARA ADMINISTRATIVO
+    path('administrativo/usuarios/', gestion_usuarios_view, name='gestion_usuarios'),
+    path('administrativo/configuracion/', configuracion_view, name='configuracion_sistema'),
+
+    # URLs PARA VIGILANCIA
+    path('vigilancia/visitantes/', gestion_visitantes_view, name='gestion_visitantes'),
+
+    # URLs PARA BRIGADA
+    path('brigada/equipos/', equipos_brigada_view, name='equipos_brigada'),
+    path('brigada/mi-brigada/', mi_brigada_view, name='mi_brigada'),
+    path('brigada/capacitaciones/', capacitaciones_brigada_view, name='capacitaciones_brigada'),
+
+    # Vista General de Reportes
+    path('reportes/general/', reportes_view, name='reportes_general'),
 
     # APIs REST (para operaciones AJAX/fetch desde el frontend)
     path('api/auth/', include('usuarios.urls')),

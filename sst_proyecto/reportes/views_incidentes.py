@@ -13,8 +13,8 @@ def listar_incidentes(request):
     Muestra todos los incidentes
     Los administradores ven todos, los demás solo los suyos
     """
-    # Si es admin, ve todos los incidentes
-    if request.user.rol == 'ADMINISTRATIVO':
+    # Si es admin o brigada, ve todos los incidentes
+    if request.user.rol in ['ADMINISTRATIVO', 'BRIGADA']:
         incidentes = Incidente.objects.all()
     else:
         # Los demás solo ven los que reportaron
