@@ -1,669 +1,164 @@
 {% extends 'base.html' %}
-{% load static %}
 
-{% block title %}Control de Acceso - SST Centro Minero{% endblock %}
-
-{% block breadcrumb %}
-<li class="breadcrumb-item active">Control de Acceso</li>
-{% endblock %}
-
-{% block extra_css %}
-<style>
-    .stat-number {
-        font-size: 2.5rem;
-        font-weight: 700;
-    }
-
-    .stat-label {
-        font-size: 0.875rem;
-        color: #6c757d;
-    }
-
-    .aforo-progress {
-        height: 8px;
-        border-radius: 10px;
-    }
-
-    .scanner-container {
-        position: relative;
-        width: 100%;
-        max-width: 500px;
-        margin: 0 auto;
-    }
-
-    #reader {
-        width: 100%;
-        border: 2px dashed #1a4d2e;
-        border-radius: 10px;
-        overflow: hidden;
-    }
-
-    .registro-badge {
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-size: 0.875rem;
-        font-weight: 600;
-    }
-
-    .badge-dentro {
-        background-color: #d4edda;
-        color: #155724;
-    }
-
-    .badge-salio {
-        background-color: #f8d7da;
-        color: #721c24;
-    }
-
-    #qrModal .modal-dialog {
-        max-width: 600px;
-    }
-
-    .alerta-aforo {
-        animation: parpadeo 1.5s infinite;
-    }
-
-    @keyframes parpadeo {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
-    }
-</style>
-{% endblock %}
+{% block title %}Control de Acceso - Sistema SST{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h3 fw-bold text-dark mb-1">
-                <i class="bi bi-door-open text-primary-green me-2"></i>
-                Control de Acceso
-            </h1>
-            <p class="text-muted">Gestión de ingresos y egresos del centro</p>
-        </div>
-        <div class="btn-group">
-            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#qrScanModal">
-                <i class="bi bi-qr-code-scan me-2"></i>Escanear QR
-            </button>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalRegistroManual">
-                <i class="bi bi-plus-circle me-2"></i>Registro Manual
-            </button>
-            <button class="btn btn-info" onclick="verMiQR()">
-                <i class="bi bi-qr-code me-2"></i>Mi Código QR
-            </button>
-        </div>
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div>
+        <h2 class="fw-bold text-dark mb-1">Control de Acceso</h2>
+        <p class="text-muted mb-0">Gestiona el ingreso y salida de personal y visitantes.</p>
     </div>
-
-    <!-- Estadísticas -->
-    <div class="row g-4 mb-4">
-        <!-- Personas en Centro -->
-        <div class="col-xl-3 col-md-6">
-            <div class="card card-modern">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <h6 class="stat-label mb-2">En Centro Ahora</h6>
-                            <h3 class="stat-number mb-0" id="stat-personas-dentro">0</h3>
-                            <small class="text-success">Personas activas</small>
-                        </div>
-                        <div class="bg-light-green rounded-3 p-3">
-                            <i class="bi bi-people-fill fs-2 text-primary-green"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Ingresos Hoy -->
-        <div class="col-xl-3 col-md-6">
-            <div class="card card-modern">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <h6 class="stat-label mb-2">Ingresos Hoy</h6>
-                            <h3 class="stat-number mb-0" id="stat-ingresos-hoy">0</h3>
-                            <small class="text-success">Registros totales</small>
-                        </div>
-                        <div class="bg-light-green rounded-3 p-3">
-                            <i class="bi bi-door-open fs-2 text-accent-green"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Visitantes Activos -->
-        <div class="col-xl-3 col-md-6">
-            <div class="card card-modern">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <h6 class="stat-label mb-2">Visitantes Activos</h6>
-                            <h3 class="stat-number mb-0" id="stat-visitantes">0</h3>
-                            <small class="text-muted">Sin registrar salida</small>
-                        </div>
-                        <div style="background-color: #fff3cd;" class="rounded-3 p-3">
-                            <i class="bi bi-person-badge fs-2 text-warning"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Capacidad/Aforo -->
-        <div class="col-xl-3 col-md-6">
-            <div class="card card-modern">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <h6 class="stat-label mb-2">Capacidad</h6>
-                            <h3 class="stat-number mb-0" id="stat-porcentaje-aforo">0%</h3>
-                            <div class="progress aforo-progress mt-2">
-                                <div class="progress-bar" id="aforo-bar" style="width: 0%"></div>
-                            </div>
-                            <small class="mt-1 d-block" id="stat-aforo-texto">Normal</small>
-                        </div>
-                        <div class="bg-light-green rounded-3 p-3">
-                            <i class="bi bi-building fs-2 text-secondary-green"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-white border shadow-sm text-muted" onclick="location.reload()">
+            <i class="bi bi-arrow-clockwise me-2"></i>Actualizar
+        </button>
+        <button class="btn btn-primary text-white shadow-sm rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#modalRegistroManual">
+            <i class="bi bi-plus-lg me-2"></i>Registrar Acceso
+        </button>
     </div>
+</div>
 
-    <!-- Alerta de Aforo (se muestra solo si es necesario) -->
-    <div class="alert alert-warning alerta-aforo d-none" id="alertaAforo" role="alert">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i>
-        <strong>Advertencia:</strong> <span id="mensajeAforo"></span>
-    </div>
-
-    <!-- Tabla de Registros -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card card-modern">
-                <div class="card-header-modern d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0">
-                        <i class="bi bi-list-ul me-2"></i>
-                        Registros de Acceso Recientes
-                    </h6>
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-light active" onclick="filtrarRegistros('todos')">Todos</button>
-                        <button class="btn btn-outline-light" onclick="filtrarRegistros('dentro')">Dentro</button>
-                        <button class="btn btn-outline-light" onclick="filtrarRegistros('salio')">Salieron</button>
-                    </div>
+<!-- Filtros y Búsqueda -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control bg-light border-start-0 ps-0" placeholder="Buscar por nombre o documento..." id="searchInput">
                 </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle" id="tablaRegistros">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Usuario</th>
-                                    <th>Rol</th>
-                                    <th>Documento</th>
-                                    <th>Hora Ingreso</th>
-                                    <th>Hora Egreso</th>
-                                    <th>Método</th>
-                                    <th>Estado</th>
-                                </tr>
-                            </thead>
-                            <tbody id="registrosBody">
-                                <tr>
-                                    <td colspan="7" class="text-center text-muted py-5">
-                                        <i class="bi bi-hourglass-split fs-1 mb-2 d-block"></i>
-                                        Cargando registros...
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select bg-light border-0" id="filterRol">
+                    <option value="">Todos los Roles</option>
+                    <option value="APRENDIZ">Aprendiz</option>
+                    <option value="INSTRUCTOR">Instructor</option>
+                    <option value="VISITANTE">Visitante</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select bg-light border-0" id="filterEstado">
+                    <option value="">Todos los Estados</option>
+                    <option value="dentro">En el Centro</option>
+                    <option value="fuera">Salida Registrada</option>
+                </select>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Modal: Escanear QR -->
-<div class="modal fade" id="qrScanModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-primary-green text-white">
-                <h5 class="modal-title">
-                    <i class="bi bi-qr-code-scan me-2"></i>
-                    Escanear Código QR
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body text-center">
-                <div class="scanner-container">
-                    <div id="reader"></div>
-                </div>
-                <div class="mt-3">
-                    <p class="text-muted mb-2">
-                        <i class="bi bi-info-circle me-1"></i>
-                        Coloca el código QR frente a la cámara
-                    </p>
-                    <button class="btn btn-secondary btn-sm" id="btnCambiarCamara">
-                        <i class="bi bi-camera-video me-1"></i>Cambiar Cámara
-                    </button>
-                </div>
-                <div id="scanResult" class="mt-3"></div>
-            </div>
+<!-- Tabla de Registros -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="fw-bold mb-0">Historial de Accesos</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light border-bottom">
+                    <tr>
+                        <th class="ps-4 py-3 text-muted small fw-bold text-uppercase tracking-wide">Usuario</th>
+                        <th class="py-3 text-muted small fw-bold text-uppercase tracking-wide">Rol</th>
+                        <th class="py-3 text-muted small fw-bold text-uppercase tracking-wide">Hora Ingreso</th>
+                        <th class="py-3 text-muted small fw-bold text-uppercase tracking-wide">Hora Salida</th>
+                        <th class="py-3 text-muted small fw-bold text-uppercase tracking-wide">Estado</th>
+                        <th class="pe-4 py-3 text-end text-muted small fw-bold text-uppercase tracking-wide">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaRegistros">
+                    <!-- El contenido se cargará vía JS -->
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <div class="spinner-border text-primary mb-2" role="status"></div>
+                            <p class="mb-0 small">Cargando registros...</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 
-<!-- Modal: Registro Manual -->
+<!-- Modal Registro Manual -->
 <div class="modal fade" id="modalRegistroManual" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-primary-green text-white">
-                <h5 class="modal-title">
-                    <i class="bi bi-person-plus me-2"></i>
-                    Registro Manual de Acceso
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-0 pb-0 pt-4 px-4">
+                <h5 class="modal-title fw-bold">Registrar Acceso Manual</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body p-4">
                 <form id="formRegistroManual">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label class="form-label">Tipo de Registro *</label>
-                        <select class="form-select" id="tipoRegistro" required>
-                            <option value="">Seleccionar...</option>
-                            <option value="ingreso">Ingreso</option>
-                            <option value="egreso">Egreso</option>
-                        </select>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Documento de Identidad</label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-person-vcard"></i></span>
+                            <input type="text" class="form-control bg-light border-start-0" id="documentoInput" placeholder="Ej: 1052..." required>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Buscar Usuario *</label>
-                        <input type="text" class="form-control" id="buscarUsuario"
-                               placeholder="Buscar por nombre o documento...">
-                        <select class="form-select mt-2" id="selectUsuario" required>
-                            <option value="">Seleccionar usuario...</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Método</label>
-                        <select class="form-select" id="metodoRegistro">
-                            <option value="MANUAL">Registro Manual</option>
-                            <option value="QR">Código QR</option>
-                            <option value="AUTOMATICO">Detección Automática</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Notas (opcional)</label>
-                        <textarea class="form-control" id="notasRegistro" rows="2"
-                                  placeholder="Agregar observaciones..."></textarea>
+                    <div class="d-grid gap-3">
+                        <button type="submit" class="btn btn-primary btn-lg text-white fw-bold shadow-sm" data-tipo="INGRESO">
+                            Registrar Ingreso
+                        </button>
+                        <button type="button" class="btn btn-outline-danger border-2 fw-bold" id="btnRegistrarSalida">
+                            Registrar Salida
+                        </button>
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" onclick="registrarAccesoManual()">
-                    <i class="bi bi-check-circle me-1"></i>Registrar
-                </button>
-            </div>
         </div>
     </div>
 </div>
-
-<!-- Modal: Ver Mi QR -->
-<div class="modal fade" id="modalMiQR" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-primary-green text-white">
-                <h5 class="modal-title">
-                    <i class="bi bi-qr-code me-2"></i>
-                    Mi Código QR
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body text-center">
-                <div id="miQRContainer">
-                    <p class="text-muted">Cargando código QR...</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 {% endblock %}
 
 {% block extra_js %}
-<!-- Librería Html5-QRCode para escanear QR -->
-<script src="https://unpkg.com/html5-qrcode"></script>
-
 <script>
-let html5QrcodeScanner = null;
-let filtroActual = 'todos';
-
-// Cargar datos al iniciar
-document.addEventListener('DOMContentLoaded', function() {
-    cargarEstadisticas();
-    cargarRegistros();
-    cargarUsuarios();
-
-    // Actualizar cada 30 segundos
-    setInterval(cargarEstadisticas, 30000);
-    setInterval(cargarRegistros, 30000);
-});
-
-// Cargar estadísticas
-async function cargarEstadisticas() {
-    try {
-        const response = await fetch('/api/acceso/registros/estadisticas/');
-        const data = await response.json();
-
-        // Actualizar estadísticas
-        document.getElementById('stat-personas-dentro').textContent = data.personas_dentro;
-        document.getElementById('stat-ingresos-hoy').textContent = data.ingresos_hoy;
-        document.getElementById('stat-visitantes').textContent = data.visitantes_activos;
-
-        // Actualizar aforo
-        const aforo = data.aforo;
-        document.getElementById('stat-porcentaje-aforo').textContent = aforo.porcentaje + '%';
-
-        const aforoBar = document.getElementById('aforo-bar');
-        aforoBar.style.width = aforo.porcentaje + '%';
-
-        // Cambiar color según nivel
-        aforoBar.classList.remove('bg-success', 'bg-warning', 'bg-danger');
-        const alertaAforo = document.getElementById('alertaAforo');
-
-        if (aforo.alerta === 'CRITICO') {
-            aforoBar.classList.add('bg-danger');
-            document.getElementById('stat-aforo-texto').textContent = 'Crítico';
-            document.getElementById('stat-aforo-texto').className = 'mt-1 d-block text-danger';
-            alertaAforo.classList.remove('d-none', 'alert-warning');
-            alertaAforo.classList.add('alert-danger');
-            document.getElementById('mensajeAforo').textContent = aforo.mensaje;
-        } else if (aforo.alerta === 'ADVERTENCIA') {
-            aforoBar.classList.add('bg-warning');
-            document.getElementById('stat-aforo-texto').textContent = 'Advertencia';
-            document.getElementById('stat-aforo-texto').className = 'mt-1 d-block text-warning';
-            alertaAforo.classList.remove('d-none', 'alert-danger');
-            alertaAforo.classList.add('alert-warning');
-            document.getElementById('mensajeAforo').textContent = aforo.mensaje;
-        } else {
-            aforoBar.classList.add('bg-success');
-            document.getElementById('stat-aforo-texto').textContent = 'Normal';
-            document.getElementById('stat-aforo-texto').className = 'mt-1 d-block text-success';
-            alertaAforo.classList.add('d-none');
-        }
-
-    } catch (error) {
-        console.error('Error cargando estadísticas:', error);
-    }
-}
-
-// Cargar registros recientes
-async function cargarRegistros() {
-    try {
-        let url = '/api/acceso/registros/registros_recientes/?limite=50';
-
-        if (filtroActual === 'dentro') {
-            url += '&dentro=true';
-        } else if (filtroActual === 'salio') {
-            url += '&dentro=false';
-        }
-
-        const response = await fetch(url);
-        const registros = await response.json();
-
-        const tbody = document.getElementById('registrosBody');
-
-        if (registros.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="7" class="text-center text-muted py-4">
-                        <i class="bi bi-inbox fs-1 mb-2 d-block"></i>
-                        No hay registros de acceso
-                    </td>
-                </tr>
-            `;
-            return;
-        }
-
-        tbody.innerHTML = registros.map(reg => {
-            const fechaIngreso = new Date(reg.fecha_hora_ingreso);
-            const horaIngreso = fechaIngreso.toLocaleTimeString('es-CO', {hour: '2-digit', minute: '2-digit'});
-
-            let horaEgreso = '-';
-            if (reg.fecha_hora_egreso) {
-                const fechaEgreso = new Date(reg.fecha_hora_egreso);
-                horaEgreso = fechaEgreso.toLocaleTimeString('es-CO', {hour: '2-digit', minute: '2-digit'});
-            }
-
-            const estadoBadge = reg.estado === 'DENTRO'
-                ? '<span class="registro-badge badge-dentro">DENTRO</span>'
-                : '<span class="registro-badge badge-salio">SALIÓ</span>';
-
-            return `
-                <tr>
-                    <td>
-                        <div class="fw-bold">${reg.usuario.nombre}</div>
-                    </td>
-                    <td>
-                        <span class="badge bg-secondary">${reg.usuario.rol}</span>
-                    </td>
-                    <td><small>${reg.usuario.documento}</small></td>
-                    <td>${horaIngreso}</td>
-                    <td>${horaEgreso}</td>
-                    <td><small>${reg.metodo_ingreso}</small></td>
-                    <td>${estadoBadge}</td>
-                </tr>
-            `;
-        }).join('');
-
-    } catch (error) {
-        console.error('Error cargando registros:', error);
-    }
-}
-
-// Filtrar registros
-function filtrarRegistros(filtro) {
-    filtroActual = filtro;
-
-    // Actualizar botones activos
-    document.querySelectorAll('.btn-group-sm .btn').forEach(btn => {
-        btn.classList.remove('active');
+    document.addEventListener('DOMContentLoaded', function() {
+        cargarRegistros();
     });
-    event.target.classList.add('active');
 
-    cargarRegistros();
-}
+    async function cargarRegistros() {
+        try {
+            const response = await fetch('/api/acceso/registros/registros_recientes/');
+            const data = await response.json();
+            const tbody = document.getElementById('tablaRegistros');
+            tbody.innerHTML = '';
 
-// Cargar usuarios para el select
-async function cargarUsuarios() {
-    try {
-        const response = await fetch('/api/auth/usuarios/');
-        const usuarios = await response.json();
-
-        const select = document.getElementById('selectUsuario');
-        select.innerHTML = '<option value="">Seleccionar usuario...</option>' +
-            usuarios.map(u => `
-                <option value="${u.id}">${u.first_name} ${u.last_name} - ${u.numero_documento}</option>
-            `).join('');
-    } catch (error) {
-        console.error('Error cargando usuarios:', error);
-    }
-}
-
-// Iniciar escáner QR
-document.getElementById('qrScanModal').addEventListener('shown.bs.modal', function() {
-    iniciarEscanerQR();
-});
-
-document.getElementById('qrScanModal').addEventListener('hidden.bs.modal', function() {
-    detenerEscanerQR();
-});
-
-function iniciarEscanerQR() {
-    html5QrcodeScanner = new Html5QrcodeScanner(
-        "reader",
-        { fps: 10, qrbox: {width: 250, height: 250} },
-        false
-    );
-
-    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-}
-
-function detenerEscanerQR() {
-    if (html5QrcodeScanner) {
-        html5QrcodeScanner.clear();
-        html5QrcodeScanner = null;
-    }
-}
-
-async function onScanSuccess(decodedText, decodedResult) {
-    // Detener el escáner
-    detenerEscanerQR();
-
-    // Procesar el QR
-    await procesarQR(decodedText);
-}
-
-function onScanFailure(error) {
-    // No hacer nada, es normal que falle mientras busca
-}
-
-// Procesar código QR
-async function procesarQR(codigoQR) {
-    try {
-        const response = await fetch('/api/acceso/registros/escanear_qr/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            },
-            body: JSON.stringify({
-                codigo_qr: codigoQR
-            })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            const tipoIcono = data.tipo === 'INGRESO' ? 'bi-door-open' : 'bi-door-closed';
-            const tipoColor = data.tipo === 'INGRESO' ? 'text-success' : 'text-warning';
-
-            document.getElementById('scanResult').innerHTML = `
-                <div class="alert alert-success">
-                    <i class="bi ${tipoIcono} ${tipoColor} fs-1 mb-2 d-block"></i>
-                    <h5>${data.mensaje}</h5>
-                    <p class="mb-0"><strong>${data.usuario.nombre}</strong></p>
-                    <small>${data.usuario.rol} - ${data.usuario.documento}</small>
-                </div>
-            `;
-
-            // Actualizar estadísticas y registros
-            setTimeout(() => {
-                cargarEstadisticas();
-                cargarRegistros();
-                bootstrap.Modal.getInstance(document.getElementById('qrScanModal')).hide();
-            }, 2000);
-        } else {
-            document.getElementById('scanResult').innerHTML = `
-                <div class="alert alert-danger">
-                    <i class="bi bi-x-circle fs-1 text-danger mb-2 d-block"></i>
-                    <p class="mb-0">${data.error}</p>
-                </div>
-            `;
+            data.forEach(reg => {
+                const row = `
+                    <tr>
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle bg-light text-success d-flex align-items-center justify-content-center me-3 border" style="width: 40px; height: 40px;">
+                                    <span class="fw-bold small">${reg.usuario.nombre.charAt(0)}</span>
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark">${reg.usuario.nombre}</div>
+                                    <div class="small text-muted">${reg.usuario.documento}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="badge bg-light text-dark border fw-normal">${reg.usuario.rol}</span></td>
+                        <td class="text-dark fw-medium">${new Date(reg.fecha_hora_ingreso).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+                        <td class="text-muted">${reg.fecha_hora_egreso ? new Date(reg.fecha_hora_egreso).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--'}</td>
+                        <td>
+                            ${!reg.fecha_hora_egreso 
+                                ? '<span class="badge bg-success-subtle text-success rounded-pill px-3 border border-success-subtle">En Centro</span>' 
+                                : '<span class="badge bg-secondary-subtle text-secondary rounded-pill px-3 border border-secondary-subtle">Salida</span>'}
+                        </td>
+                        <td class="pe-4 text-end">
+                            ${!reg.fecha_hora_egreso 
+                                ? `<button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="registrarSalida(${reg.usuario.id})">Registrar Salida</button>` 
+                                : ''}
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('tablaRegistros').innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">Error al cargar datos</td></tr>';
         }
-    } catch (error) {
-        console.error('Error procesando QR:', error);
-        document.getElementById('scanResult').innerHTML = `
-            <div class="alert alert-danger">
-                <i class="bi bi-exclamation-triangle fs-1 text-danger mb-2 d-block"></i>
-                <p class="mb-0">Error al procesar el código QR</p>
-            </div>
-        `;
     }
-}
-
-// Registro manual
-async function registrarAccesoManual() {
-    const tipo = document.getElementById('tipoRegistro').value;
-    const usuarioId = document.getElementById('selectUsuario').value;
-    const metodo = document.getElementById('metodoRegistro').value;
-
-    if (!tipo || !usuarioId) {
-        alert('Por favor completa todos los campos requeridos');
-        return;
-    }
-
-    try {
-        const endpoint = tipo === 'ingreso' ? 'registrar_ingreso' : 'registrar_egreso';
-
-        const response = await fetch(`/api/acceso/registros/${endpoint}/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            },
-            body: JSON.stringify({
-                usuario_id: parseInt(usuarioId),
-                metodo: metodo
-            })
-        });
-
-        const data = await response.json();
-
-        if (data.success || data.mensaje) {
-            alert(`✅ ${data.mensaje}`);
-            bootstrap.Modal.getInstance(document.getElementById('modalRegistroManual')).hide();
-            document.getElementById('formRegistroManual').reset();
-            cargarEstadisticas();
-            cargarRegistros();
-        } else {
-            alert(`❌ ${data.error}`);
-        }
-    } catch (error) {
-        console.error('Error en registro:', error);
-        alert('Error al registrar el acceso');
-    }
-}
-
-// Ver mi código QR
-async function verMiQR() {
-    const modal = new bootstrap.Modal(document.getElementById('modalMiQR'));
-    modal.show();
-
-    try {
-        const response = await fetch('/api/auth/usuarios/mi_qr/');
-        const data = await response.json();
-
-        document.getElementById('miQRContainer').innerHTML = `
-            <div class="mb-3">
-                <img src="data:image/png;base64,${data.qr_image}"
-                     alt="Mi código QR" class="img-fluid" style="max-width: 400px;">
-            </div>
-            <h5>${data.nombre}</h5>
-            <p class="text-muted mb-1">${data.rol}</p>
-            <small>Doc: ${data.documento}</small>
-            <div class="mt-3">
-                <button class="btn btn-primary btn-sm" onclick="descargarQR('${data.qr_image}', '${data.documento}')">
-                    <i class="bi bi-download me-1"></i>Descargar QR
-                </button>
-            </div>
-        `;
-    } catch (error) {
-        console.error('Error cargando QR:', error);
-        document.getElementById('miQRContainer').innerHTML = `
-            <div class="alert alert-danger">
-                Error al cargar el código QR
-            </div>
-        `;
-    }
-}
-
-// Descargar código QR
-function descargarQR(base64Data, documento) {
-    const link = document.createElement('a');
-    link.href = 'data:image/png;base64,' + base64Data;
-    link.download = `QR_${documento}.png`;
-    link.click();
-}
 </script>
 {% endblock %}
