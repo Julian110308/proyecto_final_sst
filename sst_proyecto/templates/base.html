@@ -15,119 +15,269 @@
     
     <!-- CSS Personalizado -->
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
         :root {
-            --primary-green: #1a4d2e;
-            --secondary-green: #2e7d32;
-            --accent-green: #4caf50;
-            --light-green: #e8f5e8;
-            --dark-green: #0d3b1e;
+            /* --- PALETA DE COLORES SEMÁNTICA --- */
+            --color-primary: #39A900;
+            --color-primary-hover: #2E8B00;
+            --color-primary-light: #F1F8E9;
+            
+            --color-text-main: #111827;      /* Gray 900 */
+            --color-text-secondary: #4B5563; /* Gray 600 */
+            --color-text-muted: #9CA3AF;     /* Gray 400 */
+            
+            --color-bg-body: #F3F4F6;        /* Gray 100 */
+            --color-bg-surface: #FFFFFF;
+            --color-border: #E5E7EB;         /* Gray 200 */
+
+            /* --- SISTEMA DE ESPACIADO (Base 4px) --- */
+            --space-1: 0.25rem;  /* 4px */
+            --space-2: 0.5rem;   /* 8px */
+            --space-3: 0.75rem;  /* 12px */
+            --space-4: 1rem;     /* 16px */
+            --space-5: 1.5rem;   /* 24px */
+            --space-6: 2rem;     /* 32px */
+
+            /* --- SISTEMA DE BORDES Y SOMBRAS --- */
+            --radius-md: 0.5rem;
+            --radius-lg: 1rem;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            
+            /* --- LAYOUT --- */
+            --sidebar-width: 260px;
+            --header-height: 70px;
         }
         
         body {
-            background-color: #f8f9fa;
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            padding-top: 70px;
+            background-color: var(--color-bg-body);
+            font-family: 'Inter', sans-serif;
+            color: var(--color-text-main);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
         }
         
         .navbar-main {
-            background: linear-gradient(135deg, var(--primary-green), var(--dark-green));
-            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            background-color: var(--color-bg-surface);
+            box-shadow: var(--shadow-sm);
+            border-bottom: 1px solid var(--color-border);
             position: fixed;
             top: 0;
-            width: 100%;
-            z-index: 1000;
+            left: 0;
+            right: 0;
+            height: var(--header-height);
+            z-index: 1030;
+            padding: 0 1.5rem;
         }
         
         .btn-emergencia {
-            background: linear-gradient(45deg, #ff6b6b, #ff5252);
-            border: none;
-            border-radius: 25px;
-            padding: 0.6rem 1.5rem;
-            font-weight: 600;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-        
-        .sidebar {
-            background: white;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
-            min-height: calc(100vh - 70px);
             position: fixed;
-            left: 0;
-            top: 70px;
-            width: 250px;
-            overflow-y: auto;
-        }
-        
-        .main-content {
-            margin-left: 250px;
-            padding: 20px;
-            transition: margin-left 0.3s ease;
-        }
-        
-        .nav-link {
-            color: #555;
-            padding: 0.8rem 1rem;
-            margin: 0.2rem 0.5rem;
-            border-radius: 8px;
-            transition: all 0.3s ease;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1060;
+            background: #DC2626;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 1rem 1.5rem;
+            font-weight: 700;
+            font-size: 1rem;
+            box-shadow: 0 4px 20px rgba(220, 38, 38, 0.4);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
             display: flex;
             align-items: center;
         }
         
+        .btn-emergencia:hover {
+            background: #B91C1C;
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 10px 25px rgba(220, 38, 38, 0.6);
+            color: white;
+        }
+        
+        .sidebar {
+            background: var(--color-bg-surface);
+            border-right: 1px solid var(--color-border);
+            width: var(--sidebar-width);
+            position: fixed;
+            top: var(--header-height);
+            bottom: 0;
+            left: 0;
+            transition: transform 0.3s ease-in-out;
+            z-index: 1020;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            height: calc(100vh - var(--header-height)); /* Altura fija para permitir scroll */
+        }
+        
+        .sidebar-menu-wrapper {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-top: 1.5rem;
+            padding-bottom: 1rem;
+            min-height: 0; /* Necesario para que el scroll funcione en Flexbox */
+        }
+        
+        .sidebar-menu-wrapper::-webkit-scrollbar { width: 6px; }
+        .sidebar-menu-wrapper::-webkit-scrollbar-thumb { background-color: #e5e7eb; border-radius: 3px; }
+
+        .sidebar-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--color-border);
+            background-color: var(--color-bg-surface);
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 2rem;
+            min-height: calc(100vh - var(--header-height));
+            transition: margin-left 0.3s ease-in-out;
+        }
+        
+        .nav-link {
+            color: var(--color-text-secondary);
+            font-weight: 500;
+            padding: var(--space-3) var(--space-5);
+            margin: var(--space-1) var(--space-3);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+        
         .nav-link:hover, .nav-link.active {
-            background: var(--light-green);
-            color: var(--primary-green);
-            transform: translateX(5px);
+            background-color: var(--color-primary-light);
+            color: var(--color-primary);
+        }
+        
+        .nav-link.active {
+            background-color: var(--color-primary);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(57, 169, 0, 0.2);
         }
         
         .nav-link i {
+            font-size: 1.2rem;
+            margin-right: 0.75rem;
             width: 24px;
             text-align: center;
         }
         
-        .card-modern {
+        .sidebar-heading {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--color-text-muted);
+            font-weight: 600;
+            padding: 0 var(--space-5);
+            margin-top: var(--space-5);
+            margin-bottom: var(--space-3);
+        }
+
+        /* --- COMPONENTE CARD UNIFICADO --- */
+        .card {
+            background: var(--color-bg-surface);
             border: none;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            transition: all 0.3s ease;
-            background: white;
+            border-radius: 1rem; /* Diseño más redondeado y moderno */
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); /* Sombra suave y difusa */
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
             overflow: hidden;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
         }
         
-        .card-modern:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        .card:hover {
+            transform: translateY(-5px); /* Efecto de elevación */
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-body {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .card-header {
+            background-color: #ffffff;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding: 1.25rem 1.5rem;
+            font-weight: 700;
+            color: var(--color-text-main);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        /* Clases de compatibilidad para dashboards específicos */
+        .card-modern {
+            border: none !important;
         }
         
         .card-header-modern {
-            background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
-            color: white;
-            padding: 1rem 1.5rem;
-            border-bottom: none;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            background: #fff;
+            font-weight: 700;
+            color: var(--color-text-main);
         }
-        
-        .stat-card {
-            border-left: 4px solid var(--accent-green);
+
+        /* Ajuste para que las tarjetas se adapten al contenido en Emergencias (Instructor) */
+        {% if user.rol == 'INSTRUCTOR' and '/emergencias/' in request.path %}
+        .card {
+            height: auto !important;
+            min-height: 0;
+        }
+        {% endif %}
+
+        /* Espaciado automático para botones en tarjetas */
+        .card .btn + .btn {
+            margin-left: 0.75rem;
+        }
+
+        /* --- UTILIDADES PARA MÉTRICAS --- */
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--color-text-main);
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .metric-icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-md);
         }
         
         @media (max-width: 768px) {
             .sidebar {
-                width: 100%;
-                position: relative;
-                top: 0;
-                height: auto;
-                min-height: auto;
+                transform: translateX(-100%);
+                display: none; /* Ocultar en móvil por defecto */
             }
-            
+            .sidebar.show {
+                transform: translateX(0);
+                display: flex; /* Mostrar como flex al activar */
+            }
             .main-content {
                 margin-left: 0;
-                margin-top: 20px;
+                padding: 1rem;
             }
         }
         
@@ -146,21 +296,21 @@
             justify-content: center;
         }
 
-        .bg-light-green {
-            background-color: var(--light-green) !important;
+        .bg-light-green { background-color: var(--color-primary-light) !important; }
+        .text-primary-green { color: var(--color-primary) !important; }
+        
+        /* Estilos para el dropdown de usuario */
+        .user-dropdown-menu .dropdown-item {
+            border-radius: 8px;
+            padding: 8px 16px;
+            margin-bottom: 4px;
+            transition: all 0.2s ease;
         }
-
-        .text-primary-green {
-            color: var(--primary-green) !important;
+        .user-dropdown-menu .dropdown-item.text-danger:hover {
+            background-color: #fee2e2;
+            color: #dc2626 !important;
         }
-
-        .text-accent-green {
-            color: var(--accent-green) !important;
-        }
-
-        .text-secondary-green {
-            color: var(--secondary-green) !important;
-        }
+        
     </style>
     
     {% block extra_css %}{% endblock %}
@@ -169,65 +319,64 @@
     <!-- Navbar -->
     <nav class="navbar navbar-main navbar-expand-lg">
         <div class="container-fluid">
-            <button class="navbar-toggler btn btn-light me-3 d-md-none" id="sidebarToggle">
-                <i class="bi bi-list"></i>
+            <button class="btn btn-link text-dark me-3 d-md-none" id="sidebarToggle">
+                <i class="bi bi-list fs-4"></i>
             </button>
             
-            <a class="navbar-brand text-white fw-bold" href="{% url 'dashboard' %}">
+            <a class="navbar-brand text-dark fw-bold" href="{% url 'dashboard' %}">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/8/83/Sena_Colombia_logo.svg" alt="Logo SENA" height="45" class="me-2">
                 SENA SST - Centro Minero
             </a>
             
-            <!-- Botón de Emergencia (Solo para roles autorizados) -->
-            {% if user.rol != 'VISITANTE' %}
-            <button class="btn btn-emergencia text-white me-3" id="botonPanico">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                EMERGENCIA
-            </button>
-            {% endif %}
-            
-            <!-- Notificaciones (No para visitantes) -->
-            {% if user.rol != 'VISITANTE' %}
-            <div class="nav-item dropdown me-3">
-                <a class="nav-link text-white p-0" href="#" data-bs-toggle="dropdown">
-                    <i class="bi bi-bell-fill position-relative">
-                        <span class="notification-badge">3</span>
-                    </i>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li><h6 class="dropdown-header">Notificaciones</h6></li>
-                    <li><a class="dropdown-item" href="#"><i class="bi bi-exclamation-triangle text-warning me-2"></i>Alerta de seguridad</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="bi bi-person-check text-success me-2"></i>Nuevo acceso</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="bi bi-file-text text-info me-2"></i>Reporte listo</a></li>
-                </ul>
-            </div>
-            {% endif %}
-            
             <!-- Usuario -->
-            <div class="navbar-nav">
+            <div class="navbar-nav ms-3">
                 <div class="dropdown">
-                    <button class="btn btn-outline-light dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown">
-                        <i class="bi bi-person-circle me-2 fs-5"></i>
-                        <div class="text-start">
-                            <small class="d-block" style="font-size: 0.8rem;">
-                                {{ user.get_full_name|default:user.username }}
-                            </small>
-                            <small class="d-block" style="font-size: 0.7rem; opacity: 0.8;">
-                                {{ user.get_rol_display }}
-                            </small>
-                        </div>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Mi Perfil</a></li>
-                        {% if user.rol != 'VISITANTE' %}
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Configuración</a></li>
+                    <a href="#" class="d-flex align-items-center text-dark text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                        {% if user.foto %}
+                            <img src="{{ user.foto.url }}" alt="Avatar" width="40" height="40" class="rounded-circle border border-2 border-white me-2" style="object-fit: cover;">
+                        {% else %}
+                            <div class="rounded-circle bg-light text-success d-flex align-items-center justify-content-center me-2 border" style="width: 40px; height: 40px;">
+                                <span class="fw-bold fs-5">{{ user.username|slice:":1"|upper }}</span>
+                            </div>
                         {% endif %}
-                        <li><hr class="dropdown-divider"></li>
+                        <div class="d-none d-sm-block text-start lh-1 me-1">
+                            <span class="d-block fw-semibold" style="font-size: 0.9rem;">{{ user.first_name|default:user.username }}</span>
+                            <span class="d-block opacity-75" style="font-size: 0.75rem;">{{ user.get_rol_display }}</span>
+                        </div>
+                    </a>
+                    
+                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 mt-3 p-2 user-dropdown-menu" aria-labelledby="dropdownUser1" style="min-width: 240px;">
+                        <!-- Header móvil -->
+                        <li class="d-block d-sm-none px-3 py-2 border-bottom mb-2">
+                            <span class="d-block fw-bold text-dark">{{ user.get_full_name|default:user.username }}</span>
+                            <span class="d-block text-muted small">{{ user.get_rol_display }}</span>
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <i class="bi bi-person-badge me-3 fs-5 text-primary"></i>
+                                <span>Mi Perfil</span>
+                            </a>
+                        </li>
+                        {% if user.rol != 'VISITANTE' %}
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <i class="bi bi-gear me-3 fs-5 text-secondary"></i>
+                                <span>Configuración</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        <li><hr class="dropdown-divider my-2"></li>
+                        
                         <li>
                             <form method="POST" action="{% url 'logout' %}">
                                 {% csrf_token %}
-                                <button type="submit" class="dropdown-item text-danger">
-                                    <i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión
+                                <button type="submit" class="dropdown-item d-flex align-items-center text-danger">
+                                    <div class="d-flex align-items-center justify-content-center bg-danger-subtle rounded-circle me-3" style="width: 32px; height: 32px;">
+                                        <i class="bi bi-box-arrow-right text-danger"></i>
+                                    </div>
+                                    <span class="fw-bold">Cerrar Sesión</span>
                                 </button>
                             </form>
                         </li>
@@ -238,11 +387,9 @@
     </nav>
 
     <!-- Sidebar - Menú dinámico según el rol -->
-    <nav class="sidebar d-none d-md-block" id="sidebar">
-        <div class="pt-4">
-            <div class="px-3 mb-4">
-                <h6 class="text-uppercase text-muted fw-bold">MENÚ PRINCIPAL</h6>
-            </div>
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-menu-wrapper">
+            <h6 class="sidebar-heading">MENÚ PRINCIPAL</h6>
                 <ul class="nav flex-column">
                 <!-- Dashboard - Todos los roles -->
                 <li class="nav-item mb-2">
@@ -503,15 +650,20 @@
             </div>
             {% endif %}
         </div>
+        
     </nav>
 
     <!-- Contenido Principal -->
     <main class="main-content">
         <!-- Breadcrumb -->
         <nav aria-label="breadcrumb" class="mb-4">
-            <ol class="breadcrumb bg-white p-3 rounded shadow-sm">
+            <ol class="breadcrumb bg-transparent p-0">
                 <li class="breadcrumb-item"><a href="{% url 'dashboard' %}"><i class="bi bi-house-door"></i></a></li>
-                {% block breadcrumb %}{% endblock %}
+                {% block breadcrumb %}
+                    {% if '/mapas/' in request.path %}
+                    <li class="breadcrumb-item active" aria-current="page">Mapa del Centro</li>
+                    {% endif %}
+                {% endblock %}
             </ol>
         </nav>
         
@@ -536,24 +688,13 @@
         </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="footer mt-5 py-3 bg-light border-top">
-        <div class="container-fluid">
-            <div class="row align-items-center">
-                <div class="col-md-6">
-                    <span class="text-muted">
-                        <i class="bi bi-shield-check text-success me-1"></i>
-                        Sistema SST - Centro Minero SENA © 2024
-                    </span>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <small class="text-muted">
-                        {{ user.get_rol_display }} | Versión 1.0.0
-                    </small>
-                </div>
-            </div>
-        </div>
-    </footer>
+    <!-- Botón de Emergencia Flotante (Solo para roles autorizados) -->
+    {% if user.rol != 'VISITANTE' %}
+    <button class="btn btn-emergencia text-white" id="botonPanico">
+        <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+        EMERGENCIA
+    </button>
+    {% endif %}
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -563,7 +704,7 @@
     <script>
         // Toggle sidebar
         document.getElementById('sidebarToggle')?.addEventListener('click', function() {
-            document.getElementById('sidebar').classList.toggle('d-none');
+            document.getElementById('sidebar').classList.toggle('show');
         });
         
         // Botón de emergencia
