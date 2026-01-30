@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Sistema SST - Centro Minero SENA{% endblock %}</title>
     
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="https://upload.wikimedia.org/wikipedia/commons/8/83/Sena_Colombia_logo.svg">
+
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
@@ -142,6 +145,22 @@
             align-items: center;
             justify-content: center;
         }
+
+        .bg-light-green {
+            background-color: var(--light-green) !important;
+        }
+
+        .text-primary-green {
+            color: var(--primary-green) !important;
+        }
+
+        .text-accent-green {
+            color: var(--accent-green) !important;
+        }
+
+        .text-secondary-green {
+            color: var(--secondary-green) !important;
+        }
     </style>
     
     {% block extra_css %}{% endblock %}
@@ -154,17 +173,21 @@
                 <i class="bi bi-list"></i>
             </button>
             
-            <a class="navbar-brand text-white fw-bold" href="/">
-                <i class="bi bi-shield-check me-2"></i>
+            <a class="navbar-brand text-white fw-bold" href="{% url 'dashboard' %}">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/8/83/Sena_Colombia_logo.svg" alt="Logo SENA" height="45" class="me-2">
                 SENA SST - Centro Minero
             </a>
             
+            <!-- Botón de Emergencia (Solo para roles autorizados) -->
+            {% if user.rol != 'VISITANTE' %}
             <button class="btn btn-emergencia text-white me-3" id="botonPanico">
                 <i class="bi bi-exclamation-triangle-fill me-2"></i>
                 EMERGENCIA
             </button>
+            {% endif %}
             
-            <!-- Notificaciones -->
+            <!-- Notificaciones (No para visitantes) -->
+            {% if user.rol != 'VISITANTE' %}
             <div class="nav-item dropdown me-3">
                 <a class="nav-link text-white p-0" href="#" data-bs-toggle="dropdown">
                     <i class="bi bi-bell-fill position-relative">
@@ -178,6 +201,7 @@
                     <li><a class="dropdown-item" href="#"><i class="bi bi-file-text text-info me-2"></i>Reporte listo</a></li>
                 </ul>
             </div>
+            {% endif %}
             
             <!-- Usuario -->
             <div class="navbar-nav">
@@ -186,17 +210,18 @@
                         <i class="bi bi-person-circle me-2 fs-5"></i>
                         <div class="text-start">
                             <small class="d-block" style="font-size: 0.8rem;">
-                                {% if user.is_authenticated %}
-                                    {{ user.get_full_name|default:user.username }}
-                                {% else %}
-                                    Usuario
-                                {% endif %}
+                                {{ user.get_full_name|default:user.username }}
+                            </small>
+                            <small class="d-block" style="font-size: 0.7rem; opacity: 0.8;">
+                                {{ user.get_rol_display }}
                             </small>
                         </div>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Mi Perfil</a></li>
+                        {% if user.rol != 'VISITANTE' %}
                         <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Configuración</a></li>
+                        {% endif %}
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <form method="POST" action="{% url 'logout' %}">
@@ -212,52 +237,271 @@
         </div>
     </nav>
 
-    <!-- Sidebar -->
+    <!-- Sidebar - Menú dinámico según el rol -->
     <nav class="sidebar d-none d-md-block" id="sidebar">
         <div class="pt-4">
             <div class="px-3 mb-4">
                 <h6 class="text-uppercase text-muted fw-bold">MENÚ PRINCIPAL</h6>
             </div>
-            
-            <ul class="nav flex-column">
+                <ul class="nav flex-column">
+                <!-- Dashboard - Todos los roles -->
                 <li class="nav-item mb-2">
-                    <a class="nav-link active" href="/">
+                    <a class="nav-link active" href="{% url 'dashboard' %}">
                         <i class="bi bi-speedometer2 me-2"></i>Dashboard
                     </a>
                 </li>
-                <li class="nav-item mb-2">
-                    <a class="nav-link" href="/acceso/">
-                        <i class="bi bi-person-check me-2"></i>Control Acceso
-                    </a>
-                </li>
-                <li class="nav-item mb-2">
-                    <a class="nav-link" href="/mapas/">
-                        <i class="bi bi-map me-2"></i>Mapa Interactivo
-                    </a>
-                </li>
-                <li class="nav-item mb-2">
-                    <a class="nav-link" href="/emergencias/">
-                        <i class="bi bi-exclamation-octagon me-2"></i>Emergencias
-                    </a>
-                </li>
-                <li class="nav-item mb-2">
-                    <a class="nav-link" href="/reportes/">
-                        <i class="bi bi-graph-up me-2"></i>Reportes
-                    </a>
-                </li>
+
+                <!-- OPCIONES PARA ADMINISTRATIVO - Acceso completo -->
+                {% if user.rol == 'ADMINISTRATIVO' %}
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="/acceso/">
+                            <i class="bi bi-person-check me-2"></i>Control Acceso
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="/mapas/">
+                            <i class="bi bi-map me-2"></i>Mapa Interactivo
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="/emergencias/">
+                            <i class="bi bi-exclamation-octagon me-2"></i>Emergencias
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="/reportes/">
+                            <i class="bi bi-graph-up me-2"></i>Reportes
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="/reportes/incidentes/">
+                            <i class="bi bi-exclamation-triangle me-2"></i>Incidentes
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="{% url 'gestion_usuarios' %}">
+                            <i class="bi bi-people me-2"></i>Gestión Usuarios
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="{% url 'configuracion_sistema' %}">
+                            <i class="bi bi-gear me-2"></i>Configuración
+                        </a>
+                    </li>
+
+                <!-- OPCIONES PARA INSTRUCTOR -->
+                {% elif user.rol == 'INSTRUCTOR' %}
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="{% url 'mis_aprendices' %}">
+                            <i class="bi bi-people me-2"></i>Mis Aprendices
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="{% url 'registrar_asistencia' %}">
+                            <i class="bi bi-person-check me-2"></i>Registrar Asistencia
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="/mapas/">
+                            <i class="bi bi-map me-2"></i>Mapa del Centro
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="/emergencias/">
+                            <i class="bi bi-exclamation-octagon me-2"></i>Emergencias
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="/reportes/">
+                            <i class="bi bi-graph-up me-2"></i>Reportes
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="/reportes/incidentes/">
+                            <i class="bi bi-exclamation-triangle me-2"></i>Incidentes
+                        </a>
+                    </li>
+
+                <!-- OPCIONES PARA VIGILANCIA -->
+                {% elif user.rol == 'VIGILANCIA' %}
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="/acceso/">
+                            <i class="bi bi-door-open me-2"></i>Control Acceso
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="{% url 'gestion_visitantes' %}">
+                            <i class="bi bi-person-badge me-2"></i>Gestionar Visitantes
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="/mapas/">
+                            <i class="bi bi-map me-2"></i>Mapa de Seguridad
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="/emergencias/">
+                            <i class="bi bi-exclamation-triangle me-2"></i>Gestión de Emergencias
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="#">
+                            <i class="bi bi-camera-video me-2"></i>Cámaras
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="{% url 'reportes_general' %}">
+                            <i class="bi bi-file-text me-2"></i>Reportes
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="{% url 'listar_incidentes' %}">
+                            <i class="bi bi-exclamation-triangle me-2"></i>Incidentes
+                        </a>
+                    </li>
+
+                <!-- OPCIONES PARA BRIGADA -->
+                {% elif user.rol == 'BRIGADA' %}
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="/emergencias/">
+                            <i class="bi bi-exclamation-octagon me-2"></i>Emergencias
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="/mapas/">
+                            <i class="bi bi-map me-2"></i>Mapa de Evacuación
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="{% url 'equipos_brigada' %}">
+                            <i class="bi bi-tools me-2"></i>Equipos
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="{% url 'mi_brigada' %}">
+                            <i class="bi bi-people me-2"></i>Mi Brigada
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                    <a class="nav-link" href="{% url 'reportes_general' %}">
+                            <i class="bi bi-file-medical me-2"></i>Reportes
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                    <a class="nav-link" href="{% url 'listar_incidentes' %}">
+                            <i class="bi bi-exclamation-triangle me-2"></i>Incidentes
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="{% url 'capacitaciones_brigada' %}">
+                            <i class="bi bi-book me-2"></i>Capacitaciones
+                        </a>
+                    </li>
+
+                <!-- OPCIONES PARA APRENDIZ - ✅ CORREGIDO CON URLs FUNCIONALES -->
+                {% elif user.rol == 'APRENDIZ' %}
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="{% url 'mi_horario' %}">
+                            <i class="bi bi-calendar-check me-2"></i>Mi Horario
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="{% url 'mi_asistencia' %}">
+                            <i class="bi bi-clock-history me-2"></i>Mi Asistencia
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="/mapas/">
+                            <i class="bi bi-map me-2"></i>Mapa del Centro
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="{% url 'informacion_sst' %}">
+                            <i class="bi bi-info-circle me-2"></i>Información SST
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="{% url 'mis_alertas' %}">
+                            <i class="bi bi-bell me-2"></i>Mis Alertas
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="/reportes/">
+                            <i class="bi bi-file-text me-2"></i>Mis Reportes
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="/reportes/incidentes/">
+                            <i class="bi bi-exclamation-triangle me-2"></i>Reportar Incidente
+                        </a>
+                    </li>
+
+                <!-- OPCIONES PARA VISITANTE - Muy limitado -->
+                {% elif user.rol == 'VISITANTE' %}
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="#">
+                            <i class="bi bi-map me-2"></i>Mapa del Centro
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="#">
+                            <i class="bi bi-shield-check me-2"></i>Normas SST
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="#">
+                            <i class="bi bi-info-circle me-2"></i>Información
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="#">
+                            <i class="bi bi-question-circle me-2"></i>Ayuda
+                        </a>
+                    </li>
+                {% endif %}
             </ul>
             
+            <!-- Acciones Rápidas - Según el rol -->
+            {% if user.rol != 'VISITANTE' %}
             <div class="px-3 mt-5">
-                <h6 class="text-uppercase text-muted fw-bold mb-3">ACCESO RÁPIDO</h6>
+                
                 <div class="d-grid gap-2">
-                    <button class="btn btn-sm btn-outline-success">
-                        <i class="bi bi-plus-circle me-1"></i>Nuevo Reporte
-                    </button>
-                    <button class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-calendar-check me-1"></i>Programar Inspección
-                    </button>
+                    {% if user.rol == 'ADMINISTRATIVO' %}
+                    <h6 class="text-uppercase text-muted fw-bold mb-3">ACCESO RÁPIDO</h6>
+                        <button class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-plus-circle me-1"></i>Nuevo Usuario
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-download me-1"></i>Exportar Datos
+                        </button>
+                    {% elif user.rol == 'INSTRUCTOR' %}
+                    <h6 class="text-uppercase text-muted fw-bold mb-3">ACCESO RÁPIDO</h6>
+                        <button class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-plus-circle me-1"></i>Nuevo Reporte
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-person-plus me-1"></i>Registrar Visitante
+                        </button>
+                    {% elif user.rol == 'VIGILANCIA' %}
+                    <h6 class="text-uppercase text-muted fw-bold mb-3">ACCESO RÁPIDO</h6>
+                        <button class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-door-open me-1"></i>Registrar Acceso
+                        </button>
+                        <button class="btn btn-sm btn-outline-warning">
+                            <i class="bi bi-person-badge me-1"></i>Nuevo Visitante
+                        </button>
+                    {% elif user.rol == 'BRIGADA' %}
+                    <h6 class="text-uppercase text-muted fw-bold mb-3">ACCESO RÁPIDO</h6>
+                        <button class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-megaphone me-1"></i>Activar Emergencia
+                        </button>
+                        <button class="btn btn-sm btn-outline-warning">
+                            <i class="bi bi-tools me-1"></i>Verificar Equipos
+                        </button>
+                    {% endif %}
                 </div>
             </div>
+            {% endif %}
         </div>
     </nav>
 
@@ -266,7 +510,7 @@
         <!-- Breadcrumb -->
         <nav aria-label="breadcrumb" class="mb-4">
             <ol class="breadcrumb bg-white p-3 rounded shadow-sm">
-                <li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door"></i></a></li>
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}"><i class="bi bi-house-door"></i></a></li>
                 {% block breadcrumb %}{% endblock %}
             </ol>
         </nav>
@@ -303,7 +547,9 @@
                     </span>
                 </div>
                 <div class="col-md-6 text-md-end">
-                    <small class="text-muted">Versión 1.0.0</small>
+                    <small class="text-muted">
+                        {{ user.get_rol_display }} | Versión 1.0.0
+                    </small>
                 </div>
             </div>
         </div>
@@ -321,9 +567,58 @@
         });
         
         // Botón de emergencia
-        document.getElementById('botonPanico')?.addEventListener('click', function() {
-            if (confirm('¿ESTÁS EN UNA SITUACIÓN DE EMERGENCIA?\n\nSe notificará al personal de seguridad.')) {
-                alert('✅ Alerta enviada');
+        document.getElementById('botonPanico')?.addEventListener('click', async function() {
+            if (!confirm('¿ESTÁS EN UNA SITUACIÓN DE EMERGENCIA?\n\nSe notificará inmediatamente al personal de seguridad.')) {
+                return;
+            }
+
+            try {
+                // Obtener ubicación del usuario
+                if (!navigator.geolocation) {
+                    alert('❌ Tu navegador no soporta geolocalización.\nLlama al personal de seguridad directamente.');
+                    return;
+                }
+
+                const position = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    });
+                });
+
+                const { latitude, longitude } = position.coords;
+
+                // Enviar emergencia al servidor
+                const response = await fetch('/api/emergencias/emergencias/boton_panico/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+                    },
+                    body: JSON.stringify({
+                        tipo: 1, // Tipo de emergencia genérica
+                        descripcion: 'Emergencia activada desde botón de pánico',
+                        latitud: latitude,
+                        longitud: longitude
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    alert('✅ ALERTA DE EMERGENCIA ENVIADA\n\n' +
+                          'La brigada de emergencia y personal de seguridad han sido notificados.\n' +
+                          'Ayuda en camino a tu ubicación.\n\n' +
+                          'Permanezca seguro y siga las instrucciones del personal.');
+                } else {
+                    throw new Error('Error al enviar la alerta');
+                }
+            } catch (error) {
+                console.error('Error en botón de pánico:', error);
+                alert('⚠️ No se pudo enviar la alerta automáticamente.\n\n' +
+                      'Por favor contacta directamente:\n' +
+                      '- Emergencias: 123\n' +
+                      '- Vigilancia SENA: Ext. 100');
             }
         });
         
@@ -334,6 +629,11 @@
                 bsAlert.close();
             });
         }, 5000);
+        
+        // Función para mostrar QR (aprendiz)
+        function mostrarQR() {
+            alert('Tu código QR para acceso está disponible en tu dashboard.\nPuedes descargarlo desde la tarjeta "Mi Código QR".');
+        }
     </script>
     
     {% block extra_js %}{% endblock %}

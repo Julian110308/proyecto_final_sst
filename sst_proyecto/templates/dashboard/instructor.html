@@ -21,8 +21,9 @@
         <button class="btn btn-primary" onclick="window.location.href='/reportes/'">
             <i class="bi bi-file-earmark-bar-graph me-1"></i>Generar Reporte
         </button>
-        <button class="btn btn-outline-primary" onclick="registrarVisitante()">
-            <i class="bi bi-person-plus me-1"></i>Registrar Visitante
+        <!-- ❌ ELIMINADO: Registrar Visitante -->
+        <button class="btn btn-outline-success" onclick="programarCapacitacion()">
+            <i class="bi bi-calendar-plus me-1"></i>Programar Capacitación
         </button>
     </div>
 </div>
@@ -35,10 +36,10 @@
             <div class="card-body p-4">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Aprendices a Cargo</h6>
-                        <h3 class="fw-bold text-dark mb-0">28</h3>
+                        <h6 class="text-muted mb-2">Mis Aprendices</h6>
+                        <h3 class="fw-bold text-dark mb-0">{{ total_aprendices|default:45 }}</h3>
                         <small class="text-success">
-                            <i class="bi bi-arrow-up-short"></i> 3 fichas activas
+                            <i class="bi bi-people-fill"></i> A mi cargo
                         </small>
                     </div>
                     <div class="bg-light-green rounded-3 p-3">
@@ -56,8 +57,8 @@
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
                         <h6 class="text-muted mb-2">Presentes Hoy</h6>
-                        <h3 class="fw-bold text-dark mb-0">24</h3>
-                        <small class="text-info">85.7% asistencia</small>
+                        <h3 class="fw-bold text-dark mb-0">{{ aprendices_presentes|default:42 }}</h3>
+                        <small class="text-success">93% asistencia</small>
                     </div>
                     <div class="bg-light rounded-3 p-3" style="background: #e3f2fd !important;">
                         <i class="bi bi-person-check-fill fs-2 text-primary"></i>
@@ -67,18 +68,18 @@
         </div>
     </div>
 
-    <!-- Visitantes Gestionados -->
+    <!-- ✅ CAMBIO: Capacitaciones en lugar de Visitantes -->
     <div class="col-xl-3 col-md-6">
         <div class="card card-modern border-0">
             <div class="card-body p-4">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Visitantes Esta Semana</h6>
-                        <h3 class="fw-bold text-dark mb-0">7</h3>
-                        <small class="text-muted">3 activos ahora</small>
+                        <h6 class="text-muted mb-2">Capacitaciones</h6>
+                        <h3 class="fw-bold text-dark mb-0">3</h3>
+                        <small class="text-warning">1 programada</small>
                     </div>
                     <div class="bg-light-warning rounded-3 p-3">
-                        <i class="bi bi-person-badge fs-2 text-warning"></i>
+                        <i class="bi bi-mortarboard fs-2 text-warning"></i>
                     </div>
                 </div>
             </div>
@@ -92,9 +93,9 @@
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
                         <h6 class="text-muted mb-2">Reportes Pendientes</h6>
-                        <h3 class="fw-bold text-dark mb-0">3</h3>
+                        <h3 class="fw-bold text-dark mb-0">{{ reportes_pendientes|default:2 }}</h3>
                         <small class="text-warning">
-                            <i class="bi bi-exclamation-triangle"></i> Requieren atención
+                            <i class="bi bi-file-earmark-text"></i> Por revisar
                         </small>
                     </div>
                     <div class="bg-light-warning rounded-3 p-3">
@@ -114,7 +115,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <h6 class="mb-0">
                         <i class="bi bi-bar-chart-line me-2"></i>
-                        Asistencia Semanal de Aprendices
+                        Asistencia Semanal de Mis Aprendices
                     </h6>
                     <div class="btn-group btn-group-sm">
                         <button class="btn btn-outline-secondary active">Semana</button>
@@ -146,13 +147,14 @@
                         <i class="bi bi-check-circle me-2"></i>
                         Registrar Asistencia
                     </button>
+                    <!-- ✅ NUEVO: Programar Capacitación -->
+                    <button class="btn btn-outline-warning text-start" onclick="programarCapacitacion()">
+                        <i class="bi bi-calendar-plus me-2"></i>
+                        Programar Capacitación
+                    </button>
                     <button class="btn btn-outline-info text-start" onclick="window.location.href='/mapas/'">
                         <i class="bi bi-map me-2"></i>
                         Ver Mapa del Centro
-                    </button>
-                    <button class="btn btn-outline-warning text-start" onclick="window.location.href='/emergencias/'">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        Ver Emergencias
                     </button>
                     <button class="btn btn-outline-secondary text-start" onclick="generarReporte()">
                         <i class="bi bi-file-earmark-bar-graph me-2"></i>
@@ -164,7 +166,7 @@
     </div>
 </div>
 
-<!-- Mis Aprendices y Visitantes -->
+<!-- Mis Aprendices y Capacitaciones -->
 <div class="row g-4 mb-4">
     <div class="col-lg-7">
         <div class="card card-modern">
@@ -269,45 +271,43 @@
         </div>
     </div>
 
+    <!-- ✅ CAMBIO: Capacitaciones en lugar de Visitantes -->
     <div class="col-lg-5">
         <div class="card card-modern mb-4">
             <div class="card-header-modern d-flex justify-content-between align-items-center">
                 <h6 class="mb-0">
-                    <i class="bi bi-person-badge me-2"></i>
-                    Visitantes Activos
+                    <i class="bi bi-calendar-check me-2"></i>
+                    Mis Capacitaciones SST
                 </h6>
-                <button class="btn btn-sm btn-primary" onclick="registrarVisitante()">
-                    <i class="bi bi-plus-circle me-1"></i>Nuevo
+                <button class="btn btn-sm btn-primary" onclick="programarCapacitacion()">
+                    <i class="bi bi-plus-circle me-1"></i>Nueva
                 </button>
             </div>
             <div class="card-body">
-                <div class="list-group list-group-flush">
-                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>Roberto Sánchez</strong>
-                            <p class="mb-0 small text-muted">Empresa ABC - Ingresó 9:30 AM</p>
+                <div class="list-group">
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">Primeros Auxilios Básicos</h6>
+                                <small class="text-muted">Para Ficha 2543891</small>
+                                <p class="mb-0 mt-1">
+                                    <span class="badge bg-primary">📅 Viernes 20/12 - 2:00 PM</span>
+                                </p>
+                            </div>
+                            <span class="badge bg-success">Programada</span>
                         </div>
-                        <button class="btn btn-sm btn-outline-danger" onclick="registrarSalida('Roberto')">
-                            <i class="bi bi-box-arrow-right"></i>
-                        </button>
                     </div>
-                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>Laura Díaz</strong>
-                            <p class="mb-0 small text-muted">Proveedor XYZ - Ingresó 10:15 AM</p>
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">Uso de Extintores</h6>
+                                <small class="text-muted">Completada el 15/12</small>
+                                <p class="mb-0 mt-1">
+                                    <small class="text-success">✅ 42 aprendices certificados</small>
+                                </p>
+                            </div>
+                            <span class="badge bg-secondary">Completada</span>
                         </div>
-                        <button class="btn btn-sm btn-outline-danger" onclick="registrarSalida('Laura')">
-                            <i class="bi bi-box-arrow-right"></i>
-                        </button>
-                    </div>
-                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>Miguel Torres</strong>
-                            <p class="mb-0 small text-muted">Auditor - Ingresó 11:00 AM</p>
-                        </div>
-                        <button class="btn btn-sm btn-outline-danger" onclick="registrarSalida('Miguel')">
-                            <i class="bi bi-box-arrow-right"></i>
-                        </button>
                     </div>
                 </div>
             </div>
@@ -324,7 +324,7 @@
             <div class="card-body">
                 <div class="alert alert-warning mb-3">
                     <i class="bi bi-exclamation-triangle me-2"></i>
-                    <strong>4 aprendices ausentes</strong><br>
+                    <strong>3 aprendices ausentes</strong><br>
                     <small>Sin justificación registrada</small>
                 </div>
                 <div class="alert alert-info mb-0">
@@ -390,7 +390,7 @@
             <div class="card-body">
                 <div class="row text-center">
                     <div class="col-6 mb-3">
-                        <h4 class="text-success mb-0">96%</h4>
+                        <h4 class="text-success mb-0">93%</h4>
                         <small class="text-muted">Asistencia Promedio</small>
                     </div>
                     <div class="col-6 mb-3">
@@ -398,12 +398,12 @@
                         <small class="text-muted">Horas Totales</small>
                     </div>
                     <div class="col-6">
-                        <h4 class="text-info mb-0">7</h4>
-                        <small class="text-muted">Visitantes</small>
+                        <h4 class="text-warning mb-0">3</h4>
+                        <small class="text-muted">Capacitaciones</small>
                     </div>
                     <div class="col-6">
-                        <h4 class="text-warning mb-0">2</h4>
-                        <small class="text-muted">Incidentes</small>
+                        <h4 class="text-info mb-0">2</h4>
+                        <small class="text-muted">Reportes</small>
                     </div>
                 </div>
             </div>
@@ -422,7 +422,7 @@ if (ctx) {
             labels: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'],
             datasets: [{
                 label: 'Asistencia (%)',
-                data: [95, 92, 88, 96, 85],
+                data: [95, 92, 88, 96, 93],
                 borderColor: '#2e7d32',
                 backgroundColor: 'rgba(46, 125, 50, 0.1)',
                 tension: 0.4,
@@ -447,25 +447,20 @@ if (ctx) {
 }
 
 function verAprendices() {
-    alert('Función para ver todos los aprendices. Se mostrará lista completa con filtros.');
+    alert('Ver todos mis aprendices:\n\n✓ Lista completa con filtros\n✓ Estado de asistencia\n✓ Historial académico\n✓ Información de contacto');
 }
 
 function registrarAsistencia() {
-    alert('Función para registrar asistencia manual de aprendices.');
+    alert('Registrar asistencia manual:\n\n✓ Marcar presentes\n✓ Registrar ausencias\n✓ Justificaciones\n✓ Generar reporte');
 }
 
-function registrarVisitante() {
-    alert('Función para registrar un nuevo visitante. Se abrirá formulario.');
-}
-
-function registrarSalida(nombre) {
-    if (confirm(`¿Registrar salida de ${nombre}?`)) {
-        alert(`Salida de ${nombre} registrada correctamente.`);
-    }
+// ✅ NUEVA FUNCIÓN
+function programarCapacitacion() {
+    alert('Programar Capacitación SST:\n\n📚 Título de la capacitación\n📅 Fecha y hora\n👥 Aprendices participantes\n📝 Contenido y objetivos\n\nPuedes crear capacitaciones específicas para tus fichas.');
 }
 
 function verDetalle(nombre) {
-    alert(`Ver detalles de ${nombre}. Se mostrará historial y datos completos.`);
+    alert(`Ver detalles de ${nombre}:\n\n✓ Historial completo\n✓ Asistencia\n✓ Capacitaciones\n✓ Datos de contacto`);
 }
 
 function generarReporte() {

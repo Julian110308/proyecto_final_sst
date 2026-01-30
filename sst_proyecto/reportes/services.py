@@ -1,5 +1,6 @@
 from django.utils import timezone
 from django.db.models import Count, Q, Avg
+from django.db.models.functions import TruncDate, ExtractHour
 from datetime import datetime, timedelta
 import math
 
@@ -17,10 +18,10 @@ class ReporteAforoService:
 
         total_ingresos = registros.count()
 
-        # Aforo por dia
-        aforo_diario = registros.extra({
-            'fecha': 'date(fecha_hora_ingreso)'
-        }).values('fecha').annotate(
+        # Aforo por dia (optimizado con TruncDate)
+        aforo_diario = registros.annotate(
+            fecha=TruncDate('fecha_hora_ingreso')
+        ).values('fecha').annotate(
             total=Count('id')
         ).order_by('fecha')
 
@@ -35,10 +36,10 @@ class ReporteAforoService:
         config_aforo = ConfiguracionAforo.objects.first()
         aforo_maximo = config_aforo.aforo_maximo if config_aforo else 0
 
-        # Hora pico
-        hora_pico_data = registros.extra({
-            'hora': 'strftime("%H", fecha_hora_ingreso)'
-        }).values('hora').annotate(
+        # Hora pico (optimizado con ExtractHour)
+        hora_pico_data = registros.annotate(
+            hora=ExtractHour('fecha_hora_ingreso')
+        ).values('hora').annotate(
             total=Count('id')
         ).order_by('-total').first()
 
@@ -114,12 +115,15 @@ class ReporteIncidentesService:
             'total_emergencias': total_emergencias,
             'por_tipo': list(por_tipo),
             'por_estado': list(por_estado),
-            'tiempo_promedio_respuesta_minutos': round(tiempo_promedio_respuesta, 2) if 
-            tiempo_promedio_respuesta else None,
+            'tiempo_promedio_respuesta_minutos': (
+                round(tiempo_promedio_respuesta, 2) if tiempo_promedio_respuesta else None
+            ),
             'total_personas_afectadas': total_afectados,
             'evacuaciones_requeridas': evacuaciones,
-            'porcentaje_resueltas': round((emergencias.filter(estado='RESUELTA').count() / total_emergencias * 100) 
-            if total_emergencias > 0 else 0, 2)
+            'porcentaje_resueltas': (
+                round((emergencias.filter(estado='RESUELTA').count() / total_emergencias * 100), 2)
+                if total_emergencias > 0 else 0
+            )
         }
     
 class ReporteAsistenciaService:

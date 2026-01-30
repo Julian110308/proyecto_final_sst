@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mi Asistencia - Sistema SST{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+<li class="breadcrumb-item active">Mi Asistencia</li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card card-modern mb-4">
+            <div class="card-header-modern">
+                <h5 class="mb-0">
+                    <i class="bi bi-calendar-check me-2"></i>
+                    Mi Asistencia Mensual
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Hora Entrada</th>
+                                <th>Hora Salida</th>
+                                <th>Horas</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for i in "12345" %}
+                            <tr>
+                                <td>{{ forloop.counter|add:20 }}/01/2024</td>
+                                <td>7:0{{ forloop.counter }} AM</td>
+                                <td>4:{{ forloop.counter|add:15 }} PM</td>
+                                <td>9h {{ forloop.counter|add:10 }}m</td>
+                                <td><span class="badge bg-success">Presente</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card card-modern mb-4">
+            <div class="card-header-modern">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up me-2"></i>
+                    Estadísticas
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <div class="display-4 fw-bold text-success">85%</div>
+                    <p class="text-muted">Asistencia este mes</p>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Días asistidos</span>
+                        <span class="fw-bold">17/20</span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-success" style="width: 85%"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Puntualidad</span>
+                        <span class="fw-bold">92%</span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-info" style="width: 92%"></div>
+                    </div>
+                </div>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>1 falta justificada</strong>
+                    <p class="mb-0 small">Día 15/01 - Consulta médica</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

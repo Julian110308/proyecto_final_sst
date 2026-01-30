@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Registrar Asistencia - Sistema SST{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Registrar Asistencia</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="text-primary-green fw-bold">
+                <i class="bi bi-calendar-check me-2"></i>Control de Asistencia
+            </h2>
+            <p class="text-muted">Seleccione una ficha para gestionar la asistencia del día.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Selección de Ficha -->
+        <div class="col-md-4 mb-4">
+            <div class="card card-modern h-100">
+                <div class="card-header-modern">
+                    <h5 class="mb-0"><i class="bi bi-filter me-2"></i>Seleccionar Grupo</h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="">
+                        <div class="mb-3">
+                            <label class="form-label">Ficha de Caracterización</label>
+                            <select class="form-select form-select-lg" name="ficha" required>
+                                <option value="" selected disabled>Seleccione una ficha...</option>
+                                {% for ficha in fichas %}
+                                    {% if ficha %}
+                                    <option value="{{ ficha }}">{{ ficha }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Fecha</label>
+                            <input type="date" class="form-control" value="{% now 'Y-m-d' %}">
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-search me-2"></i>Cargar Aprendices
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Área de Resultados (Placeholder) -->
+        <div class="col-md-8 mb-4">
+            <div class="card card-modern h-100">
+                <div class="card-body text-center d-flex flex-column justify-content-center align-items-center p-5">
+                    <div class="bg-light-green rounded-circle p-4 mb-3">
+                        <i class="bi bi-person-check text-primary-green" style="font-size: 3rem;"></i>
+                    </div>
+                    <h4>Listo para registrar</h4>
+                    <p class="text-muted">
+                        Seleccione una ficha en el panel izquierdo para visualizar el listado de aprendices y marcar su asistencia.
+                    </p>
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Nota:</strong> Esta función permite registrar la asistencia manual en caso de que el sistema biométrico/QR no esté disponible.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

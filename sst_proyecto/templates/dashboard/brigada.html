@@ -55,10 +55,10 @@
             <div class="card-body p-4">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Brigadistas Disponibles</h6>
-                        <h3 class="fw-bold text-dark mb-0">8/10</h3>
+                        <h6 class="text-muted mb-2">Personas en Centro</h6>
+                        <h3 class="fw-bold text-dark mb-0">{{ personas_en_centro|default:0 }}</h3>
                         <small class="text-success">
-                            <i class="bi bi-person-check"></i> 2 en servicio
+                            <i class="bi bi-building"></i> {{ porcentaje_ocupacion|default:0 }}% ocupación
                         </small>
                     </div>
                     <div class="bg-light rounded-3 p-3" style="background: #e3f2fd !important;">
@@ -75,10 +75,10 @@
             <div class="card-body p-4">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Emergencias Este Mes</h6>
-                        <h3 class="fw-bold text-dark mb-0">8</h3>
+                        <h6 class="text-muted mb-2">Visitantes Hoy</h6>
+                        <h3 class="fw-bold text-dark mb-0">{{ visitantes_hoy|default:0 }}</h3>
                         <small class="text-success">
-                            <i class="bi bi-arrow-down-short"></i> -25% vs mes anterior
+                            <i class="bi bi-person-badge"></i> Registrados
                         </small>
                     </div>
                     <div class="bg-light-warning rounded-3 p-3">
@@ -95,10 +95,10 @@
             <div class="card-body p-4">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Tiempo Promedio</h6>
-                        <h3 class="fw-bold text-dark mb-0">3m 45s</h3>
+                        <h6 class="text-muted mb-2">Ingresos Hoy</h6>
+                        <h3 class="fw-bold text-dark mb-0">{{ ingresos_hoy|default:0 }}</h3>
                         <small class="text-success">
-                            <i class="bi bi-arrow-down-short"></i> Mejor que objetivo (5m)
+                            <i class="bi bi-door-open-fill"></i> Total del día
                         </small>
                     </div>
                     <div class="bg-light rounded-3 p-3" style="background: #e3f2fd !important;">
@@ -286,6 +286,254 @@
                         <div class="progress-bar bg-warning" style="width: 80%"></div>
                     </div>
                     <small class="text-muted">Alarma Bloque C requiere revisión</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- NUEVAS SECCIONES AGREGADAS -->
+<div class="row g-4 mb-4">
+    <!-- Simulacros -->
+    <div class="col-lg-4">
+        <div class="card card-modern h-100">
+            <div class="card-header-modern d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-alarm-fill me-2"></i>
+                    Simulacros Programados
+                </h6>
+                <button class="btn btn-sm btn-outline-primary" onclick="agregarSimulacro()">
+                    <i class="bi bi-plus-circle me-1"></i>Nuevo
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item px-0">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">Simulacro de Evacuación General</h6>
+                                <p class="mb-1 small text-muted">Prueba de tiempos de evacuación completa</p>
+                                <small class="text-primary">
+                                    <i class="bi bi-calendar3 me-1"></i>20 de Diciembre - 9:00 AM
+                                </small>
+                                <br>
+                                <small class="text-muted">
+                                    <i class="bi bi-geo-alt me-1"></i>Todas las instalaciones
+                                </small>
+                            </div>
+                            <span class="badge bg-warning">Próximo</span>
+                        </div>
+                    </div>
+                    <div class="list-group-item px-0">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">Simulacro de Incendio</h6>
+                                <p class="mb-1 small text-muted">Control y extinción de incendios</p>
+                                <small class="text-primary">
+                                    <i class="bi bi-calendar3 me-1"></i>15 de Enero - 10:30 AM
+                                </small>
+                                <br>
+                                <small class="text-muted">
+                                    <i class="bi bi-geo-alt me-1"></i>Área de Almacén
+                                </small>
+                            </div>
+                            <span class="badge bg-info">Programado</span>
+                        </div>
+                    </div>
+                    <div class="list-group-item px-0">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">Simulacro de Primeros Auxilios</h6>
+                                <p class="mb-1 small text-muted">Atención a múltiples víctimas</p>
+                                <small class="text-success">
+                                    <i class="bi bi-check-circle me-1"></i>Completado - 5 de Diciembre
+                                </small>
+                                <br>
+                                <small class="text-muted">
+                                    <i class="bi bi-clock-history me-1"></i>Tiempo: 8m 45s
+                                </small>
+                            </div>
+                            <span class="badge bg-success">Completado</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-sm btn-outline-secondary w-100" onclick="verHistorialSimulacros()">
+                        Ver Historial de Simulacros
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inventario EPP -->
+    <div class="col-lg-4">
+        <div class="card card-modern h-100">
+            <div class="card-header-modern d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-shield-check me-2"></i>
+                    Inventario EPP
+                </h6>
+                <button class="btn btn-sm btn-outline-warning" onclick="solicitarReposicion()">
+                    <i class="bi bi-cart-plus me-1"></i>Reponer
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Equipo</th>
+                                <th>Disponible</th>
+                                <th>Mínimo</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <i class="bi bi-helmet-safety text-primary me-2"></i>
+                                    Cascos de Seguridad
+                                </td>
+                                <td>25</td>
+                                <td>15</td>
+                                <td><span class="badge bg-success">OK</span></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <i class="bi bi-mask text-info me-2"></i>
+                                    Respiradores N95
+                                </td>
+                                <td>48</td>
+                                <td>30</td>
+                                <td><span class="badge bg-success">OK</span></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <i class="bi bi-emoji-dizzy text-warning me-2"></i>
+                                    Lentes de Seguridad
+                                </td>
+                                <td>18</td>
+                                <td>20</td>
+                                <td><span class="badge bg-warning">Bajo</span></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <i class="bi bi-hand-index-thumb text-danger me-2"></i>
+                                    Guantes Anti-Corte
+                                </td>
+                                <td>32</td>
+                                <td>25</td>
+                                <td><span class="badge bg-success">OK</span></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <i class="bi bi-bootstrap-fill text-success me-2"></i>
+                                    Chalecos Reflectivos
+                                </td>
+                                <td>12</td>
+                                <td>10</td>
+                                <td><span class="badge bg-success">OK</span></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <i class="bi bi-earbuds text-secondary me-2"></i>
+                                    Protectores Auditivos
+                                </td>
+                                <td>8</td>
+                                <td>15</td>
+                                <td><span class="badge bg-danger">Crítico</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="alert alert-warning mt-3 py-2">
+                    <small>
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        <strong>Atención:</strong> 2 equipos requieren reposición inmediata
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Primeros Auxilios -->
+    <div class="col-lg-4">
+        <div class="card card-modern h-100">
+            <div class="card-header-modern d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-heart-pulse text-danger me-2"></i>
+                    Primeros Auxilios
+                </h6>
+                <button class="btn btn-sm btn-outline-danger" onclick="reportarEmergenciaMedica()">
+                    <i class="bi bi-plus-circle me-1"></i>Reportar
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <div class="card bg-light-danger border-0">
+                            <div class="card-body text-center py-3">
+                                <h3 class="text-danger mb-0">3</h3>
+                                <small class="text-muted">Atenciones Hoy</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card bg-light-success border-0">
+                            <div class="card-body text-center py-3">
+                                <h3 class="text-success mb-0">8</h3>
+                                <small class="text-muted">Brigadistas Certificados</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h6 class="mb-2">Atenciones Recientes:</h6>
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item px-0 py-2">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar bg-warning text-white rounded-circle me-3" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-bandaid"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <strong>Corte en mano</strong>
+                                <p class="mb-0 small text-muted">Ligero - María González</p>
+                            </div>
+                            <span class="badge bg-success">Atendido</span>
+                        </div>
+                    </div>
+                    <div class="list-group-item px-0 py-2">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar bg-info text-white rounded-circle me-3" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-thermometer"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <strong>Mareo y náuseas</strong>
+                                <p class="mb-0 small text-muted">Moderado - Juan Pérez</p>
+                            </div>
+                            <span class="badge bg-success">Atendido</span>
+                        </div>
+                    </div>
+                    <div class="list-group-item px-0 py-2">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar bg-danger text-white rounded-circle me-3" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-droplet"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <strong>Hemorragia nasal</strong>
+                                <p class="mb-0 small text-muted">Leve - Carlos López</p>
+                            </div>
+                            <span class="badge bg-warning">En Proceso</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <button class="btn btn-sm btn-outline-secondary w-100" onclick="verBotiquines()">
+                        <i class="bi bi-plus-square me-1"></i>
+                        Ver Botiquines y Suministros
+                    </button>
                 </div>
             </div>
         </div>
@@ -525,7 +773,7 @@ if (ctx) {
     });
 }
 
-// Funciones
+// Funciones existentes
 function activarEmergencia() {
     if (confirm('⚠️ ¿ACTIVAR PROTOCOLO DE EMERGENCIA?\n\nEsto alertará a todo el personal y activará los sistemas de emergencia.')) {
         const tipo = prompt('Tipo de emergencia:\n1. Incendio\n2. Evacuación\n3. Médica\n4. Seguridad\n5. Otra\n\nIngrese el número:');
@@ -559,5 +807,41 @@ function verDetalleEmergencia(id) {
 function verTodaBrigada() {
     alert('Lista completa de brigadistas con:\n\n- Estado actual\n- Especialidades\n- Certificaciones\n- Historial de atención\n- Datos de contacto');
 }
+
+// NUEVAS FUNCIONES PARA LAS SECCIONES AGREGADAS
+function agregarSimulacro() {
+    alert('Agregar nuevo simulacro:\n\n1. Seleccionar tipo\n2. Definir fecha y hora\n3. Establecer ubicación\n4. Asignar personal\n5. Configurar objetivos\n\nEsta función abrirá el formulario de programación.');
+}
+
+function verHistorialSimulacros() {
+    alert('Historial de simulacros:\n\n- Últimos 6 meses\n- Tiempos de respuesta\n- Participación\n- Problemas identificados\n- Acciones de mejora\n\nGenerando reporte...');
+}
+
+function solicitarReposicion() {
+    alert('Solicitar reposición de EPP:\n\n1. Seleccionar equipo\n2. Especificar cantidad\n3. Prioridad (Normal/Urgente)\n4. Justificación\n5. Enviar a compras\n\nSolicitud enviada al área de compras.');
+}
+
+function reportarEmergenciaMedica() {
+    const tipo = prompt('Tipo de emergencia médica:\n1. Lesión\n2. Enfermedad\n3. Accidente\n4. Otro\n\nIngrese el número:');
+    if (tipo) {
+        alert('🚑 EMERGENCIA MÉDICA REPORTADA\n\nSe ha notificado a:\n✓ Brigadistas de primeros auxilios\n✓ Enfermería\n✓ Servicio médico externo\n✓ Coordinador SST\n\nMantenga al paciente cómodo hasta la llegada de ayuda.');
+    }
+}
+
+function verBotiquines() {
+    alert('Estado de botiquines:\n\n✓ Botiquín Principal: Completamente surtido\n✓ Botiquín Área Producción: 95% surtido\n✓ Botiquín Oficinas: 90% surtido\n✓ Botiquín Almacén: 85% surtido\n\nPróxima revisión: 25 de Diciembre');
+}
 </script>
+
+<!-- Estilos adicionales para las nuevas secciones -->
+<style>
+.bg-light-danger {
+    background-color: rgba(244, 67, 54, 0.1) !important;
+    border: 1px solid rgba(244, 67, 54, 0.2) !important;
+}
+.bg-light-success {
+    background-color: rgba(76, 175, 80, 0.1) !important;
+    border: 1px solid rgba(76, 175, 80, 0.2) !important;
+}
+</style>
 {% endblock %}

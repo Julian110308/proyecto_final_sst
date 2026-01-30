@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from django.db.models import Q, Count
+from django.http import HttpResponse
 from datetime import datetime, timedelta
 
 from .models import ConfiguracionReporte, ReporteGenerado
@@ -14,6 +15,7 @@ from .services import (
     ReporteAsistenciaService,
     ReporteSeguridadService,
 )
+from .pdf_generator import PDFReporteGenerator
 from control_acceso.models import RegistroAcceso, ConfiguracionAforo
 from emergencias.models import Emergencia
 from usuarios.models import Usuario
@@ -75,16 +77,17 @@ class ReporteViewSet(viewsets.ModelViewSet):
                 {'error': 'No tienes permisos para generar reportes de aforo.'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        
+
         fecha_inicio = request.query_params.get('fecha_inicio')
         fecha_fin = request.query_params.get('fecha_fin')
+        formato = request.query_params.get('formato', 'json')  # json o pdf
 
         if not fecha_inicio or not fecha_fin:
             return Response(
                 {'error': 'fecha_inicio y fecha_fin son requeridos.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         try:
             periodo_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d')
             periodo_fin = datetime.strptime(fecha_fin, '%Y-%m-%d')
@@ -93,7 +96,7 @@ class ReporteViewSet(viewsets.ModelViewSet):
                 {'error': 'Formato de fecha inválido. Use YYYY-MM-DD'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         # Generar reporte
         datos = ReporteAforoService.generar_reporte(periodo_inicio, periodo_fin)
 
@@ -112,6 +115,13 @@ class ReporteViewSet(viewsets.ModelViewSet):
                 generado_por=request.user
             )
 
+        # Retornar en el formato solicitado
+        if formato == 'pdf':
+            pdf_buffer = PDFReporteGenerator.generar_reporte_aforo(datos)
+            response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="reporte_aforo_{fecha_inicio}_{fecha_fin}.pdf"'
+            return response
+
         return Response(datos)
     
     @action(detail=False, methods=['get'])
@@ -122,16 +132,17 @@ class ReporteViewSet(viewsets.ModelViewSet):
                 {'error': 'No tienes permisos para generar reportes de incidentes.'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        
+
         fecha_inicio = request.query_params.get('fecha_inicio')
         fecha_fin = request.query_params.get('fecha_fin')
+        formato = request.query_params.get('formato', 'json')  # json o pdf
 
         if not fecha_inicio or not fecha_fin:
             return Response(
                 {'error': 'fecha_inicio y fecha_fin son requeridos.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         try:
             periodo_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d')
             periodo_fin = datetime.strptime(fecha_fin, '%Y-%m-%d')
@@ -140,16 +151,23 @@ class ReporteViewSet(viewsets.ModelViewSet):
                 {'error': 'Formato de fecha inválido. Use YYYY-MM-DD'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         # Generar reporte
         if request.user.rol == 'INSTRUCTOR':
             datos = ReporteIncidentesService.generar_reporte_instruccion(
-                periodo_inicio, 
+                periodo_inicio,
                 periodo_fin,
                 request.user
             )
         else:
             datos = ReporteIncidentesService.generar_reporte(periodo_inicio, periodo_fin)
+
+        # Retornar en el formato solicitado
+        if formato == 'pdf':
+            pdf_buffer = PDFReporteGenerator.generar_reporte_incidentes(datos)
+            response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="reporte_incidentes_{fecha_inicio}_{fecha_fin}.pdf"'
+            return response
 
         return Response(datos)
     
@@ -161,17 +179,18 @@ class ReporteViewSet(viewsets.ModelViewSet):
                 {'error': 'No tienes permisos para generar reportes de asistencia.'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        
+
         ficha = request.query_params.get('ficha')
         fecha_inicio = request.query_params.get('fecha_inicio')
         fecha_fin = request.query_params.get('fecha_fin')
+        formato = request.query_params.get('formato', 'json')  # json o pdf
 
         if not all([ficha, fecha_inicio, fecha_fin]):
             return Response(
                 {'error': 'ficha, fecha_inicio y fecha_fin son requeridos.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         try:
             periodo_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d')
             periodo_fin = datetime.strptime(fecha_fin, '%Y-%m-%d')
@@ -180,9 +199,16 @@ class ReporteViewSet(viewsets.ModelViewSet):
                 {'error': 'Formato de fecha inválido. Use YYYY-MM-DD'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         # Generar reporte
         datos = ReporteAsistenciaService.generar_reporte(ficha, periodo_inicio, periodo_fin)
+
+        # Retornar en el formato solicitado
+        if formato == 'pdf':
+            pdf_buffer = PDFReporteGenerator.generar_reporte_asistencia(datos)
+            response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="reporte_asistencia_ficha_{ficha}_{fecha_inicio}_{fecha_fin}.pdf"'
+            return response
 
         return Response(datos)
     
@@ -194,9 +220,10 @@ class ReporteViewSet(viewsets.ModelViewSet):
                 {'error': 'No tienes permisos para generar reportes de seguridad.'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        
+
         fecha_inicio = request.query_params.get('fecha_inicio')
         fecha_fin = request.query_params.get('fecha_fin')
+        formato = request.query_params.get('formato', 'json')  # json o pdf
 
         if not fecha_inicio or not fecha_fin:
             fecha_fin = timezone.now().date()
@@ -212,7 +239,7 @@ class ReporteViewSet(viewsets.ModelViewSet):
                     {'error': 'Formato de fecha inválido. Use YYYY-MM-DD'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-        
+
         # Generar reporte según rol
         if request.user.rol == 'VIGILANCIA':
             datos = ReporteSeguridadService.generar_reporte_vigilancia(periodo_inicio, periodo_fin)
@@ -220,7 +247,16 @@ class ReporteViewSet(viewsets.ModelViewSet):
             datos = ReporteSeguridadService.generar_reporte_emergencias(periodo_inicio, periodo_fin)
         else:
             datos = ReporteSeguridadService.generar_reporte(periodo_inicio, periodo_fin)
-        
+
+        # Retornar en el formato solicitado
+        if formato == 'pdf':
+            pdf_buffer = PDFReporteGenerator.generar_reporte_seguridad(datos)
+            response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
+            fecha_inicio_str = fecha_inicio if isinstance(fecha_inicio, str) else fecha_inicio.strftime('%Y-%m-%d')
+            fecha_fin_str = fecha_fin if isinstance(fecha_fin, str) else fecha_fin.strftime('%Y-%m-%d')
+            response['Content-Disposition'] = f'attachment; filename="reporte_seguridad_{fecha_inicio_str}_{fecha_fin_str}.pdf"'
+            return response
+
         return Response(datos)
     
     @action(detail=False, methods=['get'])

@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}Configuración - Sistema SST{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Configuración del Sistema</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="text-primary-green fw-bold">
+                <i class="bi bi-gear-fill me-2"></i>Configuración General
+            </h2>
+            <p class="text-muted">Ajustes globales del sistema de seguridad y salud en el trabajo.</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Configuración de Aforo -->
+        <div class="col-md-6">
+            <div class="card card-modern h-100">
+                <div class="card-header-modern d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-people me-2"></i>Control de Aforo</h5>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="switchAforo" {% if config_aforo.activo %}checked{% endif %}>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Capacidad Máxima del Centro</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" value="{{ config_aforo.aforo_maximo|default:'2000' }}">
+                                <span class="input-group-text">Personas</span>
+                            </div>
+                            <div class="form-text">Límite total de personas permitidas simultáneamente.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Umbral de Alerta (%)</label>
+                            <input type="range" class="form-range" min="50" max="100" value="90" id="rangoAlerta">
+                            <div class="d-flex justify-content-between">
+                                <small>50%</small>
+                                <small class="fw-bold text-warning">90%</small>
+                                <small>100%</small>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Mensaje de Alerta</label>
+                            <textarea class="form-control" rows="2">{{ config_aforo.mensaje_alerta|default:'Aforo máximo alcanzado.' }}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary-custom w-100">Guardar Cambios</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuración de Notificaciones -->
+        <div class="col-md-6">
+            <div class="card card-modern h-100">
+                <div class="card-header-modern">
+                    <h5 class="mb-0"><i class="bi bi-bell me-2"></i>Alertas y Notificaciones</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <div>
+                                <div class="fw-bold">Alertas de Emergencia</div>
+                                <small class="text-muted">Notificar a brigadistas y administrativos</small>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" checked>
+                            </div>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <div>
+                                <div class="fw-bold">Ingresos Irregulares</div>
+                                <small class="text-muted">Alertar sobre intentos de acceso denegados</small>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" checked>
+                            </div>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <div>
+                                <div class="fw-bold">Reportes Automáticos</div>
+                                <small class="text-muted">Enviar resumen diario por correo</small>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mantenimiento -->
+        <div class="col-12">
+            <div class="alert alert-warning d-flex align-items-center" role="alert">
+                <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
+                <div>
+                    <strong>Zona de Peligro:</strong> Las opciones de reinicio del sistema y borrado de base de datos están deshabilitadas por seguridad en esta vista.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

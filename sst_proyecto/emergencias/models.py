@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
 from usuarios.models import Usuario
 from mapas.models import EdificioBloque
 
@@ -50,18 +51,26 @@ class Emergencia(models.Model):
     tipo = models.ForeignKey(
         TipoEmergencia,
         on_delete=models.PROTECT,
-        related_name='emergencias'
+        related_name='emergencias',
+        db_index=True
     )
     reportada_por = models.ForeignKey(
         Usuario,
         on_delete=models.SET_NULL,
         null=True,
-        related_name='emergencias_reportadas'
+        related_name='emergencias_reportadas',
+        db_index=True
     )
 
     # Ubicación (usando campos FloatField en lugar de PointField)
-    latitud = models.FloatField()
-    longitud = models.FloatField()
+    latitud = models.FloatField(
+        validators=[MinValueValidator(-90), MaxValueValidator(90)],
+        help_text='Latitud debe estar entre -90 y 90 grados'
+    )
+    longitud = models.FloatField(
+        validators=[MinValueValidator(-180), MaxValueValidator(180)],
+        help_text='Longitud debe estar entre -180 y 180 grados'
+    )
     edificio = models.ForeignKey(
         EdificioBloque,
         on_delete=models.SET_NULL,
@@ -73,10 +82,10 @@ class Emergencia(models.Model):
 
     # Detalles
     descripcion = models.TextField()
-    estado = models.CharField(max_length=20, choices=ESTADO, default='REPORTADA')
+    estado = models.CharField(max_length=20, choices=ESTADO, default='REPORTADA', db_index=True)
 
     # Fechas y tiempos
-    fecha_hora_reporte = models.DateTimeField(auto_now_add=True)
+    fecha_hora_reporte = models.DateTimeField(auto_now_add=True, db_index=True)
     fecha_hora_atencion = models.DateTimeField(null=True, blank=True)
     fecha_hora_resolucion = models.DateTimeField(null=True, blank=True)
 

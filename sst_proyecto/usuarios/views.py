@@ -6,15 +6,34 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import login, logout
 from .models import Usuario, Visitante
 from .serializers import UsuarioSerializer, LoginSerializer, VisitanteSerializer
+# DESHABILITADO - Solo registro físico/manual
+# from control_acceso.utils import generar_qr_usuario, generar_qr_visitante
+from .permissions import PuedeGestionarUsuarios, EsAdministrativoOInstructor
 
 class UsuarioViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar usuarios
+    PERMISOS:
+    - Login/Registro: Todos (sin autenticación)
+    - Ver perfil propio: Todos autenticados
+    - Listar/Modificar usuarios: Solo ADMINISTRATIVO
+    """
     queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
 
     def get_permissions(self):
-        # Permitir registro sin autenticación
+        # Permitir login y registro sin autenticación
         if self.action in ['login', 'create']:
             return [AllowAny()]
+
+        # Ver perfil propio: todos
+        if self.action in ['perfil']:
+            return [IsAuthenticated()]
+
+        # Gestionar usuarios: solo ADMINISTRATIVO
+        if self.action in ['list', 'update', 'partial_update', 'destroy']:
+            return [PuedeGestionarUsuarios()]
+
         return [IsAuthenticated()]
     
     def create(self, request, *args, **kwargs):
@@ -132,11 +151,67 @@ class UsuarioViewSet(viewsets.ModelViewSet):
     def perfil(self, request):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
+
+    # DESHABILITADO - Solo registro físico/manual
+    # @action(detail=True, methods=['get'])
+    # def generar_qr(self, request, pk=None):
+    #     """
+    #     Genera el código QR para un usuario
+    #     """
+    #     usuario = self.get_object()
+    #     qr_base64 = generar_qr_usuario(usuario)
+    #
+    #     return Response({
+    #         'usuario_id': usuario.id,
+    #         'nombre': usuario.get_full_name(),
+    #         'documento': usuario.numero_documento,
+    #         'rol': usuario.get_rol_display(),
+    #         'qr_image': qr_base64
+    #     })
+    #
+    # @action(detail=False, methods=['get'])
+    # def mi_qr(self, request):
+    #     """
+    #     Genera el código QR del usuario autenticado
+    #     """
+    #     qr_base64 = generar_qr_usuario(request.user)
+    #
+    #     return Response({
+    #         'usuario_id': request.user.id,
+    #         'nombre': request.user.get_full_name(),
+    #         'documento': request.user.numero_documento,
+    #         'rol': request.user.get_rol_display(),
+    #         'qr_image': qr_base64
+    #     })
     
 class VisitanteViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar visitantes
+    PERMISOS: VIGILANCIA, ADMINISTRATIVO e INSTRUCTOR
+    """
     queryset = Visitante.objects.all()
     serializer_class = VisitanteSerializer
-    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        # Solo VIGILANCIA, ADMINISTRATIVO e INSTRUCTOR pueden gestionar visitantes
+        return [EsAdministrativoOInstructor()]
 
     def perform_create(self, serializer):
         serializer.save(registrado_por=self.request.user)
+
+    # DESHABILITADO - Solo registro físico/manual
+    # @action(detail=True, methods=['get'])
+    # def generar_qr(self, request, pk=None):
+    #     """
+    #     Genera el código QR para un visitante
+    #     """
+    #     visitante = self.get_object()
+    #     qr_base64 = generar_qr_visitante(visitante)
+    #
+    #     return Response({
+    #         'visitante_id': visitante.id,
+    #         'nombre': visitante.nombre_completo,
+    #         'documento': visitante.numero_documento,
+    #         'entidad': visitante.entidad,
+    #         'qr_image': qr_base64
+    #     })

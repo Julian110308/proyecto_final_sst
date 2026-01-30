@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestión de Equipos - Brigada SST{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Brigada</a></li>
+<li class="breadcrumb-item active">Gestión de Equipos</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-primary-green fw-bold mb-0">
+                <i class="bi bi-tools me-2"></i>Inventario de Equipos de Emergencia
+            </h2>
+            <p class="text-muted">Revisión y estado del equipamiento a cargo de la brigada.</p>
+        </div>
+        <button class="btn btn-primary-custom">
+            <i class="bi bi-clipboard-check me-2"></i>Iniciar Verificación General
+        </button>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card card-modern mb-4">
+        <div class="card-body">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" placeholder="Buscar equipo por nombre o ubicación...">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select">
+                        <option value="">Filtrar por estado...</option>
+                        <option value="ÓPTIMO">Óptimo</option>
+                        <option value="REQUIERE REVISIÓN">Requiere Revisión</option>
+                        <option value="FUERA DE SERVICIO">Fuera de Servicio</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Equipos -->
+    <div class="card card-modern">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Equipo</th>
+                            <th>Ubicación</th>
+                            <th>Estado</th>
+                            <th>Última Revisión</th>
+                            <th class="text-end pe-4">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for equipo in equipos %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="fs-3 me-3">
+                                        {% if 'Extintor' in equipo.nombre %}<i class="bi bi-fire text-danger"></i>
+                                        {% elif 'Botiquín' in equipo.nombre %}<i class="bi bi-first-aid text-success"></i>
+                                        {% elif 'Camilla' in equipo.nombre %}<i class="bi bi-person-arms-up text-info"></i>
+                                        {% else %}<i class="bi bi-box-seam"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold">{{ equipo.nombre }}</div>
+                                        <small class="text-muted">ID: {{ equipo.id }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ equipo.ubicacion }}</td>
+                            <td>
+                                {% if equipo.estado == 'ÓPTIMO' %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">Óptimo</span>
+                                {% elif equipo.estado == 'REQUIERE REVISIÓN' %}
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Requiere Revisión</span>
+                                {% else %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Fuera de Servicio</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ equipo.ultima_revision }}</td>
+                            <td class="text-end pe-4">
+                                <button class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-check-circle me-1"></i> Verificar
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">No hay equipos registrados.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

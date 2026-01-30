@@ -21,12 +21,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY', default='tu-clave-secreta-aqui-cambiar-en-produccion')
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool)
+DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '*']
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost:8000,http://127.0.0.1:8000').split(',')
 
 
 # Application definition
@@ -64,8 +65,11 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# Configuración de CORS para API móvil   de los modulos.
-CORS_ALLOW_ALL_ORIGINS = True
+# Configuración de CORS para API móvil de los módulos
+CORS_ALLOWED_ORIGINS = config(
+    'CORS_ALLOWED_ORIGINS',
+    default='http://localhost:8000,http://127.0.0.1:8000'
+).split(',')
 CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'sst_proyecto.urls'
@@ -94,11 +98,20 @@ WSGI_APPLICATION = 'sst_proyecto.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': config('DB_ENGINE', default='django.db.backends.sqlite3'),
+        'NAME': config('DB_NAME', default=str(BASE_DIR / 'db.sqlite3')),
+        'USER': config('DB_USER', default=''),
+        'PASSWORD': config('DB_PASSWORD', default=''),
+        'HOST': config('DB_HOST', default=''),
+        'PORT': config('DB_PORT', default=''),
     }
 }
 
+
+# Authentication Backends
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -192,3 +205,34 @@ MESSAGE_TAGS = {
     messages_constants.WARNING: 'warning',
     messages_constants.ERROR: 'danger',
 }
+
+# ====================================================================
+# CONFIGURACIÓN DE EMAIL - Recuperación de Contraseña
+# ====================================================================
+
+# Configuración de email desde variables de entorno
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+
+# Si no hay credenciales configuradas, usar backend de consola para desarrollo
+if not EMAIL_HOST_USER or not EMAIL_HOST_PASSWORD:
+    # Backend de consola - Los emails se muestran en la terminal
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    print("\n" + "="*70)
+    print("MODO DESARROLLO: Emails se mostraran en la consola")
+    print("Para usar Gmail, configura EMAIL_HOST_USER y EMAIL_HOST_PASSWORD en .env")
+    print("="*70 + "\n")
+else:
+    # Backend SMTP - Envío real de emails
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
+    EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+    EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+    print("\n" + "="*70)
+    print(f"SMTP configurado correctamente: {EMAIL_HOST_USER}")
+    print("="*70 + "\n")
+
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='SST Centro Minero <noreply@centrominerosst.com>')
+
+# Configuración para recuperación de contraseña
+PASSWORD_RESET_TIMEOUT = 3600  # 1 hora (en segundos)

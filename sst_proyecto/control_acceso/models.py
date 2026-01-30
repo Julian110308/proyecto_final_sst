@@ -1,6 +1,7 @@
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
 from usuarios.models import Usuario
-import math
+from mapas.services import calcular_distancia
 
 class Geocerca(models.Model):
 
@@ -9,9 +10,21 @@ class Geocerca(models.Model):
     descripcion = models.TextField(blank=True)
 
     # Coordenadas del centro y radio (en lugar de polígono)
-    centro_latitud = models.FloatField(default=5.5339)
-    centro_longitud = models.FloatField(default=-73.3674)
-    radio_metros = models.IntegerField(default=200)
+    centro_latitud = models.FloatField(
+        default=5.5339,
+        validators=[MinValueValidator(-90), MaxValueValidator(90)],
+        help_text='Latitud debe estar entre -90 y 90 grados'
+    )
+    centro_longitud = models.FloatField(
+        default=-73.3674,
+        validators=[MinValueValidator(-180), MaxValueValidator(180)],
+        help_text='Longitud debe estar entre -180 y 180 grados'
+    )
+    radio_metros = models.IntegerField(
+        default=200,
+        validators=[MinValueValidator(1)],
+        help_text='Radio en metros (mínimo 1 metro)'
+    )
 
     activo = models.BooleanField(default=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
@@ -24,41 +37,27 @@ class Geocerca(models.Model):
         return self.nombre
     
     def punto_esta_dentro(self, latitud, longitud):
-
         """
         Verifica si un punto está dentro de la geocerca usando la fórmula de Haversine
         Retorna True si está dentro del radio, False si está fuera
         """
-
-        # Radio de la Tierra en metros
-        R = 6371000
-
-        # Convertir grados a radianes
-        lat1 = math.radians(self.centro_latitud)
-        lon1 = math.radians(self.centro_longitud)
-        lat2 = math.radians(latitud)
-        lon2 = math.radians(longitud)
-
-        # Diferencias de coordenadas
-        dlat = lat2-lat1
-        dlon = lon2-lon1
-
-        # Formula de Haversine
-        a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
-        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
-        distancia = R * c
-
+        distancia = calcular_distancia(
+            self.centro_latitud,
+            self.centro_longitud,
+            latitud,
+            longitud
+        )
         return distancia <= self.radio_metros
     
     @classmethod
-    def verificar_ubibicacion_usuario(cls, latitud, longitud):
+    def verificar_ubicacion_usuario(cls, latitud, longitud):
 
         """
         Verifica si una ubicación está dentro de alguna geocerca activa
         Retorna la geocerca si está dentro, None si está fuera
         """
 
-        geocercas_actives = cls.objects.filter(activa=True)
+        geocercas_actives = cls.objects.filter(activo=True)
 
         for geocerca in geocercas_actives:
             if geocerca.punto_esta_dentro(latitud, longitud):
@@ -79,9 +78,9 @@ class RegistroAcceso(models.Model):
         ('QR', 'Código QR'),
     ]
 
-    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='accesos')
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='accesos', db_index=True)
     tipo = models.CharField(max_length=10, choices=TIPO_ACCESO)
-    fecha_hora_ingreso = models.DateTimeField(auto_now_add=True)
+    fecha_hora_ingreso = models.DateTimeField(auto_now_add=True, db_index=True)
     latitud_ingreso = models.FloatField(null=True, blank=True)
     longitud_ingreso = models.FloatField(null=True, blank=True)
     metodo_ingreso = models.CharField(max_length=15, choices=METODO_DETECCION, default='AUTOMATICO')
