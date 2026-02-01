@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python manage.py shell:*)",
+      "Bash(python manage.py runserver:*)",
+      "Bash(curl:*)",
+      "Bash(dir:*)",
+      "Bash(if exist .git rd /s /q .git)",
+      "Bash(git rm:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}

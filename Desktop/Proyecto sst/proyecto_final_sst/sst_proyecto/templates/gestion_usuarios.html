@@ -1,0 +1,381 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Usuarios - SST Centro Minero{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Gestión de Usuarios</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 fw-bold text-dark mb-1">
+                <i class="bi bi-people text-primary-green me-2"></i>
+                Gestión de Usuarios
+            </h1>
+            <p class="text-muted">Administra los usuarios del sistema</p>
+        </div>
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalNuevoUsuario">
+            <i class="bi bi-person-plus me-2"></i>Nuevo Usuario
+        </button>
+    </div>
+
+    <!-- Estadísticas Rápidas -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card card-modern">
+                <div class="card-body text-center">
+                    <i class="bi bi-people-fill fs-1 text-primary-green mb-3"></i>
+                    <h3 class="fw-bold" id="totalUsuarios">0</h3>
+                    <p class="text-muted mb-0">Total Usuarios</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card card-modern">
+                <div class="card-body text-center">
+                    <i class="bi bi-person-check fs-1 text-success mb-3"></i>
+                    <h3 class="fw-bold" id="usuariosActivos">0</h3>
+                    <p class="text-muted mb-0">Activos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card card-modern">
+                <div class="card-body text-center">
+                    <i class="bi bi-person-x fs-1 text-danger mb-3"></i>
+                    <h3 class="fw-bold" id="usuariosInactivos">0</h3>
+                    <p class="text-muted mb-0">Inactivos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card card-modern">
+                <div class="card-body text-center">
+                    <i class="bi bi-person-badge fs-1 text-info mb-3"></i>
+                    <h3 class="fw-bold" id="nuevosMes">0</h3>
+                    <p class="text-muted mb-0">Nuevos este mes</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros y Búsqueda -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-modern">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" id="buscarUsuarios"
+                                   placeholder="Buscar por nombre, documento o email...">
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="filtroRol">
+                                <option value="">Todos los roles</option>
+                                <option value="APRENDIZ">Aprendiz</option>
+                                <option value="INSTRUCTOR">Instructor</option>
+                                <option value="ADMINISTRATIVO">Administrativo</option>
+                                <option value="VIGILANCIA">Vigilancia</option>
+                                <option value="BRIGADA">Brigada</option>
+                                <option value="VISITANTE">Visitante</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="filtroEstado">
+                                <option value="">Todos los estados</option>
+                                <option value="true">Activos</option>
+                                <option value="false">Inactivos</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-primary w-100" onclick="cargarUsuarios()">
+                                <i class="bi bi-search me-1"></i>Buscar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Usuarios -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card card-modern">
+                <div class="card-header-modern">
+                    <h6 class="mb-0">
+                        <i class="bi bi-list-ul me-2"></i>
+                        Lista de Usuarios
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Documento</th>
+                                    <th>Email</th>
+                                    <th>Rol</th>
+                                    <th>Estado</th>
+                                    <th>Fecha Registro</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaUsuariosBody">
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-5">
+                                        <i class="bi bi-hourglass-split fs-1 mb-2 d-block"></i>
+                                        Cargando usuarios...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nuevo Usuario -->
+<div class="modal fade" id="modalNuevoUsuario" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary-green text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-person-plus me-2"></i>
+                    Nuevo Usuario
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Para crear un nuevo usuario, por favor usa la página de <a href="/accounts/login/">Registro</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Usuario -->
+<div class="modal fade" id="modalEditarUsuario" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary-green text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-pencil me-2"></i>
+                    Editar Usuario
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditarUsuario">
+                    {% csrf_token %}
+                    <input type="hidden" id="editUsuarioId">
+                    <div class="mb-3">
+                        <label class="form-label">Estado</label>
+                        <select class="form-select" id="editEstado">
+                            <option value="true">Activo</option>
+                            <option value="false">Inactivo</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Rol</label>
+                        <select class="form-select" id="editRol">
+                            <option value="APRENDIZ">Aprendiz</option>
+                            <option value="INSTRUCTOR">Instructor</option>
+                            <option value="ADMINISTRATIVO">Administrativo</option>
+                            <option value="VIGILANCIA">Vigilancia</option>
+                            <option value="BRIGADA">Brigada</option>
+                            <option value="VISITANTE">Visitante</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarEdicion()">
+                    <i class="bi bi-check-circle me-1"></i>Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Cargar usuarios al iniciar
+document.addEventListener('DOMContentLoaded', function() {
+    cargarUsuarios();
+    cargarEstadisticas();
+});
+
+// Función para cargar estadísticas
+function cargarEstadisticas() {
+    fetch('/api/auth/usuarios/listar_para_acceso/')
+        .then(response => response.json())
+        .then(usuarios => {
+            document.getElementById('totalUsuarios').textContent = usuarios.length;
+            document.getElementById('usuariosActivos').textContent = usuarios.filter(u => u.activo).length;
+            document.getElementById('usuariosInactivos').textContent = usuarios.filter(u => !u.activo).length;
+
+            // Nuevos este mes
+            const hoy = new Date();
+            const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+            const nuevosMes = usuarios.filter(u => {
+                const fechaRegistro = new Date(u.fecha_registro);
+                return fechaRegistro >= inicioMes;
+            }).length;
+            document.getElementById('nuevosMes').textContent = nuevosMes;
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+// Función para cargar usuarios
+function cargarUsuarios() {
+    const buscar = document.getElementById('buscarUsuarios').value.toLowerCase();
+    const filtroRol = document.getElementById('filtroRol').value;
+    const filtroEstado = document.getElementById('filtroEstado').value;
+
+    fetch('/api/auth/usuarios/listar_para_acceso/')
+        .then(response => response.json())
+        .then(usuarios => {
+            // Filtrar usuarios
+            let usuariosFiltrados = usuarios;
+
+            if (buscar) {
+                usuariosFiltrados = usuariosFiltrados.filter(u => {
+                    const nombre = `${u.first_name} ${u.last_name}`.toLowerCase();
+                    const documento = u.numero_documento.toLowerCase();
+                    const email = u.email.toLowerCase();
+                    return nombre.includes(buscar) || documento.includes(buscar) || email.includes(buscar);
+                });
+            }
+
+            if (filtroRol) {
+                usuariosFiltrados = usuariosFiltrados.filter(u => u.rol === filtroRol);
+            }
+
+            if (filtroEstado !== '') {
+                const estadoBool = filtroEstado === 'true';
+                usuariosFiltrados = usuariosFiltrados.filter(u => u.activo === estadoBool);
+            }
+
+            renderizarTabla(usuariosFiltrados);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('tablaUsuariosBody').innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center text-danger py-4">
+                        Error al cargar usuarios
+                    </td>
+                </tr>
+            `;
+        });
+}
+
+// Renderizar tabla de usuarios
+function renderizarTabla(usuarios) {
+    const tbody = document.getElementById('tablaUsuariosBody');
+
+    if (usuarios.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox fs-1 mb-2 d-block"></i>
+                    No se encontraron usuarios
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    const rolesNombres = {
+        'APRENDIZ': 'Aprendiz',
+        'INSTRUCTOR': 'Instructor',
+        'ADMINISTRATIVO': 'Administrativo',
+        'VIGILANCIA': 'Vigilancia',
+        'BRIGADA': 'Brigada',
+        'VISITANTE': 'Visitante'
+    };
+
+    tbody.innerHTML = usuarios.map(usuario => {
+        const nombreCompleto = `${usuario.first_name} ${usuario.last_name}`.trim() || usuario.username;
+        const rol = rolesNombres[usuario.rol] || usuario.rol;
+        const estadoBadge = usuario.activo
+            ? '<span class="badge bg-success">Activo</span>'
+            : '<span class="badge bg-secondary">Inactivo</span>';
+
+        const fechaRegistro = usuario.fecha_registro
+            ? new Date(usuario.fecha_registro).toLocaleDateString()
+            : 'N/A';
+
+        return `
+            <tr>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <div class="bg-primary-green rounded-circle p-2 me-2">
+                            <i class="bi bi-person-fill text-white"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold">${nombreCompleto}</div>
+                            <small class="text-muted">${usuario.username}</small>
+                        </div>
+                    </div>
+                </td>
+                <td>${usuario.numero_documento}</td>
+                <td>${usuario.email}</td>
+                <td><span class="badge bg-info">${rol}</span></td>
+                <td>${estadoBadge}</td>
+                <td>${fechaRegistro}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="editarUsuario(${usuario.id})">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-${usuario.activo ? 'warning' : 'success'}"
+                            onclick="toggleEstado(${usuario.id}, ${usuario.activo})">
+                        <i class="bi bi-${usuario.activo ? 'lock' : 'unlock'}"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// Editar usuario
+function editarUsuario(userId) {
+    alert('Función de editar usuario - ID: ' + userId);
+    // Aquí puedes implementar la lógica de edición
+}
+
+// Cambiar estado del usuario
+function toggleEstado(userId, estadoActual) {
+    const nuevoEstado = !estadoActual;
+    const accion = nuevoEstado ? 'activar' : 'desactivar';
+
+    if (!confirm(`¿Estás seguro de ${accion} este usuario?`)) {
+        return;
+    }
+
+    alert(`Usuario ${accion} correctamente`);
+    cargarUsuarios();
+    cargarEstadisticas();
+
+    // Aquí llamarías al backend
+    // fetch(`/api/auth/usuarios/${userId}/`, {
+    //     method: 'PATCH',
+    //     headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken')},
+    //     body: JSON.stringify({activo: nuevoEstado})
+    // });
+}
+</script>
+{% endblock %}
