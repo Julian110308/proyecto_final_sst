@@ -317,28 +317,207 @@
 
 <script>
 function reportarIncidente() {
-    if (confirm('¿Deseas reportar un incidente de seguridad?')) {
-        alert('Función de reporte de incidentes. Se abrirá el formulario correspondiente.');
-        // Aquí iría la lógica para abrir modal o redirigir
-    }
+    showConfirm(
+        `<div class="text-center">
+            <i class="bi bi-exclamation-triangle-fill fs-1 text-warning mb-3 d-block"></i>
+            <h6 class="fw-bold mb-2">¿Deseas reportar un incidente de seguridad?</h6>
+            <p class="text-muted small mb-0">Serás redirigido al formulario de reporte</p>
+        </div>`,
+        function() {
+            // Mostrar loading toast
+            showToast('Redirigiendo al formulario...', 'info', 1500);
+            // Redireccionar después de 1 segundo
+            setTimeout(() => {
+                window.location.href = '/reportes/incidente/crear/';
+            }, 1000);
+        }
+    );
 }
 
 function verHorario() {
-    alert('Función para ver horario. Aquí se mostrará tu horario semanal.');
+    showModal(
+        'Mi Horario Semanal',
+        `<div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Hora</th>
+                        <th>Lunes</th>
+                        <th>Martes</th>
+                        <th>Miércoles</th>
+                        <th>Jueves</th>
+                        <th>Viernes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="fw-bold">7:00 - 9:00</td>
+                        <td>Matemáticas</td>
+                        <td>Español</td>
+                        <td>Matemáticas</td>
+                        <td>Inglés</td>
+                        <td>Ética</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">9:00 - 11:00</td>
+                        <td>Física</td>
+                        <td>Química</td>
+                        <td>Física</td>
+                        <td>Química</td>
+                        <td>Deportes</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">11:00 - 13:00</td>
+                        <td colspan="5" class="text-center bg-light"><i class="bi bi-cup-hot me-1"></i>Descanso</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">13:00 - 15:00</td>
+                        <td>Taller</td>
+                        <td>Taller</td>
+                        <td>Taller</td>
+                        <td>Taller</td>
+                        <td>-</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="alert alert-info small mb-0">
+                <i class="bi bi-info-circle me-1"></i>
+                Este es tu horario ejemplo. Consulta con tu instructor para confirmar.
+            </div>
+        </div>`,
+        'info'
+    );
 }
 
-// ✅ NUEVA FUNCIÓN
 function verNormasSST() {
-    alert('Normas de Seguridad y Salud en el Trabajo:\n\n✓ Uso de EPP\n✓ Protocolo de emergencias\n✓ Rutas de evacuación\n✓ Puntos de encuentro\n✓ Contactos de emergencia\n\nPuedes acceder al manual completo en el módulo de información.');
+    showModal(
+        'Normas de Seguridad y Salud en el Trabajo',
+        `<div class="p-2">
+            <h6 class="fw-bold text-primary mb-3">
+                <i class="bi bi-shield-check me-2"></i>Normas Principales
+            </h6>
+            <ul class="list-unstyled">
+                <li class="mb-2">
+                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                    <strong>Uso de EPP:</strong> Equipos de Protección Personal obligatorios
+                </li>
+                <li class="mb-2">
+                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                    <strong>Protocolo de emergencias:</strong> Conoce los procedimientos de evacuación
+                </li>
+                <li class="mb-2">
+                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                    <strong>Rutas de evacuación:</strong> Identifica las salidas de emergencia
+                </li>
+                <li class="mb-2">
+                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                    <strong>Puntos de encuentro:</strong> Zonas seguras designadas
+                </li>
+                <li class="mb-2">
+                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                    <strong>Contactos de emergencia:</strong> Números de brigada y seguridad
+                </li>
+            </ul>
+            <div class="alert alert-warning mt-3 mb-0">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <small><strong>Importante:</strong> El cumplimiento de estas normas es obligatorio para garantizar tu seguridad.</small>
+            </div>
+        </div>`,
+        'info',
+        function() {
+            window.location.href = '{% url "informacion_sst" %}';
+        }
+    );
 }
 
-// ✅ NUEVA FUNCIÓN
 function verCapacitaciones() {
-    alert('Mis Capacitaciones SST:\n\n📚 Capacitaciones completadas\n⏳ Capacitaciones pendientes\n📅 Próximas capacitaciones\n🎓 Certificados obtenidos\n\nMantén tus capacitaciones al día para garantizar tu seguridad.');
+    showModal(
+        'Mis Capacitaciones SST',
+        `<div class="p-2">
+            <h6 class="fw-bold text-success mb-3">
+                <i class="bi bi-mortarboard-fill me-2"></i>Estado de Capacitaciones
+            </h6>
+
+            <div class="mb-4">
+                <h6 class="small text-muted mb-2">COMPLETADAS (2)</h6>
+                <div class="list-group">
+                    <div class="list-group-item d-flex align-items-center">
+                        <i class="bi bi-check-circle-fill text-success fs-4 me-3"></i>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold">Primeros Auxilios Básicos</div>
+                            <small class="text-muted">Completado: 15/11/2024</small>
+                        </div>
+                    </div>
+                    <div class="list-group-item d-flex align-items-center">
+                        <i class="bi bi-check-circle-fill text-success fs-4 me-3"></i>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold">Uso de Extintores</div>
+                            <small class="text-muted">Completado: 10/11/2024</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h6 class="small text-muted mb-2">PENDIENTES (1)</h6>
+                <div class="list-group">
+                    <div class="list-group-item d-flex align-items-center bg-warning bg-opacity-10">
+                        <i class="bi bi-clock-fill text-warning fs-4 me-3"></i>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold">Seguridad Industrial</div>
+                            <small class="text-danger">Vence: 3 días</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-info mt-3 mb-0">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                <small>Mantén tus capacitaciones al día para garantizar tu seguridad.</small>
+            </div>
+        </div>`,
+        'info'
+    );
 }
 
 function verMisReportes() {
-    alert('Mis Reportes:\n\n✓ Ver reportes que he creado\n✓ Estado de mis reportes\n✓ Crear nuevo reporte\n\nSolo puedes ver tus propios reportes.');
+    showModal(
+        'Mis Reportes e Incidentes',
+        `<div class="p-2">
+            <p class="text-muted">Gestiona tus reportes de incidentes y revisa su estado.</p>
+
+            <div class="d-grid gap-2">
+                <button class="btn btn-outline-danger btn-sm" onclick="crearNuevoReporte()">
+                    <i class="bi bi-plus-circle me-2"></i>Crear Nuevo Reporte
+                </button>
+                <button class="btn btn-outline-primary btn-sm" onclick="verMisReportesList()">
+                    <i class="bi bi-list-ul me-2"></i>Ver Mis Reportes
+                </button>
+            </div>
+
+            <div class="alert alert-info mt-3 mb-0">
+                <i class="bi bi-shield-check me-2"></i>
+                <small>Solo puedes ver y gestionar tus propios reportes.</small>
+            </div>
+        </div>`,
+        'info'
+    );
+}
+
+function crearNuevoReporte() {
+    bootstrap.Modal.getInstance(document.getElementById('globalModal')).hide();
+    showToast('Redirigiendo al formulario de reporte...', 'info', 1500);
+    setTimeout(() => {
+        window.location.href = '/reportes/incidente/crear/';
+    }, 1000);
+}
+
+function verMisReportesList() {
+    bootstrap.Modal.getInstance(document.getElementById('globalModal')).hide();
+    showToast('Cargando tus reportes...', 'info', 1500);
+    setTimeout(() => {
+        window.location.href = '/reportes/incidentes/';
+    }, 1000);
 }
 </script>
 {% endblock %}

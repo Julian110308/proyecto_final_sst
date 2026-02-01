@@ -266,18 +266,78 @@
             border-radius: var(--radius-md);
         }
         
+        /* Backdrop para sidebar mobile */
+        .sidebar-backdrop {
+            display: none;
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1019;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .sidebar-backdrop.show {
+            display: block;
+            opacity: 1;
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
-                display: none; /* Ocultar en móvil por defecto */
+                display: flex; /* Siempre flex para mantener estructura */
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+                z-index: 1020;
             }
+
             .sidebar.show {
                 transform: translateX(0);
-                display: flex; /* Mostrar como flex al activar */
             }
+
             .main-content {
                 margin-left: 0;
                 padding: 1rem;
+            }
+
+            /* Prevenir scroll del body cuando sidebar está abierto */
+            body.sidebar-open {
+                overflow: hidden;
+            }
+
+            /* Mejorar área táctil de los enlaces */
+            .sidebar .nav-link {
+                padding: 0.875rem 1.25rem;
+                font-size: 0.9375rem;
+            }
+
+            .sidebar .nav-link i {
+                font-size: 1.25rem;
+            }
+
+            /* Sidebar más ancho en landscape mobile */
+            @media (orientation: landscape) {
+                .sidebar {
+                    width: 240px;
+                }
+            }
+        }
+
+        /* Tablets en portrait */
+        @media (min-width: 769px) and (max-width: 991px) {
+            .sidebar {
+                width: 220px;
+            }
+
+            .main-content {
+                margin-left: 220px;
+            }
+
+            .sidebar .nav-link {
+                padding: 0.75rem 1rem;
+                font-size: 0.875rem;
             }
         }
         
@@ -310,7 +370,434 @@
             background-color: #fee2e2;
             color: #dc2626 !important;
         }
-        
+
+        /* ===================================================
+           RESPONSIVE TABLES - MEJORAS PARA MÓVILES
+           =================================================== */
+
+        /* Mejoras generales para tablas */
+        .table-responsive {
+            border-radius: 0.5rem;
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling en iOS */
+        }
+
+        .table {
+            font-size: 0.9375rem; /* 15px */
+        }
+
+        .table th {
+            font-weight: 600;
+            white-space: nowrap;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            color: var(--color-text-secondary);
+        }
+
+        .table td {
+            vertical-align: middle;
+        }
+
+        /* Responsive para tablets */
+        @media (max-width: 991px) {
+            .table {
+                font-size: 0.875rem; /* 14px */
+            }
+
+            .table th {
+                font-size: 0.7rem;
+                padding: 0.75rem 0.5rem;
+            }
+
+            .table td {
+                padding: 0.75rem 0.5rem;
+            }
+
+            /* Reducir padding en celdas específicas */
+            .table .ps-4 {
+                padding-left: 0.75rem !important;
+            }
+
+            .table .pe-4 {
+                padding-right: 0.75rem !important;
+            }
+        }
+
+        /* Responsive para móviles */
+        @media (max-width: 768px) {
+            /* Tabla con scroll horizontal suave */
+            .table-responsive {
+                margin: 0 -0.5rem;
+                padding: 0 0.5rem;
+                box-shadow: inset -8px 0 8px -8px rgba(0,0,0,0.1);
+            }
+
+            .table-responsive::after {
+                content: '→';
+                position: absolute;
+                right: 0;
+                top: 50%;
+                transform: translateY(-50%);
+                background: linear-gradient(to right, transparent, white 50%);
+                padding: 1rem 2rem 1rem 3rem;
+                font-size: 1.5rem;
+                color: var(--color-text-muted);
+                pointer-events: none;
+                opacity: 0.5;
+            }
+
+            .table {
+                font-size: 0.8125rem; /* 13px */
+                min-width: 600px; /* Mínimo para mantener legibilidad */
+            }
+
+            .table th {
+                font-size: 0.65rem;
+                padding: 0.5rem 0.4rem;
+                position: sticky;
+                top: 0;
+                background: #f8f9fa;
+                z-index: 10;
+            }
+
+            .table td {
+                padding: 0.75rem 0.4rem;
+            }
+
+            /* Badges más compactos en mobile */
+            .table .badge {
+                font-size: 0.65rem;
+                padding: 0.25rem 0.5rem;
+            }
+
+            /* Botones de acción más compactos */
+            .table .btn-sm {
+                padding: 0.25rem 0.4rem;
+                font-size: 0.75rem;
+            }
+
+            .table .btn-group {
+                gap: 0.25rem;
+            }
+
+            /* Ocultar columnas menos importantes en mobile */
+            .table td:nth-child(5),
+            .table th:nth-child(5) {
+                display: none;
+            }
+
+            /* Reducir espaciado de avatares */
+            .avatar-initials {
+                width: 32px !important;
+                height: 32px !important;
+                font-size: 0.75rem !important;
+                padding: 0 !important;
+            }
+
+            /* Ajustar d-flex en celdas */
+            .table td .d-flex {
+                gap: 0.5rem;
+            }
+
+            /* Padding reducido en tabla */
+            .table .ps-4 {
+                padding-left: 0.5rem !important;
+            }
+
+            .table .pe-4 {
+                padding-right: 0.5rem !important;
+            }
+
+            /* Íconos más pequeños */
+            .table .fs-3 {
+                font-size: 1.5rem !important;
+            }
+        }
+
+        /* Móviles pequeños - aún más compacto */
+        @media (max-width: 576px) {
+            .table {
+                font-size: 0.75rem; /* 12px */
+                min-width: 500px;
+            }
+
+            .table th {
+                font-size: 0.6rem;
+                padding: 0.4rem 0.3rem;
+            }
+
+            .table td {
+                padding: 0.6rem 0.3rem;
+            }
+
+            /* Ocultar más columnas en pantallas muy pequeñas */
+            .table td:nth-child(4),
+            .table th:nth-child(4),
+            .table td:nth-child(5),
+            .table th:nth-child(5) {
+                display: none;
+            }
+
+            .table .badge {
+                font-size: 0.6rem;
+                padding: 0.2rem 0.4rem;
+            }
+
+            .table .btn-sm {
+                padding: 0.2rem 0.3rem;
+                font-size: 0.7rem;
+            }
+
+            .table .btn-sm i {
+                font-size: 0.9rem;
+            }
+
+            /* Texto truncado para nombres largos */
+            .table td .fw-bold {
+                max-width: 120px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .table td small {
+                font-size: 0.65rem;
+            }
+        }
+
+        /* Mejoras de accesibilidad táctil */
+        @media (hover: none) and (pointer: coarse) {
+            .table .btn-sm {
+                min-height: 36px;
+                min-width: 36px;
+            }
+
+            .table .form-check-input {
+                width: 1.5em;
+                height: 1.5em;
+            }
+        }
+
+        /* ===================================================
+           LOADING STATES - SPINNERS Y SKELETON SCREENS
+           =================================================== */
+
+        /* Spinner principal */
+        .spinner-border-custom {
+            width: 1.25rem;
+            height: 1.25rem;
+            border-width: 0.2em;
+            border-color: currentColor;
+            border-right-color: transparent;
+            animation: spinner-border 0.75s linear infinite;
+        }
+
+        @keyframes spinner-border {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Spinner en botones */
+        .btn-loading {
+            position: relative;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .btn-loading::before {
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 1rem;
+            height: 1rem;
+            margin-left: -0.5rem;
+            margin-top: -0.5rem;
+            border: 2px solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spinner-border 0.75s linear infinite;
+        }
+
+        .btn-loading > * {
+            opacity: 0;
+        }
+
+        /* Loading overlay para cards y contenedores */
+        .loading-overlay {
+            position: relative;
+            pointer-events: none;
+        }
+
+        .loading-overlay::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(2px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .loading-overlay::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 2.5rem;
+            height: 2.5rem;
+            margin-left: -1.25rem;
+            margin-top: -1.25rem;
+            border: 3px solid var(--color-primary);
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spinner-border 0.75s linear infinite;
+            z-index: 11;
+        }
+
+        /* Skeleton screens */
+        .skeleton {
+            background: linear-gradient(
+                90deg,
+                #f0f0f0 25%,
+                #e0e0e0 50%,
+                #f0f0f0 75%
+            );
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s ease-in-out infinite;
+            border-radius: 4px;
+        }
+
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .skeleton-text {
+            height: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .skeleton-text:last-child {
+            width: 60%;
+        }
+
+        .skeleton-title {
+            height: 1.5rem;
+            width: 40%;
+            margin-bottom: 1rem;
+        }
+
+        .skeleton-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+
+        .skeleton-card {
+            height: 200px;
+            border-radius: 0.5rem;
+        }
+
+        .skeleton-table-row {
+            height: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Pulse animation para elementos cargando */
+        @keyframes pulse-opacity {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .pulse-loading {
+            animation: pulse-opacity 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* Estado disabled mejorado */
+        .btn:disabled,
+        .btn.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        /* Loading inline para textos */
+        .loading-dots::after {
+            content: '';
+            animation: loading-dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes loading-dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        /* Loading bar para progreso */
+        .loading-bar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--color-primary);
+            transform-origin: left;
+            animation: loading-bar 2s ease-in-out infinite;
+            z-index: 9999;
+            display: none;
+        }
+
+        .loading-bar.show {
+            display: block;
+        }
+
+        @keyframes loading-bar {
+            0% { transform: scaleX(0); }
+            50% { transform: scaleX(0.7); }
+            100% { transform: scaleX(1); opacity: 0; }
+        }
+
+        /* Shimmer effect alternativo */
+        .shimmer {
+            background: linear-gradient(
+                to right,
+                #f6f7f8 0%,
+                #edeef1 20%,
+                #f6f7f8 40%,
+                #f6f7f8 100%
+            );
+            background-size: 800px 100%;
+            animation: shimmer 2s linear infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -800px 0; }
+            100% { background-position: 800px 0; }
+        }
+
+        /* Estados para inputs */
+        .form-control:disabled,
+        .form-select:disabled {
+            background-color: #f5f5f5;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* Loading específico para tablas */
+        .table-loading {
+            position: relative;
+            min-height: 200px;
+        }
+
+        .table-loading tbody {
+            opacity: 0.3;
+        }
+
     </style>
     
     {% block extra_css %}{% endblock %}
@@ -319,8 +806,8 @@
     <!-- Navbar -->
     <nav class="navbar navbar-main navbar-expand-lg">
         <div class="container-fluid">
-            <button class="btn btn-link text-dark me-3 d-md-none" id="sidebarToggle">
-                <i class="bi bi-list fs-4"></i>
+            <button class="btn btn-link text-dark me-3 d-md-none" id="sidebarToggle" aria-label="Abrir menú de navegación" aria-expanded="false" aria-controls="sidebar">
+                <i class="bi bi-list fs-4" aria-hidden="true"></i>
             </button>
             
             <a class="navbar-brand text-dark fw-bold" href="{% url 'dashboard' %}">
@@ -385,6 +872,9 @@
             </div>
         </div>
     </nav>
+
+    <!-- Backdrop para sidebar en mobile -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
     <!-- Sidebar - Menú dinámico según el rol -->
     <nav class="sidebar" id="sidebar">
@@ -696,15 +1186,140 @@
     </button>
     {% endif %}
 
+    <!-- ============================================= -->
+    <!-- SISTEMA DE MODALES Y TOASTS REUTILIZABLE -->
+    <!-- ============================================= -->
+
+    <!-- Container de Toasts (Notificaciones) -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+        <div id="globalToast" class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body" id="toastMessage">
+                    <i class="bi me-2" id="toastIcon"></i>
+                    <span id="toastText"></span>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Genérico Reutilizable -->
+    <div class="modal fade" id="globalModal" tabindex="-1" aria-labelledby="globalModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header border-0" id="modalHeader">
+                    <h5 class="modal-title fw-bold" id="globalModalLabel">
+                        <i class="bi me-2" id="modalIcon"></i>
+                        <span id="modalTitle"></span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- Contenido dinámico -->
+                </div>
+                <div class="modal-footer border-0" id="modalFooter">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" id="modalActionBtn">Aceptar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmación -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header border-0 bg-warning">
+                    <h5 class="modal-title fw-bold text-white" id="confirmModalLabel">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Confirmación
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body py-4" id="confirmBody">
+                    <!-- Mensaje de confirmación -->
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-warning text-white" id="confirmActionBtn">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <script>
-        // Toggle sidebar
-        document.getElementById('sidebarToggle')?.addEventListener('click', function() {
-            document.getElementById('sidebar').classList.toggle('show');
+        // ===================================================================
+        // SIDEBAR TOGGLE CON MEJORAS PARA MOBILE
+        // ===================================================================
+
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+
+        // Función para abrir sidebar
+        function openSidebar() {
+            sidebar?.classList.add('show');
+            sidebarBackdrop?.classList.add('show');
+            document.body.classList.add('sidebar-open');
+            sidebarToggle?.setAttribute('aria-expanded', 'true');
+            sidebarToggle?.setAttribute('aria-label', 'Cerrar menú de navegación');
+        }
+
+        // Función para cerrar sidebar
+        function closeSidebar() {
+            sidebar?.classList.remove('show');
+            sidebarBackdrop?.classList.remove('show');
+            document.body.classList.remove('sidebar-open');
+            sidebarToggle?.setAttribute('aria-expanded', 'false');
+            sidebarToggle?.setAttribute('aria-label', 'Abrir menú de navegación');
+        }
+
+        // Toggle sidebar al hacer clic en el botón
+        sidebarToggle?.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isOpen = sidebar?.classList.contains('show');
+            if (isOpen) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        });
+
+        // Cerrar sidebar al hacer clic en el backdrop
+        sidebarBackdrop?.addEventListener('click', closeSidebar);
+
+        // Cerrar sidebar al hacer clic en cualquier enlace del menú (solo en mobile)
+        if (sidebar && window.innerWidth <= 768) {
+            const sidebarLinks = sidebar.querySelectorAll('.nav-link');
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    // Pequeño delay para permitir que la navegación ocurra
+                    setTimeout(closeSidebar, 100);
+                });
+            });
+        }
+
+        // Cerrar sidebar al redimensionar la ventana a desktop
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                if (window.innerWidth > 768) {
+                    closeSidebar();
+                }
+            }, 250);
+        });
+
+        // Cerrar sidebar con la tecla Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && sidebar?.classList.contains('show')) {
+                closeSidebar();
+            }
         });
         
         // Botón de emergencia
@@ -771,12 +1386,358 @@
             });
         }, 5000);
         
+        // ================================================================
+        // SISTEMA DE MODALES Y TOASTS REUTILIZABLE
+        // ================================================================
+
+        /**
+         * Muestra un toast (notificación temporal)
+         * @param {string} message - Mensaje a mostrar
+         * @param {string} type - Tipo: 'success', 'error', 'warning', 'info'
+         * @param {number} duration - Duración en ms (default: 3000)
+         */
+        function showToast(message, type = 'info', duration = 3000) {
+            const toast = document.getElementById('globalToast');
+            const toastBody = toast.querySelector('.toast-body');
+            const toastIcon = document.getElementById('toastIcon');
+            const toastText = document.getElementById('toastText');
+
+            // Remover clases previas
+            toast.className = 'toast align-items-center border-0';
+
+            // Configurar icono y color según tipo
+            const configs = {
+                success: {
+                    icon: 'bi-check-circle-fill',
+                    class: 'text-bg-success',
+                    iconClass: 'text-white'
+                },
+                error: {
+                    icon: 'bi-exclamation-circle-fill',
+                    class: 'text-bg-danger',
+                    iconClass: 'text-white'
+                },
+                warning: {
+                    icon: 'bi-exclamation-triangle-fill',
+                    class: 'text-bg-warning',
+                    iconClass: 'text-white'
+                },
+                info: {
+                    icon: 'bi-info-circle-fill',
+                    class: 'text-bg-primary',
+                    iconClass: 'text-white'
+                }
+            };
+
+            const config = configs[type] || configs.info;
+
+            toast.classList.add(config.class);
+            toastIcon.className = `bi ${config.icon} ${config.iconClass} me-2`;
+            toastText.textContent = message;
+
+            // Mostrar toast
+            const bsToast = new bootstrap.Toast(toast, { delay: duration });
+            bsToast.show();
+        }
+
+        /**
+         * Muestra un modal informativo
+         * @param {string} title - Título del modal
+         * @param {string} message - Mensaje del modal (puede incluir HTML)
+         * @param {string} type - Tipo: 'success', 'error', 'warning', 'info'
+         * @param {function} onAction - Callback al hacer click en el botón de acción
+         */
+        function showModal(title, message, type = 'info', onAction = null) {
+            const modal = document.getElementById('globalModal');
+            const modalHeader = document.getElementById('modalHeader');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalIcon = document.getElementById('modalIcon');
+            const modalBody = document.getElementById('modalBody');
+            const modalActionBtn = document.getElementById('modalActionBtn');
+
+            // Configurar según tipo
+            const configs = {
+                success: {
+                    icon: 'bi-check-circle-fill',
+                    headerClass: 'bg-success text-white',
+                    btnClass: 'btn-success'
+                },
+                error: {
+                    icon: 'bi-x-circle-fill',
+                    headerClass: 'bg-danger text-white',
+                    btnClass: 'btn-danger'
+                },
+                warning: {
+                    icon: 'bi-exclamation-triangle-fill',
+                    headerClass: 'bg-warning text-white',
+                    btnClass: 'btn-warning'
+                },
+                info: {
+                    icon: 'bi-info-circle-fill',
+                    headerClass: 'bg-primary text-white',
+                    btnClass: 'btn-primary'
+                }
+            };
+
+            const config = configs[type] || configs.info;
+
+            // Aplicar estilos
+            modalHeader.className = `modal-header border-0 ${config.headerClass}`;
+            modalIcon.className = `bi ${config.icon}`;
+            modalTitle.textContent = title;
+            modalBody.innerHTML = message;
+
+            // Configurar botón de acción
+            modalActionBtn.className = `btn ${config.btnClass}`;
+            if (onAction) {
+                modalActionBtn.style.display = 'block';
+                modalActionBtn.onclick = function() {
+                    onAction();
+                    bootstrap.Modal.getInstance(modal).hide();
+                };
+            } else {
+                modalActionBtn.style.display = 'none';
+            }
+
+            // Mostrar modal
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+        }
+
+        /**
+         * Muestra un modal de confirmación
+         * @param {string} message - Mensaje de confirmación
+         * @param {function} onConfirm - Callback al confirmar
+         * @param {function} onCancel - Callback al cancelar (opcional)
+         */
+        function showConfirm(message, onConfirm, onCancel = null) {
+            const modal = document.getElementById('confirmModal');
+            const confirmBody = document.getElementById('confirmBody');
+            const confirmBtn = document.getElementById('confirmActionBtn');
+
+            confirmBody.innerHTML = message;
+
+            // Configurar botón de confirmación
+            confirmBtn.onclick = function() {
+                if (onConfirm) onConfirm();
+                bootstrap.Modal.getInstance(modal).hide();
+            };
+
+            // Configurar cancelación
+            const cancelBtn = modal.querySelector('[data-bs-dismiss="modal"]');
+            if (onCancel) {
+                cancelBtn.onclick = function() {
+                    onCancel();
+                };
+            }
+
+            // Mostrar modal
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+        }
+
+        // ================================================================
+        // FUNCIONES AUXILIARES GLOBALES
+        // ================================================================
+
         // Función para mostrar QR (aprendiz)
         function mostrarQR() {
-            alert('Tu código QR para acceso está disponible en tu dashboard.\nPuedes descargarlo desde la tarjeta "Mi Código QR".');
+            showModal(
+                'Mi Código QR',
+                `<div class="text-center">
+                    <div class="mb-3">
+                        <i class="bi bi-qr-code" style="font-size: 120px; color: #1a4d2e;"></i>
+                    </div>
+                    <p class="text-muted">Tu código QR para acceso está disponible en tu dashboard.</p>
+                    <p class="small">Puedes descargarlo desde la tarjeta "Mi Código QR".</p>
+                </div>`,
+                'info'
+            );
         }
+
+        // ===================================================================
+        // LOADING STATES - FUNCIONES GLOBALES
+        // ===================================================================
+
+        /**
+         * Agrega estado de loading a un botón
+         * @param {HTMLElement|string} button - Elemento del botón o selector
+         * @param {boolean} loading - true para activar, false para desactivar
+         */
+        function setButtonLoading(button, loading = true) {
+            const btn = typeof button === 'string' ? document.querySelector(button) : button;
+            if (!btn) return;
+
+            if (loading) {
+                btn.disabled = true;
+                btn.classList.add('btn-loading');
+                // Guardar texto original
+                btn.dataset.originalText = btn.innerHTML;
+            } else {
+                btn.disabled = false;
+                btn.classList.remove('btn-loading');
+                // Restaurar texto original
+                if (btn.dataset.originalText) {
+                    btn.innerHTML = btn.dataset.originalText;
+                    delete btn.dataset.originalText;
+                }
+            }
+        }
+
+        /**
+         * Agrega loading overlay a un contenedor
+         * @param {HTMLElement|string} container - Elemento contenedor o selector
+         * @param {boolean} loading - true para activar, false para desactivar
+         */
+        function setContainerLoading(container, loading = true) {
+            const elem = typeof container === 'string' ? document.querySelector(container) : container;
+            if (!elem) return;
+
+            if (loading) {
+                elem.classList.add('loading-overlay');
+            } else {
+                elem.classList.remove('loading-overlay');
+            }
+        }
+
+        /**
+         * Muestra/oculta la barra de loading global
+         * @param {boolean} show - true para mostrar, false para ocultar
+         */
+        function showLoadingBar(show = true) {
+            let loadingBar = document.getElementById('globalLoadingBar');
+
+            if (!loadingBar) {
+                loadingBar = document.createElement('div');
+                loadingBar.id = 'globalLoadingBar';
+                loadingBar.className = 'loading-bar';
+                document.body.appendChild(loadingBar);
+            }
+
+            if (show) {
+                loadingBar.classList.add('show');
+            } else {
+                loadingBar.classList.remove('show');
+            }
+        }
+
+        /**
+         * Crea un skeleton screen en un contenedor
+         * @param {HTMLElement|string} container - Elemento contenedor o selector
+         * @param {string} type - Tipo de skeleton: 'text', 'card', 'table', 'avatar'
+         * @param {number} count - Cantidad de elementos skeleton a crear
+         */
+        function showSkeleton(container, type = 'text', count = 3) {
+            const elem = typeof container === 'string' ? document.querySelector(container) : container;
+            if (!elem) return;
+
+            elem.innerHTML = '';
+
+            for (let i = 0; i < count; i++) {
+                const skeleton = document.createElement('div');
+
+                switch(type) {
+                    case 'text':
+                        skeleton.className = 'skeleton skeleton-text';
+                        break;
+                    case 'card':
+                        skeleton.className = 'skeleton skeleton-card mb-3';
+                        break;
+                    case 'table':
+                        skeleton.className = 'skeleton skeleton-table-row';
+                        break;
+                    case 'avatar':
+                        skeleton.className = 'skeleton skeleton-avatar';
+                        break;
+                    default:
+                        skeleton.className = 'skeleton';
+                }
+
+                elem.appendChild(skeleton);
+            }
+        }
+
+        /**
+         * Deshabilita todos los inputs de un formulario durante el envío
+         * @param {HTMLFormElement|string} form - Formulario o selector
+         * @param {boolean} disabled - true para deshabilitar, false para habilitar
+         */
+        function setFormDisabled(form, disabled = true) {
+            const formElem = typeof form === 'string' ? document.querySelector(form) : form;
+            if (!formElem) return;
+
+            const inputs = formElem.querySelectorAll('input, select, textarea, button[type="submit"]');
+            inputs.forEach(input => {
+                input.disabled = disabled;
+            });
+
+            // Agregar loading state al botón submit
+            const submitBtn = formElem.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                setButtonLoading(submitBtn, disabled);
+            }
+        }
+
+        /**
+         * Auto-manejo de loading en formularios
+         * Deshabilita el formulario al enviarlo y lo habilita si hay error
+         */
+        function enableFormLoadingStates() {
+            document.querySelectorAll('form').forEach(form => {
+                // Evitar formularios de logout
+                if (form.action?.includes('logout')) return;
+
+                form.addEventListener('submit', function(e) {
+                    // Solo si no se previene por defecto
+                    if (!e.defaultPrevented) {
+                        setFormDisabled(this, true);
+                        showLoadingBar(true);
+
+                        // Habilitar nuevamente después de 10 segundos por seguridad
+                        setTimeout(() => {
+                            setFormDisabled(this, false);
+                            showLoadingBar(false);
+                        }, 10000);
+                    }
+                });
+            });
+        }
+
+        /**
+         * Simula una carga de datos con skeleton
+         * Útil para desarrollo y testing
+         */
+        function simulateDataLoading(container, callback, delay = 2000) {
+            showSkeleton(container, 'text', 5);
+            setTimeout(() => {
+                if (callback) callback();
+            }, delay);
+        }
+
+        // ===================================================================
+        // INICIALIZACIÓN AUTOMÁTICA DE LOADING STATES
+        // ===================================================================
+
+        // Habilitar auto-manejo de loading en formularios cuando el DOM esté listo
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', enableFormLoadingStates);
+        } else {
+            enableFormLoadingStates();
+        }
+
+        // Interceptar links de navegación para mostrar loading bar
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('a[href]:not([target="_blank"]):not([href^="#"]):not([download])');
+            if (link && !link.classList.contains('dropdown-item') && !link.dataset.bsToggle) {
+                // Mostrar loading bar en navegación
+                showLoadingBar(true);
+                // Ocultar después de 5 segundos por seguridad
+                setTimeout(() => showLoadingBar(false), 5000);
+            }
+        });
+
     </script>
-    
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>
