@@ -1,6 +1,29 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block extra_css %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+<style>
+    /* Estilos adicionales para el mapa */
+    #mapaPrincipal {
+        z-index: 1;
+    }
+    .leaflet-control-container .leaflet-top {
+        z-index: 999;
+    }
+    .leaflet-control-zoom {
+        border: none !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important;
+    }
+    .leaflet-popup-content {
+        font-family: var(--font-family-base);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- Header del Mapa -->
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -63,23 +86,35 @@
                 <div id="mapaPrincipal" style="height: 500px; border-radius: 0 0 12px 12px; position: relative;"></div>
                 
                 <!-- Leyenda del Mapa -->
-                <div class="leyenda-mapa" style="position: absolute; bottom: 20px; right: 20px; z-index: 1000; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);">
-                    <strong style="display: block; margin-bottom: 8px; font-size: 14px;">Leyenda:</strong>
-                    <div class="leyenda-item" style="display: flex; align-items: center; margin-bottom: 5px; font-size: 12px;">
-                        <div class="leyenda-color" style="width: 15px; height: 15px; border-radius: 50%; margin-right: 8px; background: #4CAF50; border: 2px solid white;"></div>
-                        <span>Punto de Encuentro</span>
+                <div class="leyenda-mapa" style="position: absolute; bottom: 20px; right: 20px; z-index: 1000; background: white; padding: 12px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); max-width: 180px;">
+                    <strong style="display: block; margin-bottom: 10px; font-size: 13px; border-bottom: 2px solid #39A900; padding-bottom: 5px;">
+                        <i class="bi bi-geo-alt-fill" style="color: #39A900;"></i> Centro Minero SENA
+                    </strong>
+
+                    <div style="margin-bottom: 8px;">
+                        <small style="font-weight: bold; color: #666; display: block; margin-bottom: 6px;">Seguridad SST:</small>
+                        <div class="leyenda-item" style="display: flex; align-items: center; margin-bottom: 5px; font-size: 11px;">
+                            <div style="width: 16px; height: 16px; border-radius: 50%; margin-right: 8px; background: #4CAF50; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>
+                            <span>Punto de Encuentro</span>
+                        </div>
+                        <div class="leyenda-item" style="display: flex; align-items: center; margin-bottom: 5px; font-size: 11px;">
+                            <div style="width: 16px; height: 16px; border-radius: 50%; margin-right: 8px; background: #f44336; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>
+                            <span>Extintor</span>
+                        </div>
+                        <div class="leyenda-item" style="display: flex; align-items: center; margin-bottom: 5px; font-size: 11px;">
+                            <div style="width: 16px; height: 16px; border-radius: 50%; margin-right: 8px; background: #2196F3; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>
+                            <span>Botiquín</span>
+                        </div>
+                        <div class="leyenda-item" style="display: flex; align-items: center; font-size: 11px;">
+                            <div style="width: 16px; height: 16px; border-radius: 50%; margin-right: 8px; background: #FF9800; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>
+                            <span>Tu ubicación</span>
+                        </div>
                     </div>
-                    <div class="leyenda-item" style="display: flex; align-items: center; margin-bottom: 5px; font-size: 12px;">
-                        <div class="leyenda-color" style="width: 15px; height: 15px; border-radius: 50%; margin-right: 8px; background: #f44336; border: 2px solid white;"></div>
-                        <span>Extintor</span>
-                    </div>
-                    <div class="leyenda-item" style="display: flex; align-items: center; margin-bottom: 5px; font-size: 12px;">
-                        <div class="leyenda-color" style="width: 15px; height: 15px; border-radius: 50%; margin-right: 8px; background: #2196F3; border: 2px solid white;"></div>
-                        <span>Botiquín</span>
-                    </div>
-                    <div class="leyenda-item" style="display: flex; align-items: center; font-size: 12px;">
-                        <div class="leyenda-color" style="width: 15px; height: 15px; border-radius: 50%; margin-right: 8px; background: #FF9800; border: 2px solid white;"></div>
-                        <span>Tu ubicación</span>
+
+                    <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #E0E0E0;">
+                        <small style="font-size: 10px; color: #999; display: block; text-align: center;">
+                            Vista satelital en tiempo real
+                        </small>
                     </div>
                 </div>
             </div>
@@ -97,11 +132,9 @@
                 </h6>
             </div>
             <div class="card-body">
-                <div class="form-check form-switch mb-3">
-                    <input class="form-check-input" type="checkbox" id="capaEdificios" checked disabled>
-                    <label class="form-check-label" for="capaEdificios">
-                        <i class="bi bi-building me-2"></i>Edificios y Bloques
-                    </label>
+                <div class="alert alert-info mb-3" style="font-size: 12px;">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Vista satelital del Centro Nacional Minero SENA
                 </div>
                 <div class="form-check form-switch mb-3">
                     <input class="form-check-input" type="checkbox" id="capaPuntos" checked>
@@ -198,37 +231,75 @@
 </div>
 
 <!-- Pasar datos de Django a JavaScript -->
+{{ edificios|json_script:"edificios-data" }}
 {{ puntos_encuentro|json_script:"puntos-encuentro-data" }}
 {{ equipamiento|json_script:"equipamiento-data" }}
+
+<!-- Leaflet JS - DEBE cargarse ANTES del código que lo usa -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
 
 <script>
 // ====================================================================
 // CONFIGURACIÓN Y VARIABLES GLOBALES
 // ====================================================================
 
-// Coordenadas del Centro Minero SENA en Sogamoso, Boyacá
+// Coordenadas exactas del Centro Nacional Minero SENA - Vereda Morcá, Sogamoso, Boyacá
+// Coordenadas tomadas desde Google Earth del punto central del área de edificios
 const centroMinero = {
-    latitud: 5.5339,
-    longitud: -73.3674,
-    nombre: 'Centro Minero SENA Sogamoso'
+    latitud: 5.7303596,
+    longitud: -72.8943613,
+    nombre: 'Centro Nacional Minero SENA - Sogamoso, Vereda Morcá'
 };
 
-// Radio de la geocerca en metros
-const radioGeocerca = 200;
+// Polígono de geocerca - Contorno ajustado del área de edificios y salones del Centro Minero
+// Basado en imagen satelital de Google Earth (19/12/2025)
+// Centro: 5.7303596, -72.8943613
+// Radio aproximado: 100-120 metros (ajustado al contorno real)
+const geocercaCentro = [
+    [5.73125, -72.89515],  // 1. Noroeste superior
+    [5.73135, -72.89470],  // 2. Norte 1
+    [5.73130, -72.89420],  // 3. Norte 2 (zona edificios norte)
+    [5.73120, -72.89370],  // 4. Noreste 1
+    [5.73100, -72.89340],  // 5. Noreste 2
+    [5.73070, -72.89320],  // 6. Este superior (límite este)
+    [5.73040, -72.89310],  // 7. Este 1
+    [5.73000, -72.89315],  // 8. Este 2
+    [5.72965, -72.89330],  // 9. Sureste 1 (esquina sureste)
+    [5.72940, -72.89360],  // 10. Sur 1
+    [5.72930, -72.89400],  // 11. Sur 2 (límite sur edificios)
+    [5.72935, -72.89450],  // 12. Suroeste 1
+    [5.72950, -72.89500],  // 13. Suroeste 2 (esquina suroeste)
+    [5.72975, -72.89535],  // 14. Oeste 1
+    [5.73010, -72.89550],  // 15. Oeste 2 (límite oeste)
+    [5.73050, -72.89545],  // 16. Noroeste 1
+    [5.73090, -72.89535],  // 17. Noroeste 2
+    [5.73125, -72.89515]   // 18. Cierre (vuelve al inicio)
+];
 
 // Variables globales
 let mapa;
 let miMarcador = null;
 let circuloPrecision = null;
+let poligonoGeocerca = null;
 let rutaActiva = null;
+let capaEdificios = L.layerGroup();
+let capaVias = L.layerGroup();
+let capaAreas = L.layerGroup();
 let capaPuntosEncuentro = L.layerGroup();
 let capaEquipamiento = L.layerGroup();
+let capaInfraestructura = L.layerGroup();
 
 // Cargar datos de Django
+let edificiosData = [];
 let puntosEncuentroData = [];
 let equipamientoData = [];
 
 try {
+    edificiosData = JSON.parse(
+        document.getElementById('edificios-data')?.textContent || '[]'
+    );
     puntosEncuentroData = JSON.parse(
         document.getElementById('puntos-encuentro-data')?.textContent || '[]'
     );
@@ -240,20 +311,365 @@ try {
 }
 
 // ====================================================================
+// DATOS DE INFRAESTRUCTURA DEL CENTRO
+// ====================================================================
+
+function inicializarInfraestructura() {
+    // 1. VÍAS DE ACCESO - Basadas en imagen satelital
+
+    // Vía de Acceso Principal (desde oeste/noroeste)
+    const viaPrincipal = L.polyline([
+        [5.7008, -72.8843],
+        [5.7004, -72.8840],
+        [5.7000, -72.8837],
+        [5.6995, -72.8833]
+    ], {
+        color: '#424242',
+        weight: 7,
+        opacity: 0.9
+    }).addTo(capaVias);
+    viaPrincipal.bindPopup('<strong>🛣️ Vía Principal de Acceso</strong><br>Entrada desde carretera Sogamoso - Morcá');
+
+    // Vía Interna Horizontal (conecta edificios norte)
+    const viaInterna1 = L.polyline([
+        [5.7003, -72.8840],
+        [5.7003, -72.8833]
+    ], {
+        color: '#757575',
+        weight: 5,
+        opacity: 0.7
+    }).addTo(capaVias);
+    viaInterna1.bindPopup('<strong>Vía Interna Norte</strong><br>Conecta aulas y administración');
+
+    // Vía Interna Vertical (conecta norte-sur)
+    const viaInterna2 = L.polyline([
+        [5.7003, -72.8837],
+        [5.6998, -72.8837],
+        [5.6995, -72.8835]
+    ], {
+        color: '#757575',
+        weight: 5,
+        opacity: 0.7
+    }).addTo(capaVias);
+    viaInterna2.bindPopup('<strong>Vía Interna Central</strong><br>Circulación principal del centro');
+
+    // Acceso a Talleres (suroeste)
+    const accesoTalleres = L.polyline([
+        [5.6998, -72.8837],
+        [5.6995, -72.8840],
+        [5.6993, -72.8843]
+    ], {
+        color: '#757575',
+        weight: 4,
+        opacity: 0.7,
+        dashArray: '8, 5'
+    }).addTo(capaVias);
+    accesoTalleres.bindPopup('<strong>Acceso a Talleres</strong><br>Zona de maquinaria pesada');
+
+    // Vía de Servicio (este - conecta parqueadero)
+    const viaServicio = L.polyline([
+        [5.7001, -72.8833],
+        [5.6998, -72.8830]
+    ], {
+        color: '#9E9E9E',
+        weight: 3,
+        opacity: 0.6,
+        dashArray: '5, 5'
+    }).addTo(capaVias);
+    viaServicio.bindPopup('<strong>Vía de Servicio</strong><br>Acceso secundario');
+
+    // 2. EDIFICIOS COMO POLÍGONOS - Basado en imagen aérea real
+    const edificios = {
+        // Edificio Principal (Noroeste - estructura grande rectangular)
+        administrativo: {
+            coords: [
+                [5.70025, -72.88390],
+                [5.70025, -72.88370],
+                [5.70010, -72.88370],
+                [5.70010, -72.88390]
+            ],
+            nombre: 'Edificio Administrativo Principal',
+            color: '#8E24AA',
+            icon: 'bi-briefcase'
+        },
+
+        // Galpón de Talleres 1 (Centro-Sur - estructura grande con techo blanco)
+        taller1: {
+            coords: [
+                [5.69995, -72.88385],
+                [5.69995, -72.88360],
+                [5.69975, -72.88360],
+                [5.69975, -72.88385]
+            ],
+            nombre: 'Taller de Maquinaria Pesada',
+            color: '#FF9800',
+            icon: 'bi-tools'
+        },
+
+        // Galpón de Talleres 2 (Sur - paralelo al anterior)
+        taller2: {
+            coords: [
+                [5.69970, -72.88385],
+                [5.69970, -72.88360],
+                [5.69950, -72.88360],
+                [5.69950, -72.88385]
+            ],
+            nombre: 'Taller de Soldadura y Mecánica',
+            color: '#FF9800',
+            icon: 'bi-tools'
+        },
+
+        // Bloque de Aulas (Norte - edificio rectangular)
+        aulas: {
+            coords: [
+                [5.70040, -72.88375],
+                [5.70040, -72.88355],
+                [5.70025, -72.88355],
+                [5.70025, -72.88375]
+            ],
+            nombre: 'Bloque de Aulas Teóricas',
+            color: '#5C6BC0',
+            icon: 'bi-book'
+        },
+
+        // Laboratorios (Este - estructura mediana)
+        laboratorios: {
+            coords: [
+                [5.70020, -72.88340],
+                [5.70020, -72.88325],
+                [5.70008, -72.88325],
+                [5.70008, -72.88340]
+            ],
+            nombre: 'Laboratorios de Geología',
+            color: '#00897B',
+            icon: 'bi-clipboard-data'
+        },
+
+        // Cafetería y Bienestar (Este)
+        cafeteria: {
+            coords: [
+                [5.70008, -72.88340],
+                [5.70008, -72.88328],
+                [5.69998, -72.88328],
+                [5.69998, -72.88340]
+            ],
+            nombre: 'Cafetería y Bienestar',
+            color: '#D84315',
+            icon: 'bi-cup-hot'
+        },
+
+        // Entrada a Mina Didáctica (Suroeste - estructura especial)
+        mina: {
+            coords: [
+                [5.69955, -72.88410],
+                [5.69955, -72.88398],
+                [5.69945, -72.88398],
+                [5.69945, -72.88410]
+            ],
+            nombre: 'Entrada Mina Didáctica Subterránea',
+            color: '#424242',
+            icon: 'bi-minecart'
+        },
+
+        // Biblioteca/Centro de Recursos (Noreste)
+        biblioteca: {
+            coords: [
+                [5.70035, -72.88345],
+                [5.70035, -72.88333],
+                [5.70023, -72.88333],
+                [5.70023, -72.88345]
+            ],
+            nombre: 'Biblioteca y Centro de Recursos',
+            color: '#1976D2',
+            icon: 'bi-book-half'
+        },
+
+        // Almacén y Bodegas (Oeste)
+        almacen: {
+            coords: [
+                [5.69985, -72.88425],
+                [5.69985, -72.88413],
+                [5.69973, -72.88413],
+                [5.69973, -72.88425]
+            ],
+            nombre: 'Almacén de Equipos y Materiales',
+            color: '#546E7A',
+            icon: 'bi-box-seam'
+        }
+    };
+
+    Object.keys(edificios).forEach(key => {
+        const edif = edificios[key];
+        const polygon = L.polygon(edif.coords, {
+            color: edif.color,
+            fillColor: edif.color,
+            fillOpacity: 0.6,
+            weight: 2
+        }).addTo(capaEdificios);
+
+        polygon.bindPopup(`
+            <div style="min-width: 200px;">
+                <h6 style="color: ${edif.color};">
+                    <i class="bi ${edif.icon}"></i> ${edif.nombre}
+                </h6>
+                <p class="mb-0 small">Haga clic para más detalles</p>
+            </div>
+        `);
+    });
+
+    // 3. ÁREAS ESPECIALES - Basadas en la imagen satelital
+
+    // CANCHA DEPORTIVA (verde, centro-norte de la imagen)
+    const cancha = L.rectangle([
+        [5.70048, -72.88365],
+        [5.70025, -72.88340]
+    ], {
+        color: '#2E7D32',
+        fillColor: '#66BB6A',
+        fillOpacity: 0.7,
+        weight: 2
+    }).addTo(capaAreas);
+    cancha.bindPopup('<strong>⚽ Cancha Deportiva</strong><br>Fútbol y actividades recreativas<br>También sirve como punto de encuentro principal');
+
+    // Parqueadero Principal (Noroeste)
+    const parqueadero1 = L.rectangle([
+        [5.70030, -72.88405],
+        [5.70015, -72.88390]
+    ], {
+        color: '#607D8B',
+        fillColor: '#CFD8DC',
+        fillOpacity: 0.6,
+        weight: 2,
+        dashArray: '5, 5'
+    }).addTo(capaAreas);
+    parqueadero1.bindPopup('<strong>🚗 Parqueadero Norte</strong><br>Acceso principal<br>Capacidad: 50 vehículos');
+
+    // Parqueadero Este
+    const parqueadero2 = L.rectangle([
+        [5.70015, -72.88325],
+        [5.70000, -72.88310]
+    ], {
+        color: '#607D8B',
+        fillColor: '#CFD8DC',
+        fillOpacity: 0.6,
+        weight: 2,
+        dashArray: '5, 5'
+    }).addTo(capaAreas);
+    parqueadero2.bindPopup('<strong>🚗 Parqueadero Este</strong><br>Capacidad: 40 vehículos');
+
+    // Patio de Maquinaria Pesada (Suroeste)
+    const patioMaquinaria = L.rectangle([
+        [5.69960, -72.88420],
+        [5.69940, -72.88395]
+    ], {
+        color: '#795548',
+        fillColor: '#BCAAA4',
+        fillOpacity: 0.7,
+        weight: 2
+    }).addTo(capaAreas);
+    patioMaquinaria.bindPopup('<strong>🚜 Patio de Maquinaria</strong><br>Excavadoras, volquetas y equipos pesados<br>Zona de práctica con maquinaria real');
+
+    // Zonas Verdes (arboleadas visibles en imagen)
+    const zonaVerde1 = L.circle([5.70050, -72.88390], {
+        color: '#2E7D32',
+        fillColor: '#81C784',
+        fillOpacity: 0.5,
+        radius: 12
+    }).addTo(capaAreas);
+    zonaVerde1.bindPopup('<strong>🌳 Zona Verde Norte</strong><br>Área arbolada');
+
+    const zonaVerde2 = L.circle([5.69965, -72.88350], {
+        color: '#2E7D32',
+        fillColor: '#81C784',
+        fillOpacity: 0.5,
+        radius: 10
+    }).addTo(capaAreas);
+    zonaVerde2.bindPopup('<strong>🌳 Zona Verde Sur</strong><br>Área de descanso');
+
+    const zonaVerde3 = L.circle([5.70000, -72.88395], {
+        color: '#2E7D32',
+        fillColor: '#81C784',
+        fillOpacity: 0.5,
+        radius: 8
+    }).addTo(capaAreas);
+    zonaVerde3.bindPopup('<strong>🌳 Jardines</strong>');
+
+    // 4. INFRAESTRUCTURA
+    const cerramientoPerimetral = L.polygon([
+        [5.70070, -72.88450],
+        [5.70070, -72.88300],
+        [5.69940, -72.88300],
+        [5.69940, -72.88450]
+    ], {
+        color: '#000000',
+        fillColor: 'transparent',
+        weight: 3,
+        dashArray: '10, 10',
+        opacity: 0.5
+    }).addTo(capaInfraestructura);
+    cerramientoPerimetral.bindPopup('<strong>🚧 Cerramiento Perimetral</strong>');
+
+    // Postes de luz (marcadores pequeños)
+    const postesCoordenadas = [
+        [5.70050, -72.88380],
+        [5.70030, -72.88370],
+        [5.70010, -72.88360],
+        [5.69990, -72.88370],
+        [5.69970, -72.88380]
+    ];
+
+    postesCoordenadas.forEach(coord => {
+        L.circleMarker(coord, {
+            radius: 3,
+            fillColor: '#FFC107',
+            color: '#FF6F00',
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 0.8
+        }).addTo(capaInfraestructura).bindPopup('💡 Poste de Iluminación');
+    });
+
+    // Tanque de agua
+    L.circle([5.70060, -72.88320], {
+        radius: 8,
+        fillColor: '#2196F3',
+        color: '#0D47A1',
+        weight: 2,
+        fillOpacity: 0.7
+    }).addTo(capaInfraestructura).bindPopup('<strong>💧 Tanque de Agua</strong><br>Capacidad: 10,000 L');
+
+    // Flecha indicando el Norte
+    const iconoNorte = L.divIcon({
+        className: 'north-arrow',
+        html: '<div style="font-size: 30px; color: #C62828;"><i class="bi bi-arrow-up-circle-fill"></i></div>',
+        iconSize: [30, 30]
+    });
+    L.marker([5.70065, -72.88375], { icon: iconoNorte }).addTo(capaInfraestructura)
+        .bindPopup('<strong>⬆️ Norte Geográfico</strong>');
+}
+
+// ====================================================================
 // INICIALIZACIÓN DEL MAPA
 // ====================================================================
 
 function inicializarMapa() {
-    // Crear el mapa
+    // Crear el mapa centrado en el Centro Nacional Minero SENA
     mapa = L.map('mapaPrincipal').setView(
         [centroMinero.latitud, centroMinero.longitud],
-        17
+        18
     );
 
-    // Agregar capa base de OpenStreetMap
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
+    // Capa Satelital de Esri (mejor calidad que OpenStreetMap)
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
         maxZoom: 19
+    }).addTo(mapa);
+
+    // Capa opcional de etiquetas sobre la imagen satelital
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+        maxZoom: 19,
+        opacity: 0.7
     }).addTo(mapa);
 
     // Agregar marcador del Centro Minero
@@ -287,25 +703,25 @@ function inicializarMapa() {
         </div>
     `);
 
-    // Dibujar geocerca
-    const circuloGeocerca = L.circle(
-        [centroMinero.latitud, centroMinero.longitud],
-        {
-            color: '#1565C0',
-            fillColor: '#2196F3',
-            fillOpacity: 0.1,
-            radius: radioGeocerca
-        }
-    ).addTo(mapa);
+    // Dibujar geocerca - Contorno del Centro Minero
+    poligonoGeocerca = L.polygon(geocercaCentro, {
+        color: '#E53935',        // Rojo
+        fillColor: '#E53935',    // Rojo
+        fillOpacity: 0.08,       // Muy transparente
+        weight: 4,               // Grosor del borde
+        opacity: 0.9             // Opacidad del borde
+    }).addTo(mapa);
 
-    circuloGeocerca.bindPopup(`
-        <div style="min-width: 180px;">
-            <h6 style="margin: 0 0 8px 0; color: #1565C0;">
-                <i class="bi bi-geo-fill"></i> Geocerca del Centro
+    poligonoGeocerca.bindPopup(`
+        <div style="min-width: 200px;">
+            <h6 style="margin: 0 0 8px 0; color: #2196F3;">
+                <i class="bi bi-shield-check"></i> Geocerca del Centro
             </h6>
-            <p style="margin: 0 0 5px 0;">
-                <strong>Radio:</strong> ${radioGeocerca} metros<br>
-                <strong>Área:</strong> ${(Math.PI * radioGeocerca * radioGeocerca / 10000).toFixed(2)} hectáreas
+            <p style="margin: 0; font-size: 13px;">
+                Perímetro de seguridad del Centro Nacional Minero SENA
+            </p>
+            <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">
+                <i class="bi bi-info-circle"></i> La geocerca sigue el contorno real del centro
             </p>
         </div>
     `);
@@ -436,29 +852,35 @@ function cuandoHayError(error) {
 }
 
 function verificarDentroGeocerca(latitud, longitud) {
-    const distancia = mapa.distance(
+    const estadoElemento = document.getElementById('estadoGeocerca');
+
+    // Verificar si el punto está dentro del polígono de geocerca
+    const puntoUsuario = L.latLng(latitud, longitud);
+    const dentroDeLaGeocerca = poligonoGeocerca.getBounds().contains(puntoUsuario) &&
+                                estaPuntoDentroPoligono(latitud, longitud, geocercaCentro);
+
+    // Calcular distancia al centro como referencia
+    const distanciaAlCentro = mapa.distance(
         [latitud, longitud],
         [centroMinero.latitud, centroMinero.longitud]
     );
 
-    const estadoElemento = document.getElementById('estadoGeocerca');
-    
-    if (distancia <= radioGeocerca) {
+    if (dentroDeLaGeocerca) {
         estadoElemento.innerHTML = `
             <span class="text-success">
                 <i class="bi bi-check-circle-fill me-1"></i>
-                Dentro del centro (${distancia.toFixed(0)} m)
+                Dentro del centro
             </span>
         `;
         if (miMarcador) {
             miMarcador.bindPopup(`
-                <div style="min-width: 180px;">
+                <div style="min-width: 200px;">
                     <h6 style="margin: 0 0 8px 0; color: #2E7D32;">
                         <i class="bi bi-person-circle"></i> Mi ubicación
                     </h6>
                     <p style="margin: 0 0 5px 0;">
-                        <span class="badge bg-success">✓ Dentro del centro</span><br>
-                        Distancia: ${distancia.toFixed(0)} m
+                        <span class="badge bg-success">✓ Dentro del perímetro</span><br>
+                        <small>Distancia al centro: ${distanciaAlCentro.toFixed(0)} m</small>
                     </p>
                 </div>
             `);
@@ -467,23 +889,43 @@ function verificarDentroGeocerca(latitud, longitud) {
         estadoElemento.innerHTML = `
             <span class="text-warning">
                 <i class="bi bi-exclamation-triangle me-1"></i>
-                Fuera del centro (${distancia.toFixed(0)} m)
+                Fuera del centro
             </span>
         `;
         if (miMarcador) {
             miMarcador.bindPopup(`
-                <div style="min-width: 180px;">
+                <div style="min-width: 200px;">
                     <h6 style="margin: 0 0 8px 0; color: #F57C00;">
                         <i class="bi bi-person-circle"></i> Mi ubicación
                     </h6>
                     <p style="margin: 0 0 5px 0;">
-                        <span class="badge bg-warning">⚠ Fuera del centro</span><br>
-                        Distancia: ${distancia.toFixed(0)} m
+                        <span class="badge bg-warning">⚠ Fuera del perímetro</span><br>
+                        <small>Distancia al centro: ${distanciaAlCentro.toFixed(0)} m</small>
                     </p>
                 </div>
             `);
         }
     }
+}
+
+// Función auxiliar: Algoritmo de Ray Casting para verificar si un punto está dentro de un polígono
+function estaPuntoDentroPoligono(lat, lng, poligonoCoords) {
+    let dentro = false;
+    const x = lat;
+    const y = lng;
+
+    for (let i = 0, j = poligonoCoords.length - 1; i < poligonoCoords.length; j = i++) {
+        const xi = poligonoCoords[i][0];
+        const yi = poligonoCoords[i][1];
+        const xj = poligonoCoords[j][0];
+        const yj = poligonoCoords[j][1];
+
+        const intersect = ((yi > y) !== (yj > y)) &&
+                         (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) dentro = !dentro;
+    }
+
+    return dentro;
 }
 
 // ====================================================================
@@ -497,6 +939,12 @@ function inicializarDatosDinamicos() {
 
     // Crear iconos personalizados
     const iconos = {
+        edificio: L.divIcon({
+            className: 'custom-div-icon',
+            html: '<div style="background:#FF6600;width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;border:3px solid white;box-shadow:0 3px 8px rgba(0,0,0,0.4);"><i class="bi bi-building"></i></div>',
+            iconSize: [40, 40],
+            iconAnchor: [20, 40]
+        }),
         puntoEncuentro: L.divIcon({
             className: 'custom-div-icon',
             html: '<div style="background:#4CAF50;width:35px;height:35px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;border:3px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3);"><i class="bi bi-people-fill"></i></div>',
@@ -582,7 +1030,7 @@ function inicializarDatosDinamicos() {
         `);
     });
 
-    // Agregar capas al mapa inicialmente
+    // Agregar capas al mapa inicialmente (solo puntos de encuentro y equipamiento)
     capaPuntosEncuentro.addTo(mapa);
     capaEquipamiento.addTo(mapa);
 }
@@ -938,14 +1386,18 @@ function centrarMapaEnPunto(puntoId) {
 document.addEventListener('DOMContentLoaded', function() {
     // 1. Inicializar mapa
     mapa = inicializarMapa();
-    
-    // 2. Inicializar geolocalización
+
+    // 2. Inicializar infraestructura del centro (vías, edificios, áreas)
+    // DESACTIVADO: Solo mostrar imagen satelital real
+    // inicializarInfraestructura();
+
+    // 3. Inicializar geolocalización
     inicializarGeolocalizacion();
-    
-    // 3. Cargar datos dinámicos
+
+    // 4. Cargar datos dinámicos (puntos, equipamiento)
     inicializarDatosDinamicos();
-    
-    // 4. Configurar controles
+
+    // 5. Configurar controles
     inicializarControles();
     
     // 5. Configurar eventos del mapa

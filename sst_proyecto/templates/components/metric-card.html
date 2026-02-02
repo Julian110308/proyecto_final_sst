@@ -1,0 +1,37 @@
+{# Metric Card Component - Tarjeta de métrica reutilizable #}
+{% comment %}
+Uso:
+{% include 'components/metric-card.html' with
+    label="Mi Etiqueta"
+    value=mi_variable|default:0
+    sublabel="Texto adicional"
+    sublabel_icon="bi bi-check"
+    sublabel_color="success"
+    icon="bi-speedometer2"
+    icon_color="primary"
+    border_color="success"
+%}
+{% endcomment %}
+
+<div class="col-xl-3 col-md-6">
+    <div class="card card-modern border-0 {% if border_color %}border-start border-4 border-{{ border_color }}{% endif %}">
+        <div class="card-body p-4">
+            <div class="d-flex align-items-center">
+                <div class="flex-grow-1">
+                    <h6 class="text-muted mb-2">{{ label }}</h6>
+                    <h3 class="fw-bold text-dark mb-0">{{ value }}</h3>
+                    {% if sublabel %}
+                    <small class="text-{{ sublabel_color|default:'muted' }}">
+                        {% if sublabel_icon %}<i class="{{ sublabel_icon }}"></i> {% endif %}{{ sublabel }}
+                    </small>
+                    {% endif %}
+                </div>
+                {% if icon %}
+                <div class="bg-light-{{ icon_color|default:'primary' }} rounded-3 p-3">
+                    <i class="{{ icon }} fs-2 text-{{ icon_color|default:'primary' }}"></i>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>

@@ -12,51 +12,13 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-    
-    <!-- CSS Personalizado -->
+
+    <!-- Design System CSS -->
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
+
+    <!-- CSS Personalizado para componentes específicos -->
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-        :root {
-            /* --- PALETA DE COLORES SEMÁNTICA --- */
-            --color-primary: #39A900;
-            --color-primary-hover: #2E8B00;
-            --color-primary-light: #F1F8E9;
-            
-            --color-text-main: #111827;      /* Gray 900 */
-            --color-text-secondary: #4B5563; /* Gray 600 */
-            --color-text-muted: #9CA3AF;     /* Gray 400 */
-            
-            --color-bg-body: #F3F4F6;        /* Gray 100 */
-            --color-bg-surface: #FFFFFF;
-            --color-border: #E5E7EB;         /* Gray 200 */
-
-            /* --- SISTEMA DE ESPACIADO (Base 4px) --- */
-            --space-1: 0.25rem;  /* 4px */
-            --space-2: 0.5rem;   /* 8px */
-            --space-3: 0.75rem;  /* 12px */
-            --space-4: 1rem;     /* 16px */
-            --space-5: 1.5rem;   /* 24px */
-            --space-6: 2rem;     /* 32px */
-
-            /* --- SISTEMA DE BORDES Y SOMBRAS --- */
-            --radius-md: 0.5rem;
-            --radius-lg: 1rem;
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            
-            /* --- LAYOUT --- */
-            --sidebar-width: 260px;
-            --header-height: 70px;
-        }
-        
-        body {
-            background-color: var(--color-bg-body);
-            font-family: 'Inter', sans-serif;
-            color: var(--color-text-main);
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-        }
         
         .navbar-main {
             background-color: var(--color-bg-surface);
@@ -177,55 +139,8 @@
             margin-bottom: var(--space-3);
         }
 
-        /* --- COMPONENTE CARD UNIFICADO --- */
-        .card {
-            background: var(--color-bg-surface);
-            border: none;
-            border-radius: 1rem; /* Diseño más redondeado y moderno */
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); /* Sombra suave y difusa */
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            overflow: hidden;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-        }
-        
-        .card:hover {
-            transform: translateY(-5px); /* Efecto de elevación */
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .card-body {
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
-        }
-
-        .card-header {
-            background-color: #ffffff;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-            padding: 1.25rem 1.5rem;
-            font-weight: 700;
-            color: var(--color-text-main);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        
-        /* Clases de compatibilidad para dashboards específicos */
-        .card-modern {
-            border: none !important;
-        }
-        
-        .card-header-modern {
-            padding: 1.25rem 1.5rem;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-            background: #fff;
-            font-weight: 700;
-            color: var(--color-text-main);
-        }
+        /* --- COMPONENTES ESPECÍFICOS DEL LAYOUT --- */
+        /* Los estilos de .card están en design-system.css */
 
         /* Ajuste para que las tarjetas se adapten al contenido en Emergencias (Instructor) */
         {% if user.rol == 'INSTRUCTOR' and '/emergencias/' in request.path %}
@@ -317,13 +232,13 @@
 </head>
 <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-main navbar-expand-lg">
+    <nav class="navbar navbar-main navbar-expand-lg" role="navigation" aria-label="Navegación principal">
         <div class="container-fluid">
-            <button class="btn btn-link text-dark me-3 d-md-none" id="sidebarToggle">
-                <i class="bi bi-list fs-4"></i>
+            <button class="btn btn-link text-dark me-3 d-md-none" id="sidebarToggle" aria-label="Abrir menú lateral" aria-controls="sidebar">
+                <i class="bi bi-list fs-4" aria-hidden="true"></i>
             </button>
-            
-            <a class="navbar-brand text-dark fw-bold" href="{% url 'dashboard' %}">
+
+            <a class="navbar-brand text-dark fw-bold" href="{% url 'dashboard' %}" aria-label="Inicio - Sistema SST Centro Minero">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/8/83/Sena_Colombia_logo.svg" alt="Logo SENA" height="45" class="me-2">
                 SENA SST - Centro Minero
             </a>
@@ -387,14 +302,14 @@
     </nav>
 
     <!-- Sidebar - Menú dinámico según el rol -->
-    <nav class="sidebar" id="sidebar">
+    <nav class="sidebar" id="sidebar" role="navigation" aria-label="Menú lateral">
         <div class="sidebar-menu-wrapper">
             <h6 class="sidebar-heading">MENÚ PRINCIPAL</h6>
                 <ul class="nav flex-column">
                 <!-- Dashboard - Todos los roles -->
                 <li class="nav-item mb-2">
-                    <a class="nav-link active" href="{% url 'dashboard' %}">
-                        <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                    <a class="nav-link active" href="{% url 'dashboard' %}" aria-current="page">
+                        <i class="bi bi-speedometer2 me-2" aria-hidden="true"></i>Dashboard
                     </a>
                 </li>
 
@@ -776,7 +691,11 @@
             alert('Tu código QR para acceso está disponible en tu dashboard.\nPuedes descargarlo desde la tarjeta "Mi Código QR".');
         }
     </script>
-    
+
+    <!-- Design System JavaScript -->
+    <script src="{% static 'js/ui-feedback.js' %}"></script>
+    <script src="{% static 'js/form-validation.js' %}"></script>
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>

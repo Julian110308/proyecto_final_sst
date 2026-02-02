@@ -30,81 +30,13 @@
 
 <!-- Métricas Principales -->
 <div class="row g-4 mb-4">
-    <!-- Aprendices a Cargo -->
-    <div class="col-xl-3 col-md-6">
-        <div class="card card-modern border-0">
-            <div class="card-body p-4">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Mis Aprendices</h6>
-                        <h3 class="fw-bold text-dark mb-0">{{ total_aprendices|default:45 }}</h3>
-                        <small class="text-success">
-                            <i class="bi bi-people-fill"></i> A mi cargo
-                        </small>
-                    </div>
-                    <div class="bg-light-green rounded-3 p-3">
-                        <i class="bi bi-people-fill fs-2" style="color: #2e7d32;"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include 'components/metric-card.html' with label="Mis Aprendices" value=total_aprendices|default:45 sublabel="A mi cargo" sublabel_icon="bi bi-people-fill" sublabel_color="success" icon="bi-people-fill" icon_color="success" %}
 
-    <!-- Presentes Hoy -->
-    <div class="col-xl-3 col-md-6">
-        <div class="card card-modern border-0">
-            <div class="card-body p-4">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Presentes Hoy</h6>
-                        <h3 class="fw-bold text-dark mb-0">{{ aprendices_presentes|default:42 }}</h3>
-                        <small class="text-success">93% asistencia</small>
-                    </div>
-                    <div class="bg-light rounded-3 p-3" style="background: #e3f2fd !important;">
-                        <i class="bi bi-person-check-fill fs-2 text-primary"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include 'components/metric-card.html' with label="Presentes Hoy" value=aprendices_presentes|default:42 sublabel="93% asistencia" sublabel_color="success" icon="bi-person-check-fill" icon_color="primary" %}
 
-    <!-- ✅ CAMBIO: Capacitaciones en lugar de Visitantes -->
-    <div class="col-xl-3 col-md-6">
-        <div class="card card-modern border-0">
-            <div class="card-body p-4">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Capacitaciones</h6>
-                        <h3 class="fw-bold text-dark mb-0">3</h3>
-                        <small class="text-warning">1 programada</small>
-                    </div>
-                    <div class="bg-light-warning rounded-3 p-3">
-                        <i class="bi bi-mortarboard fs-2 text-warning"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include 'components/metric-card.html' with label="Capacitaciones" value="3" sublabel="1 programada" sublabel_color="warning" icon="bi-mortarboard" icon_color="warning" %}
 
-    <!-- Reportes Pendientes -->
-    <div class="col-xl-3 col-md-6">
-        <div class="card card-modern border-0">
-            <div class="card-body p-4">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Reportes Pendientes</h6>
-                        <h3 class="fw-bold text-dark mb-0">{{ reportes_pendientes|default:2 }}</h3>
-                        <small class="text-warning">
-                            <i class="bi bi-file-earmark-text"></i> Por revisar
-                        </small>
-                    </div>
-                    <div class="bg-light-warning rounded-3 p-3">
-                        <i class="bi bi-file-earmark-text fs-2 text-warning"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include 'components/metric-card.html' with label="Reportes Pendientes" value=reportes_pendientes|default:2 sublabel="Por revisar" sublabel_icon="bi bi-file-earmark-text" sublabel_color="warning" icon="bi-file-earmark-text" icon_color="warning" %}
 </div>
 
 <!-- Gráfico de Asistencia y Acciones Rápidas -->
