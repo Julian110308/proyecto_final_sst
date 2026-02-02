@@ -1,0 +1,14 @@
+{# Loading State Component - Estado de carga #}
+{% comment %}
+Uso:
+{% include 'components/loading.html' with
+    message="Cargando reportes..."
+%}
+{% endcomment %}
+
+<div class="loading-overlay">
+    <div class="text-center">
+        <div class="spinner-sena mx-auto mb-3"></div>
+        <p class="text-muted">{{ message|default:'Cargando...' }}</p>
+    </div>
+</div>

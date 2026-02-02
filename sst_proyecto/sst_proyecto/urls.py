@@ -337,13 +337,10 @@ def control_acceso_view(request):
     """
     return render(request, 'control_acceso.html')
 
-@excluir_visitantes
-def mapas_view(request):
-    """
-    Vista de Mapas
-    PERMISOS: Todos excepto VISITANTE
-    """
-    return render(request, 'mapas.html')
+# Importar la vista completa de mapas
+from mapas.views import mapa_interactivo
+
+# Decorador aplicado directamente en la vista mapa_interactivo en mapas/views.py
 
 @excluir_visitantes
 def emergencias_view(request):
@@ -406,7 +403,7 @@ urlpatterns = [
     path('', dashboard_view, name='dashboard'),
     path('dashboard/', RedirectView.as_view(url='/', permanent=False)),
     path('acceso/', control_acceso_view, name='control_acceso'),
-    path('mapas/', mapas_view, name='mapas'),
+    path('mapas/', mapa_interactivo, name='mapas'),
     path('emergencias/', emergencias_view, name='emergencias'),
 
     # ==============================================

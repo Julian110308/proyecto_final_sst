@@ -28,45 +28,10 @@
 
 <!-- Tarjetas de Información Rápida -->
 <div class="row g-4 mb-4">
-    <!-- Mi Asistencia -->
-    <div class="col-xl-3 col-md-6">
-        <div class="card card-modern border-0">
-            <div class="card-body p-4">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Mis Ingresos Este Mes</h6>
-                        <h3 class="fw-bold text-dark mb-0">{{ usuarios_mes|default:0 }}</h3>
-                        <small class="text-success">
-                            <i class="bi bi-calendar-check"></i> Días asistidos
-                        </small>
-                    </div>
-                    <div class="bg-light-green rounded-3 p-3">
-                        <i class="bi bi-calendar-check fs-2 text-success"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include 'components/metric-card.html' with label="Mis Ingresos Este Mes" value=usuarios_mes|default:0 sublabel="Días asistidos" sublabel_icon="bi bi-calendar-check" sublabel_color="success" icon="bi-calendar-check" icon_color="success" %}
 
-    <!-- Horas en Centro -->
-    <div class="col-xl-3 col-md-6">
-        <div class="card card-modern border-0">
-            <div class="card-body p-4">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Ingresos Totales Hoy</h6>
-                        <h3 class="fw-bold text-dark mb-0">{{ ingresos_hoy|default:0 }}</h3>
-                        <small class="text-info">Personas en el centro</small>
-                    </div>
-                    <div class="bg-light rounded-3 p-3" style="background: #e3f2fd !important;">
-                        <i class="bi bi-clock-history fs-2 text-primary"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include 'components/metric-card.html' with label="Mis Reportes de Incidentes" value=mis_reportes|default:0 sublabel="Reportes enviados" sublabel_icon="bi bi-file-earmark-text" sublabel_color="warning" icon="bi-exclamation-triangle-fill" icon_color="warning" %}
 
-    <!-- Estado Actual -->
     <div class="col-xl-3 col-md-6">
         <div class="card card-modern border-0">
             <div class="card-body p-4">
@@ -82,7 +47,7 @@
                         </h3>
                         <small class="text-muted">Desde las 7:00 AM</small>
                     </div>
-                    <div class="bg-light-green rounded-3 p-3">
+                    <div class="bg-light-success rounded-3 p-3">
                         <i class="bi bi-geo-alt fs-2 text-success"></i>
                     </div>
                 </div>
@@ -90,25 +55,7 @@
         </div>
     </div>
 
-    <!-- Mis Capacitaciones - ✅ NUEVO -->
-    <div class="col-xl-3 col-md-6">
-        <div class="card card-modern border-0">
-            <div class="card-body p-4">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Mis Capacitaciones</h6>
-                        <h3 class="fw-bold text-dark mb-0">3</h3>
-                        <small class="text-warning">
-                            <i class="bi bi-mortarboard"></i> 1 pendiente
-                        </small>
-                    </div>
-                    <div class="bg-light-warning rounded-3 p-3">
-                        <i class="bi bi-award fs-2 text-warning"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include 'components/metric-card.html' with label="Mis Capacitaciones" value="3" sublabel="1 pendiente" sublabel_icon="bi bi-mortarboard" sublabel_color="warning" icon="bi-award" icon_color="warning" %}
 </div>
 
 <!-- Acciones Rápidas -->

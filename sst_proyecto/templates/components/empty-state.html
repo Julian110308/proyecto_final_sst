@@ -1,0 +1,28 @@
+{# Empty State Component - Estado vacío cuando no hay datos #}
+{% comment %}
+Uso:
+{% include 'components/empty-state.html' with
+    icon="bi bi-inbox"
+    title="No hay reportes"
+    message="Aún no has creado ningún reporte de incidente"
+    action_url="/reportes/crear/"
+    action_text="Crear Reporte"
+    action_icon="bi bi-plus-circle"
+%}
+{% endcomment %}
+
+<div class="empty-state">
+    <div class="empty-state-icon">
+        <i class="{{ icon|default:'bi bi-inbox' }}"></i>
+    </div>
+    <h4 class="mb-2">{{ title|default:'No hay datos' }}</h4>
+    {% if message %}
+    <p class="text-muted mb-4">{{ message }}</p>
+    {% endif %}
+    {% if action_url %}
+    <a href="{{ action_url }}" class="btn btn-primary">
+        {% if action_icon %}<i class="{{ action_icon }} me-2"></i>{% endif %}
+        {{ action_text|default:'Crear nuevo' }}
+    </a>
+    {% endif %}
+</div>

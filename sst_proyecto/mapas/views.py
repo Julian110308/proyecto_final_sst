@@ -19,14 +19,42 @@ from .serializers import (
     RutaEvacuacionSerializer,
 )
 from .services import encontrar_mas_cercano
-from usuarios.permissions import NoEsVisitante, EsAdministrativo
+from usuarios.permissions import NoEsVisitante, EsAdministrativo, excluir_visitantes
 
 @login_required
+@excluir_visitantes
 def mapa_interactivo(request):
-    """Vista principal del mapa interactivo"""
+    """Vista principal del mapa interactivo - TODOS excepto VISITANTE"""
     
     try:
-        # 1. PUNTOS DE ENCUENTRO
+        # 1. EDIFICIOS/BLOQUES
+
+        edificios = EdificioBloque.objects.filter(activo=True).values(
+            'id',
+            'nombre',
+            'tipo',
+            'latitud',
+            'longitud',
+            'descripcion',
+            'piso_minimo',
+            'piso_maximo',
+            'capacidad',
+        )
+
+        edificios_data = []
+        for edificio in edificios:
+            edificios_data.append({
+                'id': edificio['id'],
+                'nombre': edificio['nombre'],
+                'tipo': edificio['tipo'],
+                'latitud': float(edificio['latitud']),
+                'longitud': float(edificio['longitud']),
+                'descripcion': edificio['descripcion'] or f"Edificio {edificio['tipo']}",
+                'pisos': f"{edificio['piso_minimo']} - {edificio['piso_maximo']}" if edificio['piso_maximo'] else str(edificio['piso_minimo'] or 1),
+                'capacidad': edificio['capacidad'] or 0,
+            })
+
+        # 2. PUNTOS DE ENCUENTRO
 
         puntos_encuentro = PuntoEncuentro.objects.filter(activo=True).values(
             'id', 
@@ -50,8 +78,8 @@ def mapa_interactivo(request):
                 'capacidad': punto['capacidad'],
                 'descripcion': punto['descripcion'] or f"Punto de encuentro {punto['tipo_terreno']} - Prioridad {punto['prioridad']}",
             })
-        
-        # 2. EQUIPAMIENTO DE SEGURIDAD
+
+        # 3. EQUIPAMIENTO DE SEGURIDAD
 
         equipamientos = EquipamientoSeguridad.objects.filter(
             estado='OPERATIVO'
@@ -91,25 +119,117 @@ def mapa_interactivo(request):
                 'descripcion': descripcion_completa or f"Equipo {equipo['tipo']} - {equipo['codigo']}",
             })
         
-        # 3. CREAR DATOS DE EJEMPLO SI NO HAY REALES
+        # 4. CREAR DATOS DE EJEMPLO SI NO HAY REALES
+
+        if not edificios_data:
+            # Coordenadas reales del Centro Nacional Minero SENA - Sogamoso, Vereda Morcá
+            # Base: 5.7303596° N, -72.8943613° O
+            edificios_data = [
+                {
+                    'id': 1,
+                    'nombre': 'Edificio Administrativo Principal',
+                    'tipo': 'ADMINISTRATIVO',
+                    'latitud': 5.73036,
+                    'longitud': -72.89436,
+                    'descripcion': 'Dirección y administración del Centro Nacional Minero',
+                    'pisos': '1 - 2',
+                    'capacidad': 100,
+                },
+                {
+                    'id': 2,
+                    'nombre': 'Bloque de Aulas Teóricas',
+                    'tipo': 'AULAS',
+                    'latitud': 5.73070,
+                    'longitud': -72.89460,
+                    'descripcion': 'Aulas para formación teórica en minería',
+                    'pisos': '1 - 2',
+                    'capacidad': 300,
+                },
+                {
+                    'id': 3,
+                    'nombre': 'Talleres de Minería',
+                    'tipo': 'TALLER',
+                    'latitud': 5.73000,
+                    'longitud': -72.89410,
+                    'descripcion': 'Talleres prácticos de maquinaria y equipos mineros',
+                    'pisos': '1',
+                    'capacidad': 150,
+                },
+                {
+                    'id': 4,
+                    'nombre': 'Mina Didáctica Subterránea',
+                    'tipo': 'TALLER',
+                    'latitud': 5.72970,
+                    'longitud': -72.89430,
+                    'descripcion': 'Entrada a la mina didáctica para formación práctica',
+                    'pisos': '1',
+                    'capacidad': 50,
+                },
+                {
+                    'id': 5,
+                    'nombre': 'Laboratorios de Geología y Topografía',
+                    'tipo': 'LABORATORIO',
+                    'latitud': 5.73090,
+                    'longitud': -72.89420,
+                    'descripcion': 'Laboratorios especializados en ciencias de la tierra',
+                    'pisos': '1',
+                    'capacidad': 80,
+                },
+                {
+                    'id': 6,
+                    'nombre': 'Cafetería y Bienestar',
+                    'tipo': 'CAFETERIA',
+                    'latitud': 5.73050,
+                    'longitud': -72.89480,
+                    'descripcion': 'Zona de alimentación y descanso para aprendices',
+                    'pisos': '1',
+                    'capacidad': 200,
+                },
+                {
+                    'id': 7,
+                    'nombre': 'Parqueadero Principal',
+                    'tipo': 'PARQUEADERO',
+                    'latitud': 5.73120,
+                    'longitud': -72.89510,
+                    'descripcion': 'Parqueadero de vehículos y motos',
+                    'pisos': '1',
+                    'capacidad': 100,
+                },
+            ]
 
         if not puntos_data:
             puntos_data = [
                 {
                     'id': 1,
-                    'nombre': 'Cancha Principal',
-                    'latitud': 5.5342,
-                    'longitud': -73.3670,
-                    'capacidad': 200,
-                    'descripcion': 'Área abierta principal para evacuación - Prioridad 1',
+                    'nombre': 'Punto Principal - Cancha Deportiva',
+                    'latitud': 5.73040,
+                    'longitud': -72.89430,
+                    'capacidad': 500,
+                    'descripcion': 'PRIORIDAD 1: Cancha deportiva central - Espacio abierto amplio para evacuación masiva',
                 },
                 {
                     'id': 2,
-                    'nombre': 'Parqueadero Trasero',
-                    'latitud': 5.5336,
-                    'longitud': -73.3678,
+                    'nombre': 'Punto Secundario - Parqueadero Norte',
+                    'latitud': 5.73130,
+                    'longitud': -72.89510,
+                    'capacidad': 250,
+                    'descripcion': 'PRIORIDAD 2: Zona de parqueadero norte - Área despejada',
+                },
+                {
+                    'id': 3,
+                    'nombre': 'Punto Alterno - Entrada Principal',
+                    'latitud': 5.73150,
+                    'longitud': -72.89460,
+                    'capacidad': 200,
+                    'descripcion': 'PRIORIDAD 3: Zona de acceso principal - Salida rápida del centro',
+                },
+                {
+                    'id': 4,
+                    'nombre': 'Punto de Evacuación Sur',
+                    'latitud': 5.72960,
+                    'longitud': -72.89410,
                     'capacidad': 150,
-                    'descripcion': 'Zona segura trasera del edificio - Prioridad 2',
+                    'descripcion': 'EMERGENCIA: Punto sur para evacuación de talleres',
                 }
             ]
         
@@ -119,31 +239,50 @@ def mapa_interactivo(request):
                     'id': 1,
                     'tipo': 'EXTINTOR',
                     'codigo': 'EXT-001',
-                    'latitud': 5.5339,
-                    'longitud': -73.3674,
-                    'ultima_revision': '2024-12-01',
-                    'descripcion': 'Extintor CO2 en entrada principal',
+                    'latitud': 5.73036,
+                    'longitud': -72.89436,
+                    'ultima_revision': '2026-01-15',
+                    'descripcion': 'Extintor PQS - Entrada principal edificio administrativo',
                 },
                 {
                     'id': 2,
+                    'tipo': 'EXTINTOR',
+                    'codigo': 'EXT-002',
+                    'latitud': 5.72970,
+                    'longitud': -72.89430,
+                    'ultima_revision': '2026-01-15',
+                    'descripcion': 'Extintor CO2 - Entrada mina didáctica',
+                },
+                {
+                    'id': 3,
                     'tipo': 'BOTIQUIN',
                     'codigo': 'BOT-001',
-                    'latitud': 5.5341,
-                    'longitud': -73.3676,
-                    'ultima_revision': '2024-11-15',
-                    'descripcion': 'Botiquín de primeros auxilios completo',
+                    'latitud': 5.73070,
+                    'longitud': -72.89460,
+                    'ultima_revision': '2026-01-20',
+                    'descripcion': 'Botiquín tipo A - Bloque de aulas',
+                },
+                {
+                    'id': 4,
+                    'tipo': 'BOTIQUIN',
+                    'codigo': 'BOT-002',
+                    'latitud': 5.73000,
+                    'longitud': -72.89410,
+                    'ultima_revision': '2026-01-20',
+                    'descripcion': 'Botiquín tipo A - Talleres de minería',
                 }
             ]
         
-        # 4. PREPARAR CONTEXTO
+        # 5. PREPARAR CONTEXTO
 
         context = {
+            'edificios': edificios_data,
             'puntos_encuentro': puntos_data,
             'equipamiento': equipamientos_data,
             'centro_minero': {
-                'lat': 5.5339,
-                'lng': -73.3674,
-                'nombre': 'Centro Minero SENA Sogamoso'
+                'lat': 5.7303596,
+                'lng': -72.8943613,
+                'nombre': 'Centro Nacional Minero SENA - Sogamoso, Vereda Morcá'
             }
         }
         
@@ -152,24 +291,56 @@ def mapa_interactivo(request):
         import traceback
         print(f"❌ Error cargando datos del mapa: {e}")
         print(traceback.format_exc())
-        
+
         context = {
-            'puntos_encuentro': [
+            'edificios': [
                 {
                     'id': 1,
-                    'nombre': 'Cancha Principal',
-                    'latitud': 5.5342,
-                    'longitud': -73.3670,
-                    'capacidad': 200,
-                    'descripcion': 'Área abierta principal para evacuación - Prioridad 1',
+                    'nombre': 'Edificio Administrativo Principal',
+                    'tipo': 'ADMINISTRATIVO',
+                    'latitud': 5.73036,
+                    'longitud': -72.89436,
+                    'descripcion': 'Dirección y administración del Centro Nacional Minero',
+                    'pisos': '1 - 2',
+                    'capacidad': 100,
                 },
                 {
                     'id': 2,
-                    'nombre': 'Parqueadero Trasero',
-                    'latitud': 5.5336,
-                    'longitud': -73.3678,
-                    'capacidad': 150,
-                    'descripcion': 'Zona segura trasera del edificio - Prioridad 2',
+                    'nombre': 'Bloque de Aulas Teóricas',
+                    'tipo': 'AULAS',
+                    'latitud': 5.73070,
+                    'longitud': -72.89460,
+                    'descripcion': 'Aulas para formación teórica en minería',
+                    'pisos': '1 - 2',
+                    'capacidad': 300,
+                },
+                {
+                    'id': 3,
+                    'nombre': 'Mina Didáctica Subterránea',
+                    'tipo': 'TALLER',
+                    'latitud': 5.72970,
+                    'longitud': -72.89430,
+                    'descripcion': 'Entrada a la mina didáctica para formación práctica',
+                    'pisos': '1',
+                    'capacidad': 50,
+                },
+            ],
+            'puntos_encuentro': [
+                {
+                    'id': 1,
+                    'nombre': 'Punto Principal - Cancha Deportiva',
+                    'latitud': 5.73040,
+                    'longitud': -72.89430,
+                    'capacidad': 500,
+                    'descripcion': 'PRIORIDAD 1: Cancha deportiva central - Espacio abierto amplio para evacuación masiva',
+                },
+                {
+                    'id': 2,
+                    'nombre': 'Punto Secundario - Parqueadero Norte',
+                    'latitud': 5.73130,
+                    'longitud': -72.89510,
+                    'capacidad': 250,
+                    'descripcion': 'PRIORIDAD 2: Zona de parqueadero norte - Área despejada',
                 }
             ],
             'equipamiento': [
@@ -177,25 +348,25 @@ def mapa_interactivo(request):
                     'id': 1,
                     'tipo': 'EXTINTOR',
                     'codigo': 'EXT-001',
-                    'latitud': 5.5339,
-                    'longitud': -73.3674,
-                    'ultima_revision': '2024-12-01',
-                    'descripcion': 'Extintor CO2 en entrada principal',
+                    'latitud': 5.73036,
+                    'longitud': -72.89436,
+                    'ultima_revision': '2026-01-15',
+                    'descripcion': 'Extintor PQS - Entrada principal edificio administrativo',
                 },
                 {
                     'id': 2,
                     'tipo': 'BOTIQUIN',
                     'codigo': 'BOT-001',
-                    'latitud': 5.5341,
-                    'longitud': -73.3676,
-                    'ultima_revision': '2024-11-15',
-                    'descripcion': 'Botiquín de primeros auxilios completo',
+                    'latitud': 5.73070,
+                    'longitud': -72.89460,
+                    'ultima_revision': '2026-01-20',
+                    'descripcion': 'Botiquín tipo A - Bloque de aulas',
                 }
             ],
             'centro_minero': {
-                'lat': 5.5339,
-                'lng': -73.3674,
-                'nombre': 'Centro Minero SENA Sogamoso'
+                'lat': 5.7303596,
+                'lng': -72.8943613,
+                'nombre': 'Centro Nacional Minero SENA - Sogamoso, Vereda Morcá'
             }
         }
     

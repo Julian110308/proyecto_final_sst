@@ -29,7 +29,6 @@
 
 <!-- Estado de Emergencias -->
 <div class="row g-4 mb-4">
-    <!-- Estado Actual -->
     <div class="col-xl-3 col-md-6">
         <div class="card card-modern border-0 border-start border-4 border-success">
             <div class="card-body p-4">
@@ -41,7 +40,7 @@
                             <i class="bi bi-shield-check"></i> Sin emergencias activas
                         </small>
                     </div>
-                    <div class="bg-light-green rounded-3 p-3">
+                    <div class="bg-light-success rounded-3 p-3">
                         <i class="bi bi-check-circle-fill fs-2 text-success"></i>
                     </div>
                 </div>
@@ -49,65 +48,11 @@
         </div>
     </div>
 
-    <!-- Brigadistas Disponibles -->
-    <div class="col-xl-3 col-md-6">
-        <div class="card card-modern border-0 border-start border-4 border-primary">
-            <div class="card-body p-4">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Personas en Centro</h6>
-                        <h3 class="fw-bold text-dark mb-0">{{ personas_en_centro|default:0 }}</h3>
-                        <small class="text-success">
-                            <i class="bi bi-building"></i> {{ porcentaje_ocupacion|default:0 }}% ocupación
-                        </small>
-                    </div>
-                    <div class="bg-light rounded-3 p-3" style="background: #e3f2fd !important;">
-                        <i class="bi bi-people-fill fs-2 text-primary"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include 'components/metric-card.html' with label="Personas en Centro" value=personas_en_centro|default:0 sublabel=porcentaje_ocupacion|default:0|add:"% ocupación" sublabel_icon="bi bi-building" sublabel_color="success" icon="bi-people-fill" icon_color="primary" border_color="primary" %}
 
-    <!-- Emergencias del Mes -->
-    <div class="col-xl-3 col-md-6">
-        <div class="card card-modern border-0 border-start border-4 border-warning">
-            <div class="card-body p-4">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Visitantes Hoy</h6>
-                        <h3 class="fw-bold text-dark mb-0">{{ visitantes_hoy|default:0 }}</h3>
-                        <small class="text-success">
-                            <i class="bi bi-person-badge"></i> Registrados
-                        </small>
-                    </div>
-                    <div class="bg-light-warning rounded-3 p-3">
-                        <i class="bi bi-exclamation-triangle-fill fs-2 text-warning"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include 'components/metric-card.html' with label="Brigadistas Disponibles" value=brigadistas_disponibles|default:8|add:"/10" sublabel="En servicio activo" sublabel_icon="bi bi-person-check" sublabel_color="success" icon="bi-people-fill" icon_color="warning" border_color="warning" %}
 
-    <!-- Tiempo de Respuesta Promedio -->
-    <div class="col-xl-3 col-md-6">
-        <div class="card card-modern border-0 border-start border-4 border-info">
-            <div class="card-body p-4">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Ingresos Hoy</h6>
-                        <h3 class="fw-bold text-dark mb-0">{{ ingresos_hoy|default:0 }}</h3>
-                        <small class="text-success">
-                            <i class="bi bi-door-open-fill"></i> Total del día
-                        </small>
-                    </div>
-                    <div class="bg-light rounded-3 p-3" style="background: #e3f2fd !important;">
-                        <i class="bi bi-stopwatch-fill fs-2 text-info"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include 'components/metric-card.html' with label="Emergencias del Mes" value=emergencias_mes|default:8 sublabel="Atendidas" sublabel_icon="bi bi-exclamation-triangle" sublabel_color="info" icon="bi-shield-exclamation" icon_color="info" border_color="info" %}
 </div>
 
 <!-- Panel Principal -->

@@ -32,79 +32,13 @@
 
 <!-- Estado del Sistema -->
 <div class="row g-4 mb-4">
-    <div class="col-xl-3 col-md-6">
-        <div class="card card-modern border-0 border-start border-4 border-primary">
-            <div class="card-body p-4">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Personas en Centro</h6>
-                        <h3 class="fw-bold text-dark mb-0">{{ personas_en_centro|default:0 }}</h3>
-                        <small class="text-success">
-                            <i class="bi bi-shield-check"></i> {{ porcentaje_ocupacion|default:0 }}% ocupación
-                        </small>
-                    </div>
-                    <div class="bg-light rounded-3 p-3" style="background: #e3f2fd !important;">
-                        <i class="bi bi-people-fill fs-2 text-primary"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include 'components/metric-card.html' with label="Personas en Centro" value=personas_en_centro|default:0 sublabel=porcentaje_ocupacion|default:0|add:"% ocupación" sublabel_icon="bi bi-shield-check" sublabel_color="success" icon="bi-people-fill" icon_color="primary" border_color="primary" %}
 
-    <div class="col-xl-3 col-md-6">
-        <div class="card card-modern border-0 border-start border-4 border-success">
-            <div class="card-body p-4">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Ingresos Hoy</h6>
-                        <h3 class="fw-bold text-dark mb-0">{{ ingresos_hoy|default:0 }}</h3>
-                        <small class="text-info">Total del día</small>
-                    </div>
-                    <div class="bg-light-green rounded-3 p-3">
-                        <i class="bi bi-box-arrow-in-right fs-2 text-success"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include 'components/metric-card.html' with label="Ingresos Hoy" value=ingresos_hoy|default:0 sublabel="Total del día" sublabel_color="info" icon="bi-box-arrow-in-right" icon_color="success" border_color="success" %}
 
-    <div class="col-xl-3 col-md-6">
-        <div class="card card-modern border-0 border-start border-4 border-warning">
-            <div class="card-body p-4">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Visitantes Hoy</h6>
-                        <h3 class="fw-bold text-dark mb-0">{{ visitantes_hoy|default:0 }}</h3>
-                        <small class="text-warning">
-                            <i class="bi bi-person-badge"></i> Registrados
-                        </small>
-                    </div>
-                    <div class="bg-light-warning rounded-3 p-3">
-                        <i class="bi bi-person-badge fs-2 text-warning"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include 'components/metric-card.html' with label="Visitantes Hoy" value=visitantes_hoy|default:0 sublabel="Registrados" sublabel_icon="bi bi-person-badge" sublabel_color="warning" icon="bi-person-badge" icon_color="warning" border_color="warning" %}
 
-    <div class="col-xl-3 col-md-6">
-        <div class="card card-modern border-0 border-start border-4 border-info">
-            <div class="card-body p-4">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Rondas del Turno</h6>
-                        <h3 class="fw-bold text-dark mb-0">4</h3>
-                        <small class="text-success">
-                            <i class="bi bi-check-circle"></i> Última: 11:30 AM
-                        </small>
-                    </div>
-                    <div class="bg-light rounded-3 p-3" style="background: #e3f2fd !important;">
-                        <i class="bi bi-clipboard-check fs-2 text-info"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include 'components/metric-card.html' with label="Rondas del Turno" value="4" sublabel="Última: 11:30 AM" sublabel_icon="bi bi-check-circle" sublabel_color="success" icon="bi-clipboard-check" icon_color="info" border_color="info" %}
 </div>
 
 <!-- Registro de Accesos y Acciones Rápidas -->

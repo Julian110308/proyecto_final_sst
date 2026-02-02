@@ -1,0 +1,52 @@
+{# Card Component - Tarjeta genérica reutilizable #}
+{% comment %}
+Uso:
+<div class="col-md-6">
+{% include 'components/card.html' with
+    title="Título de la Tarjeta"
+    icon="bi-speedometer2"
+    variant="elevated"
+    content=card_content_html
+    footer=card_footer_html
+%}
+</div>
+
+O con block para contenido más complejo:
+<div class="col-md-6">
+    {% include 'components/card.html' with title="Mi Card" icon="bi-info" only %}
+        <p>Contenido personalizado aquí</p>
+    {% endinclude %}
+</div>
+{% endcomment %}
+
+<div class="card {% if variant %}card-{{ variant }}{% endif %} {% if extra_classes %}{{ extra_classes }}{% endif %}">
+    {% if title %}
+    <div class="card-header {% if header_class %}{{ header_class }}{% endif %}">
+        <div class="d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">
+                {% if icon %}<i class="{{ icon }} me-2"></i>{% endif %}
+                {{ title }}
+            </h6>
+            {% if actions %}
+            <div class="card-actions">
+                {{ actions|safe }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card-body {% if body_class %}{{ body_class }}{% endif %}">
+        {% if content %}
+            {{ content|safe }}
+        {% else %}
+            {{ block.super }}
+        {% endif %}
+    </div>
+
+    {% if footer %}
+    <div class="card-footer {% if footer_class %}{{ footer_class }}{% endif %}">
+        {{ footer|safe }}
+    </div>
+    {% endif %}
+</div>
