@@ -13,7 +13,7 @@
         <i class="bi bi-graph-up text-primary me-2"></i>
         Módulo de Reportes
     </h1>
-    <p class="text-muted mb-0">Gestión de reportes e incidentes de seguridad</p>
+    <p class="text-muted mb-0">Gestión de reportes, estadísticas y exportación de datos</p>
 </div>
 
 <!-- Tarjetas de Acceso Rápido -->
@@ -43,59 +43,206 @@
         </div>
     </div>
 
-    <!-- Estadísticas (Próximamente) -->
+    <!-- Exportar Reportes -->
     <div class="col-md-6">
         <div class="card card-modern h-100">
             <div class="card-body text-center p-5">
                 <div class="mb-4">
-                    <i class="bi bi-bar-chart-fill text-info" style="font-size: 4rem;"></i>
-                </div>
-                <h3 class="fw-bold mb-3">Estadísticas</h3>
-                <p class="text-muted mb-4">
-                    Análisis detallado de datos de seguridad, tendencias y métricas del centro.
-                </p>
-                <button class="btn btn-secondary btn-lg" disabled>
-                    <i class="bi bi-graph-up me-2"></i>
-                    Próximamente
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Auditorías (Próximamente) -->
-    <div class="col-md-6">
-        <div class="card card-modern h-100">
-            <div class="card-body text-center p-5">
-                <div class="mb-4">
-                    <i class="bi bi-clipboard-check-fill text-success" style="font-size: 4rem;"></i>
-                </div>
-                <h3 class="fw-bold mb-3">Auditorías</h3>
-                <p class="text-muted mb-4">
-                    Registro de inspecciones y auditorías de seguridad del centro minero.
-                </p>
-                <button class="btn btn-secondary btn-lg" disabled>
-                    <i class="bi bi-clipboard-data me-2"></i>
-                    Próximamente
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Exportar Reportes (Próximamente) -->
-    <div class="col-md-6">
-        <div class="card card-modern h-100">
-            <div class="card-body text-center p-5">
-                <div class="mb-4">
-                    <i class="bi bi-file-earmark-pdf-fill text-danger" style="font-size: 4rem;"></i>
+                    <i class="bi bi-file-earmark-arrow-down-fill text-success" style="font-size: 4rem;"></i>
                 </div>
                 <h3 class="fw-bold mb-3">Exportar Reportes</h3>
                 <p class="text-muted mb-4">
-                    Genera reportes en PDF, Excel y otros formatos para presentación.
+                    Genera reportes en PDF, Excel y CSV para presentación y análisis.
                 </p>
-                <button class="btn btn-secondary btn-lg" disabled>
+                <button class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#exportarModal">
                     <i class="bi bi-download me-2"></i>
-                    Próximamente
+                    Generar Reporte
                 </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tipos de Reportes Disponibles -->
+<div class="card card-modern mt-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">
+            <i class="bi bi-file-earmark-text me-2"></i>
+            Tipos de Reportes Disponibles
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <!-- Reporte de Aforo -->
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 border-primary">
+                    <div class="card-body text-center">
+                        <i class="bi bi-people-fill text-primary fs-1 mb-3"></i>
+                        <h6 class="fw-bold">Reporte de Aforo</h6>
+                        <p class="text-muted small mb-3">Ingresos, egresos y ocupación del centro</p>
+                        <button class="btn btn-sm btn-outline-primary" onclick="abrirModalExportar('aforo')">
+                            <i class="bi bi-download me-1"></i> Exportar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reporte de Incidentes -->
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 border-danger">
+                    <div class="card-body text-center">
+                        <i class="bi bi-exclamation-octagon-fill text-danger fs-1 mb-3"></i>
+                        <h6 class="fw-bold">Reporte de Incidentes</h6>
+                        <p class="text-muted small mb-3">Emergencias y eventos de seguridad</p>
+                        <button class="btn btn-sm btn-outline-danger" onclick="abrirModalExportar('incidentes')">
+                            <i class="bi bi-download me-1"></i> Exportar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reporte de Asistencia -->
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 border-success">
+                    <div class="card-body text-center">
+                        <i class="bi bi-calendar-check-fill text-success fs-1 mb-3"></i>
+                        <h6 class="fw-bold">Reporte de Asistencia</h6>
+                        <p class="text-muted small mb-3">Asistencia por ficha de formación</p>
+                        <button class="btn btn-sm btn-outline-success" onclick="abrirModalExportar('asistencia')">
+                            <i class="bi bi-download me-1"></i> Exportar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reporte de Seguridad -->
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 border-warning">
+                    <div class="card-body text-center">
+                        <i class="bi bi-shield-fill-check text-warning fs-1 mb-3"></i>
+                        <h6 class="fw-bold">Reporte de Seguridad</h6>
+                        <p class="text-muted small mb-3">Equipamiento y estado general</p>
+                        <button class="btn btn-sm btn-outline-warning" onclick="abrirModalExportar('seguridad')">
+                            <i class="bi bi-download me-1"></i> Exportar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Exportar Reportes -->
+<div class="modal fade" id="exportarModal" tabindex="-1" aria-labelledby="exportarModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="exportarModalLabel">
+                    <i class="bi bi-file-earmark-arrow-down me-2"></i>
+                    Generar Reporte
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formExportar">
+                    <div class="row g-3">
+                        <!-- Tipo de Reporte -->
+                        <div class="col-md-6">
+                            <label for="tipoReporte" class="form-label fw-bold">
+                                <i class="bi bi-file-text me-1"></i> Tipo de Reporte
+                            </label>
+                            <select class="form-select" id="tipoReporte" required>
+                                <option value="">Seleccione un tipo...</option>
+                                <option value="aforo">Reporte de Aforo</option>
+                                <option value="incidentes">Reporte de Incidentes</option>
+                                <option value="asistencia">Reporte de Asistencia</option>
+                                <option value="seguridad">Reporte de Seguridad</option>
+                            </select>
+                        </div>
+
+                        <!-- Formato -->
+                        <div class="col-md-6">
+                            <label for="formatoReporte" class="form-label fw-bold">
+                                <i class="bi bi-file-earmark me-1"></i> Formato de Exportación
+                            </label>
+                            <select class="form-select" id="formatoReporte" required>
+                                <option value="pdf">PDF - Documento</option>
+                                <option value="excel">Excel - Hoja de cálculo</option>
+                                <option value="csv">CSV - Datos crudos</option>
+                                <option value="json">JSON - Datos API</option>
+                            </select>
+                        </div>
+
+                        <!-- Fecha Inicio -->
+                        <div class="col-md-6">
+                            <label for="fechaInicio" class="form-label fw-bold">
+                                <i class="bi bi-calendar-event me-1"></i> Fecha Inicio
+                            </label>
+                            <input type="date" class="form-control" id="fechaInicio" required>
+                        </div>
+
+                        <!-- Fecha Fin -->
+                        <div class="col-md-6">
+                            <label for="fechaFin" class="form-label fw-bold">
+                                <i class="bi bi-calendar-event me-1"></i> Fecha Fin
+                            </label>
+                            <input type="date" class="form-control" id="fechaFin" required>
+                        </div>
+
+                        <!-- Campo Ficha (solo para asistencia) -->
+                        <div class="col-12" id="campoFicha" style="display: none;">
+                            <label for="fichaReporte" class="form-label fw-bold">
+                                <i class="bi bi-card-list me-1"></i> Número de Ficha
+                            </label>
+                            <input type="text" class="form-control" id="fichaReporte" placeholder="Ej: 2889765">
+                            <div class="form-text">Ingrese el número de ficha para generar el reporte de asistencia</div>
+                        </div>
+
+                        <!-- Opciones Adicionales -->
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="guardarReporte">
+                                <label class="form-check-label" for="guardarReporte">
+                                    Guardar en historial de reportes
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Previsualización de formatos -->
+                <div class="mt-4 p-3 bg-light rounded">
+                    <h6 class="fw-bold mb-2">
+                        <i class="bi bi-info-circle me-1"></i> Información del formato
+                    </h6>
+                    <div id="infoFormato">
+                        <p class="mb-0 text-muted">
+                            <strong>PDF:</strong> Documento formateado ideal para impresión y presentación oficial.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg me-1"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" id="btnGenerarReporte" onclick="generarReporte()">
+                    <i class="bi bi-download me-1"></i> Generar y Descargar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Spinner de carga -->
+<div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-transparent border-0">
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="text-white mt-3 fw-bold">Generando reporte...</p>
             </div>
         </div>
     </div>
@@ -105,14 +252,189 @@
 <div class="alert alert-info mt-4" role="alert">
     <h5 class="alert-heading">
         <i class="bi bi-info-circle me-2"></i>
-        Información
+        Información sobre Reportes
     </h5>
     <hr>
     <ul class="mb-0">
-        <li><strong>Incidentes:</strong> Actualmente disponible para reportar y gestionar incidentes</li>
-        <li><strong>Estadísticas:</strong> Próximamente - Análisis visual de datos</li>
-        <li><strong>Auditorías:</strong> Próximamente - Sistema de inspecciones</li>
-        <li><strong>Exportar:</strong> Próximamente - Generación de documentos</li>
+        <li><strong>PDF:</strong> Documento formateado con tablas y gráficos, ideal para presentaciones</li>
+        <li><strong>Excel:</strong> Hoja de cálculo con múltiples pestañas y datos estructurados</li>
+        <li><strong>CSV:</strong> Datos crudos separados por comas, ideal para análisis en otras herramientas</li>
+        <li><strong>JSON:</strong> Formato de datos estructurado para integración con sistemas</li>
     </ul>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Establecer fechas por defecto (último mes)
+    document.addEventListener('DOMContentLoaded', function() {
+        const hoy = new Date();
+        const hace30Dias = new Date();
+        hace30Dias.setDate(hoy.getDate() - 30);
+
+        document.getElementById('fechaFin').value = hoy.toISOString().split('T')[0];
+        document.getElementById('fechaInicio').value = hace30Dias.toISOString().split('T')[0];
+    });
+
+    // Mostrar/ocultar campo ficha según tipo de reporte
+    document.getElementById('tipoReporte').addEventListener('change', function() {
+        const campoFicha = document.getElementById('campoFicha');
+        const fichaInput = document.getElementById('fichaReporte');
+
+        if (this.value === 'asistencia') {
+            campoFicha.style.display = 'block';
+            fichaInput.required = true;
+        } else {
+            campoFicha.style.display = 'none';
+            fichaInput.required = false;
+        }
+    });
+
+    // Actualizar información del formato
+    document.getElementById('formatoReporte').addEventListener('change', function() {
+        const infoFormato = document.getElementById('infoFormato');
+        const formatos = {
+            'pdf': '<strong>PDF:</strong> Documento formateado ideal para impresión y presentación oficial.',
+            'excel': '<strong>Excel:</strong> Hoja de cálculo con datos organizados en tablas, permite análisis y filtros.',
+            'csv': '<strong>CSV:</strong> Valores separados por comas, ideal para importar en otros sistemas o análisis de datos.',
+            'json': '<strong>JSON:</strong> Formato estructurado para integración con APIs y sistemas externos.'
+        };
+        infoFormato.innerHTML = `<p class="mb-0 text-muted">${formatos[this.value]}</p>`;
+    });
+
+    // Abrir modal con tipo preseleccionado
+    function abrirModalExportar(tipo) {
+        document.getElementById('tipoReporte').value = tipo;
+        document.getElementById('tipoReporte').dispatchEvent(new Event('change'));
+        new bootstrap.Modal(document.getElementById('exportarModal')).show();
+    }
+
+    // Generar y descargar reporte
+    function generarReporte() {
+        const tipo = document.getElementById('tipoReporte').value;
+        const formato = document.getElementById('formatoReporte').value;
+        const fechaInicio = document.getElementById('fechaInicio').value;
+        const fechaFin = document.getElementById('fechaFin').value;
+        const ficha = document.getElementById('fichaReporte').value;
+        const guardar = document.getElementById('guardarReporte').checked;
+
+        // Validaciones
+        if (!tipo) {
+            alert('Por favor seleccione un tipo de reporte');
+            return;
+        }
+
+        if (!fechaInicio || !fechaFin) {
+            alert('Por favor seleccione el rango de fechas');
+            return;
+        }
+
+        if (tipo === 'asistencia' && !ficha) {
+            alert('Por favor ingrese el número de ficha para el reporte de asistencia');
+            return;
+        }
+
+        // Construir URL
+        let url = `/reportes/api/${tipo}/?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}&formato=${formato}`;
+
+        if (tipo === 'asistencia') {
+            url += `&ficha=${ficha}`;
+        }
+
+        if (guardar) {
+            url += '&guardar=true';
+        }
+
+        // Mostrar loading
+        const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+        loadingModal.show();
+
+        // Si es JSON, abrir en nueva pestaña
+        if (formato === 'json') {
+            loadingModal.hide();
+            window.open(url, '_blank');
+            return;
+        }
+
+        // Para otros formatos, descargar
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.error || 'Error al generar el reporte');
+                });
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            loadingModal.hide();
+
+            // Determinar extensión
+            const extensiones = {
+                'pdf': 'pdf',
+                'excel': 'xlsx',
+                'csv': 'csv'
+            };
+
+            // Crear link de descarga
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `reporte_${tipo}_${fechaInicio}_${fechaFin}.${extensiones[formato]}`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+
+            // Cerrar modal de exportación
+            bootstrap.Modal.getInstance(document.getElementById('exportarModal')).hide();
+
+            // Mostrar mensaje de éxito
+            mostrarMensaje('success', 'Reporte generado exitosamente');
+        })
+        .catch(error => {
+            loadingModal.hide();
+            mostrarMensaje('danger', error.message);
+        });
+    }
+
+    // Función para obtener cookie CSRF
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Mostrar mensaje toast
+    function mostrarMensaje(tipo, mensaje) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${tipo} alert-dismissible fade show position-fixed`;
+        alertDiv.style.cssText = 'top: 80px; right: 20px; z-index: 9999; min-width: 300px;';
+        alertDiv.innerHTML = `
+            <i class="bi bi-${tipo === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+            ${mensaje}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alertDiv);
+
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
+    }
+</script>
 {% endblock %}

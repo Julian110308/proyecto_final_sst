@@ -8,204 +8,110 @@ class RolePermissions:
     """
     PERMISSIONS_MAP = {
         'APRENDIZ': {
-            # Dashboard y datos personales
             'can_view_dashboard': True,
             'can_view_reports': True,
             'can_view_own_data': True,
             'can_view_capacity': True,
             'can_view_alerts': True,
-            
-            # Emergencias - CAMBIO: Solo reportar y ver las propias
             'can_report_emergency': True,
-            'can_view_emergencies': False,  # ❌ NO ve todas las emergencias
-            'can_view_own_emergencies': True,  # ✅ Solo las que reportó
-            
-            # Mapas - CAMBIO CRÍTICO: Ahora SÍ puede ver
-            'can_view_map': True,  # ✅ CAMBIADO de False a True
-            'can_view_evacuation_routes': True,  # ✅ NUEVO: Importante para seguridad
-            
-            # Reportes e incidentes
+            'can_view_emergencies': False,
+            'can_view_own_emergencies': True,
+            'can_view_map': True,
+            'can_view_evacuation_routes': True,
             'can_create_report': True,
             'can_view_own_reports': True,
             'can_report_incident': True,
-            
-            # Capacitaciones - NUEVO
-            'can_view_own_trainings': True,  # ✅ Ver sus capacitaciones
-            'can_view_sst_norms': True,  # ✅ Ver normas SST
-            
-            # Control de acceso
             'can_view_own_access': True,
-            'can_use_qr_code': True,
-            
-            # Permisos denegados
-            'can_view_income': False,
             'can_manage_users': False,
             'can_manage_visitors': False,
             'can_configure_system': False,
             'can_export_data': False,
         },
-        
+
         'INSTRUCTOR': {
-            # Dashboard y vistas
             'can_view_dashboard': True,
             'can_view_reports': True,
             'can_view_own_data': True,
             'can_view_apprentice_data': True,
             'can_view_capacity': True,
-            
-            # Emergencias
             'can_report_emergency': True,
             'can_view_emergencies': True,
             'can_view_all_emergencies': False,
-            
-            # Mapas
             'can_view_map': True,
             'can_view_evacuation_routes': True,
             'can_view_full_map': True,
-            
-            # Reportes
             'can_create_report': True,
             'can_view_own_reports': True,
             'can_view_apprentice_reports': True,
             'can_approve_reports': True,
             'can_export_data': True,
-            
-            # Aprendices
             'can_view_apprentices': True,
             'can_manage_apprentices': True,
             'can_register_attendance': True,
-            
-            # Visitantes - CAMBIO CRÍTICO
-            'can_manage_visitors': False,  # ❌ CAMBIADO de True a False
-            'can_view_visitors_to_me': True,  # ✅ Solo visitantes que vienen a verlo
-            
-            # Capacitaciones - NUEVO
-            'can_view_own_trainings': True,
-            'can_create_trainings': True,
-            'can_manage_trainings': True,
-            'can_view_sst_norms': True,
-            
-            # Incidentes
+            'can_manage_visitors': False,
+            'can_view_visitors_to_me': True,
             'can_report_incident': True,
             'can_view_area_incidents': True,
-            
-            # Permisos denegados
-            'can_view_income': False,
             'can_manage_users': False,
             'can_configure_system': False,
         },
-        
+
         'ADMINISTRATIVO': {
-            # Acceso total
             'can_view_dashboard': True,
             'can_view_all_reports': True,
             'can_view_all_data': True,
             'can_manage_all_users': True,
             'can_view_capacity': True,
-            
-            # Emergencias
             'can_report_emergency': True,
             'can_view_all_emergencies': True,
             'can_manage_emergencies': True,
             'can_activate_emergency_protocol': True,
-            
-            # Mapas
             'can_view_map': True,
             'can_view_full_map': True,
             'can_edit_map': True,
             'can_view_evacuation_routes': True,
-            
-            # Reportes
             'can_create_report': True,
             'can_approve_reports': True,
             'can_export_data': True,
-            
-            # Usuarios y visitantes
             'can_manage_users': True,
             'can_manage_visitors': True,
             'can_create_users': True,
             'can_edit_users': True,
             'can_block_users': True,
-            
-            # Capacitaciones - NUEVO
-            'can_view_all_trainings': True,
-            'can_create_trainings': True,
-            'can_manage_trainings': True,
-            'can_view_sst_norms': True,
-            
-            # Configuración y auditoría
-            'can_view_income': True,
             'can_configure_system': True,
-            'can_view_audit_logs': True,  # ✅ NUEVO
-            
-            # Control de acceso
             'can_view_all_access': True,
             'can_register_manual_access': True,
-            
-            # EPP - NUEVO
-            'can_manage_epp_inventory': True,  # ✅ NUEVO
         },
-        
+
         'VIGILANCIA': {
-            # Dashboard
             'can_view_dashboard': True,
             'can_view_reports': True,
             'can_view_access_data': True,
             'can_view_capacity': True,
-            
-            # Control de acceso
             'can_register_access': True,
             'can_view_all_access': True,
             'can_register_manual_access': True,
             'can_block_users': True,
-            
-            # Visitantes
             'can_manage_visitors': True,
             'can_register_visitors': True,
             'can_view_all_visitors': True,
-            
-            # Emergencias - CAMBIO: Solo de seguridad
             'can_report_emergency': True,
-            'can_view_security_emergencies': True,  # ✅ Solo seguridad
-            'can_view_all_emergencies': False,  # ❌ NO todas
-            
-            # Mapas
+            'can_view_security_emergencies': True,
+            'can_view_all_emergencies': False,
             'can_view_map': True,
             'can_view_security_map': True,
-            'can_view_camera_locations': True,
-            
-            # Cámaras
-            'can_view_cameras': True,
-            'can_manage_cameras': True,
-            
-            # Rondas de seguridad - NUEVO
-            'can_register_security_rounds': True,  # ✅ NUEVO
-            'can_view_security_rounds': True,  # ✅ NUEVO
-            'can_manage_lost_items': True,  # ✅ NUEVO
-            
-            # Reportes
             'can_create_report': True,
             'can_view_security_reports': True,
             'can_export_data': True,
-            
-            # Capacitaciones
-            'can_view_own_trainings': True,
-            'can_view_sst_norms': True,
-            
-            # Permisos denegados
-            'can_view_income': False,
             'can_configure_system': False,
             'can_manage_users': False,
         },
-        
+
         'BRIGADA': {
-            # Dashboard
             'can_view_dashboard': True,
             'can_view_reports': True,
             'can_view_emergency_data': True,
             'can_view_capacity': True,
-            
-            # Emergencias
             'can_report_emergency': True,
             'can_view_all_emergencies': True,
             'can_update_emergencies': True,
@@ -213,68 +119,30 @@ class RolePermissions:
             'can_resolve_emergencies': True,
             'can_activate_emergency_protocol': True,
             'can_evacuate_zones': True,
-            
-            # Mapas
             'can_view_map': True,
             'can_view_emergency_map': True,
             'can_view_evacuation_routes': True,
             'can_edit_evacuation_routes': True,
-            
-            # Capacitaciones
-            'can_view_own_trainings': True,
-            'can_create_trainings': True,
-            'can_view_sst_norms': True,
-            
-            # Simulacros - NUEVO
-            'can_create_drills': True,  # ✅ NUEVO
-            'can_manage_drills': True,  # ✅ NUEVO
-            'can_evaluate_drills': True,  # ✅ NUEVO
-            
-            # EPP y equipos - NUEVO
-            'can_view_epp_inventory': True,  # ✅ NUEVO
-            'can_manage_epp_inventory': True,  # ✅ NUEVO
-            'can_verify_equipment': True,  # ✅ NUEVO
-            
-            # Primeros auxilios - NUEVO
-            'can_register_first_aid': True,  # ✅ NUEVO
-            'can_view_medical_data': True,
-            
-            # Disponibilidad
+            'can_verify_equipment': True,
             'can_manage_own_availability': True,
             'can_view_brigade_members': True,
-            
-            # Reportes
             'can_create_report': True,
             'can_view_emergency_reports': True,
             'can_export_data': True,
-            
-            # Permisos denegados
-            'can_view_income': False,
             'can_configure_system': False,
             'can_manage_users': False,
-            'can_view_all_access': False,  # ❌ NO necesita control de acceso
+            'can_view_all_access': False,
         },
-        
+
         'VISITANTE': {
-            # Dashboard limitado
             'can_view_dashboard': False,
             'can_view_welcome': True,
-            
-            # Solo su visita
             'can_register_arrival': True,
             'can_view_own_visit': True,
-            
-            # Información básica
-            'can_view_map': True,  # ✅ Mapa básico
-            'can_view_sst_norms': True,  # ✅ Normas
+            'can_view_map': True,
             'can_view_help': True,
-            
-            # Emergencia
             'can_report_emergency': True,
-            
-            # Permisos denegados
             'can_view_reports': False,
-            'can_view_income': False,
             'can_manage_users': False,
             'can_view_emergencies': False,
             'can_export_data': False,
@@ -488,3 +356,104 @@ class Visitante(models.Model):
             duracion = salida - entrada
             return duracion.total_seconds() / 3600  # Horas
         return None
+
+
+class Notificacion(models.Model):
+    """
+    Sistema de notificaciones general para todos los usuarios
+    """
+    TIPO_NOTIFICACION = [
+        ('EMERGENCIA', 'Emergencia'),
+        ('INCIDENTE', 'Incidente'),
+        ('SISTEMA', 'Sistema'),
+        ('ASISTENCIA', 'Asistencia'),
+        ('CAPACITACION', 'Capacitacion'),
+        ('RECORDATORIO', 'Recordatorio'),
+        ('INFO', 'Informativo'),
+    ]
+
+    PRIORIDAD = [
+        ('ALTA', 'Alta'),
+        ('MEDIA', 'Media'),
+        ('BAJA', 'Baja'),
+    ]
+
+    # Destinatario
+    destinatario = models.ForeignKey(
+        Usuario,
+        on_delete=models.CASCADE,
+        related_name='notificaciones'
+    )
+
+    # Contenido
+    titulo = models.CharField(max_length=200)
+    mensaje = models.TextField()
+    tipo = models.CharField(max_length=20, choices=TIPO_NOTIFICACION, default='INFO')
+    prioridad = models.CharField(max_length=10, choices=PRIORIDAD, default='MEDIA')
+
+    # Estado
+    leida = models.BooleanField(default=False)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_lectura = models.DateTimeField(null=True, blank=True)
+
+    # Opcional: enlace relacionado
+    url_relacionada = models.CharField(max_length=500, blank=True)
+
+    # Opcional: fecha de vencimiento (para recordatorios)
+    fecha_vencimiento = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Notificacion'
+        verbose_name_plural = 'Notificaciones'
+        ordering = ['-fecha_creacion']
+        indexes = [
+            models.Index(fields=['destinatario', '-fecha_creacion']),
+            models.Index(fields=['destinatario', 'leida']),
+        ]
+
+    def __str__(self):
+        return f'{self.titulo} - {self.destinatario.username}'
+
+    def marcar_leida(self):
+        """Marca la notificacion como leida"""
+        from django.utils import timezone
+        if not self.leida:
+            self.leida = True
+            self.fecha_lectura = timezone.now()
+            self.save()
+
+    @property
+    def esta_vencida(self):
+        """Verifica si la notificacion tiene fecha de vencimiento y esta vencida"""
+        if self.fecha_vencimiento:
+            from django.utils import timezone
+            return self.fecha_vencimiento < timezone.now()
+        return False
+
+    @classmethod
+    def crear_notificacion(cls, destinatario, titulo, mensaje, tipo='INFO', prioridad='MEDIA', url='', vencimiento=None):
+        """Metodo helper para crear notificaciones facilmente"""
+        return cls.objects.create(
+            destinatario=destinatario,
+            titulo=titulo,
+            mensaje=mensaje,
+            tipo=tipo,
+            prioridad=prioridad,
+            url_relacionada=url,
+            fecha_vencimiento=vencimiento
+        )
+
+    @classmethod
+    def notificar_usuarios_por_rol(cls, rol, titulo, mensaje, tipo='INFO', prioridad='MEDIA'):
+        """Crea notificaciones masivas para todos los usuarios de un rol"""
+        usuarios = Usuario.objects.filter(rol=rol, activo=True)
+        notificaciones = []
+        for usuario in usuarios:
+            notificaciones.append(cls(
+                destinatario=usuario,
+                titulo=titulo,
+                mensaje=mensaje,
+                tipo=tipo,
+                prioridad=prioridad
+            ))
+        return cls.objects.bulk_create(notificaciones)

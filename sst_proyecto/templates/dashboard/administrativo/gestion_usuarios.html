@@ -6,8 +6,58 @@
 <li class="breadcrumb-item active">Gestión de Usuarios</li>
 {% endblock %}
 
+{% block extra_css %}
+<style>
+    .modal-header-green {
+        background: linear-gradient(135deg, #2e7d32, #1a4d2e);
+        color: white;
+    }
+    .form-label-required::after {
+        content: " *";
+        color: #dc3545;
+    }
+    .role-badge {
+        font-size: 0.75rem;
+        padding: 0.35em 0.65em;
+    }
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+    }
+    .table-hover tbody tr:hover {
+        background-color: rgba(46, 125, 50, 0.05);
+    }
+    .alert-dismissible {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        z-index: 1060;
+        min-width: 300px;
+        animation: slideIn 0.3s ease;
+    }
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    .campos-aprendiz {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 10px;
+        border-left: 3px solid #2e7d32;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
+    <!-- Alertas -->
+    <div id="alertContainer"></div>
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="text-primary-green fw-bold mb-0">
@@ -15,7 +65,7 @@
             </h2>
             <p class="text-muted">Administración de cuentas y roles del sistema</p>
         </div>
-        <button class="btn btn-success">
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalNuevoUsuario">
             <i class="bi bi-person-plus-fill me-2"></i>Nuevo Usuario
         </button>
     </div>
@@ -38,6 +88,7 @@
                         <option value="ADMINISTRATIVO">Administrativo</option>
                         <option value="VIGILANCIA">Vigilancia</option>
                         <option value="BRIGADA">Brigada</option>
+                        <option value="VISITANTE">Visitante</option>
                     </select>
                 </div>
                 <div class="col-md-3">
@@ -101,8 +152,14 @@
                             <td><small class="text-muted">{{ usuario.fecha_registro|date:"d/m/Y" }}</small></td>
                             <td class="text-end pe-4">
                                 <div class="btn-group">
-                                    <button class="btn btn-sm btn-outline-secondary" title="Editar"><i class="bi bi-pencil"></i></button>
-                                    <button class="btn btn-sm btn-outline-danger" title="Desactivar"><i class="bi bi-slash-circle"></i></button>
+                                    <button class="btn btn-sm btn-outline-secondary" title="Editar" onclick="editarUsuario({{ usuario.id }})">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-{% if usuario.activo %}danger{% else %}success{% endif %}"
+                                            title="{% if usuario.activo %}Desactivar{% else %}Activar{% endif %}"
+                                            onclick="toggleEstadoUsuario({{ usuario.id }}, '{{ usuario.get_full_name|escapejs }}', {{ usuario.activo|yesno:'true,false' }})">
+                                        <i class="bi bi-{% if usuario.activo %}slash-circle{% else %}check-circle{% endif %}"></i>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -120,4 +177,471 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Nuevo Usuario -->
+<div class="modal fade" id="modalNuevoUsuario" tabindex="-1" aria-labelledby="modalNuevoUsuarioLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header modal-header-green">
+                <h5 class="modal-title" id="modalNuevoUsuarioLabel">
+                    <i class="bi bi-person-plus-fill me-2"></i>Crear Nuevo Usuario
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form id="formNuevoUsuario">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <!-- Nombre y Apellido -->
+                        <div class="col-md-6">
+                            <label for="nuevo_first_name" class="form-label form-label-required">Nombre</label>
+                            <input type="text" class="form-control" id="nuevo_first_name" name="first_name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="nuevo_last_name" class="form-label form-label-required">Apellido</label>
+                            <input type="text" class="form-control" id="nuevo_last_name" name="last_name" required>
+                        </div>
+
+                        <!-- Usuario y Email -->
+                        <div class="col-md-6">
+                            <label for="nuevo_username" class="form-label form-label-required">Usuario</label>
+                            <input type="text" class="form-control" id="nuevo_username" name="username" required minlength="3">
+                            <div class="form-text">Mínimo 3 caracteres</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="nuevo_email" class="form-label form-label-required">Correo Electrónico</label>
+                            <input type="email" class="form-control" id="nuevo_email" name="email" required>
+                        </div>
+
+                        <!-- Tipo y Número de Documento -->
+                        <div class="col-md-4">
+                            <label for="nuevo_tipo_documento" class="form-label form-label-required">Tipo Documento</label>
+                            <select class="form-select" id="nuevo_tipo_documento" name="tipo_documento" required>
+                                <option value="">Selecciona...</option>
+                                <option value="CC">Cédula de Ciudadanía</option>
+                                <option value="CE">Cédula de Extranjería</option>
+                                <option value="TI">Tarjeta de Identidad</option>
+                                <option value="PAS">Pasaporte</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="nuevo_numero_documento" class="form-label form-label-required">N° Documento</label>
+                            <input type="text" class="form-control" id="nuevo_numero_documento" name="numero_documento" required>
+                        </div>
+
+                        <!-- Rol -->
+                        <div class="col-md-4">
+                            <label for="nuevo_rol" class="form-label form-label-required">Rol</label>
+                            <select class="form-select" id="nuevo_rol" name="rol" required onchange="toggleCamposAprendiz()">
+                                <option value="">Selecciona rol...</option>
+                                <option value="APRENDIZ">Aprendiz</option>
+                                <option value="INSTRUCTOR">Instructor</option>
+                                <option value="ADMINISTRATIVO">Administrativo</option>
+                                <option value="VIGILANCIA">Vigilancia</option>
+                                <option value="BRIGADA">Brigada</option>
+                                <option value="VISITANTE">Visitante</option>
+                            </select>
+                        </div>
+
+                        <!-- Campos exclusivos de Aprendiz -->
+                        <div class="col-12" id="camposAprendiz" style="display: none;">
+                            <div class="campos-aprendiz">
+                                <h6 class="mb-3"><i class="bi bi-mortarboard me-2"></i>Información de Aprendiz</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="nuevo_ficha" class="form-label form-label-required">N° Ficha</label>
+                                        <input type="text" class="form-control" id="nuevo_ficha" name="ficha" maxlength="20">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="nuevo_programa" class="form-label form-label-required">Programa de Formación</label>
+                                        <select class="form-select" id="nuevo_programa" name="programa_formacion">
+                                            <option value="">Selecciona programa...</option>
+                                            <option value="Analisis y Desarrollo de Software">Análisis y Desarrollo de Software</option>
+                                            <option value="Maquinaria Pesada">Maquinaria Pesada</option>
+                                            <option value="Seguridad y Salud en el Trabajo">Seguridad y Salud en el Trabajo</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contraseñas -->
+                        <div class="col-md-6">
+                            <label for="nuevo_password" class="form-label form-label-required">Contraseña</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="nuevo_password" name="password" required minlength="8">
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('nuevo_password')">
+                                    <i class="bi bi-eye" id="icon_nuevo_password"></i>
+                                </button>
+                            </div>
+                            <div class="form-text">Mínimo 8 caracteres con mayúsculas, minúsculas, números y símbolos</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="nuevo_password2" class="form-label form-label-required">Confirmar Contraseña</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="nuevo_password2" name="password2" required minlength="8">
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('nuevo_password2')">
+                                    <i class="bi bi-eye" id="icon_nuevo_password2"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Estado -->
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="nuevo_activo" name="activo" checked>
+                                <label class="form-check-label" for="nuevo_activo">
+                                    Usuario activo (puede iniciar sesión inmediatamente)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-1"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-success" id="btnCrearUsuario">
+                        <i class="bi bi-person-plus me-1"></i>Crear Usuario
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Usuario -->
+<div class="modal fade" id="modalEditarUsuario" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header modal-header-green">
+                <h5 class="modal-title">
+                    <i class="bi bi-pencil-square me-2"></i>Editar Usuario
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formEditarUsuario">
+                {% csrf_token %}
+                <input type="hidden" id="editar_id" name="id">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label form-label-required">Nombre</label>
+                            <input type="text" class="form-control" id="editar_first_name" name="first_name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label form-label-required">Apellido</label>
+                            <input type="text" class="form-control" id="editar_last_name" name="last_name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Usuario</label>
+                            <input type="text" class="form-control" id="editar_username" disabled>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label form-label-required">Correo</label>
+                            <input type="email" class="form-control" id="editar_email" name="email" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label form-label-required">Rol</label>
+                            <select class="form-select" id="editar_rol" name="rol" required onchange="toggleCamposAprendizEditar()">
+                                <option value="APRENDIZ">Aprendiz</option>
+                                <option value="INSTRUCTOR">Instructor</option>
+                                <option value="ADMINISTRATIVO">Administrativo</option>
+                                <option value="VIGILANCIA">Vigilancia</option>
+                                <option value="BRIGADA">Brigada</option>
+                                <option value="VISITANTE">Visitante</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Estado</label>
+                            <select class="form-select" id="editar_activo" name="activo">
+                                <option value="true">Activo</option>
+                                <option value="false">Inactivo</option>
+                            </select>
+                        </div>
+                        <!-- Campos de Aprendiz para edición -->
+                        <div class="col-12" id="camposAprendizEditar" style="display: none;">
+                            <div class="campos-aprendiz">
+                                <h6 class="mb-3"><i class="bi bi-mortarboard me-2"></i>Información de Aprendiz</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">N° Ficha</label>
+                                        <input type="text" class="form-control" id="editar_ficha" name="ficha">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Programa</label>
+                                        <select class="form-select" id="editar_programa" name="programa_formacion">
+                                            <option value="">Selecciona...</option>
+                                            <option value="Analisis y Desarrollo de Software">Análisis y Desarrollo de Software</option>
+                                            <option value="Maquinaria Pesada">Maquinaria Pesada</option>
+                                            <option value="Seguridad y Salud en el Trabajo">Seguridad y Salud en el Trabajo</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg me-1"></i>Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Confirmar Desactivación -->
+<div class="modal fade" id="modalConfirmarDesactivar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Confirmar Acción</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas <strong id="accionTexto">desactivar</strong> al usuario <strong id="nombreUsuarioDesactivar"></strong>?</p>
+                <p class="text-muted small" id="desactivarInfo">El usuario no podrá iniciar sesión hasta que sea reactivado.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning" id="btnConfirmarDesactivar">
+                    <i class="bi bi-check-lg me-1"></i>Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Mostrar/ocultar campos de aprendiz
+    function toggleCamposAprendiz() {
+        const rol = document.getElementById('nuevo_rol').value;
+        const campos = document.getElementById('camposAprendiz');
+        const fichaInput = document.getElementById('nuevo_ficha');
+        const programaInput = document.getElementById('nuevo_programa');
+
+        if (rol === 'APRENDIZ') {
+            campos.style.display = 'block';
+            fichaInput.setAttribute('required', 'required');
+            programaInput.setAttribute('required', 'required');
+        } else {
+            campos.style.display = 'none';
+            fichaInput.removeAttribute('required');
+            programaInput.removeAttribute('required');
+        }
+    }
+
+    function toggleCamposAprendizEditar() {
+        const rol = document.getElementById('editar_rol').value;
+        const campos = document.getElementById('camposAprendizEditar');
+        campos.style.display = rol === 'APRENDIZ' ? 'block' : 'none';
+    }
+
+    // Toggle visibilidad de contraseña
+    function togglePasswordVisibility(inputId) {
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById('icon_' + inputId);
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.className = 'bi bi-eye-slash';
+        } else {
+            input.type = 'password';
+            icon.className = 'bi bi-eye';
+        }
+    }
+
+    // Mostrar alerta
+    function showAlert(message, type = 'success') {
+        const container = document.getElementById('alertContainer');
+        const alertId = 'alert_' + Date.now();
+        container.innerHTML = `
+            <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
+                <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}-fill me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        setTimeout(() => {
+            const alert = document.getElementById(alertId);
+            if (alert) alert.remove();
+        }, 5000);
+    }
+
+    // Crear usuario
+    document.getElementById('formNuevoUsuario').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const password = document.getElementById('nuevo_password').value;
+        const password2 = document.getElementById('nuevo_password2').value;
+
+        // Validar contraseñas
+        if (password !== password2) {
+            showAlert('Las contraseñas no coinciden', 'danger');
+            return;
+        }
+
+        const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        if (!strongRegex.test(password)) {
+            showAlert('La contraseña debe tener mayúsculas, minúsculas, números y caracteres especiales (@$!%*?&)', 'danger');
+            return;
+        }
+
+        const btn = document.getElementById('btnCrearUsuario');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Creando...';
+
+        const formData = new FormData(this);
+
+        fetch('/api/auth/usuarios/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.id || data.mensaje) {
+                showAlert('Usuario creado exitosamente', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('modalNuevoUsuario')).hide();
+                this.reset();
+                document.getElementById('camposAprendiz').style.display = 'none';
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert(data.error || data.detail || 'Error al crear usuario', 'danger');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            showAlert('Error de conexión', 'danger');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-person-plus me-1"></i>Crear Usuario';
+        });
+    });
+
+    // Abrir modal de edición
+    function editarUsuario(id) {
+        fetch(`/api/auth/usuarios/${id}/`, {
+            headers: { 'Accept': 'application/json' }
+        })
+        .then(r => r.json())
+        .then(usuario => {
+            document.getElementById('editar_id').value = usuario.id;
+            document.getElementById('editar_first_name').value = usuario.first_name || '';
+            document.getElementById('editar_last_name').value = usuario.last_name || '';
+            document.getElementById('editar_username').value = usuario.username;
+            document.getElementById('editar_email').value = usuario.email;
+            document.getElementById('editar_rol').value = usuario.rol;
+            document.getElementById('editar_activo').value = usuario.activo ? 'true' : 'false';
+            document.getElementById('editar_ficha').value = usuario.ficha || '';
+            document.getElementById('editar_programa').value = usuario.programa_formacion || '';
+            toggleCamposAprendizEditar();
+            new bootstrap.Modal(document.getElementById('modalEditarUsuario')).show();
+        })
+        .catch(err => showAlert('Error al cargar usuario', 'danger'));
+    }
+
+    // Guardar edición
+    document.getElementById('formEditarUsuario').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const id = document.getElementById('editar_id').value;
+        const formData = {
+            first_name: document.getElementById('editar_first_name').value,
+            last_name: document.getElementById('editar_last_name').value,
+            email: document.getElementById('editar_email').value,
+            rol: document.getElementById('editar_rol').value,
+            activo: document.getElementById('editar_activo').value === 'true',
+            ficha: document.getElementById('editar_ficha').value,
+            programa_formacion: document.getElementById('editar_programa').value
+        };
+
+        fetch(`/api/auth/usuarios/${id}/`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.id) {
+                showAlert('Usuario actualizado correctamente', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('modalEditarUsuario')).hide();
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert(data.error || 'Error al actualizar', 'danger');
+            }
+        })
+        .catch(err => showAlert('Error de conexión', 'danger'));
+    });
+
+    // Desactivar/Activar usuario
+    let usuarioIdToggle = null;
+    let usuarioActivoActual = true;
+
+    function toggleEstadoUsuario(id, nombre, activo) {
+        usuarioIdToggle = id;
+        usuarioActivoActual = activo;
+        document.getElementById('nombreUsuarioDesactivar').textContent = nombre;
+        document.getElementById('accionTexto').textContent = activo ? 'desactivar' : 'activar';
+        document.getElementById('desactivarInfo').textContent = activo
+            ? 'El usuario no podrá iniciar sesión hasta que sea reactivado.'
+            : 'El usuario podrá iniciar sesión nuevamente.';
+        document.getElementById('btnConfirmarDesactivar').className = activo ? 'btn btn-warning' : 'btn btn-success';
+        new bootstrap.Modal(document.getElementById('modalConfirmarDesactivar')).show();
+    }
+
+    document.getElementById('btnConfirmarDesactivar').addEventListener('click', function() {
+        fetch(`/api/auth/usuarios/${usuarioIdToggle}/`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({ activo: !usuarioActivoActual })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.id) {
+                showAlert(`Usuario ${usuarioActivoActual ? 'desactivado' : 'activado'} correctamente`, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('modalConfirmarDesactivar')).hide();
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('Error al cambiar estado', 'danger');
+            }
+        });
+    });
+
+    // Filtros de la tabla
+    document.getElementById('buscadorUsuario').addEventListener('input', filtrarTabla);
+    document.getElementById('filtroRol').addEventListener('change', filtrarTabla);
+    document.getElementById('filtroEstado').addEventListener('change', filtrarTabla);
+
+    function filtrarTabla() {
+        const busqueda = document.getElementById('buscadorUsuario').value.toLowerCase();
+        const rolFiltro = document.getElementById('filtroRol').value;
+        const estadoFiltro = document.getElementById('filtroEstado').value;
+        const filas = document.querySelectorAll('#tablaUsuarios tbody tr');
+
+        filas.forEach(fila => {
+            const texto = fila.textContent.toLowerCase();
+            const rol = fila.querySelector('.badge')?.textContent.trim() || '';
+            const estado = fila.querySelector('.badge.bg-success-subtle, .badge.bg-danger-subtle')?.textContent.trim() || '';
+
+            const coincideBusqueda = texto.includes(busqueda);
+            const coinicideRol = !rolFiltro || rol.toUpperCase().includes(rolFiltro);
+            const coinicideEstado = !estadoFiltro || estado === estadoFiltro;
+
+            fila.style.display = (coincideBusqueda && coinicideRol && coinicideEstado) ? '' : 'none';
+        });
+    }
+</script>
 {% endblock %}

@@ -16,6 +16,8 @@ from .services import (
     ReporteSeguridadService,
 )
 from .pdf_generator import PDFReporteGenerator
+from .excel_generator import ExcelReporteGenerator
+from .csv_generator import CSVReporteGenerator
 from control_acceso.models import RegistroAcceso, ConfiguracionAforo
 from emergencias.models import Emergencia
 from usuarios.models import Usuario
@@ -80,7 +82,7 @@ class ReporteViewSet(viewsets.ModelViewSet):
 
         fecha_inicio = request.query_params.get('fecha_inicio')
         fecha_fin = request.query_params.get('fecha_fin')
-        formato = request.query_params.get('formato', 'json')  # json o pdf
+        formato = request.query_params.get('formato', 'json')  # json, pdf, excel, csv
 
         if not fecha_inicio or not fecha_fin:
             return Response(
@@ -122,6 +124,21 @@ class ReporteViewSet(viewsets.ModelViewSet):
             response['Content-Disposition'] = f'attachment; filename="reporte_aforo_{fecha_inicio}_{fecha_fin}.pdf"'
             return response
 
+        elif formato == 'excel':
+            excel_buffer = ExcelReporteGenerator.generar_reporte_aforo(datos)
+            response = HttpResponse(
+                excel_buffer.getvalue(),
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = f'attachment; filename="reporte_aforo_{fecha_inicio}_{fecha_fin}.xlsx"'
+            return response
+
+        elif formato == 'csv':
+            csv_buffer = CSVReporteGenerator.generar_reporte_aforo(datos)
+            response = HttpResponse(csv_buffer.getvalue(), content_type='text/csv; charset=utf-8')
+            response['Content-Disposition'] = f'attachment; filename="reporte_aforo_{fecha_inicio}_{fecha_fin}.csv"'
+            return response
+
         return Response(datos)
     
     @action(detail=False, methods=['get'])
@@ -135,7 +152,7 @@ class ReporteViewSet(viewsets.ModelViewSet):
 
         fecha_inicio = request.query_params.get('fecha_inicio')
         fecha_fin = request.query_params.get('fecha_fin')
-        formato = request.query_params.get('formato', 'json')  # json o pdf
+        formato = request.query_params.get('formato', 'json')  # json, pdf, excel, csv
 
         if not fecha_inicio or not fecha_fin:
             return Response(
@@ -169,6 +186,21 @@ class ReporteViewSet(viewsets.ModelViewSet):
             response['Content-Disposition'] = f'attachment; filename="reporte_incidentes_{fecha_inicio}_{fecha_fin}.pdf"'
             return response
 
+        elif formato == 'excel':
+            excel_buffer = ExcelReporteGenerator.generar_reporte_incidentes(datos)
+            response = HttpResponse(
+                excel_buffer.getvalue(),
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = f'attachment; filename="reporte_incidentes_{fecha_inicio}_{fecha_fin}.xlsx"'
+            return response
+
+        elif formato == 'csv':
+            csv_buffer = CSVReporteGenerator.generar_reporte_incidentes(datos)
+            response = HttpResponse(csv_buffer.getvalue(), content_type='text/csv; charset=utf-8')
+            response['Content-Disposition'] = f'attachment; filename="reporte_incidentes_{fecha_inicio}_{fecha_fin}.csv"'
+            return response
+
         return Response(datos)
     
     @action(detail=False, methods=['get'])
@@ -183,7 +215,7 @@ class ReporteViewSet(viewsets.ModelViewSet):
         ficha = request.query_params.get('ficha')
         fecha_inicio = request.query_params.get('fecha_inicio')
         fecha_fin = request.query_params.get('fecha_fin')
-        formato = request.query_params.get('formato', 'json')  # json o pdf
+        formato = request.query_params.get('formato', 'json')  # json, pdf, excel, csv
 
         if not all([ficha, fecha_inicio, fecha_fin]):
             return Response(
@@ -210,6 +242,21 @@ class ReporteViewSet(viewsets.ModelViewSet):
             response['Content-Disposition'] = f'attachment; filename="reporte_asistencia_ficha_{ficha}_{fecha_inicio}_{fecha_fin}.pdf"'
             return response
 
+        elif formato == 'excel':
+            excel_buffer = ExcelReporteGenerator.generar_reporte_asistencia(datos)
+            response = HttpResponse(
+                excel_buffer.getvalue(),
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = f'attachment; filename="reporte_asistencia_ficha_{ficha}_{fecha_inicio}_{fecha_fin}.xlsx"'
+            return response
+
+        elif formato == 'csv':
+            csv_buffer = CSVReporteGenerator.generar_reporte_asistencia(datos)
+            response = HttpResponse(csv_buffer.getvalue(), content_type='text/csv; charset=utf-8')
+            response['Content-Disposition'] = f'attachment; filename="reporte_asistencia_ficha_{ficha}_{fecha_inicio}_{fecha_fin}.csv"'
+            return response
+
         return Response(datos)
     
     @action(detail=False, methods=['get'])
@@ -223,7 +270,7 @@ class ReporteViewSet(viewsets.ModelViewSet):
 
         fecha_inicio = request.query_params.get('fecha_inicio')
         fecha_fin = request.query_params.get('fecha_fin')
-        formato = request.query_params.get('formato', 'json')  # json o pdf
+        formato = request.query_params.get('formato', 'json')  # json, pdf, excel, csv
 
         if not fecha_inicio or not fecha_fin:
             fecha_fin = timezone.now().date()
@@ -248,13 +295,37 @@ class ReporteViewSet(viewsets.ModelViewSet):
         else:
             datos = ReporteSeguridadService.generar_reporte(periodo_inicio, periodo_fin)
 
+        fecha_inicio_str = fecha_inicio if isinstance(fecha_inicio, str) else fecha_inicio.strftime('%Y-%m-%d')
+        fecha_fin_str = fecha_fin if isinstance(fecha_fin, str) else fecha_fin.strftime('%Y-%m-%d')
+
         # Retornar en el formato solicitado
         if formato == 'pdf':
             pdf_buffer = PDFReporteGenerator.generar_reporte_seguridad(datos)
             response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
-            fecha_inicio_str = fecha_inicio if isinstance(fecha_inicio, str) else fecha_inicio.strftime('%Y-%m-%d')
-            fecha_fin_str = fecha_fin if isinstance(fecha_fin, str) else fecha_fin.strftime('%Y-%m-%d')
             response['Content-Disposition'] = f'attachment; filename="reporte_seguridad_{fecha_inicio_str}_{fecha_fin_str}.pdf"'
+            return response
+
+        elif formato == 'excel':
+            # Usar reporte de emergencias si es Brigada
+            if request.user.rol == 'BRIGADA':
+                excel_buffer = ExcelReporteGenerator.generar_reporte_emergencias(datos)
+            else:
+                excel_buffer = ExcelReporteGenerator.generar_reporte_seguridad(datos)
+            response = HttpResponse(
+                excel_buffer.getvalue(),
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = f'attachment; filename="reporte_seguridad_{fecha_inicio_str}_{fecha_fin_str}.xlsx"'
+            return response
+
+        elif formato == 'csv':
+            # Usar reporte de emergencias si es Brigada
+            if request.user.rol == 'BRIGADA':
+                csv_buffer = CSVReporteGenerator.generar_reporte_emergencias(datos)
+            else:
+                csv_buffer = CSVReporteGenerator.generar_reporte_seguridad(datos)
+            response = HttpResponse(csv_buffer.getvalue(), content_type='text/csv; charset=utf-8')
+            response['Content-Disposition'] = f'attachment; filename="reporte_seguridad_{fecha_inicio_str}_{fecha_fin_str}.csv"'
             return response
 
         return Response(datos)

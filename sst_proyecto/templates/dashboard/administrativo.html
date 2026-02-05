@@ -30,18 +30,26 @@
                 </div>
                 <div class="card-body">
                     <div class="d-flex flex-wrap gap-3">
-                        <button class="btn btn-light border py-2 px-4 d-flex align-items-center hover-shadow transition">
+                        <a href="{% url 'gestion_usuarios' %}" class="btn btn-light border py-2 px-4 d-flex align-items-center hover-shadow transition text-decoration-none">
                             <i class="bi bi-person-plus text-success fs-5 me-2"></i>
-                            <span>Nuevo Usuario</span>
-                        </button>
-                        <button class="btn btn-light border py-2 px-4 d-flex align-items-center hover-shadow transition">
+                            <span>Gestionar Usuarios</span>
+                        </a>
+                        <a href="{% url 'reportes_general' %}" class="btn btn-light border py-2 px-4 d-flex align-items-center hover-shadow transition text-decoration-none">
                             <i class="bi bi-file-earmark-text text-primary fs-5 me-2"></i>
-                            <span>Generar Reporte</span>
-                        </button>
-                        <button class="btn btn-light border py-2 px-4 d-flex align-items-center hover-shadow transition">
+                            <span>Ver Reportes</span>
+                        </a>
+                        <a href="{% url 'listar_incidentes' %}" class="btn btn-light border py-2 px-4 d-flex align-items-center hover-shadow transition text-decoration-none">
                             <i class="bi bi-shield-exclamation text-warning fs-5 me-2"></i>
                             <span>Ver Incidentes</span>
-                        </button>
+                        </a>
+                        <a href="/emergencias/" class="btn btn-light border py-2 px-4 d-flex align-items-center hover-shadow transition text-decoration-none">
+                            <i class="bi bi-exclamation-triangle text-danger fs-5 me-2"></i>
+                            <span>Emergencias</span>
+                        </a>
+                        <a href="/mapas/" class="btn btn-light border py-2 px-4 d-flex align-items-center hover-shadow transition text-decoration-none">
+                            <i class="bi bi-map text-info fs-5 me-2"></i>
+                            <span>Mapa del Centro</span>
+                        </a>
                     </div>
                 </div>
             </div>

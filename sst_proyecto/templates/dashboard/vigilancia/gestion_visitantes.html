@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
 
-{% block title %}Gestión de Visitantes - Sistema SST{% endblock %}
+{% block title %}Gestion de Visitantes - Sistema SST{% endblock %}
 
 {% block breadcrumb %}
-<li class="breadcrumb-item active">Gestión de Visitantes</li>
+<li class="breadcrumb-item active">Gestion de Visitantes</li>
 {% endblock %}
 
 {% block content %}
@@ -93,7 +93,7 @@
                             </td>
                             <td class="text-end pe-4">
                                 {% if not visitante.hora_salida %}
-                                <button class="btn btn-sm btn-outline-danger" title="Registrar Salida">
+                                <button class="btn btn-sm btn-outline-danger" onclick="registrarSalida({{ visitante.id }}, '{{ visitante.nombre_completo }}')">
                                     <i class="bi bi-box-arrow-right"></i> Salida
                                 </button>
                                 {% endif %}
@@ -103,7 +103,7 @@
                         <tr>
                             <td colspan="7" class="text-center py-5 text-muted">
                                 <i class="bi bi-clipboard-x fs-1 d-block mb-2"></i>
-                                No hay visitantes registrados el día de hoy.
+                                No hay visitantes registrados el dia de hoy.
                             </td>
                         </tr>
                         {% endfor %}
@@ -118,28 +118,54 @@
 <div class="modal fade" id="modalRegistroVisitante" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header bg-primary-green text-white">
+            <div class="modal-header bg-success text-white">
                 <h5 class="modal-title"><i class="bi bi-person-plus me-2"></i>Registrar Nuevo Visitante</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
+                <div id="alertaVisitante" class="alert d-none mb-3"></div>
                 <form id="formVisitante">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Número de Documento</label>
-                            <input type="text" class="form-control" required>
+                            <label class="form-label">Nombre Completo *</label>
+                            <input type="text" class="form-control" id="vNombre" required>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Nombre Completo</label>
-                            <input type="text" class="form-control" required>
+                        <div class="col-md-3">
+                            <label class="form-label">Tipo Doc. *</label>
+                            <select class="form-select" id="vTipoDoc">
+                                <option value="CC">CC</option>
+                                <option value="CE">CE</option>
+                                <option value="TI">TI</option>
+                                <option value="PAS">Pasaporte</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Numero Documento *</label>
+                            <input type="text" class="form-control" id="vDocumento" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Entidad / Empresa</label>
-                            <input type="text" class="form-control">
+                            <input type="text" class="form-control" id="vEntidad">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Telefono *</label>
+                            <input type="text" class="form-control" id="vTelefono" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Persona a Visitar *</label>
+                            <select class="form-select" id="vPersonaVisitar" required>
+                                <option value="">Seleccione...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Motivo de la Visita *</label>
+                            <input type="text" class="form-control" id="vMotivo" required>
                         </div>
                         <div class="col-12 text-end mt-4">
                             <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-success">Registrar Ingreso</button>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle me-1"></i>Registrar Ingreso
+                            </button>
                         </div>
                     </div>
                 </form>
@@ -147,4 +173,116 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function getCookie(name) {
+    let v = null;
+    document.cookie.split(';').forEach(c => {
+        c = c.trim();
+        if (c.startsWith(name + '=')) v = decodeURIComponent(c.substring(name.length + 1));
+    });
+    return v;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    cargarPersonasVisitar();
+
+    document.getElementById('formVisitante').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        await crearVisitante();
+    });
+
+    // Filtro de busqueda en tabla
+    document.getElementById('buscadorVisitante').addEventListener('input', function() {
+        const q = this.value.toLowerCase();
+        document.querySelectorAll('#tablaVisitantesBody tr').forEach(row => {
+            row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+    });
+});
+
+async function cargarPersonasVisitar() {
+    try {
+        const r = await fetch('/api/auth/usuarios/');
+        const data = await r.json();
+        const lista = data.results || data;
+        const select = document.getElementById('vPersonaVisitar');
+        lista.filter(u => u.rol !== 'VISITANTE' && u.rol !== 'APRENDIZ').forEach(u => {
+            const opt = document.createElement('option');
+            opt.value = u.id;
+            opt.textContent = `${u.first_name} ${u.last_name} (${u.rol})`;
+            select.appendChild(opt);
+        });
+    } catch(e) { console.error(e); }
+}
+
+async function crearVisitante() {
+    const alerta = document.getElementById('alertaVisitante');
+    const payload = {
+        nombre_completo: document.getElementById('vNombre').value.trim(),
+        tipo_documento: document.getElementById('vTipoDoc').value,
+        numero_documento: document.getElementById('vDocumento').value.trim(),
+        entidad: document.getElementById('vEntidad').value.trim(),
+        telefono: document.getElementById('vTelefono').value.trim(),
+        persona_a_visitar: document.getElementById('vPersonaVisitar').value,
+        motivo_visita: document.getElementById('vMotivo').value.trim(),
+        registrado_por: {{ user.id }}
+    };
+
+    if (!payload.nombre_completo || !payload.numero_documento || !payload.telefono || !payload.persona_a_visitar || !payload.motivo_visita) {
+        alerta.className = 'alert alert-warning mb-3';
+        alerta.textContent = 'Complete todos los campos obligatorios';
+        alerta.classList.remove('d-none');
+        return;
+    }
+
+    try {
+        const r = await fetch('/api/auth/visitantes/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(payload)
+        });
+        const data = await r.json();
+        if (r.ok || r.status === 201) {
+            alerta.className = 'alert alert-success mb-3';
+            alerta.textContent = 'Visitante registrado exitosamente';
+            alerta.classList.remove('d-none');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            const errores = Object.values(data).flat().join(', ');
+            alerta.className = 'alert alert-danger mb-3';
+            alerta.textContent = errores || 'Error al registrar';
+            alerta.classList.remove('d-none');
+        }
+    } catch(e) {
+        alerta.className = 'alert alert-danger mb-3';
+        alerta.textContent = 'Error de conexion';
+        alerta.classList.remove('d-none');
+    }
+}
+
+async function registrarSalida(id, nombre) {
+    if (!confirm(`Registrar salida de ${nombre}?`)) return;
+    try {
+        const r = await fetch(`/api/auth/visitantes/${id}/`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({hora_salida: new Date().toTimeString().split(' ')[0]})
+        });
+        if (r.ok) {
+            location.reload();
+        } else {
+            alert('Error al registrar salida');
+        }
+    } catch(e) { alert('Error de conexion'); }
+}
+</script>
 {% endblock %}

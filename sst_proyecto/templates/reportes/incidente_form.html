@@ -16,13 +16,27 @@
                     <h4 class="mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>Reportar Nuevo Incidente</h4>
                 </div>
                 <div class="card-body p-4">
+
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <strong>Corrige los siguientes errores:</strong>
+                        <ul class="mb-0 mt-2">
+                            {% for field, errors in form.errors.items %}
+                                {% for error in errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
                     <form method="POST" enctype="multipart/form-data">
                         {% csrf_token %}
-                        
+
                         <div class="mb-3">
                             <label class="form-label fw-bold">Título del Incidente</label>
                             {{ form.titulo }}
-                            <!-- Si usas django-widget-tweaks o similar, podrías añadir clases aquí. Asumimos renderizado básico o manual -->
                         </div>
 
                         <div class="row mb-3">
@@ -43,6 +57,12 @@
                         </div>
 
                         <div class="mb-3">
+                            <label class="form-label fw-bold">Fecha y Hora del Incidente</label>
+                            {{ form.fecha_incidente }}
+                            <div class="form-text">¿Cuándo ocurrió el incidente?</div>
+                        </div>
+
+                        <div class="mb-3">
                             <label class="form-label fw-bold">Descripción Detallada</label>
                             {{ form.descripcion }}
                             <div class="form-text">Describa qué sucedió, personas involucradas y condiciones observadas.</div>
@@ -50,7 +70,7 @@
 
                         <div class="mb-4">
                             <label class="form-label fw-bold">Evidencia Fotográfica (Opcional)</label>
-                            {{ form.evidencia }}
+                            {{ form.foto }}
                         </div>
 
                         <div class="d-flex justify-content-end gap-2">

@@ -150,14 +150,44 @@
                         <span id="contadorEquipos" class="badge bg-danger ms-2">0</span>
                     </label>
                 </div>
-                <div class="form-check form-switch">
+                <div class="form-check form-switch mb-3">
                     <input class="form-check-input" type="checkbox" id="capaRutas">
                     <label class="form-check-label" for="capaRutas">
-                        <i class="bi bi-arrow-right-circle me-2"></i>Rutas de Evacuación
+                        <i class="bi bi-arrow-right-circle me-2"></i>Rutas de Evacuacion
                     </label>
+                </div>
+                {% if user.rol == 'VIGILANCIA' or user.rol == 'ADMINISTRATIVO' %}
+                <hr class="my-2">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="capaPersonas" checked>
+                    <label class="form-check-label" for="capaPersonas">
+                        <i class="bi bi-people-fill me-2 text-primary"></i>Personas en el Centro
+                        <span id="contadorPersonas" class="badge bg-primary ms-2">0</span>
+                    </label>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if user.rol == 'VIGILANCIA' or user.rol == 'ADMINISTRATIVO' %}
+        <!-- Panel de Personas en el Centro -->
+        <div class="card card-modern mb-4" id="panelPersonas">
+            <div class="card-header-modern bg-primary text-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-people-fill me-2"></i>
+                    Monitoreo en Tiempo Real
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                <div id="listaPersonasCentro" style="max-height: 300px; overflow-y: auto;">
+                    <div class="text-center text-muted py-3">
+                        <div class="spinner-border spinner-border-sm" role="status"></div>
+                        <p class="small mb-0 mt-2">Cargando...</p>
+                    </div>
                 </div>
             </div>
         </div>
+        {% endif %}
 
         <!-- Búsqueda -->
         <div class="card card-modern mb-4">
@@ -290,6 +320,10 @@ let capaAreas = L.layerGroup();
 let capaPuntosEncuentro = L.layerGroup();
 let capaEquipamiento = L.layerGroup();
 let capaInfraestructura = L.layerGroup();
+let capaPersonas = L.layerGroup();
+
+// Rol del usuario actual (para funcionalidades condicionales)
+const userRol = '{{ user.rol }}';
 
 // Cargar datos de Django
 let edificiosData = [];
@@ -315,25 +349,26 @@ try {
 // ====================================================================
 
 function inicializarInfraestructura() {
-    // 1. VÍAS DE ACCESO - Basadas en imagen satelital
+    // 1. VÍAS DE ACCESO - Coordenadas dentro de la geocerca del Centro Minero
+    // Centro geocerca: 5.7303596, -72.8943613
 
     // Vía de Acceso Principal (desde oeste/noroeste)
     const viaPrincipal = L.polyline([
-        [5.7008, -72.8843],
-        [5.7004, -72.8840],
-        [5.7000, -72.8837],
-        [5.6995, -72.8833]
+        [5.7311, -72.8949],
+        [5.7307, -72.8946],
+        [5.7303, -72.8943],
+        [5.7298, -72.8939]
     ], {
         color: '#424242',
         weight: 7,
         opacity: 0.9
     }).addTo(capaVias);
-    viaPrincipal.bindPopup('<strong>🛣️ Vía Principal de Acceso</strong><br>Entrada desde carretera Sogamoso - Morcá');
+    viaPrincipal.bindPopup('<strong>Vía Principal de Acceso</strong><br>Entrada desde carretera Sogamoso - Morcá');
 
     // Vía Interna Horizontal (conecta edificios norte)
     const viaInterna1 = L.polyline([
-        [5.7003, -72.8840],
-        [5.7003, -72.8833]
+        [5.7306, -72.8946],
+        [5.7306, -72.8939]
     ], {
         color: '#757575',
         weight: 5,
@@ -343,9 +378,9 @@ function inicializarInfraestructura() {
 
     // Vía Interna Vertical (conecta norte-sur)
     const viaInterna2 = L.polyline([
-        [5.7003, -72.8837],
-        [5.6998, -72.8837],
-        [5.6995, -72.8835]
+        [5.7306, -72.8943],
+        [5.7301, -72.8943],
+        [5.7298, -72.8941]
     ], {
         color: '#757575',
         weight: 5,
@@ -355,9 +390,9 @@ function inicializarInfraestructura() {
 
     // Acceso a Talleres (suroeste)
     const accesoTalleres = L.polyline([
-        [5.6998, -72.8837],
-        [5.6995, -72.8840],
-        [5.6993, -72.8843]
+        [5.7301, -72.8943],
+        [5.7298, -72.8946],
+        [5.7296, -72.8949]
     ], {
         color: '#757575',
         weight: 4,
@@ -368,8 +403,8 @@ function inicializarInfraestructura() {
 
     // Vía de Servicio (este - conecta parqueadero)
     const viaServicio = L.polyline([
-        [5.7001, -72.8833],
-        [5.6998, -72.8830]
+        [5.7304, -72.8939],
+        [5.7301, -72.8936]
     ], {
         color: '#9E9E9E',
         weight: 3,
@@ -378,67 +413,67 @@ function inicializarInfraestructura() {
     }).addTo(capaVias);
     viaServicio.bindPopup('<strong>Vía de Servicio</strong><br>Acceso secundario');
 
-    // 2. EDIFICIOS COMO POLÍGONOS - Basado en imagen aérea real
+    // 2. EDIFICIOS COMO POLÍGONOS - Dentro de la geocerca
     const edificios = {
-        // Edificio Principal (Noroeste - estructura grande rectangular)
+        // Edificio Principal (Noroeste)
         administrativo: {
             coords: [
-                [5.70025, -72.88390],
-                [5.70025, -72.88370],
-                [5.70010, -72.88370],
-                [5.70010, -72.88390]
+                [5.73055, -72.89450],
+                [5.73055, -72.89430],
+                [5.73040, -72.89430],
+                [5.73040, -72.89450]
             ],
             nombre: 'Edificio Administrativo Principal',
             color: '#8E24AA',
             icon: 'bi-briefcase'
         },
 
-        // Galpón de Talleres 1 (Centro-Sur - estructura grande con techo blanco)
+        // Galpón de Talleres 1 (Centro-Sur)
         taller1: {
             coords: [
-                [5.69995, -72.88385],
-                [5.69995, -72.88360],
-                [5.69975, -72.88360],
-                [5.69975, -72.88385]
+                [5.73025, -72.89445],
+                [5.73025, -72.89420],
+                [5.73005, -72.89420],
+                [5.73005, -72.89445]
             ],
             nombre: 'Taller de Maquinaria Pesada',
             color: '#FF9800',
             icon: 'bi-tools'
         },
 
-        // Galpón de Talleres 2 (Sur - paralelo al anterior)
+        // Galpón de Talleres 2 (Sur)
         taller2: {
             coords: [
-                [5.69970, -72.88385],
-                [5.69970, -72.88360],
-                [5.69950, -72.88360],
-                [5.69950, -72.88385]
+                [5.73000, -72.89445],
+                [5.73000, -72.89420],
+                [5.72980, -72.89420],
+                [5.72980, -72.89445]
             ],
             nombre: 'Taller de Soldadura y Mecánica',
             color: '#FF9800',
             icon: 'bi-tools'
         },
 
-        // Bloque de Aulas (Norte - edificio rectangular)
+        // Bloque de Aulas (Norte)
         aulas: {
             coords: [
-                [5.70040, -72.88375],
-                [5.70040, -72.88355],
-                [5.70025, -72.88355],
-                [5.70025, -72.88375]
+                [5.73070, -72.89435],
+                [5.73070, -72.89415],
+                [5.73055, -72.89415],
+                [5.73055, -72.89435]
             ],
             nombre: 'Bloque de Aulas Teóricas',
             color: '#5C6BC0',
             icon: 'bi-book'
         },
 
-        // Laboratorios (Este - estructura mediana)
+        // Laboratorios (Este)
         laboratorios: {
             coords: [
-                [5.70020, -72.88340],
-                [5.70020, -72.88325],
-                [5.70008, -72.88325],
-                [5.70008, -72.88340]
+                [5.73050, -72.89400],
+                [5.73050, -72.89385],
+                [5.73038, -72.89385],
+                [5.73038, -72.89400]
             ],
             nombre: 'Laboratorios de Geología',
             color: '#00897B',
@@ -448,23 +483,23 @@ function inicializarInfraestructura() {
         // Cafetería y Bienestar (Este)
         cafeteria: {
             coords: [
-                [5.70008, -72.88340],
-                [5.70008, -72.88328],
-                [5.69998, -72.88328],
-                [5.69998, -72.88340]
+                [5.73038, -72.89400],
+                [5.73038, -72.89388],
+                [5.73028, -72.89388],
+                [5.73028, -72.89400]
             ],
             nombre: 'Cafetería y Bienestar',
             color: '#D84315',
             icon: 'bi-cup-hot'
         },
 
-        // Entrada a Mina Didáctica (Suroeste - estructura especial)
+        // Entrada a Mina Didáctica (Suroeste)
         mina: {
             coords: [
-                [5.69955, -72.88410],
-                [5.69955, -72.88398],
-                [5.69945, -72.88398],
-                [5.69945, -72.88410]
+                [5.72985, -72.89470],
+                [5.72985, -72.89458],
+                [5.72975, -72.89458],
+                [5.72975, -72.89470]
             ],
             nombre: 'Entrada Mina Didáctica Subterránea',
             color: '#424242',
@@ -474,10 +509,10 @@ function inicializarInfraestructura() {
         // Biblioteca/Centro de Recursos (Noreste)
         biblioteca: {
             coords: [
-                [5.70035, -72.88345],
-                [5.70035, -72.88333],
-                [5.70023, -72.88333],
-                [5.70023, -72.88345]
+                [5.73065, -72.89405],
+                [5.73065, -72.89393],
+                [5.73053, -72.89393],
+                [5.73053, -72.89405]
             ],
             nombre: 'Biblioteca y Centro de Recursos',
             color: '#1976D2',
@@ -487,10 +522,10 @@ function inicializarInfraestructura() {
         // Almacén y Bodegas (Oeste)
         almacen: {
             coords: [
-                [5.69985, -72.88425],
-                [5.69985, -72.88413],
-                [5.69973, -72.88413],
-                [5.69973, -72.88425]
+                [5.73015, -72.89485],
+                [5.73015, -72.89473],
+                [5.73003, -72.89473],
+                [5.73003, -72.89485]
             ],
             nombre: 'Almacén de Equipos y Materiales',
             color: '#546E7A',
@@ -517,24 +552,24 @@ function inicializarInfraestructura() {
         `);
     });
 
-    // 3. ÁREAS ESPECIALES - Basadas en la imagen satelital
+    // 3. ÁREAS ESPECIALES - Dentro de la geocerca
 
-    // CANCHA DEPORTIVA (verde, centro-norte de la imagen)
+    // CANCHA DEPORTIVA
     const cancha = L.rectangle([
-        [5.70048, -72.88365],
-        [5.70025, -72.88340]
+        [5.73078, -72.89425],
+        [5.73055, -72.89400]
     ], {
         color: '#2E7D32',
         fillColor: '#66BB6A',
         fillOpacity: 0.7,
         weight: 2
     }).addTo(capaAreas);
-    cancha.bindPopup('<strong>⚽ Cancha Deportiva</strong><br>Fútbol y actividades recreativas<br>También sirve como punto de encuentro principal');
+    cancha.bindPopup('<strong>Cancha Deportiva</strong><br>Fútbol y actividades recreativas<br>También sirve como punto de encuentro principal');
 
     // Parqueadero Principal (Noroeste)
     const parqueadero1 = L.rectangle([
-        [5.70030, -72.88405],
-        [5.70015, -72.88390]
+        [5.73060, -72.89465],
+        [5.73045, -72.89450]
     ], {
         color: '#607D8B',
         fillColor: '#CFD8DC',
@@ -542,12 +577,12 @@ function inicializarInfraestructura() {
         weight: 2,
         dashArray: '5, 5'
     }).addTo(capaAreas);
-    parqueadero1.bindPopup('<strong>🚗 Parqueadero Norte</strong><br>Acceso principal<br>Capacidad: 50 vehículos');
+    parqueadero1.bindPopup('<strong>Parqueadero Norte</strong><br>Acceso principal<br>Capacidad: 50 vehículos');
 
     // Parqueadero Este
     const parqueadero2 = L.rectangle([
-        [5.70015, -72.88325],
-        [5.70000, -72.88310]
+        [5.73045, -72.89385],
+        [5.73030, -72.89370]
     ], {
         color: '#607D8B',
         fillColor: '#CFD8DC',
@@ -555,51 +590,51 @@ function inicializarInfraestructura() {
         weight: 2,
         dashArray: '5, 5'
     }).addTo(capaAreas);
-    parqueadero2.bindPopup('<strong>🚗 Parqueadero Este</strong><br>Capacidad: 40 vehículos');
+    parqueadero2.bindPopup('<strong>Parqueadero Este</strong><br>Capacidad: 40 vehículos');
 
     // Patio de Maquinaria Pesada (Suroeste)
     const patioMaquinaria = L.rectangle([
-        [5.69960, -72.88420],
-        [5.69940, -72.88395]
+        [5.72990, -72.89480],
+        [5.72970, -72.89455]
     ], {
         color: '#795548',
         fillColor: '#BCAAA4',
         fillOpacity: 0.7,
         weight: 2
     }).addTo(capaAreas);
-    patioMaquinaria.bindPopup('<strong>🚜 Patio de Maquinaria</strong><br>Excavadoras, volquetas y equipos pesados<br>Zona de práctica con maquinaria real');
+    patioMaquinaria.bindPopup('<strong>Patio de Maquinaria</strong><br>Excavadoras, volquetas y equipos pesados<br>Zona de práctica con maquinaria real');
 
-    // Zonas Verdes (arboleadas visibles en imagen)
-    const zonaVerde1 = L.circle([5.70050, -72.88390], {
+    // Zonas Verdes
+    const zonaVerde1 = L.circle([5.73080, -72.89450], {
         color: '#2E7D32',
         fillColor: '#81C784',
         fillOpacity: 0.5,
         radius: 12
     }).addTo(capaAreas);
-    zonaVerde1.bindPopup('<strong>🌳 Zona Verde Norte</strong><br>Área arbolada');
+    zonaVerde1.bindPopup('<strong>Zona Verde Norte</strong><br>Área arbolada');
 
-    const zonaVerde2 = L.circle([5.69965, -72.88350], {
+    const zonaVerde2 = L.circle([5.72995, -72.89410], {
         color: '#2E7D32',
         fillColor: '#81C784',
         fillOpacity: 0.5,
         radius: 10
     }).addTo(capaAreas);
-    zonaVerde2.bindPopup('<strong>🌳 Zona Verde Sur</strong><br>Área de descanso');
+    zonaVerde2.bindPopup('<strong>Zona Verde Sur</strong><br>Área de descanso');
 
-    const zonaVerde3 = L.circle([5.70000, -72.88395], {
+    const zonaVerde3 = L.circle([5.73030, -72.89455], {
         color: '#2E7D32',
         fillColor: '#81C784',
         fillOpacity: 0.5,
         radius: 8
     }).addTo(capaAreas);
-    zonaVerde3.bindPopup('<strong>🌳 Jardines</strong>');
+    zonaVerde3.bindPopup('<strong>Jardines</strong>');
 
     // 4. INFRAESTRUCTURA
     const cerramientoPerimetral = L.polygon([
-        [5.70070, -72.88450],
-        [5.70070, -72.88300],
-        [5.69940, -72.88300],
-        [5.69940, -72.88450]
+        [5.73100, -72.89510],
+        [5.73100, -72.89360],
+        [5.72970, -72.89360],
+        [5.72970, -72.89510]
     ], {
         color: '#000000',
         fillColor: 'transparent',
@@ -607,15 +642,15 @@ function inicializarInfraestructura() {
         dashArray: '10, 10',
         opacity: 0.5
     }).addTo(capaInfraestructura);
-    cerramientoPerimetral.bindPopup('<strong>🚧 Cerramiento Perimetral</strong>');
+    cerramientoPerimetral.bindPopup('<strong>Cerramiento Perimetral</strong>');
 
     // Postes de luz (marcadores pequeños)
     const postesCoordenadas = [
-        [5.70050, -72.88380],
-        [5.70030, -72.88370],
-        [5.70010, -72.88360],
-        [5.69990, -72.88370],
-        [5.69970, -72.88380]
+        [5.73080, -72.89440],
+        [5.73060, -72.89430],
+        [5.73040, -72.89420],
+        [5.73020, -72.89430],
+        [5.73000, -72.89440]
     ];
 
     postesCoordenadas.forEach(coord => {
@@ -626,17 +661,17 @@ function inicializarInfraestructura() {
             weight: 1,
             opacity: 1,
             fillOpacity: 0.8
-        }).addTo(capaInfraestructura).bindPopup('💡 Poste de Iluminación');
+        }).addTo(capaInfraestructura).bindPopup('Poste de Iluminación');
     });
 
     // Tanque de agua
-    L.circle([5.70060, -72.88320], {
+    L.circle([5.73090, -72.89380], {
         radius: 8,
         fillColor: '#2196F3',
         color: '#0D47A1',
         weight: 2,
         fillOpacity: 0.7
-    }).addTo(capaInfraestructura).bindPopup('<strong>💧 Tanque de Agua</strong><br>Capacidad: 10,000 L');
+    }).addTo(capaInfraestructura).bindPopup('<strong>Tanque de Agua</strong><br>Capacidad: 10,000 L');
 
     // Flecha indicando el Norte
     const iconoNorte = L.divIcon({
@@ -644,8 +679,8 @@ function inicializarInfraestructura() {
         html: '<div style="font-size: 30px; color: #C62828;"><i class="bi bi-arrow-up-circle-fill"></i></div>',
         iconSize: [30, 30]
     });
-    L.marker([5.70065, -72.88375], { icon: iconoNorte }).addTo(capaInfraestructura)
-        .bindPopup('<strong>⬆️ Norte Geográfico</strong>');
+    L.marker([5.73095, -72.89435], { icon: iconoNorte }).addTo(capaInfraestructura)
+        .bindPopup('<strong>Norte Geográfico</strong>');
 }
 
 // ====================================================================
@@ -1094,7 +1129,145 @@ function inicializarControles() {
         }
     });
 
-    // Búsqueda
+    // ============================================================
+    // MONITOREO EN TIEMPO REAL - Personas en el Centro
+    // Solo para VIGILANCIA y ADMINISTRATIVO
+    // ============================================================
+    if (userRol === 'VIGILANCIA' || userRol === 'ADMINISTRATIVO') {
+
+        const coloresRol = {
+            'APRENDIZ': '#4CAF50',
+            'INSTRUCTOR': '#2196F3',
+            'ADMINISTRATIVO': '#9C27B0',
+            'VIGILANCIA': '#FF9800',
+            'BRIGADA': '#F44336',
+            'VISITANTE': '#607D8B'
+        };
+
+        const iconosRol = {
+            'APRENDIZ': 'bi-mortarboard',
+            'INSTRUCTOR': 'bi-person-badge',
+            'ADMINISTRATIVO': 'bi-briefcase',
+            'VIGILANCIA': 'bi-shield-check',
+            'BRIGADA': 'bi-heart-pulse',
+            'VISITANTE': 'bi-person'
+        };
+
+        async function cargarPersonasEnCentro() {
+            try {
+                const response = await fetch('/api/acceso/registros/personas_en_centro/', {
+                    credentials: 'same-origin'
+                });
+                if (!response.ok) return;
+
+                const data = await response.json();
+                const personas = data.personas || [];
+
+                // Actualizar contador
+                const contador = document.getElementById('contadorPersonas');
+                if (contador) contador.textContent = data.total || 0;
+
+                // Limpiar capa anterior
+                capaPersonas.clearLayers();
+
+                // Agregar marcadores
+                personas.forEach(persona => {
+                    if (!persona.latitud || !persona.longitud) return;
+
+                    const color = coloresRol[persona.rol_code] || '#607D8B';
+                    const icono = iconosRol[persona.rol_code] || 'bi-person';
+
+                    const marker = L.circleMarker(
+                        [persona.latitud, persona.longitud],
+                        {
+                            radius: 10,
+                            fillColor: color,
+                            color: '#fff',
+                            weight: 2,
+                            opacity: 1,
+                            fillOpacity: 0.9
+                        }
+                    );
+
+                    marker.bindPopup(`
+                        <div style="min-width: 180px;">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center me-2"
+                                     style="width:32px;height:32px;background:${color};color:#fff;">
+                                    <i class="bi ${icono}"></i>
+                                </div>
+                                <div>
+                                    <strong>${persona.nombre}</strong><br>
+                                    <small class="text-muted">${persona.rol}</small>
+                                </div>
+                            </div>
+                            <div style="font-size:12px;">
+                                <i class="bi bi-clock me-1"></i> Ingreso: ${persona.hora_ingreso}<br>
+                                <i class="bi bi-geo-alt me-1"></i> ${persona.metodo}
+                            </div>
+                        </div>
+                    `);
+
+                    marker.addTo(capaPersonas);
+                });
+
+                // Actualizar panel lateral
+                actualizarListaPersonas(personas);
+
+            } catch (e) {
+                console.warn('Error cargando personas:', e);
+            }
+        }
+
+        function actualizarListaPersonas(personas) {
+            const lista = document.getElementById('listaPersonasCentro');
+            if (!lista) return;
+
+            if (personas.length === 0) {
+                lista.innerHTML = `
+                    <div class="text-center text-muted py-3">
+                        <i class="bi bi-people fs-3 d-block mb-1"></i>
+                        <span class="small">No hay personas registradas</span>
+                    </div>`;
+                return;
+            }
+
+            lista.innerHTML = personas.map(p => {
+                const color = coloresRol[p.rol_code] || '#607D8B';
+                return `
+                    <div class="d-flex align-items-center px-3 py-2 border-bottom persona-item"
+                         style="cursor:pointer; font-size:13px;"
+                         onclick="mapa.setView([${p.latitud || centroMinero.latitud}, ${p.longitud || centroMinero.longitud}], 19)">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center me-2 flex-shrink-0"
+                             style="width:28px;height:28px;background:${color};color:#fff;font-size:12px;">
+                            ${p.nombre.charAt(0)}
+                        </div>
+                        <div class="flex-grow-1 text-truncate">
+                            <div class="fw-semibold text-truncate">${p.nombre}</div>
+                            <div class="text-muted" style="font-size:11px;">${p.rol} - ${p.hora_ingreso}</div>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        // Checkbox personas
+        document.getElementById('capaPersonas')?.addEventListener('change', function() {
+            if (this.checked) {
+                mapa.addLayer(capaPersonas);
+                document.getElementById('panelPersonas').style.display = '';
+            } else {
+                mapa.removeLayer(capaPersonas);
+                document.getElementById('panelPersonas').style.display = 'none';
+            }
+        });
+
+        // Iniciar monitoreo
+        capaPersonas.addTo(mapa);
+        cargarPersonasEnCentro();
+        setInterval(cargarPersonasEnCentro, 30000);
+    }
+
+    // Busqueda
     document.getElementById('btnBuscar').addEventListener('click', realizarBusqueda);
     document.getElementById('inputBusqueda').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') realizarBusqueda();

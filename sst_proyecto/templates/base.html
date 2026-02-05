@@ -243,6 +243,30 @@
                 SENA SST - Centro Minero
             </a>
             
+            <!-- Notificaciones -->
+            {% if user.rol != 'VISITANTE' %}
+            <div class="navbar-nav ms-auto me-2">
+                <div class="nav-item dropdown">
+                    <a href="#" class="nav-link position-relative p-2" data-bs-toggle="dropdown" aria-expanded="false" id="notificationBell" title="Notificaciones">
+                        <i class="bi bi-bell fs-5 text-dark"></i>
+                        <span class="badge bg-danger rounded-pill position-absolute d-none" id="notificationCount" style="font-size: 0.6rem; top: 2px; right: -2px;">0</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2" style="min-width: 340px; max-height: 420px; overflow-y: auto;" id="notificationDropdown">
+                        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom mb-1">
+                            <h6 class="mb-0 fw-bold"><i class="bi bi-bell me-1"></i> Notificaciones</h6>
+                            <span class="badge bg-primary rounded-pill" id="notifHeaderCount">0</span>
+                        </div>
+                        <div id="notificationList">
+                            <div class="text-center text-muted py-4">
+                                <i class="bi bi-bell-slash fs-3 d-block mb-2"></i>
+                                <span class="small">Sin notificaciones nuevas</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Usuario -->
             <div class="navbar-nav ms-3">
                 <div class="dropdown">
@@ -359,11 +383,6 @@
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'registrar_asistencia' %}">
-                            <i class="bi bi-person-check me-2"></i>Registrar Asistencia
-                        </a>
-                    </li>
-                    <li class="nav-item mb-2">
                         <a class="nav-link" href="/mapas/">
                             <i class="bi bi-map me-2"></i>Mapa del Centro
                         </a>
@@ -454,22 +473,12 @@
                             <i class="bi bi-exclamation-triangle me-2"></i>Incidentes
                         </a>
                     </li>
-                    <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'capacitaciones_brigada' %}">
-                            <i class="bi bi-book me-2"></i>Capacitaciones
-                        </a>
-                    </li>
 
                 <!-- OPCIONES PARA APRENDIZ - ✅ CORREGIDO CON URLs FUNCIONALES -->
                 {% elif user.rol == 'APRENDIZ' %}
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'mi_horario' %}">
-                            <i class="bi bi-calendar-check me-2"></i>Mi Horario
-                        </a>
-                    </li>
-                    <li class="nav-item mb-2">
                         <a class="nav-link" href="{% url 'mi_asistencia' %}">
-                            <i class="bi bi-clock-history me-2"></i>Mi Asistencia
+                            <i class="bi bi-clock-history me-2"></i>Mis Accesos
                         </a>
                     </li>
                     <li class="nav-item mb-2">
@@ -522,48 +531,6 @@
                     </li>
                 {% endif %}
             </ul>
-            
-            <!-- Acciones Rápidas - Según el rol -->
-            {% if user.rol != 'VISITANTE' %}
-            <div class="px-3 mt-5">
-                
-                <div class="d-grid gap-2">
-                    {% if user.rol == 'ADMINISTRATIVO' %}
-                    <h6 class="text-uppercase text-muted fw-bold mb-3">ACCESO RÁPIDO</h6>
-                        <button class="btn btn-sm btn-outline-success">
-                            <i class="bi bi-plus-circle me-1"></i>Nuevo Usuario
-                        </button>
-                        <button class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-download me-1"></i>Exportar Datos
-                        </button>
-                    {% elif user.rol == 'INSTRUCTOR' %}
-                    <h6 class="text-uppercase text-muted fw-bold mb-3">ACCESO RÁPIDO</h6>
-                        <button class="btn btn-sm btn-outline-success">
-                            <i class="bi bi-plus-circle me-1"></i>Nuevo Reporte
-                        </button>
-                        <button class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-person-plus me-1"></i>Registrar Visitante
-                        </button>
-                    {% elif user.rol == 'VIGILANCIA' %}
-                    <h6 class="text-uppercase text-muted fw-bold mb-3">ACCESO RÁPIDO</h6>
-                        <button class="btn btn-sm btn-outline-success">
-                            <i class="bi bi-door-open me-1"></i>Registrar Acceso
-                        </button>
-                        <button class="btn btn-sm btn-outline-warning">
-                            <i class="bi bi-person-badge me-1"></i>Nuevo Visitante
-                        </button>
-                    {% elif user.rol == 'BRIGADA' %}
-                    <h6 class="text-uppercase text-muted fw-bold mb-3">ACCESO RÁPIDO</h6>
-                        <button class="btn btn-sm btn-outline-danger">
-                            <i class="bi bi-megaphone me-1"></i>Activar Emergencia
-                        </button>
-                        <button class="btn btn-sm btn-outline-warning">
-                            <i class="bi bi-tools me-1"></i>Verificar Equipos
-                        </button>
-                    {% endif %}
-                </div>
-            </div>
-            {% endif %}
         </div>
         
     </nav>
@@ -611,6 +578,9 @@
     </button>
     {% endif %}
 
+    <!-- CSRF Token global para peticiones AJAX -->
+    {% csrf_token %}
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -621,63 +591,96 @@
         document.getElementById('sidebarToggle')?.addEventListener('click', function() {
             document.getElementById('sidebar').classList.toggle('show');
         });
-        
-        // Botón de emergencia
+
+        // ============================================================
+        // TIPOS DE EMERGENCIA - Cargar ANTES de usar en el botón
+        // ============================================================
+        window._tiposEmergencia = [];
+
+        fetch('/api/emergencias/tipos/', { credentials: 'same-origin' })
+            .then(r => r.json())
+            .then(data => { window._tiposEmergencia = data.results || data; })
+            .catch(() => {});
+
+        // ============================================================
+        // BOTÓN DE EMERGENCIA (PÁNICO)
+        // ============================================================
+        // Coordenadas por defecto del Centro Minero SENA
+        const CENTRO_MINERO_LAT = 5.7303596;
+        const CENTRO_MINERO_LNG = -72.8943613;
+
+        function obtenerCSRFToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+        }
+
+        async function obtenerUbicacion() {
+            if (!navigator.geolocation) {
+                return { latitude: CENTRO_MINERO_LAT, longitude: CENTRO_MINERO_LNG };
+            }
+            try {
+                const position = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        enableHighAccuracy: true,
+                        timeout: 8000,
+                        maximumAge: 0
+                    });
+                });
+                return position.coords;
+            } catch (e) {
+                // Si el usuario niega permisos o falla GPS, usar coordenadas del centro
+                return { latitude: CENTRO_MINERO_LAT, longitude: CENTRO_MINERO_LNG };
+            }
+        }
+
         document.getElementById('botonPanico')?.addEventListener('click', async function() {
             if (!confirm('¿ESTÁS EN UNA SITUACIÓN DE EMERGENCIA?\n\nSe notificará inmediatamente al personal de seguridad.')) {
                 return;
             }
 
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Enviando...';
+
             try {
-                // Obtener ubicación del usuario
-                if (!navigator.geolocation) {
-                    alert('❌ Tu navegador no soporta geolocalización.\nLlama al personal de seguridad directamente.');
-                    return;
-                }
+                const coords = await obtenerUbicacion();
+                const tipoId = window._tiposEmergencia.length > 0 ? window._tiposEmergencia[0].id : 1;
 
-                const position = await new Promise((resolve, reject) => {
-                    navigator.geolocation.getCurrentPosition(resolve, reject, {
-                        enableHighAccuracy: true,
-                        timeout: 10000,
-                        maximumAge: 0
-                    });
-                });
-
-                const { latitude, longitude } = position.coords;
-
-                // Enviar emergencia al servidor
                 const response = await fetch('/api/emergencias/emergencias/boton_panico/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+                        'X-CSRFToken': obtenerCSRFToken()
                     },
                     body: JSON.stringify({
-                        tipo: 1, // Tipo de emergencia genérica
-                        descripcion: 'Emergencia activada desde botón de pánico',
-                        latitud: latitude,
-                        longitud: longitude
+                        tipo: tipoId,
+                        descripcion: 'Emergencia activada desde boton de panico',
+                        descripcion_ubicacion: 'Ubicacion GPS del usuario',
+                        latitud: coords.latitude,
+                        longitud: coords.longitude
                     })
                 });
 
                 if (response.ok) {
-                    const data = await response.json();
-                    alert('✅ ALERTA DE EMERGENCIA ENVIADA\n\n' +
+                    alert('ALERTA DE EMERGENCIA ENVIADA\n\n' +
                           'La brigada de emergencia y personal de seguridad han sido notificados.\n' +
-                          'Ayuda en camino a tu ubicación.\n\n' +
+                          'Ayuda en camino a tu ubicacion.\n\n' +
                           'Permanezca seguro y siga las instrucciones del personal.');
                 } else {
-                    throw new Error('Error al enviar la alerta');
+                    const errData = await response.json().catch(() => ({}));
+                    console.error('Error respuesta:', response.status, errData);
+                    throw new Error(errData.detail || 'Error al enviar la alerta');
                 }
             } catch (error) {
-                console.error('Error en botón de pánico:', error);
-                alert('⚠️ No se pudo enviar la alerta automáticamente.\n\n' +
+                console.error('Error en boton de panico:', error);
+                alert('No se pudo enviar la alerta automaticamente.\n\n' +
                       'Por favor contacta directamente:\n' +
                       '- Emergencias: 123\n' +
                       '- Vigilancia SENA: Ext. 100');
+            } finally {
+                this.disabled = false;
+                this.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>EMERGENCIA';
             }
         });
-        
+
         // Auto-ocultar alertas
         setTimeout(() => {
             document.querySelectorAll('.alert').forEach(alert => {
@@ -685,11 +688,119 @@
                 bsAlert.close();
             });
         }, 5000);
-        
-        // Función para mostrar QR (aprendiz)
-        function mostrarQR() {
-            alert('Tu código QR para acceso está disponible en tu dashboard.\nPuedes descargarlo desde la tarjeta "Mi Código QR".');
+
+        // ============================================================
+        // SISTEMA DE NOTIFICACIONES - Polling cada 30 segundos
+        // ============================================================
+        const NOTIF_ICONS = {
+            'EMERGENCIA': { icon: 'bi-exclamation-triangle-fill', bg: 'danger', border: 'danger' },
+            'INCIDENTE': { icon: 'bi-exclamation-circle-fill', bg: 'warning', border: 'warning' },
+            'SISTEMA': { icon: 'bi-gear-fill', bg: 'secondary', border: 'secondary' },
+            'ASISTENCIA': { icon: 'bi-clock-fill', bg: 'info', border: 'info' },
+            'CAPACITACION': { icon: 'bi-book-fill', bg: 'primary', border: 'primary' },
+            'RECORDATORIO': { icon: 'bi-calendar-event-fill', bg: 'warning', border: 'warning' },
+            'INFO': { icon: 'bi-info-circle-fill', bg: 'info', border: 'info' }
+        };
+
+        async function checkNotifications() {
+            try {
+                // Consultar notificaciones generales del usuario
+                const response = await fetch('/api/auth/notificaciones/no_leidas/', {
+                    credentials: 'same-origin'
+                });
+                if (!response.ok) return;
+
+                const data = await response.json();
+                const notifications = data.notificaciones || data.results || data;
+                const count = data.count || notifications.length;
+
+                const badge = document.getElementById('notificationCount');
+                const headerCount = document.getElementById('notifHeaderCount');
+                const list = document.getElementById('notificationList');
+
+                if (!badge) return;
+
+                if (count > 0) {
+                    badge.textContent = count > 99 ? '99+' : count;
+                    badge.classList.remove('d-none');
+                    if (headerCount) headerCount.textContent = count;
+
+                    list.innerHTML = notifications.slice(0, 10).map(n => {
+                        const style = NOTIF_ICONS[n.tipo] || NOTIF_ICONS['INFO'];
+                        const fecha = new Date(n.fecha_creacion).toLocaleString('es-CO', {
+                            hour:'2-digit', minute:'2-digit', day:'2-digit', month:'short'
+                        });
+                        return `
+                        <a href="${n.url_relacionada || '#'}" class="dropdown-item rounded-3 py-2 px-3 mb-1 border-start border-3 border-${style.border}"
+                           onclick="markNotifRead(${n.id}, '${n.url_relacionada || ''}')" style="white-space: normal;">
+                            <div class="d-flex align-items-start">
+                                <div class="flex-shrink-0 me-2 mt-1">
+                                    <div class="rounded-circle bg-${style.bg}-subtle d-flex align-items-center justify-content-center" style="width:32px;height:32px;">
+                                        <i class="bi ${style.icon} text-${style.bg}"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-semibold small text-dark">${n.titulo}</div>
+                                    <div class="text-muted small" style="line-height:1.3;">${n.mensaje.substring(0, 80)}${n.mensaje.length > 80 ? '...' : ''}</div>
+                                    <div class="text-muted" style="font-size: 0.7rem;">
+                                        <i class="bi bi-clock me-1"></i>${n.tiempo_transcurrido || fecha}
+                                    </div>
+                                </div>
+                            </div>
+                        </a>`;
+                    }).join('');
+
+                    // Agregar boton "Ver todas" si hay notificaciones
+                    list.innerHTML += `
+                        <div class="border-top pt-2 mt-2">
+                            <a href="#" class="dropdown-item text-center small text-primary" onclick="marcarTodasLeidas()">
+                                <i class="bi bi-check2-all me-1"></i>Marcar todas como leidas
+                            </a>
+                        </div>`;
+                } else {
+                    badge.classList.add('d-none');
+                    if (headerCount) headerCount.textContent = '0';
+                    list.innerHTML = `
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-bell-slash fs-3 d-block mb-2"></i>
+                            <span class="small">Sin notificaciones nuevas</span>
+                        </div>`;
+                }
+            } catch (e) {
+                console.log('Error cargando notificaciones:', e);
+            }
         }
+
+        async function markNotifRead(id, url) {
+            try {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+                await fetch(`/api/auth/notificaciones/${id}/marcar_leida/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/json' },
+                    credentials: 'same-origin'
+                });
+                checkNotifications();
+                if (url && url !== '#' && url !== '') {
+                    window.location.href = url;
+                }
+            } catch (e) {}
+        }
+
+        async function marcarTodasLeidas() {
+            try {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+                await fetch('/api/auth/notificaciones/marcar_todas_leidas/', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/json' },
+                    credentials: 'same-origin'
+                });
+                checkNotifications();
+            } catch (e) {}
+        }
+
+        // Iniciar polling de notificaciones
+        checkNotifications();
+        setInterval(checkNotifications, 30000);
     </script>
 
     <!-- Design System JavaScript -->

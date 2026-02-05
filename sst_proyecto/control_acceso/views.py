@@ -27,6 +27,8 @@ from usuarios.permissions import (
     EsAdministrativo,
     NoEsVisitante
 )
+# Servicio centralizado de notificaciones
+from usuarios.services import NotificacionService
 
 
 class GeocercaViewSet(viewsets.ModelViewSet):
@@ -171,6 +173,14 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
             longitud_ingreso=longitud,
             metodo_ingreso=metodo
         )
+
+        # Notificar si el aforo está en nivel de alerta (>90%)
+        if aforo_info['alerta'] in ['ALERTA', 'ALTO']:
+            NotificacionService.notificar_aforo_critico(
+                aforo_info['personas_dentro'],
+                aforo_info['aforo_maximo'],
+                porcentaje_alerta=90
+            )
 
         return Response({
             'success': True,
@@ -365,6 +375,167 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
             })
 
         return Response(data)
+
+    @action(detail=False, methods=['get'])
+    def personas_en_centro(self, request):
+        """
+        Retorna las personas actualmente dentro del centro con sus coordenadas.
+        Usado para el monitoreo en tiempo real en el mapa.
+        Accesible por VIGILANCIA y ADMINISTRATIVO.
+        """
+        hoy = timezone.now().date()
+        registros_activos = RegistroAcceso.objects.filter(
+            tipo='INGRESO',
+            fecha_hora_egreso__isnull=True,
+            fecha_hora_ingreso__date=hoy
+        ).select_related('usuario')
+
+        personas = []
+        for registro in registros_activos:
+            personas.append({
+                'id': registro.usuario.id,
+                'nombre': registro.usuario.get_full_name() or registro.usuario.username,
+                'rol': registro.usuario.get_rol_display(),
+                'rol_code': registro.usuario.rol,
+                'latitud': registro.latitud_ingreso,
+                'longitud': registro.longitud_ingreso,
+                'hora_ingreso': registro.fecha_hora_ingreso.strftime('%H:%M'),
+                'metodo': registro.get_metodo_ingreso_display(),
+            })
+
+        return Response({
+            'total': len(personas),
+            'personas': personas
+        })
+
+    @action(detail=False, methods=['post'], url_path='registrar_asistencia_manual')
+    def registrar_asistencia_manual(self, request):
+        """
+        Registra la asistencia manual de un aprendiz (para instructores)
+        PERMISOS: INSTRUCTOR, VIGILANCIA, ADMINISTRATIVO
+        """
+        # Verificar permisos
+        if request.user.rol not in ['INSTRUCTOR', 'VIGILANCIA', 'ADMINISTRATIVO']:
+            return Response({
+                'success': False,
+                'error': 'No tiene permisos para registrar asistencia'
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        usuario_id = request.data.get('usuario_id')
+
+        if not usuario_id:
+            return Response({
+                'success': False,
+                'error': 'Se requiere el ID del usuario'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            usuario = Usuario.objects.get(id=usuario_id)
+        except Usuario.DoesNotExist:
+            return Response({
+                'success': False,
+                'error': 'Usuario no encontrado'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Verificar que no tenga ya un registro de hoy
+        hoy = timezone.now().date()
+        registro_existente = RegistroAcceso.objects.filter(
+            usuario=usuario,
+            fecha_hora_ingreso__date=hoy
+        ).first()
+
+        if registro_existente:
+            return Response({
+                'success': False,
+                'error': 'El usuario ya tiene un registro de asistencia para hoy'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Crear registro de asistencia manual (ingreso sin coordenadas)
+        # Usar coordenadas del centro por defecto
+        geocerca = Geocerca.objects.filter(activo=True).first()
+        lat_default = geocerca.centro_latitud if geocerca else 5.7303596
+        lng_default = geocerca.centro_longitud if geocerca else -72.8943613
+
+        registro = RegistroAcceso.objects.create(
+            usuario=usuario,
+            tipo='INGRESO',
+            latitud_ingreso=lat_default,
+            longitud_ingreso=lng_default,
+            metodo_ingreso='MANUAL'
+        )
+
+        return Response({
+            'success': True,
+            'message': f'Asistencia registrada para {usuario.get_full_name()}',
+            'registro_id': registro.id,
+            'hora_registro': registro.fecha_hora_ingreso.strftime('%H:%M')
+        }, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['post'], url_path='registrar_asistencia_masiva')
+    def registrar_asistencia_masiva(self, request):
+        """
+        Registra la asistencia manual de multiples aprendices
+        PERMISOS: INSTRUCTOR, VIGILANCIA, ADMINISTRATIVO
+        """
+        # Verificar permisos
+        if request.user.rol not in ['INSTRUCTOR', 'VIGILANCIA', 'ADMINISTRATIVO']:
+            return Response({
+                'success': False,
+                'error': 'No tiene permisos para registrar asistencia'
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        usuarios_ids = request.data.get('usuarios_ids', [])
+
+        if not usuarios_ids:
+            return Response({
+                'success': False,
+                'error': 'Se requiere una lista de IDs de usuarios'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Obtener coordenadas por defecto
+        geocerca = Geocerca.objects.filter(activo=True).first()
+        lat_default = geocerca.centro_latitud if geocerca else 5.7303596
+        lng_default = geocerca.centro_longitud if geocerca else -72.8943613
+
+        hoy = timezone.now().date()
+        registrados = 0
+        errores = []
+
+        for usuario_id in usuarios_ids:
+            try:
+                usuario = Usuario.objects.get(id=usuario_id)
+
+                # Verificar que no tenga ya un registro de hoy
+                registro_existente = RegistroAcceso.objects.filter(
+                    usuario=usuario,
+                    fecha_hora_ingreso__date=hoy
+                ).exists()
+
+                if registro_existente:
+                    errores.append(f'{usuario.get_full_name()} ya tiene registro')
+                    continue
+
+                # Crear registro
+                RegistroAcceso.objects.create(
+                    usuario=usuario,
+                    tipo='INGRESO',
+                    latitud_ingreso=lat_default,
+                    longitud_ingreso=lng_default,
+                    metodo_ingreso='MANUAL'
+                )
+                registrados += 1
+
+            except Usuario.DoesNotExist:
+                errores.append(f'Usuario ID {usuario_id} no encontrado')
+            except Exception as e:
+                errores.append(f'Error con usuario {usuario_id}: {str(e)}')
+
+        return Response({
+            'success': True,
+            'message': f'Asistencia registrada para {registrados} aprendiz(es)',
+            'registrados': registrados,
+            'errores': errores if errores else None
+        }, status=status.HTTP_201_CREATED)
 
 
 class ConfiguracionAforoViewSet(viewsets.ModelViewSet):

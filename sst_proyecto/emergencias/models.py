@@ -214,7 +214,7 @@ class BrigadaEmergencia(models.Model):
 class NotificacionEmergencia(models.Model):
 
     # Log de notificaciones enviadas
-    emergencias = models.ForeignKey(
+    emergencia = models.ForeignKey(
         Emergencia,
         on_delete=models.CASCADE,
         related_name='notificaciones'

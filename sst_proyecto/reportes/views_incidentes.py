@@ -4,6 +4,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import Incidente
 from .forms import IncidenteForm
+# Servicio centralizado de notificaciones
+from usuarios.services import NotificacionService
 
 
 # Vista SIMPLE: Listar todos los incidentes
@@ -63,6 +65,9 @@ def crear_incidente(request):
 
             # Guardar
             incidente.save()
+
+            # Notificar a administrativos (y a instructores si es crítico)
+            NotificacionService.notificar_incidente_creado(incidente)
 
             messages.success(request, f'Incidente "{incidente.titulo}" reportado exitosamente.')
             return redirect('listar_incidentes')
