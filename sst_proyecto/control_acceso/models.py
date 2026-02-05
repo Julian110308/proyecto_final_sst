@@ -11,12 +11,12 @@ class Geocerca(models.Model):
 
     # Coordenadas del centro y radio (en lugar de polígono)
     centro_latitud = models.FloatField(
-        default=5.5339,
+        default=5.7303596,
         validators=[MinValueValidator(-90), MaxValueValidator(90)],
         help_text='Latitud debe estar entre -90 y 90 grados'
     )
     centro_longitud = models.FloatField(
-        default=-73.3674,
+        default=-72.8943613,
         validators=[MinValueValidator(-180), MaxValueValidator(180)],
         help_text='Longitud debe estar entre -180 y 180 grados'
     )

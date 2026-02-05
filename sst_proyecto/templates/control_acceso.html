@@ -6,10 +6,15 @@
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
     <div>
         <h2 class="fw-bold text-dark mb-1">Control de Acceso</h2>
-        <p class="text-muted mb-0">Gestiona el ingreso y salida de personal y visitantes.</p>
+        <p class="text-muted mb-0">Gestiona el ingreso y salida de personal.</p>
     </div>
     <div class="d-flex gap-2">
-        <button class="btn btn-white border shadow-sm text-muted" onclick="location.reload()">
+        <div class="text-end me-3">
+            <small class="text-muted d-block">Personas en centro</small>
+            <span class="fw-bold fs-5" id="aforoActual">--</span>
+            <small class="text-muted">/ <span id="aforoMaximo">--</span></small>
+        </div>
+        <button class="btn btn-white border shadow-sm text-muted" onclick="cargarRegistros()">
             <i class="bi bi-arrow-clockwise me-2"></i>Actualizar
         </button>
         <button class="btn btn-primary text-white shadow-sm rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#modalRegistroManual">
@@ -18,7 +23,7 @@
     </div>
 </div>
 
-<!-- Filtros y Búsqueda -->
+<!-- Filtros y Busqueda -->
 <div class="card mb-4">
     <div class="card-body">
         <div class="row g-3">
@@ -33,7 +38,9 @@
                     <option value="">Todos los Roles</option>
                     <option value="APRENDIZ">Aprendiz</option>
                     <option value="INSTRUCTOR">Instructor</option>
-                    <option value="VISITANTE">Visitante</option>
+                    <option value="ADMINISTRATIVO">Administrativo</option>
+                    <option value="VIGILANCIA">Vigilancia</option>
+                    <option value="BRIGADA">Brigada</option>
                 </select>
             </div>
             <div class="col-md-3">
@@ -57,16 +64,15 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="bg-light border-bottom">
                     <tr>
-                        <th class="ps-4 py-3 text-muted small fw-bold text-uppercase tracking-wide">Usuario</th>
-                        <th class="py-3 text-muted small fw-bold text-uppercase tracking-wide">Rol</th>
-                        <th class="py-3 text-muted small fw-bold text-uppercase tracking-wide">Hora Ingreso</th>
-                        <th class="py-3 text-muted small fw-bold text-uppercase tracking-wide">Hora Salida</th>
-                        <th class="py-3 text-muted small fw-bold text-uppercase tracking-wide">Estado</th>
-                        <th class="pe-4 py-3 text-end text-muted small fw-bold text-uppercase tracking-wide">Acciones</th>
+                        <th class="ps-4 py-3 text-muted small fw-bold text-uppercase">Usuario</th>
+                        <th class="py-3 text-muted small fw-bold text-uppercase">Rol</th>
+                        <th class="py-3 text-muted small fw-bold text-uppercase">Hora Ingreso</th>
+                        <th class="py-3 text-muted small fw-bold text-uppercase">Hora Salida</th>
+                        <th class="py-3 text-muted small fw-bold text-uppercase">Estado</th>
+                        <th class="pe-4 py-3 text-end text-muted small fw-bold text-uppercase">Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="tablaRegistros">
-                    <!-- El contenido se cargará vía JS -->
                     <tr>
                         <td colspan="6" class="text-center py-5 text-muted">
                             <div class="spinner-border text-primary mb-2" role="status"></div>
@@ -88,6 +94,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
+                <div id="modalAlerta" class="alert d-none mb-3"></div>
                 <form id="formRegistroManual">
                     <div class="mb-4">
                         <label class="form-label fw-bold text-muted small text-uppercase">Documento de Identidad</label>
@@ -95,13 +102,16 @@
                             <span class="input-group-text bg-light border-end-0"><i class="bi bi-person-vcard"></i></span>
                             <input type="text" class="form-control bg-light border-start-0" id="documentoInput" placeholder="Ej: 1052..." required>
                         </div>
+                        <div id="infoUsuario" class="mt-2 d-none">
+                            <small class="text-success"><i class="bi bi-check-circle me-1"></i><span id="nombreUsuario"></span> - <span id="rolUsuario"></span></small>
+                        </div>
                     </div>
                     <div class="d-grid gap-3">
-                        <button type="submit" class="btn btn-primary btn-lg text-white fw-bold shadow-sm" data-tipo="INGRESO">
-                            Registrar Ingreso
+                        <button type="button" class="btn btn-success btn-lg fw-bold shadow-sm" id="btnIngreso" onclick="registrarAcceso('INGRESO')">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Registrar Ingreso
                         </button>
-                        <button type="button" class="btn btn-outline-danger border-2 fw-bold" id="btnRegistrarSalida">
-                            Registrar Salida
+                        <button type="button" class="btn btn-outline-danger border-2 fw-bold" id="btnEgreso" onclick="registrarAcceso('EGRESO')">
+                            <i class="bi bi-box-arrow-right me-2"></i>Registrar Salida
                         </button>
                     </div>
                 </form>
@@ -113,52 +123,198 @@
 
 {% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        cargarRegistros();
+const TOKEN = '{{ request.auth.key|default:"" }}';
+let todosRegistros = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    cargarRegistros();
+    cargarAforo();
+
+    // Buscar usuario al escribir documento
+    let debounce;
+    document.getElementById('documentoInput').addEventListener('input', function() {
+        clearTimeout(debounce);
+        debounce = setTimeout(() => buscarUsuario(this.value), 400);
     });
 
-    async function cargarRegistros() {
-        try {
-            const response = await fetch('/api/acceso/registros/registros_recientes/');
-            const data = await response.json();
-            const tbody = document.getElementById('tablaRegistros');
-            tbody.innerHTML = '';
+    // Filtros
+    document.getElementById('searchInput').addEventListener('input', filtrarTabla);
+    document.getElementById('filterRol').addEventListener('change', filtrarTabla);
+    document.getElementById('filterEstado').addEventListener('change', filtrarTabla);
+});
 
-            data.forEach(reg => {
-                const row = `
-                    <tr>
-                        <td class="ps-4">
-                            <div class="d-flex align-items-center">
-                                <div class="rounded-circle bg-light text-success d-flex align-items-center justify-content-center me-3 border" style="width: 40px; height: 40px;">
-                                    <span class="fw-bold small">${reg.usuario.nombre.charAt(0)}</span>
-                                </div>
-                                <div>
-                                    <div class="fw-bold text-dark">${reg.usuario.nombre}</div>
-                                    <div class="small text-muted">${reg.usuario.documento}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td><span class="badge bg-light text-dark border fw-normal">${reg.usuario.rol}</span></td>
-                        <td class="text-dark fw-medium">${new Date(reg.fecha_hora_ingreso).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
-                        <td class="text-muted">${reg.fecha_hora_egreso ? new Date(reg.fecha_hora_egreso).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--'}</td>
-                        <td>
-                            ${!reg.fecha_hora_egreso 
-                                ? '<span class="badge bg-success-subtle text-success rounded-pill px-3 border border-success-subtle">En Centro</span>' 
-                                : '<span class="badge bg-secondary-subtle text-secondary rounded-pill px-3 border border-secondary-subtle">Salida</span>'}
-                        </td>
-                        <td class="pe-4 text-end">
-                            ${!reg.fecha_hora_egreso 
-                                ? `<button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="registrarSalida(${reg.usuario.id})">Registrar Salida</button>` 
-                                : ''}
-                        </td>
-                    </tr>
-                `;
-                tbody.innerHTML += row;
-            });
-        } catch (error) {
-            console.error('Error:', error);
-            document.getElementById('tablaRegistros').innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">Error al cargar datos</td></tr>';
-        }
+async function cargarAforo() {
+    try {
+        const r = await fetch('/api/acceso/config-aforo/aforo_actual/');
+        const data = await r.json();
+        document.getElementById('aforoActual').textContent = data.personas_dentro || 0;
+        document.getElementById('aforoMaximo').textContent = data.aforo_maximo || '--';
+    } catch(e) { console.error(e); }
+}
+
+async function cargarRegistros() {
+    try {
+        const r = await fetch('/api/acceso/registros/registros_recientes/?limite=50');
+        todosRegistros = await r.json();
+        renderTabla(todosRegistros);
+        cargarAforo();
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('tablaRegistros').innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">Error al cargar datos</td></tr>';
     }
+}
+
+function renderTabla(registros) {
+    const tbody = document.getElementById('tablaRegistros');
+    if (!registros.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No hay registros</td></tr>';
+        return;
+    }
+    tbody.innerHTML = registros.map(reg => `
+        <tr>
+            <td class="ps-4">
+                <div class="d-flex align-items-center">
+                    <div class="rounded-circle bg-light text-success d-flex align-items-center justify-content-center me-3 border" style="width:40px;height:40px;">
+                        <span class="fw-bold small">${reg.usuario.nombre.charAt(0)}</span>
+                    </div>
+                    <div>
+                        <div class="fw-bold text-dark">${reg.usuario.nombre}</div>
+                        <div class="small text-muted">${reg.usuario.documento}</div>
+                    </div>
+                </div>
+            </td>
+            <td><span class="badge bg-light text-dark border fw-normal">${reg.usuario.rol}</span></td>
+            <td class="text-dark fw-medium">${new Date(reg.fecha_hora_ingreso).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})}</td>
+            <td class="text-muted">${reg.fecha_hora_egreso ? new Date(reg.fecha_hora_egreso).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'}) : '--:--'}</td>
+            <td>
+                ${!reg.fecha_hora_egreso
+                    ? '<span class="badge bg-success-subtle text-success rounded-pill px-3 border border-success-subtle">En Centro</span>'
+                    : '<span class="badge bg-secondary-subtle text-secondary rounded-pill px-3 border border-secondary-subtle">Salida</span>'}
+            </td>
+            <td class="pe-4 text-end">
+                ${!reg.fecha_hora_egreso
+                    ? `<button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="registrarSalida(${reg.usuario.id})">Registrar Salida</button>`
+                    : ''}
+            </td>
+        </tr>
+    `).join('');
+}
+
+function filtrarTabla() {
+    const busqueda = document.getElementById('searchInput').value.toLowerCase();
+    const rol = document.getElementById('filterRol').value;
+    const estado = document.getElementById('filterEstado').value;
+
+    const filtrados = todosRegistros.filter(reg => {
+        const matchBusqueda = !busqueda || reg.usuario.nombre.toLowerCase().includes(busqueda) || reg.usuario.documento.includes(busqueda);
+        const matchRol = !rol || reg.usuario.rol.toUpperCase().includes(rol);
+        const matchEstado = !estado || (estado === 'dentro' && !reg.fecha_hora_egreso) || (estado === 'fuera' && reg.fecha_hora_egreso);
+        return matchBusqueda && matchRol && matchEstado;
+    });
+    renderTabla(filtrados);
+}
+
+async function buscarUsuario(doc) {
+    const info = document.getElementById('infoUsuario');
+    if (doc.length < 3) { info.classList.add('d-none'); return; }
+    try {
+        const r = await fetch(`/api/acceso/registros/registros_recientes/?limite=50`);
+        const data = await r.json();
+        const found = data.find(d => d.usuario.documento === doc);
+        if (found) {
+            document.getElementById('nombreUsuario').textContent = found.usuario.nombre;
+            document.getElementById('rolUsuario').textContent = found.usuario.rol;
+            info.classList.remove('d-none');
+        } else {
+            info.classList.add('d-none');
+        }
+    } catch(e) { info.classList.add('d-none'); }
+}
+
+function getCookie(name) {
+    let v = null;
+    document.cookie.split(';').forEach(c => {
+        c = c.trim();
+        if (c.startsWith(name + '=')) v = decodeURIComponent(c.substring(name.length + 1));
+    });
+    return v;
+}
+
+async function registrarAcceso(tipo) {
+    const doc = document.getElementById('documentoInput').value.trim();
+    if (!doc) { mostrarAlerta('Ingrese un documento', 'warning'); return; }
+
+    // Buscar usuario por documento
+    const alerta = document.getElementById('modalAlerta');
+    try {
+        const rUsuarios = await fetch('/api/auth/usuarios/', {headers: {'X-CSRFToken': getCookie('csrftoken')}});
+        const usuarios = await rUsuarios.json();
+        const lista = usuarios.results || usuarios;
+        const usuario = lista.find(u => u.numero_documento === doc);
+
+        if (!usuario) { mostrarAlerta('Usuario no encontrado con ese documento', 'danger'); return; }
+
+        const endpoint = tipo === 'INGRESO' ? '/api/acceso/registros/registrar_ingreso/' : '/api/acceso/registros/registrar_egreso/';
+        const r = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                usuario_id: usuario.id,
+                metodo: 'MANUAL'
+            })
+        });
+        const data = await r.json();
+        if (r.ok) {
+            mostrarAlerta(data.mensaje, 'success');
+            document.getElementById('documentoInput').value = '';
+            document.getElementById('infoUsuario').classList.add('d-none');
+            setTimeout(() => {
+                bootstrap.Modal.getInstance(document.getElementById('modalRegistroManual')).hide();
+                cargarRegistros();
+            }, 1200);
+        } else {
+            mostrarAlerta(data.error || 'Error al registrar', 'danger');
+        }
+    } catch(e) {
+        console.error(e);
+        mostrarAlerta('Error de conexion', 'danger');
+    }
+}
+
+async function registrarSalida(usuarioId) {
+    if (!confirm('Registrar salida de este usuario?')) return;
+    try {
+        const r = await fetch('/api/acceso/registros/registrar_egreso/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                usuario_id: usuarioId,
+                metodo: 'MANUAL'
+            })
+        });
+        const data = await r.json();
+        if (r.ok) {
+            cargarRegistros();
+        } else {
+            alert(data.error || 'Error al registrar salida');
+        }
+    } catch(e) {
+        alert('Error de conexion');
+    }
+}
+
+function mostrarAlerta(msg, tipo) {
+    const el = document.getElementById('modalAlerta');
+    el.className = `alert alert-${tipo} mb-3`;
+    el.textContent = msg;
+    el.classList.remove('d-none');
+    if (tipo === 'success') setTimeout(() => el.classList.add('d-none'), 3000);
+}
 </script>
 {% endblock %}

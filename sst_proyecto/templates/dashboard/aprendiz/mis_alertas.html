@@ -9,98 +9,248 @@
 {% endblock %}
 
 {% block content %}
-<div class="card card-modern">
-    <div class="card-header-modern">
-        <div class="d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">
-                <i class="bi bi-bell me-2"></i>
-                Mis Alertas y Notificaciones
-            </h5>
-            <button class="btn btn-sm btn-outline-secondary">
-                <i class="bi bi-check2-all me-1"></i>Marcar todas como leídas
-            </button>
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary-green fw-bold">
+            <i class="bi bi-bell me-2"></i>Mis Alertas y Notificaciones
+        </h2>
+        {% if total_no_leidas > 0 %}
+        <button class="btn btn-outline-primary" onclick="marcarTodasLeidas()">
+            <i class="bi bi-check2-all me-1"></i>Marcar todas como leidas ({{ total_no_leidas }})
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- Resumen -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card card-modern h-100 {% if total_no_leidas > 0 %}border-start border-warning border-4{% endif %}">
+                <div class="card-body text-center">
+                    <div class="fs-2 {% if total_no_leidas > 0 %}text-warning{% else %}text-muted{% endif %} fw-bold">{{ total_no_leidas }}</div>
+                    <div class="text-muted small">No Leidas</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-modern h-100">
+                <div class="card-body text-center">
+                    <div class="fs-2 text-success fw-bold">{{ leidas|length }}</div>
+                    <div class="text-muted small">Leidas Recientemente</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-modern h-100">
+                <div class="card-body text-center">
+                    <div class="fs-2 text-primary fw-bold">{{ historial|length }}</div>
+                    <div class="text-muted small">Total en Historial</div>
+                </div>
+            </div>
         </div>
     </div>
-    <div class="card-body">
-        <!-- Alertas no leídas -->
-        <div class="mb-4">
-            <h6 class="text-uppercase text-muted mb-3">No Leídas</h6>
-            <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                <div class="d-flex">
-                    <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
-                    <div>
-                        <h6 class="alert-heading mb-1">Capacitación SST Pendiente</h6>
-                        <p class="mb-1">Debes completar el módulo de Seguridad Industrial antes del viernes.</p>
-                        <small class="text-muted">Hace 2 días • Vence en 3 días</small>
-                    </div>
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
+
+    <!-- Alertas no leidas -->
+    <div class="card card-modern mb-4">
+        <div class="card-header bg-warning-subtle">
+            <h6 class="mb-0 fw-bold text-warning">
+                <i class="bi bi-exclamation-circle me-2"></i>No Leidas
+                {% if total_no_leidas > 0 %}
+                <span class="badge bg-warning text-dark ms-2">{{ total_no_leidas }}</span>
+                {% endif %}
+            </h6>
         </div>
-        
-        <!-- Alertas leídas -->
-        <div class="mb-4">
-            <h6 class="text-uppercase text-muted mb-3">Leídas</h6>
-            <div class="list-group">
-                <div class="list-group-item list-group-item-action">
-                    <div class="d-flex w-100 justify-content-between">
-                        <div class="mb-1">
-                            <i class="bi bi-shield-check text-success me-2"></i>
-                            <strong>Actualización de Protocolos</strong>
-                            <p class="mb-1 small">Se han actualizado los protocolos de evacuación. Por favor revisa los cambios.</p>
+        <div class="card-body">
+            {% if no_leidas %}
+                {% for notif in no_leidas %}
+                <div class="alert {% if notif.prioridad == 'ALTA' %}alert-danger{% elif notif.prioridad == 'MEDIA' %}alert-warning{% else %}alert-info{% endif %} alert-dismissible fade show" role="alert">
+                    <div class="d-flex">
+                        <div class="me-3">
+                            {% if notif.tipo == 'EMERGENCIA' %}
+                                <i class="bi bi-exclamation-triangle-fill fs-4 text-danger"></i>
+                            {% elif notif.tipo == 'INCIDENTE' %}
+                                <i class="bi bi-shield-exclamation fs-4 text-warning"></i>
+                            {% elif notif.tipo == 'CAPACITACION' %}
+                                <i class="bi bi-book fs-4 text-primary"></i>
+                            {% elif notif.tipo == 'ASISTENCIA' %}
+                                <i class="bi bi-calendar-check fs-4 text-success"></i>
+                            {% elif notif.tipo == 'RECORDATORIO' %}
+                                <i class="bi bi-clock fs-4 text-info"></i>
+                            {% else %}
+                                <i class="bi bi-info-circle fs-4"></i>
+                            {% endif %}
                         </div>
-                        <small class="text-muted">Hace 1 semana</small>
-                    </div>
-                </div>
-                <div class="list-group-item list-group-item-action">
-                    <div class="d-flex w-100 justify-content-between">
-                        <div class="mb-1">
-                            <i class="bi bi-calendar-check text-primary me-2"></i>
-                            <strong>Recordatorio de Asistencia</strong>
-                            <p class="mb-1 small">Tu puntualidad este mes es del 92%. ¡Sigue así!</p>
+                        <div class="flex-grow-1">
+                            <h6 class="alert-heading mb-1">{{ notif.titulo }}</h6>
+                            <p class="mb-1">{{ notif.mensaje }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    {{ notif.fecha_creacion|timesince }}
+                                    {% if notif.fecha_vencimiento %}
+                                        | Vence: {{ notif.fecha_vencimiento|date:"d/m/Y" }}
+                                    {% endif %}
+                                </small>
+                                <span class="badge {% if notif.tipo == 'EMERGENCIA' %}bg-danger{% elif notif.tipo == 'INCIDENTE' %}bg-warning text-dark{% elif notif.tipo == 'CAPACITACION' %}bg-primary{% else %}bg-info{% endif %}">
+                                    {{ notif.get_tipo_display }}
+                                </span>
+                            </div>
                         </div>
-                        <small class="text-muted">Hace 2 semanas</small>
                     </div>
+                    <button type="button" class="btn-close" onclick="marcarLeida({{ notif.id }})" title="Marcar como leida"></button>
                 </div>
-            </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-check-circle fs-1 d-block mb-2 text-success"></i>
+                    <p class="mb-0">No tienes notificaciones pendientes</p>
+                </div>
+            {% endif %}
         </div>
-        
-        <!-- Historial -->
-        <div>
-            <h6 class="text-uppercase text-muted mb-3">Historial</h6>
+    </div>
+
+    <!-- Alertas leidas recientemente -->
+    <div class="card card-modern mb-4">
+        <div class="card-header bg-light">
+            <h6 class="mb-0 fw-bold">
+                <i class="bi bi-check2-circle me-2"></i>Leidas Recientemente
+            </h6>
+        </div>
+        <div class="card-body">
+            {% if leidas %}
+            <div class="list-group list-group-flush">
+                {% for notif in leidas %}
+                <div class="list-group-item px-0">
+                    <div class="d-flex w-100 justify-content-between align-items-start">
+                        <div class="d-flex">
+                            <div class="me-3">
+                                {% if notif.tipo == 'EMERGENCIA' %}
+                                    <i class="bi bi-exclamation-triangle text-danger"></i>
+                                {% elif notif.tipo == 'INCIDENTE' %}
+                                    <i class="bi bi-shield-exclamation text-warning"></i>
+                                {% elif notif.tipo == 'CAPACITACION' %}
+                                    <i class="bi bi-book text-primary"></i>
+                                {% elif notif.tipo == 'ASISTENCIA' %}
+                                    <i class="bi bi-calendar-check text-success"></i>
+                                {% else %}
+                                    <i class="bi bi-info-circle text-info"></i>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <strong>{{ notif.titulo }}</strong>
+                                <p class="mb-1 small text-muted">{{ notif.mensaje|truncatewords:20 }}</p>
+                            </div>
+                        </div>
+                        <small class="text-muted">{{ notif.fecha_creacion|timesince }}</small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+                <p class="text-muted text-center py-3 mb-0">No hay notificaciones leidas recientes</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Historial -->
+    <div class="card card-modern">
+        <div class="card-header bg-light">
+            <h6 class="mb-0 fw-bold">
+                <i class="bi bi-clock-history me-2"></i>Historial de Notificaciones
+            </h6>
+        </div>
+        <div class="card-body p-0">
+            {% if historial %}
             <div class="table-responsive">
-                <table class="table table-sm">
-                    <thead>
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
                         <tr>
-                            <th>Fecha</th>
+                            <th class="ps-4">Fecha</th>
                             <th>Tipo</th>
-                            <th>Mensaje</th>
+                            <th>Titulo</th>
                             <th>Estado</th>
                         </tr>
                     </thead>
                     <tbody>
+                        {% for notif in historial %}
                         <tr>
-                            <td>15/01/2024</td>
-                            <td><span class="badge bg-info">Informativo</span></td>
-                            <td>Nuevo instructor asignado</td>
-                            <td><span class="badge bg-secondary">Leída</span></td>
+                            <td class="ps-4">{{ notif.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                <span class="badge {% if notif.tipo == 'EMERGENCIA' %}bg-danger{% elif notif.tipo == 'INCIDENTE' %}bg-warning text-dark{% elif notif.tipo == 'CAPACITACION' %}bg-primary{% elif notif.tipo == 'ASISTENCIA' %}bg-success{% else %}bg-info{% endif %}">
+                                    {{ notif.get_tipo_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <strong>{{ notif.titulo }}</strong>
+                                <br><small class="text-muted">{{ notif.mensaje|truncatewords:10 }}</small>
+                            </td>
+                            <td>
+                                {% if notif.leida %}
+                                    <span class="badge bg-secondary">Leida</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">Pendiente</span>
+                                {% endif %}
+                            </td>
                         </tr>
-                        <tr>
-                            <td>10/01/2024</td>
-                            <td><span class="badge bg-warning">Importante</span></td>
-                            <td>Mantenimiento programado en taller 3</td>
-                            <td><span class="badge bg-secondary">Leída</span></td>
-                        </tr>
-                        <tr>
-                            <td>05/01/2024</td>
-                            <td><span class="badge bg-success">Capacitación</span></td>
-                            <td>Primeros auxilios completada</td>
-                            <td><span class="badge bg-secondary">Leída</span></td>
-                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
+            {% else %}
+                <p class="text-muted text-center py-4 mb-0">No hay notificaciones en el historial</p>
+            {% endif %}
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function marcarLeida(notifId) {
+    fetch(`/api/auth/notificaciones/${notifId}/marcar_leida/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function marcarTodasLeidas() {
+    fetch('/api/auth/notificaciones/marcar_todas_leidas/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+</script>
 {% endblock %}

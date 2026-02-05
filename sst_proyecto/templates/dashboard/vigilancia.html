@@ -15,33 +15,77 @@
             <i class="bi bi-shield-check text-primary me-2"></i>
             Control de Seguridad - {{ user.get_full_name|default:user.username }}
         </h1>
-        <p class="text-muted mb-0">Control de acceso y vigilancia del centro</p>
+        <p class="text-muted mb-0">
+            Control de acceso y vigilancia del centro
+            <span id="lastUpdateIndicator" class="ms-3 badge bg-light text-secondary">
+                <i class="bi bi-arrow-repeat me-1"></i>Cargando...
+            </span>
+        </p>
     </div>
     <div class="btn-group">
-        <button class="btn btn-primary" onclick="registrarAcceso()">
-            <i class="bi bi-door-open me-1"></i>Registrar Acceso
+        <button class="btn btn-outline-secondary" onclick="refrescarTodo()" title="Actualizar ahora">
+            <i class="bi bi-arrow-clockwise"></i>
         </button>
-        <button class="btn btn-outline-info" onclick="registrarRonda()">
-            <i class="bi bi-clipboard-check me-1"></i>Registrar Ronda
-        </button>
+        <a href="/acceso/" class="btn btn-primary">
+            <i class="bi bi-door-open me-1"></i>Control de Acceso
+        </a>
         <button class="btn btn-outline-danger" onclick="alertaSeguridad()">
             <i class="bi bi-exclamation-triangle me-1"></i>Alerta
         </button>
     </div>
 </div>
 
+<!-- Alerta de Aforo Critico (oculta por defecto) -->
+<div id="alertaAforoCritico" class="alert alert-danger alert-dismissible fade mb-4" role="alert" style="display: none;">
+    <div class="d-flex align-items-center">
+        <div class="me-3">
+            <i class="bi bi-exclamation-triangle-fill fs-1"></i>
+        </div>
+        <div class="flex-grow-1">
+            <h5 class="alert-heading mb-1">
+                <i class="bi bi-volume-up-fill me-2"></i>ALERTA: Aforo Critico
+            </h5>
+            <p class="mb-0" id="alertaAforoMensaje">
+                El centro ha alcanzado mas del 90% de su capacidad maxima.
+            </p>
+        </div>
+        <div class="ms-3 text-end">
+            <span class="badge bg-danger fs-5" id="alertaAforoPorcentaje">0%</span>
+            <br>
+            <small id="alertaAforoNumeros">0 / 0</small>
+        </div>
+    </div>
+</div>
+
 <!-- Estado del Sistema -->
 <div class="row g-4 mb-4">
-    {% include 'components/metric-card.html' with label="Personas en Centro" value=personas_en_centro|default:0 sublabel=porcentaje_ocupacion|default:0|add:"% ocupación" sublabel_icon="bi bi-shield-check" sublabel_color="success" icon="bi-people-fill" icon_color="primary" border_color="primary" %}
+    {% include 'components/metric-card.html' with label="Personas en Centro" value=personas_en_centro|default:0 sublabel=porcentaje_ocupacion|default:0|add:"% ocupacion" sublabel_icon="bi bi-shield-check" sublabel_color="success" icon="bi-people-fill" icon_color="primary" border_color="primary" %}
 
-    {% include 'components/metric-card.html' with label="Ingresos Hoy" value=ingresos_hoy|default:0 sublabel="Total del día" sublabel_color="info" icon="bi-box-arrow-in-right" icon_color="success" border_color="success" %}
+    {% include 'components/metric-card.html' with label="Ingresos Hoy" value=ingresos_hoy|default:0 sublabel="Total del dia" sublabel_color="info" icon="bi-box-arrow-in-right" icon_color="success" border_color="success" %}
 
     {% include 'components/metric-card.html' with label="Visitantes Hoy" value=visitantes_hoy|default:0 sublabel="Registrados" sublabel_icon="bi bi-person-badge" sublabel_color="warning" icon="bi-person-badge" icon_color="warning" border_color="warning" %}
 
-    {% include 'components/metric-card.html' with label="Rondas del Turno" value="4" sublabel="Última: 11:30 AM" sublabel_icon="bi bi-check-circle" sublabel_color="success" icon="bi-clipboard-check" icon_color="info" border_color="info" %}
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0 border-start border-4 border-info">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Aforo <span class="badge bg-info ms-1" style="font-size:0.6rem;">EN VIVO</span></h6>
+                        <h3 class="fw-bold mb-0" id="aforoDisplay">{{ personas_en_centro|default:0 }} / {{ aforo_maximo|default:2000 }}</h3>
+                        <small id="aforoIndicator" class="{% if porcentaje_ocupacion > 90 %}text-danger{% elif porcentaje_ocupacion > 70 %}text-warning{% else %}text-success{% endif %}">
+                            <i class="bi bi-bar-chart"></i> {{ porcentaje_ocupacion|default:0 }}% capacidad
+                        </small>
+                    </div>
+                    <div class="bg-light rounded-3 p-3">
+                        <i class="bi bi-bar-chart-fill fs-2 text-info"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<!-- Registro de Accesos y Acciones Rápidas -->
+<!-- Registro de Accesos y Acciones Rapidas -->
 <div class="row g-4 mb-4">
     <div class="col-lg-8">
         <div class="card card-modern">
@@ -49,13 +93,9 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <h6 class="mb-0">
                         <i class="bi bi-clock-history me-2"></i>
-                        Registros de Acceso en Tiempo Real
+                        Registros de Acceso Recientes
                     </h6>
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-secondary active">Todos</button>
-                        <button class="btn btn-outline-success">Ingresos</button>
-                        <button class="btn btn-outline-danger">Egresos</button>
-                    </div>
+                    <a href="/acceso/" class="btn btn-sm btn-outline-secondary">Ver historial completo</a>
                 </div>
             </div>
             <div class="card-body">
@@ -65,57 +105,17 @@
                             <tr>
                                 <th>Hora</th>
                                 <th>Usuario</th>
-                                <th>Tipo</th>
-                                <th>Acción</th>
-                                <th>Método</th>
-                                <th>Estado</th>
+                                <th>Rol</th>
+                                <th>Accion</th>
+                                <th>Metodo</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr class="table-success">
-                                <td><strong>11:45 AM</strong></td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="avatar bg-primary text-white rounded-circle me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 12px;">JP</div>
-                                        <span>Juan Pérez</span>
-                                    </div>
-                                </td>
-                                <td><span class="badge bg-primary">Aprendiz</span></td>
-                                <td><i class="bi bi-box-arrow-in-right text-success"></i> Ingreso</td>
-                                <td>QR Code</td>
-                                <td><span class="badge bg-success">Verificado</span></td>
-                            </tr>
-                            <tr class="table-danger">
-                                <td><strong>11:42 AM</strong></td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="avatar bg-success text-white rounded-circle me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 12px;">MG</div>
-                                        <span>María González</span>
-                                    </div>
-                                </td>
-                                <td><span class="badge bg-success">Instructor</span></td>
-                                <td><i class="bi bi-box-arrow-right text-danger"></i> Egreso</td>
-                                <td>Manual</td>
-                                <td><span class="badge bg-success">Verificado</span></td>
-                            </tr>
-                            <tr class="table-success">
-                                <td><strong>11:38 AM</strong></td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="avatar bg-warning text-white rounded-circle me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 12px;">CL</div>
-                                        <span>Carlos López</span>
-                                    </div>
-                                </td>
-                                <td><span class="badge bg-warning">Visitante</span></td>
-                                <td><i class="bi bi-box-arrow-in-right text-success"></i> Ingreso</td>
-                                <td>Manual</td>
-                                <td><span class="badge bg-warning">Pendiente Autorización</span></td>
-                            </tr>
+                        <tbody id="tablaAccesos">
+                            <tr><td colspan="5" class="text-center py-4 text-muted">
+                                <div class="spinner-border spinner-border-sm me-2"></div>Cargando...
+                            </td></tr>
                         </tbody>
                     </table>
-                </div>
-                <div class="text-center mt-3">
-                    <button class="btn btn-sm btn-outline-secondary" onclick="window.location.href='/acceso/'">Ver historial completo</button>
                 </div>
             </div>
         </div>
@@ -126,89 +126,56 @@
             <div class="card-header-modern">
                 <h6 class="mb-0">
                     <i class="bi bi-lightning-charge-fill me-2"></i>
-                    Acciones Rápidas
+                    Acciones Rapidas
                 </h6>
             </div>
             <div class="card-body">
                 <div class="d-grid gap-3">
-                    <button class="btn btn-primary text-start" onclick="registrarAcceso()">
+                    <a href="/acceso/" class="btn btn-primary text-start">
                         <i class="bi bi-door-open me-2"></i>Registrar Ingreso/Egreso
-                    </button>
-                    <button class="btn btn-outline-warning text-start" onclick="registrarVisitante()">
+                    </a>
+                    <a href="{% url 'gestion_visitantes' %}" class="btn btn-outline-warning text-start">
                         <i class="bi bi-person-plus me-2"></i>Registrar Visitante
-                    </button>
-                    <button class="btn btn-outline-info text-start" onclick="registrarRonda()">
-                        <i class="bi bi-clipboard-check me-2"></i>Registrar Ronda
-                    </button>
-                    <button class="btn btn-outline-secondary text-start" onclick="objetosPerdidos()">
-                        <i class="bi bi-box-seam me-2"></i>Objetos Perdidos
-                    </button>
-                    <button class="btn btn-outline-success text-start" onclick="buscarPersona()">
-                        <i class="bi bi-search me-2"></i>Buscar Persona
-                    </button>
-                    <button class="btn btn-outline-danger text-start" onclick="alertaSeguridad()">
-                        <i class="bi bi-exclamation-triangle me-2"></i>Reportar Alerta
-                    </button>
+                    </a>
+                    <a href="/mapas/" class="btn btn-outline-info text-start">
+                        <i class="bi bi-map me-2"></i>Ver Mapa del Centro
+                    </a>
+                    <a href="/reportes/incidentes/nuevo/" class="btn btn-outline-danger text-start">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Reportar Incidente
+                    </a>
                 </div>
             </div>
         </div>
 
+        <!-- Personas en centro por rol -->
         <div class="card card-modern">
             <div class="card-header-modern">
                 <h6 class="mb-0">
-                    <i class="bi bi-camera-video me-2"></i>
-                    Cámaras Activas
+                    <i class="bi bi-people me-2"></i>
+                    Distribucion por Rol
                 </h6>
             </div>
-            <div class="card-body">
-                <div class="row g-2">
-                    <div class="col-6">
-                        <div class="border rounded p-2 text-center bg-light">
-                            <i class="bi bi-camera-video-fill text-success fs-3"></i>
-                            <p class="mb-0 small mt-1">Entrada Principal</p>
-                            <span class="badge bg-success">Activa</span>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="border rounded p-2 text-center bg-light">
-                            <i class="bi bi-camera-video-fill text-success fs-3"></i>
-                            <p class="mb-0 small mt-1">Parqueadero</p>
-                            <span class="badge bg-success">Activa</span>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="border rounded p-2 text-center bg-light">
-                            <i class="bi bi-camera-video-fill text-success fs-3"></i>
-                            <p class="mb-0 small mt-1">Talleres</p>
-                            <span class="badge bg-success">Activa</span>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="border rounded p-2 text-center bg-light">
-                            <i class="bi bi-camera-video-fill text-danger fs-3"></i>
-                            <p class="mb-0 small mt-1">Salida Trasera</p>
-                            <span class="badge bg-danger">Offline</span>
-                        </div>
-                    </div>
+            <div class="card-body" id="distribucionRoles">
+                <div class="text-center text-muted py-3">
+                    <div class="spinner-border spinner-border-sm me-2"></div>Cargando...
                 </div>
-                <button class="btn btn-sm btn-outline-primary w-100 mt-3" onclick="verTodasCamaras()">Ver Todas las Cámaras</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Visitantes y Rondas -->
+<!-- Visitantes y Mapa -->
 <div class="row g-4 mb-4">
     <div class="col-lg-7">
         <div class="card card-modern">
             <div class="card-header-modern d-flex justify-content-between align-items-center">
                 <h6 class="mb-0">
                     <i class="bi bi-person-badge me-2"></i>
-                    Visitantes Activos en Centro (15)
+                    Visitantes Activos (<span id="contadorVisitantes">0</span>)
                 </h6>
-                <button class="btn btn-sm btn-primary" onclick="registrarVisitante()">
+                <a href="{% url 'gestion_visitantes' %}" class="btn btn-sm btn-primary">
                     <i class="bi bi-plus-circle me-1"></i>Nuevo Visitante
-                </button>
+                </a>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -219,47 +186,11 @@
                                 <th>Entidad</th>
                                 <th>Visita a</th>
                                 <th>Ingreso</th>
-                                <th>Tiempo</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td><strong>Carlos Méndez</strong></td>
-                                <td>Proveedor ABC</td>
-                                <td>Ing. Rodríguez</td>
-                                <td>8:30 AM</td>
-                                <td><span class="badge bg-warning">3h 15m</span></td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="registrarSalidaVisitante('Carlos')">
-                                        <i class="bi bi-box-arrow-right"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>Ana Vargas</strong></td>
-                                <td>Auditor Externo</td>
-                                <td>Director</td>
-                                <td>9:00 AM</td>
-                                <td><span class="badge bg-warning">2h 45m</span></td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="registrarSalidaVisitante('Ana')">
-                                        <i class="bi bi-box-arrow-right"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>Roberto López</strong></td>
-                                <td>Mantenimiento</td>
-                                <td>Coordinador</td>
-                                <td>10:15 AM</td>
-                                <td><span class="badge bg-success">1h 30m</span></td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="registrarSalidaVisitante('Roberto')">
-                                        <i class="bi bi-box-arrow-right"></i>
-                                    </button>
-                                </td>
-                            </tr>
+                        <tbody id="tablaVisitantes">
+                            <tr><td colspan="5" class="text-center py-4 text-muted">Cargando...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -267,110 +198,18 @@
         </div>
     </div>
 
+    <!-- Mapa -->
     <div class="col-lg-5">
-        <div class="card card-modern mb-4">
-            <div class="card-header-modern d-flex justify-content-between align-items-center">
-                <h6 class="mb-0">
-                    <i class="bi bi-clipboard-check me-2"></i>
-                    Rondas del Turno
-                </h6>
-                <button class="btn btn-sm btn-primary" onclick="registrarRonda()">
-                    <i class="bi bi-plus-circle me-1"></i>Nueva
-                </button>
-            </div>
-            <div class="card-body">
-                <div class="list-group">
-                    <div class="list-group-item">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <strong>11:30 AM - Ronda Completa</strong>
-                                <p class="mb-1 small text-muted">✅ Todas las áreas revisadas</p>
-                                <small class="text-success">Sin novedades</small>
-                            </div>
-                            <span class="badge bg-success">OK</span>
-                        </div>
-                    </div>
-                    <div class="list-group-item">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <strong>9:45 AM - Ronda Completa</strong>
-                                <p class="mb-1 small text-muted">⚠️ Puerta trasera abierta</p>
-                                <small class="text-warning">Novedad reportada</small>
-                            </div>
-                            <span class="badge bg-warning">Novedad</span>
-                        </div>
-                    </div>
-                    <div class="list-group-item">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <strong>7:30 AM - Ronda Inicio</strong>
-                                <p class="mb-1 small text-muted">✅ Inicio de turno normal</p>
-                                <small class="text-success">Sin novedades</small>
-                            </div>
-                            <span class="badge bg-success">OK</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card card-modern">
-            <div class="card-header-modern d-flex justify-content-between align-items-center">
-                <h6 class="mb-0">
-                    <i class="bi bi-box-seam me-2"></i>
-                    Objetos Perdidos (3)
-                </h6>
-                <button class="btn btn-sm btn-outline-primary" onclick="objetosPerdidos()">Ver Todos</button>
-            </div>
-            <div class="card-body">
-                <div class="list-group list-group-flush">
-                    <div class="list-group-item px-0">
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-phone fs-3 text-primary me-3"></i>
-                            <div>
-                                <strong>Teléfono móvil</strong>
-                                <p class="mb-0 small text-muted">Encontrado en Cafetería - Hoy 10:00 AM</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="list-group-item px-0">
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-bag fs-3 text-success me-3"></i>
-                            <div>
-                                <strong>Mochila negra</strong>
-                                <p class="mb-0 small text-muted">Encontrada en Talleres - Ayer 4:30 PM</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="list-group-item px-0">
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-key fs-3 text-warning me-3"></i>
-                            <div>
-                                <strong>Llavero</strong>
-                                <p class="mb-0 small text-muted">Encontrado en Parqueadero - 15/12</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <button class="btn btn-sm btn-outline-secondary w-100 mt-2" onclick="objetosPerdidos()">Gestionar Objetos Perdidos</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Mapa -->
-<div class="row g-4">
-    <div class="col-12">
         <div class="card card-modern">
             <div class="card-header-modern d-flex justify-content-between align-items-center">
                 <h6 class="mb-0">
                     <i class="bi bi-geo-alt me-2"></i>
-                    Mapa de Seguridad del Centro
+                    Mapa del Centro
                 </h6>
-                <button class="btn btn-sm btn-outline-primary" onclick="window.location.href='/mapas/'">Ver Mapa Completo</button>
+                <a href="/mapas/" class="btn btn-sm btn-outline-primary">Ver Completo</a>
             </div>
             <div class="card-body p-0">
-                <div id="securityMap" style="height: 400px;"></div>
+                <div id="securityMap" style="height: 350px;"></div>
             </div>
         </div>
     </div>
@@ -378,96 +217,359 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const map = L.map('securityMap').setView([5.5339, -73.3674], 17);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+// Configuracion de auto-refresh
+const REFRESH_INTERVAL = 30000; // 30 segundos
+let refreshTimers = {};
+let lastUpdate = null;
 
-const entradaIcon = L.divIcon({
-    className: 'custom-div-icon',
-    html: '<div style="background-color:#4CAF50; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold;">E</div>',
-    iconSize: [30, 30]
+function getCookie(name) {
+    let v = null;
+    document.cookie.split(';').forEach(c => {
+        c = c.trim();
+        if (c.startsWith(name + '=')) v = decodeURIComponent(c.substring(name.length + 1));
+    });
+    return v;
+}
+
+function actualizarIndicadorTiempo() {
+    const ahora = new Date();
+    lastUpdate = ahora;
+    const indicator = document.getElementById('lastUpdateIndicator');
+    if (indicator) {
+        indicator.innerHTML = `<i class="bi bi-arrow-repeat me-1"></i>Actualizado: ${ahora.toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit', second:'2-digit'})}`;
+    }
+}
+
+function iniciarAutoRefresh() {
+    // Refrescar tablas cada 30 segundos
+    refreshTimers.accesos = setInterval(() => {
+        cargarAccesosRecientes();
+        actualizarIndicadorTiempo();
+    }, REFRESH_INTERVAL);
+
+    refreshTimers.visitantes = setInterval(() => {
+        cargarVisitantes();
+    }, REFRESH_INTERVAL);
+
+    refreshTimers.distribucion = setInterval(() => {
+        cargarDistribucion();
+    }, REFRESH_INTERVAL);
+
+    // Refrescar indicadores de aforo cada 15 segundos
+    refreshTimers.aforo = setInterval(() => {
+        actualizarAforo();
+    }, 15000);
+
+    console.log('Auto-refresh iniciado: tablas cada 30s, aforo cada 15s');
+}
+
+function detenerAutoRefresh() {
+    Object.values(refreshTimers).forEach(timer => clearInterval(timer));
+    refreshTimers = {};
+    console.log('Auto-refresh detenido');
+}
+
+async function actualizarAforo() {
+    try {
+        const r = await fetch('/api/acceso/registros/personas_en_centro/');
+        const data = await r.json();
+        const total = data.total || 0;
+        const aforoMax = {{ aforo_maximo|default:2000 }};
+        const porcentaje = Math.round((total / aforoMax) * 100);
+
+        // Actualizar display de aforo
+        const aforoDisplay = document.getElementById('aforoDisplay');
+        if (aforoDisplay) {
+            aforoDisplay.textContent = `${total} / ${aforoMax}`;
+        }
+
+        // Actualizar indicador de color segun ocupacion
+        const aforoIndicator = document.getElementById('aforoIndicator');
+        if (aforoIndicator) {
+            if (porcentaje > 90) {
+                aforoIndicator.className = 'text-danger';
+                aforoIndicator.innerHTML = `<i class="bi bi-exclamation-triangle-fill"></i> ${porcentaje}% capacidad - ALTO`;
+            } else if (porcentaje > 70) {
+                aforoIndicator.className = 'text-warning';
+                aforoIndicator.innerHTML = `<i class="bi bi-bar-chart"></i> ${porcentaje}% capacidad`;
+            } else {
+                aforoIndicator.className = 'text-success';
+                aforoIndicator.innerHTML = `<i class="bi bi-bar-chart"></i> ${porcentaje}% capacidad`;
+            }
+        }
+
+        // Mostrar/ocultar alerta de aforo critico
+        const alertaAforo = document.getElementById('alertaAforoCritico');
+        if (alertaAforo) {
+            if (porcentaje >= 90) {
+                // Actualizar contenido de la alerta
+                const alertaMensaje = document.getElementById('alertaAforoMensaje');
+                const alertaPorcentaje = document.getElementById('alertaAforoPorcentaje');
+                const alertaNumeros = document.getElementById('alertaAforoNumeros');
+
+                if (alertaMensaje) {
+                    if (porcentaje >= 100) {
+                        alertaMensaje.innerHTML = `<strong>CAPACIDAD MAXIMA ALCANZADA.</strong> No se permiten mas ingresos al centro.`;
+                    } else if (porcentaje >= 95) {
+                        alertaMensaje.innerHTML = `El centro esta al <strong>${porcentaje}%</strong> de su capacidad. Restriccion de ingresos recomendada.`;
+                    } else {
+                        alertaMensaje.innerHTML = `El centro ha alcanzado mas del 90% de su capacidad maxima. Monitorear ingresos.`;
+                    }
+                }
+                if (alertaPorcentaje) alertaPorcentaje.textContent = `${porcentaje}%`;
+                if (alertaNumeros) alertaNumeros.textContent = `${total} / ${aforoMax}`;
+
+                // Mostrar alerta con animacion
+                alertaAforo.style.display = 'block';
+                setTimeout(() => alertaAforo.classList.add('show'), 10);
+
+                // Reproducir sonido de alerta si el porcentaje acaba de cruzar el umbral
+                if (!alertaAforo.dataset.alertaActiva) {
+                    alertaAforo.dataset.alertaActiva = 'true';
+                    reproducirSonidoAlerta();
+                }
+            } else {
+                // Ocultar alerta
+                alertaAforo.classList.remove('show');
+                setTimeout(() => {
+                    alertaAforo.style.display = 'none';
+                    alertaAforo.dataset.alertaActiva = '';
+                }, 150);
+            }
+        }
+    } catch(e) {
+        console.error('Error actualizando aforo:', e);
+    }
+}
+
+function reproducirSonidoAlerta() {
+    // Crear un sonido de alerta simple usando Web Audio API
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        oscillator.frequency.value = 800;
+        oscillator.type = 'sine';
+        gainNode.gain.value = 0.3;
+
+        oscillator.start();
+        setTimeout(() => {
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            setTimeout(() => oscillator.stop(), 300);
+        }, 200);
+    } catch(e) {
+        console.log('Audio no disponible');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    cargarAccesosRecientes();
+    cargarVisitantes();
+    cargarDistribucion();
+    initMapa();
+    actualizarAforo();
+    actualizarIndicadorTiempo();
+    iniciarAutoRefresh();
 });
 
-L.marker([5.5339, -73.3674], {icon: entradaIcon}).addTo(map).bindPopup('<b>Entrada Principal</b><br>Activa - Sin incidentes');
-L.marker([5.5345, -73.3680], {icon: entradaIcon}).addTo(map).bindPopup('<b>Salida Trasera</b><br>Activa');
+// Detener refresh cuando la pagina no es visible
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        detenerAutoRefresh();
+    } else {
+        cargarAccesosRecientes();
+        cargarVisitantes();
+        cargarDistribucion();
+        actualizarAforo();
+        actualizarIndicadorTiempo();
+        iniciarAutoRefresh();
+    }
+});
 
-function registrarAcceso() {
-    alert('Función de registro de acceso. Se abrirá formulario para registrar ingreso/egreso manual.');
-}
-
-function registrarVisitante() {
-    alert('Función para registrar nuevo visitante. Se abrirá formulario con datos requeridos.');
-}
-
-function registrarRonda() {
-    const puntos = prompt('Registrar Ronda de Seguridad:\n\nPuntos a revisar:\n1. Entrada Principal\n2. Parqueadero\n3. Talleres\n4. Salida Trasera\n5. Área Administrativa\n\n¿Todos los puntos revisados? (SI/NO)');
-    
-    if (puntos && puntos.toUpperCase() === 'SI') {
-        const novedades = prompt('¿Alguna novedad para reportar? (Dejar vacío si no hay novedades)');
-        
-        if (novedades === null) return;
-        
-        if (novedades.trim() === '') {
-            alert('✅ Ronda Registrada\n\nHora: ' + new Date().toLocaleTimeString() + '\nEstado: Sin novedades\nPuntos revisados: 5/5\n\n¡Todas las áreas seguras!');
-        } else {
-            alert('⚠️ Ronda Registrada con Novedad\n\nHora: ' + new Date().toLocaleTimeString() + '\nNovedad: ' + novedades + '\n\nLa novedad ha sido reportada al coordinador.');
+async function cargarAccesosRecientes() {
+    try {
+        const r = await fetch('/api/acceso/registros/registros_recientes/?limite=10');
+        const data = await r.json();
+        const tbody = document.getElementById('tablaAccesos');
+        if (!data.length) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Sin registros hoy</td></tr>';
+            return;
         }
+        tbody.innerHTML = data.map(reg => {
+            const esIngreso = !reg.fecha_hora_egreso || new Date(reg.fecha_hora_ingreso) > new Date(reg.fecha_hora_egreso || 0);
+            const hora = new Date(reg.fecha_hora_egreso || reg.fecha_hora_ingreso).toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit'});
+            return `
+                <tr class="${!reg.fecha_hora_egreso ? '' : 'table-light'}">
+                    <td><strong>${hora}</strong></td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle bg-primary text-white me-2 d-flex align-items-center justify-content-center" style="width:32px;height:32px;font-size:12px;">
+                                ${reg.usuario.nombre.split(' ').map(n=>n[0]).join('').substring(0,2)}
+                            </div>
+                            <span>${reg.usuario.nombre}</span>
+                        </div>
+                    </td>
+                    <td><span class="badge bg-light text-dark border">${reg.usuario.rol}</span></td>
+                    <td>${!reg.fecha_hora_egreso
+                        ? '<i class="bi bi-box-arrow-in-right text-success"></i> Ingreso'
+                        : '<i class="bi bi-box-arrow-right text-danger"></i> Egreso'}</td>
+                    <td>${reg.metodo_ingreso || 'Manual'}</td>
+                </tr>`;
+        }).join('');
+    } catch(e) {
+        document.getElementById('tablaAccesos').innerHTML = '<tr><td colspan="5" class="text-center text-danger py-3">Error al cargar</td></tr>';
     }
 }
 
-function objetosPerdidos() {
-    const opcion = prompt('Gestión de Objetos Perdidos:\n\n1. Registrar objeto encontrado\n2. Buscar objeto\n3. Entregar objeto\n4. Ver lista completa\n\nIngrese el número de opción:');
-    
-    switch(opcion) {
-        case '1':
-            const objeto = prompt('Registrar Objeto Encontrado:\n\nDescripción del objeto:');
-            if (objeto) {
-                const ubicacion = prompt('¿Dónde fue encontrado?');
-                if (ubicacion) {
-                    alert('✅ Objeto Registrado\n\nObjeto: ' + objeto + '\nUbicación: ' + ubicacion + '\nFecha: ' + new Date().toLocaleDateString() + '\nHora: ' + new Date().toLocaleTimeString() + '\n\nEl objeto quedó registrado en custodia.');
-                }
-            }
-            break;
-        case '2':
-            alert('Buscar Objeto:\n\n📱 Teléfono móvil - Cafetería\n🎒 Mochila negra - Talleres\n🔑 Llavero - Parqueadero\n📓 Cuaderno - Biblioteca\n💳 Carnet - Entrada\n\nPuede filtrar por tipo, fecha o ubicación.');
-            break;
-        case '3':
-            const persona = prompt('Entregar Objeto:\n\nNombre de la persona que reclama:');
-            if (persona) {
-                const documento = prompt('Número de documento:');
-                if (documento) {
-                    alert('✅ Objeto Entregado\n\nEntregado a: ' + persona + '\nDocumento: ' + documento + '\nFecha: ' + new Date().toLocaleDateString() + '\nHora: ' + new Date().toLocaleTimeString() + '\n\nFirma de recibido registrada.');
-                }
-            }
-            break;
-        case '4':
-            alert('Lista Completa de Objetos Perdidos:\n\n📱 3 Teléfonos\n🎒 2 Mochilas\n🔑 4 Llaveros\n💳 5 Carnets\n📓 2 Cuadernos\n👓 1 Gafas\n⌚ 1 Reloj\n\nTotal: 18 objetos en custodia');
-            break;
-        default:
-            if (opcion) alert('Opción no válida');
+async function cargarVisitantes() {
+    try {
+        const r = await fetch('/api/auth/visitantes/');
+        const data = await r.json();
+        const lista = data.results || data;
+        const hoy = new Date().toISOString().split('T')[0];
+        const visitantesHoy = lista.filter(v => v.fecha_visita === hoy);
+        const activos = visitantesHoy.filter(v => !v.hora_salida);
+
+        document.getElementById('contadorVisitantes').textContent = activos.length;
+        const tbody = document.getElementById('tablaVisitantes');
+
+        if (!activos.length) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No hay visitantes activos</td></tr>';
+            return;
+        }
+        tbody.innerHTML = activos.map(v => `
+            <tr>
+                <td><strong>${v.nombre_completo}</strong></td>
+                <td>${v.entidad || 'Particular'}</td>
+                <td>${v.persona_a_visitar_nombre || '-'}</td>
+                <td>${v.hora_ingreso || '-'}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-danger" onclick="registrarSalidaVisitante(${v.id}, '${v.nombre_completo}')">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </button>
+                </td>
+            </tr>`).join('');
+    } catch(e) {
+        document.getElementById('tablaVisitantes').innerHTML = '<tr><td colspan="5" class="text-center text-danger py-3">Error al cargar</td></tr>';
     }
 }
 
-function buscarPersona() {
-    const nombre = prompt('Ingrese el nombre o documento de la persona a buscar:');
-    if (nombre) {
-        alert(`Buscando información de: ${nombre}\n\nEsta función mostrará el estado actual y historial de acceso.`);
+async function cargarDistribucion() {
+    try {
+        const r = await fetch('/api/acceso/registros/personas_en_centro/');
+        const data = await r.json();
+        const cont = document.getElementById('distribucionRoles');
+
+        const roles = {};
+        const colores = {APRENDIZ:'success', INSTRUCTOR:'primary', ADMINISTRATIVO:'info', VIGILANCIA:'warning', BRIGADA:'danger'};
+        (data.personas || []).forEach(p => {
+            roles[p.rol_code] = (roles[p.rol_code] || 0) + 1;
+        });
+
+        if (!Object.keys(roles).length) {
+            cont.innerHTML = '<p class="text-center text-muted py-2">Sin personas registradas</p>';
+            return;
+        }
+
+        cont.innerHTML = Object.entries(roles).map(([rol, cant]) => {
+            const pct = Math.round((cant / data.total) * 100);
+            const color = colores[rol] || 'secondary';
+            const nombres = {APRENDIZ:'Aprendices', INSTRUCTOR:'Instructores', ADMINISTRATIVO:'Administrativos', VIGILANCIA:'Vigilancia', BRIGADA:'Brigada'};
+            return `
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small>${nombres[rol] || rol}</small>
+                        <small class="fw-bold">${cant}</small>
+                    </div>
+                    <div class="progress" style="height:6px;">
+                        <div class="progress-bar bg-${color}" style="width:${pct}%"></div>
+                    </div>
+                </div>`;
+        }).join('');
+    } catch(e) {
+        document.getElementById('distribucionRoles').innerHTML = '<p class="text-center text-muted">Error</p>';
     }
+}
+
+function initMapa() {
+    const map = L.map('securityMap').setView([5.7303596, -72.8943613], 17);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {maxZoom:19}).addTo(map);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {maxZoom:19, opacity:0.7}).addTo(map);
+
+    // Cargar personas en centro como marcadores
+    fetch('/api/acceso/registros/personas_en_centro/')
+        .then(r => r.json())
+        .then(data => {
+            const colores = {APRENDIZ:'#4CAF50', INSTRUCTOR:'#2196F3', ADMINISTRATIVO:'#9C27B0', VIGILANCIA:'#FF9800', BRIGADA:'#F44336'};
+            (data.personas || []).forEach(p => {
+                if (!p.latitud || !p.longitud) return;
+                const color = colores[p.rol_code] || '#666';
+                const icon = L.divIcon({
+                    className: 'custom-div-icon',
+                    html: `<div style="background:${color};width:12px;height:12px;border-radius:50%;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.4);"></div>`,
+                    iconSize: [12, 12]
+                });
+                L.marker([p.latitud, p.longitud], {icon}).addTo(map)
+                    .bindPopup(`<b>${p.nombre}</b><br>${p.rol}<br>Ingreso: ${p.hora_ingreso}`);
+            });
+        }).catch(() => {});
+}
+
+async function registrarSalidaVisitante(id, nombre) {
+    if (!confirm(`Registrar salida de ${nombre}?`)) return;
+    try {
+        const r = await fetch(`/api/auth/visitantes/${id}/`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({hora_salida: new Date().toTimeString().split(' ')[0]})
+        });
+        if (r.ok) {
+            cargarVisitantes();
+        } else {
+            alert('Error al registrar salida');
+        }
+    } catch(e) { alert('Error de conexion'); }
 }
 
 function alertaSeguridad() {
-    if (confirm('¿Desea reportar una ALERTA DE SEGURIDAD?\n\nEsto notificará inmediatamente al personal de emergencia.')) {
-        alert('ALERTA ACTIVADA\n\nNotificación enviada a:\n- Coordinador de Seguridad\n- Brigada de Emergencia\n- Personal Administrativo');
+    if (confirm('Desea reportar una ALERTA DE SEGURIDAD?\n\nEsto creara una emergencia y notificara al personal.')) {
+        window.location.href = '/emergencias/';
     }
 }
 
-function registrarSalidaVisitante(nombre) {
-    if (confirm(`¿Registrar salida de ${nombre}?`)) {
-        alert(`Salida de ${nombre} registrada exitosamente a las ${new Date().toLocaleTimeString()}`);
-    }
-}
+function refrescarTodo() {
+    const btn = event.target.closest('button');
+    const icon = btn.querySelector('i');
+    icon.classList.add('spin-animation');
 
-function verTodasCamaras() {
-    alert('Sistema de cámaras de seguridad. Se mostrará vista en tiempo real de todas las cámaras activas.');
+    Promise.all([
+        cargarAccesosRecientes(),
+        cargarVisitantes(),
+        cargarDistribucion(),
+        actualizarAforo()
+    ]).then(() => {
+        actualizarIndicadorTiempo();
+        icon.classList.remove('spin-animation');
+    }).catch(() => {
+        icon.classList.remove('spin-animation');
+    });
 }
 </script>
+
+<style>
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.spin-animation {
+    animation: spin 1s linear infinite;
+}
+</style>
 {% endblock %}

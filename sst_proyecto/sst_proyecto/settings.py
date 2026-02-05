@@ -175,7 +175,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Configuración de Leaflet (Mapas)
 LEAFLET_CONFIG = {
-    'DEFAULT_CENTER': (5.5339, -73.3674), # Coordenadas Centro Minero Boyacá
+    'DEFAULT_CENTER': (5.7303596, -72.8943613), # Coordenadas Centro Minero SENA - Vereda Morcá, Sogamoso
     'DEFAULT_ZOOM': 16,
     'MIN_ZOOM': 14,
     'MAX_ZOOM': 19,
@@ -236,3 +236,84 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='SST Centro Minero <no
 
 # Configuración para recuperación de contraseña
 PASSWORD_RESET_TIMEOUT = 3600  # 1 hora (en segundos)
+
+# ====================================================================
+# CONFIGURACIÓN DE LOGGING - Auditoría del Sistema
+# ====================================================================
+
+# Directorio para archivos de log
+LOG_DIR = BASE_DIR / 'logs'
+LOG_DIR.mkdir(exist_ok=True)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{asctime}] {levelname} {name} {message}',
+            'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+        'auditoria': {
+            'format': '[{asctime}] [{levelname}] {message}',
+            'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file_auditoria': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOG_DIR / 'auditoria.log',
+            'maxBytes': 10 * 1024 * 1024,  # 10 MB
+            'backupCount': 5,
+            'formatter': 'auditoria',
+            'encoding': 'utf-8',
+        },
+        'file_seguridad': {
+            'level': 'WARNING',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOG_DIR / 'seguridad.log',
+            'maxBytes': 10 * 1024 * 1024,  # 10 MB
+            'backupCount': 10,
+            'formatter': 'auditoria',
+            'encoding': 'utf-8',
+        },
+        'file_errores': {
+            'level': 'ERROR',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOG_DIR / 'errores.log',
+            'maxBytes': 10 * 1024 * 1024,  # 10 MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+            'encoding': 'utf-8',
+        },
+    },
+    'loggers': {
+        'auditoria': {
+            'handlers': ['file_auditoria', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'seguridad': {
+            'handlers': ['file_seguridad', 'console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        'django': {
+            'handlers': ['console', 'file_errores'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'django.request': {
+            'handlers': ['file_errores'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+}

@@ -15,10 +15,18 @@
             <i class="bi bi-shield-fill-exclamation text-danger me-2"></i>
             Brigada de Emergencia - {{ user.get_full_name|default:user.username }}
         </h1>
-        <p class="text-muted mb-0">Sistema de respuesta a emergencias y evacuación</p>
+        <p class="text-muted mb-0">
+            Sistema de respuesta a emergencias y evacuación
+            <span id="lastUpdateIndicator" class="ms-3 badge bg-light text-secondary">
+                <i class="bi bi-arrow-repeat me-1"></i>Cargando...
+            </span>
+        </p>
     </div>
     <div class="btn-group">
-        <button class="btn btn-danger btn-lg" onclick="activarEmergencia()">
+        <button class="btn btn-outline-secondary" onclick="refrescarTodo()" title="Actualizar ahora">
+            <i class="bi bi-arrow-clockwise"></i>
+        </button>
+        <button class="btn btn-danger btn-lg" onclick="mostrarModalEmergencia()" id="btnActivarEmergencia">
             <i class="bi bi-megaphone-fill me-2"></i>ACTIVAR EMERGENCIA
         </button>
         <button class="btn btn-outline-warning" onclick="window.location.href='/emergencias/'">
@@ -27,21 +35,75 @@
     </div>
 </div>
 
+<!-- Modal de Activacion de Emergencia -->
+<div class="modal fade" id="modalEmergencia" tabindex="-1" aria-labelledby="modalEmergenciaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="modalEmergenciaLabel">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>ACTIVAR EMERGENCIA
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>Atencion:</strong> Esta accion activara una alerta de emergencia y notificara a todo el personal de brigada.
+                </div>
+                <form id="formEmergencia">
+                    <div class="mb-3">
+                        <label for="tipoEmergencia" class="form-label fw-bold">Tipo de Emergencia *</label>
+                        <select class="form-select form-select-lg" id="tipoEmergencia" required>
+                            <option value="">Seleccione el tipo...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="descripcionEmergencia" class="form-label fw-bold">Descripcion *</label>
+                        <textarea class="form-control" id="descripcionEmergencia" rows="3" placeholder="Describa brevemente la situacion..." required></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="ubicacionEmergencia" class="form-label fw-bold">Ubicacion</label>
+                            <input type="text" class="form-control" id="ubicacionEmergencia" placeholder="Ej: Bloque A, segundo piso">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="personasAfectadas" class="form-label fw-bold">Personas afectadas (estimado)</label>
+                            <input type="number" class="form-control" id="personasAfectadas" value="0" min="0">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="requiereEvacuacion">
+                            <label class="form-check-label fw-bold text-danger" for="requiereEvacuacion">
+                                <i class="bi bi-sign-stop-fill me-1"></i>Requiere evacuacion inmediata
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger btn-lg" onclick="confirmarEmergencia()">
+                    <i class="bi bi-megaphone-fill me-2"></i>CONFIRMAR EMERGENCIA
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Estado de Emergencias -->
 <div class="row g-4 mb-4">
     <div class="col-xl-3 col-md-6">
-        <div class="card card-modern border-0 border-start border-4 border-success">
+        <div class="card card-modern border-0 border-start border-4" id="cardEstado">
             <div class="card-body p-4">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
                         <h6 class="text-muted mb-2">Estado Actual</h6>
-                        <h3 class="fw-bold text-success mb-0">NORMAL</h3>
-                        <small class="text-success">
-                            <i class="bi bi-shield-check"></i> Sin emergencias activas
-                        </small>
+                        <h3 class="fw-bold mb-0" id="estadoTexto">Cargando...</h3>
+                        <small id="estadoSub"><i class="bi bi-hourglass-split"></i> Verificando...</small>
                     </div>
-                    <div class="bg-light-success rounded-3 p-3">
-                        <i class="bi bi-check-circle-fill fs-2 text-success"></i>
+                    <div class="bg-light rounded-3 p-3">
+                        <i class="bi bi-shield-check fs-2" id="estadoIcono"></i>
                     </div>
                 </div>
             </div>
@@ -73,76 +135,22 @@
                 </div>
             </div>
             <div class="card-body">
-                <!-- No hay emergencias activas -->
-                <div class="alert alert-success mb-4">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-check-circle-fill fs-2 me-3"></i>
-                        <div>
-                            <h5 class="mb-1">Sistema en Estado Normal</h5>
-                            <p class="mb-0">No hay emergencias activas en este momento. Todos los sistemas operando correctamente.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <h6 class="mb-3">Últimas Emergencias Atendidas:</h6>
+                <div id="alertaEmergencias"></div>
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead class="table-light">
                             <tr>
                                 <th>Tipo</th>
-                                <th>Ubicación</th>
-                                <th>Nivel</th>
-                                <th>Tiempo Respuesta</th>
+                                <th>Ubicacion</th>
                                 <th>Estado</th>
+                                <th>Reportada</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td>
-                                    <i class="bi bi-lightning-fill text-warning me-2"></i>
-                                    <strong>Corte Eléctrico</strong>
-                                </td>
-                                <td>Bloque B - Piso 2</td>
-                                <td><span class="badge bg-warning">Menor</span></td>
-                                <td>2m 30s</td>
-                                <td><span class="badge bg-success">Resuelta</span></td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-secondary" onclick="verDetalleEmergencia(1)">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <i class="bi bi-droplet-fill text-info me-2"></i>
-                                    <strong>Fuga de Agua</strong>
-                                </td>
-                                <td>Baños - Planta Baja</td>
-                                <td><span class="badge bg-info">Información</span></td>
-                                <td>4m 15s</td>
-                                <td><span class="badge bg-success">Resuelta</span></td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-secondary" onclick="verDetalleEmergencia(2)">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <i class="bi bi-fire text-danger me-2"></i>
-                                    <strong>Conato de Incendio</strong>
-                                </td>
-                                <td>Cocina - Cafetería</td>
-                                <td><span class="badge bg-danger">Crítica</span></td>
-                                <td>1m 50s</td>
-                                <td><span class="badge bg-success">Resuelta</span></td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-secondary" onclick="verDetalleEmergencia(3)">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                </td>
-                            </tr>
+                        <tbody id="tablaEmergencias">
+                            <tr><td colspan="5" class="text-center py-4 text-muted">
+                                <div class="spinner-border spinner-border-sm me-2"></div>Cargando...
+                            </td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -186,299 +194,108 @@
             </div>
         </div>
 
-        <!-- Estado de Equipos -->
+        <!-- Estado de Equipos (Dinamico) -->
         <div class="card card-modern">
-            <div class="card-header-modern">
+            <div class="card-header-modern d-flex justify-content-between align-items-center">
                 <h6 class="mb-0">
                     <i class="bi bi-tools me-2"></i>
-                    Estado de Equipos
+                    Estado de Equipos <span class="badge bg-info ms-1" style="font-size:0.6rem;">EN VIVO</span>
                 </h6>
+                <a href="{% url 'equipos_brigada' %}" class="btn btn-sm btn-outline-primary">Ver todos</a>
             </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span><i class="bi bi-fire-extinguisher text-danger me-2"></i>Extintores</span>
-                        <span class="badge bg-success">15/15</span>
-                    </div>
-                    <div class="progress" style="height: 6px;">
-                        <div class="progress-bar bg-success" style="width: 100%"></div>
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span><i class="bi bi-droplet-fill text-info me-2"></i>Hidrantes</span>
-                        <span class="badge bg-success">8/8</span>
-                    </div>
-                    <div class="progress" style="height: 6px;">
-                        <div class="progress-bar bg-success" style="width: 100%"></div>
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span><i class="bi bi-heart-pulse text-danger me-2"></i>Botiquines</span>
-                        <span class="badge bg-success">6/6</span>
-                    </div>
-                    <div class="progress" style="height: 6px;">
-                        <div class="progress-bar bg-success" style="width: 100%"></div>
-                    </div>
-                </div>
-                <div>
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span><i class="bi bi-radioactive text-warning me-2"></i>Alarmas</span>
-                        <span class="badge bg-warning">4/5</span>
-                    </div>
-                    <div class="progress" style="height: 6px;">
-                        <div class="progress-bar bg-warning" style="width: 80%"></div>
-                    </div>
-                    <small class="text-muted">Alarma Bloque C requiere revisión</small>
+            <div class="card-body" id="estadoEquipos">
+                <div class="text-center py-3 text-muted">
+                    <div class="spinner-border spinner-border-sm me-2"></div>Cargando...
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- NUEVAS SECCIONES AGREGADAS -->
+<!-- Incidentes Reportados -->
 <div class="row g-4 mb-4">
-    <!-- Simulacros -->
-    <div class="col-lg-4">
-        <div class="card card-modern h-100">
+    <div class="col-12">
+        <div class="card card-modern">
             <div class="card-header-modern d-flex justify-content-between align-items-center">
                 <h6 class="mb-0">
-                    <i class="bi bi-alarm-fill me-2"></i>
-                    Simulacros Programados
+                    <i class="bi bi-exclamation-triangle-fill me-2 text-warning"></i>
+                    Incidentes Reportados
+                    {% if incidentes_pendientes %}
+                    <span class="badge bg-danger ms-2">{{ incidentes_pendientes }} pendiente{{ incidentes_pendientes|pluralize:"s" }}</span>
+                    {% endif %}
                 </h6>
-                <button class="btn btn-sm btn-outline-primary" onclick="agregarSimulacro()">
-                    <i class="bi bi-plus-circle me-1"></i>Nuevo
-                </button>
+                <a href="{% url 'listar_incidentes' %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-list-ul me-1"></i>Ver Todos
+                </a>
             </div>
-            <div class="card-body">
-                <div class="list-group list-group-flush">
-                    <div class="list-group-item px-0">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6 class="mb-1">Simulacro de Evacuación General</h6>
-                                <p class="mb-1 small text-muted">Prueba de tiempos de evacuación completa</p>
-                                <small class="text-primary">
-                                    <i class="bi bi-calendar3 me-1"></i>20 de Diciembre - 9:00 AM
-                                </small>
-                                <br>
-                                <small class="text-muted">
-                                    <i class="bi bi-geo-alt me-1"></i>Todas las instalaciones
-                                </small>
-                            </div>
-                            <span class="badge bg-warning">Próximo</span>
-                        </div>
-                    </div>
-                    <div class="list-group-item px-0">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6 class="mb-1">Simulacro de Incendio</h6>
-                                <p class="mb-1 small text-muted">Control y extinción de incendios</p>
-                                <small class="text-primary">
-                                    <i class="bi bi-calendar3 me-1"></i>15 de Enero - 10:30 AM
-                                </small>
-                                <br>
-                                <small class="text-muted">
-                                    <i class="bi bi-geo-alt me-1"></i>Área de Almacén
-                                </small>
-                            </div>
-                            <span class="badge bg-info">Programado</span>
-                        </div>
-                    </div>
-                    <div class="list-group-item px-0">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6 class="mb-1">Simulacro de Primeros Auxilios</h6>
-                                <p class="mb-1 small text-muted">Atención a múltiples víctimas</p>
-                                <small class="text-success">
-                                    <i class="bi bi-check-circle me-1"></i>Completado - 5 de Diciembre
-                                </small>
-                                <br>
-                                <small class="text-muted">
-                                    <i class="bi bi-clock-history me-1"></i>Tiempo: 8m 45s
-                                </small>
-                            </div>
-                            <span class="badge bg-success">Completado</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <button class="btn btn-sm btn-outline-secondary w-100" onclick="verHistorialSimulacros()">
-                        Ver Historial de Simulacros
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Inventario EPP -->
-    <div class="col-lg-4">
-        <div class="card card-modern h-100">
-            <div class="card-header-modern d-flex justify-content-between align-items-center">
-                <h6 class="mb-0">
-                    <i class="bi bi-shield-check me-2"></i>
-                    Inventario EPP
-                </h6>
-                <button class="btn btn-sm btn-outline-warning" onclick="solicitarReposicion()">
-                    <i class="bi bi-cart-plus me-1"></i>Reponer
-                </button>
-            </div>
-            <div class="card-body">
+            <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead class="table-light">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
                             <tr>
-                                <th>Equipo</th>
-                                <th>Disponible</th>
-                                <th>Mínimo</th>
+                                <th class="ps-4">Incidente</th>
+                                <th>Tipo</th>
+                                <th>Gravedad</th>
                                 <th>Estado</th>
+                                <th>Reportado por</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
+                            {% for incidente in incidentes_recientes %}
                             <tr>
-                                <td>
-                                    <i class="bi bi-helmet-safety text-primary me-2"></i>
-                                    Cascos de Seguridad
+                                <td class="ps-4">
+                                    <div class="fw-bold">{{ incidente.titulo }}</div>
+                                    <small class="text-muted">{{ incidente.ubicacion }}</small>
                                 </td>
-                                <td>25</td>
-                                <td>15</td>
-                                <td><span class="badge bg-success">OK</span></td>
+                                <td><span class="badge bg-secondary">{{ incidente.get_tipo_display }}</span></td>
+                                <td>
+                                    {% if incidente.gravedad == 'CRITICA' %}
+                                        <span class="badge bg-danger">Cr&iacute;tica</span>
+                                    {% elif incidente.gravedad == 'ALTA' %}
+                                        <span class="badge bg-warning text-dark">Alta</span>
+                                    {% elif incidente.gravedad == 'MEDIA' %}
+                                        <span class="badge bg-info">Media</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Baja</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if incidente.estado == 'REPORTADO' %}
+                                        <span class="badge bg-warning text-dark">Reportado</span>
+                                    {% elif incidente.estado == 'EN_REVISION' or incidente.estado == 'EN_PROCESO' %}
+                                        <span class="badge bg-info">En Proceso</span>
+                                    {% elif incidente.estado == 'RESUELTO' %}
+                                        <span class="badge bg-success">Resuelto</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ incidente.get_estado_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div>{{ incidente.reportado_por.get_full_name|default:incidente.reportado_por.username }}</div>
+                                    <small class="text-muted">{{ incidente.reportado_por.get_rol_display }}</small>
+                                </td>
+                                <td>
+                                    <small>{{ incidente.fecha_reporte|date:"d/m/Y" }}</small><br>
+                                    <small class="text-muted">{{ incidente.fecha_reporte|time:"h:i A" }}</small>
+                                </td>
+                                <td>
+                                    <a href="{% url 'detalle_incidente' incidente.id %}" class="btn btn-sm btn-outline-primary" title="Ver detalle">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
                             </tr>
+                            {% empty %}
                             <tr>
-                                <td>
-                                    <i class="bi bi-mask text-info me-2"></i>
-                                    Respiradores N95
+                                <td colspan="7" class="text-center py-4 text-muted">
+                                    <i class="bi bi-check-circle fs-4 d-block mb-2"></i>
+                                    No hay incidentes reportados.
                                 </td>
-                                <td>48</td>
-                                <td>30</td>
-                                <td><span class="badge bg-success">OK</span></td>
                             </tr>
-                            <tr>
-                                <td>
-                                    <i class="bi bi-emoji-dizzy text-warning me-2"></i>
-                                    Lentes de Seguridad
-                                </td>
-                                <td>18</td>
-                                <td>20</td>
-                                <td><span class="badge bg-warning">Bajo</span></td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <i class="bi bi-hand-index-thumb text-danger me-2"></i>
-                                    Guantes Anti-Corte
-                                </td>
-                                <td>32</td>
-                                <td>25</td>
-                                <td><span class="badge bg-success">OK</span></td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <i class="bi bi-bootstrap-fill text-success me-2"></i>
-                                    Chalecos Reflectivos
-                                </td>
-                                <td>12</td>
-                                <td>10</td>
-                                <td><span class="badge bg-success">OK</span></td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <i class="bi bi-earbuds text-secondary me-2"></i>
-                                    Protectores Auditivos
-                                </td>
-                                <td>8</td>
-                                <td>15</td>
-                                <td><span class="badge bg-danger">Crítico</span></td>
-                            </tr>
+                            {% endfor %}
                         </tbody>
                     </table>
-                </div>
-                <div class="alert alert-warning mt-3 py-2">
-                    <small>
-                        <i class="bi bi-exclamation-triangle me-1"></i>
-                        <strong>Atención:</strong> 2 equipos requieren reposición inmediata
-                    </small>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Primeros Auxilios -->
-    <div class="col-lg-4">
-        <div class="card card-modern h-100">
-            <div class="card-header-modern d-flex justify-content-between align-items-center">
-                <h6 class="mb-0">
-                    <i class="bi bi-heart-pulse text-danger me-2"></i>
-                    Primeros Auxilios
-                </h6>
-                <button class="btn btn-sm btn-outline-danger" onclick="reportarEmergenciaMedica()">
-                    <i class="bi bi-plus-circle me-1"></i>Reportar
-                </button>
-            </div>
-            <div class="card-body">
-                <div class="row mb-3">
-                    <div class="col-6">
-                        <div class="card bg-light-danger border-0">
-                            <div class="card-body text-center py-3">
-                                <h3 class="text-danger mb-0">3</h3>
-                                <small class="text-muted">Atenciones Hoy</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="card bg-light-success border-0">
-                            <div class="card-body text-center py-3">
-                                <h3 class="text-success mb-0">8</h3>
-                                <small class="text-muted">Brigadistas Certificados</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <h6 class="mb-2">Atenciones Recientes:</h6>
-                <div class="list-group list-group-flush">
-                    <div class="list-group-item px-0 py-2">
-                        <div class="d-flex align-items-center">
-                            <div class="avatar bg-warning text-white rounded-circle me-3" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
-                                <i class="bi bi-bandaid"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <strong>Corte en mano</strong>
-                                <p class="mb-0 small text-muted">Ligero - María González</p>
-                            </div>
-                            <span class="badge bg-success">Atendido</span>
-                        </div>
-                    </div>
-                    <div class="list-group-item px-0 py-2">
-                        <div class="d-flex align-items-center">
-                            <div class="avatar bg-info text-white rounded-circle me-3" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
-                                <i class="bi bi-thermometer"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <strong>Mareo y náuseas</strong>
-                                <p class="mb-0 small text-muted">Moderado - Juan Pérez</p>
-                            </div>
-                            <span class="badge bg-success">Atendido</span>
-                        </div>
-                    </div>
-                    <div class="list-group-item px-0 py-2">
-                        <div class="d-flex align-items-center">
-                            <div class="avatar bg-danger text-white rounded-circle me-3" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
-                                <i class="bi bi-droplet"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <strong>Hemorragia nasal</strong>
-                                <p class="mb-0 small text-muted">Leve - Carlos López</p>
-                            </div>
-                            <span class="badge bg-warning">En Proceso</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="mt-3">
-                    <button class="btn btn-sm btn-outline-secondary w-100" onclick="verBotiquines()">
-                        <i class="bi bi-plus-square me-1"></i>
-                        Ver Botiquines y Suministros
-                    </button>
                 </div>
             </div>
         </div>
@@ -500,71 +317,12 @@
                 </button>
             </div>
             <div class="card-body">
-                <div class="list-group list-group-flush">
-                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <div class="d-flex align-items-center">
-                            <div class="avatar bg-success text-white rounded-circle me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                                <i class="bi bi-person-check-fill"></i>
-                            </div>
-                            <div>
-                                <strong>Carlos Ramírez</strong>
-                                <p class="mb-0 small text-muted">Coordinador - Disponible</p>
-                            </div>
-                        </div>
-                        <span class="badge bg-success">Activo</span>
-                    </div>
-                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <div class="d-flex align-items-center">
-                            <div class="avatar bg-success text-white rounded-circle me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                                <i class="bi bi-person-check-fill"></i>
-                            </div>
-                            <div>
-                                <strong>Ana Torres</strong>
-                                <p class="mb-0 small text-muted">Primeros Auxilios - Disponible</p>
-                            </div>
-                        </div>
-                        <span class="badge bg-success">Activo</span>
-                    </div>
-                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <div class="d-flex align-items-center">
-                            <div class="avatar bg-warning text-white rounded-circle me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                                <i class="bi bi-person-fill"></i>
-                            </div>
-                            <div>
-                                <strong>Miguel Sánchez</strong>
-                                <p class="mb-0 small text-muted">Evacuación - En servicio</p>
-                            </div>
-                        </div>
-                        <span class="badge bg-warning">En Servicio</span>
-                    </div>
-                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <div class="d-flex align-items-center">
-                            <div class="avatar bg-success text-white rounded-circle me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                                <i class="bi bi-person-check-fill"></i>
-                            </div>
-                            <div>
-                                <strong>Laura Gómez</strong>
-                                <p class="mb-0 small text-muted">Control Incendios - Disponible</p>
-                            </div>
-                        </div>
-                        <span class="badge bg-success">Activo</span>
-                    </div>
-                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <div class="d-flex align-items-center">
-                            <div class="avatar bg-secondary text-white rounded-circle me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                                <i class="bi bi-person-x-fill"></i>
-                            </div>
-                            <div>
-                                <strong>Pedro Martínez</strong>
-                                <p class="mb-0 small text-muted">Comunicaciones - No disponible</p>
-                            </div>
-                        </div>
-                        <span class="badge bg-secondary">Fuera</span>
-                    </div>
+                <div class="list-group list-group-flush" id="listaBrigadistas">
+                    <div class="text-center py-3 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Cargando...</div>
                 </div>
-                <button class="btn btn-sm btn-outline-secondary w-100 mt-3" onclick="verTodaBrigada()">
+                <a href="{% url 'mi_brigada' %}" class="btn btn-sm btn-outline-secondary w-100 mt-3">
                     Ver todos los brigadistas
-                </button>
+                </a>
             </div>
         </div>
     </div>
@@ -588,74 +346,78 @@
     </div>
 </div>
 
-<!-- Estadísticas y Capacitaciones -->
+<!-- Timeline de Emergencias y Estadísticas -->
 <div class="row g-4">
-    <div class="col-md-6">
+    <!-- Timeline de Emergencias -->
+    <div class="col-lg-8">
         <div class="card card-modern">
-            <div class="card-header-modern">
+            <div class="card-header-modern d-flex justify-content-between align-items-center">
                 <h6 class="mb-0">
-                    <i class="bi bi-graph-up me-2"></i>
-                    Estadísticas de Emergencias
+                    <i class="bi bi-clock-history me-2"></i>
+                    Timeline de Emergencias
+                    <span class="badge bg-info ms-1" style="font-size:0.6rem;">EN VIVO</span>
                 </h6>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-secondary active" onclick="filtrarTimeline('todas')">Todas</button>
+                    <button class="btn btn-outline-danger" onclick="filtrarTimeline('activas')">Activas</button>
+                    <button class="btn btn-outline-success" onclick="filtrarTimeline('resueltas')">Resueltas</button>
+                </div>
             </div>
-            <div class="card-body">
-                <canvas id="emergenciasChart" height="80"></canvas>
-                <div class="row text-center mt-4">
-                    <div class="col-4">
-                        <h5 class="text-danger mb-0">2</h5>
-                        <small class="text-muted">Críticas</small>
-                    </div>
-                    <div class="col-4">
-                        <h5 class="text-warning mb-0">4</h5>
-                        <small class="text-muted">Menores</small>
-                    </div>
-                    <div class="col-4">
-                        <h5 class="text-info mb-0">2</h5>
-                        <small class="text-muted">Información</small>
+            <div class="card-body" style="max-height: 500px; overflow-y: auto;">
+                <div id="timelineEmergencias" class="timeline-container">
+                    <div class="text-center py-4 text-muted">
+                        <div class="spinner-border spinner-border-sm me-2"></div>Cargando timeline...
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="col-md-6">
-        <div class="card card-modern">
+    <!-- Estadísticas del Mes -->
+    <div class="col-lg-4">
+        <div class="card card-modern mb-4">
             <div class="card-header-modern">
                 <h6 class="mb-0">
-                    <i class="bi bi-calendar-check me-2"></i>
-                    Próximas Capacitaciones
+                    <i class="bi bi-graph-up me-2"></i>
+                    Estadísticas del Mes
                 </h6>
             </div>
             <div class="card-body">
-                <div class="list-group">
-                    <div class="list-group-item">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6 class="mb-1">Simulacro de Evacuación</h6>
-                                <p class="mb-1 small text-muted">Práctica general de evacuación</p>
-                                <small class="text-primary"><i class="bi bi-calendar3 me-1"></i>20 de Diciembre - 9:00 AM</small>
-                            </div>
-                            <span class="badge bg-primary">Programado</span>
-                        </div>
+                <div id="statsEmergencias">
+                    <div class="text-center py-3 text-muted">
+                        <div class="spinner-border spinner-border-sm me-2"></div>Cargando...
                     </div>
-                    <div class="list-group-item">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6 class="mb-1">Primeros Auxilios Avanzados</h6>
-                                <p class="mb-1 small text-muted">Certificación renovación</p>
-                                <small class="text-primary"><i class="bi bi-calendar3 me-1"></i>28 de Diciembre - 2:00 PM</small>
-                            </div>
-                            <span class="badge bg-primary">Programado</span>
-                        </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tiempos de Respuesta -->
+        <div class="card card-modern">
+            <div class="card-header-modern">
+                <h6 class="mb-0">
+                    <i class="bi bi-stopwatch me-2"></i>
+                    Tiempos de Respuesta
+                </h6>
+            </div>
+            <div class="card-body">
+                <div id="tiemposRespuesta">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted">Promedio de atencion</span>
+                        <span class="fw-bold text-primary" id="tiempoPromedio">-- min</span>
                     </div>
-                    <div class="list-group-item">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6 class="mb-1">Manejo de Extintores</h6>
-                                <p class="mb-1 small text-muted">Capacitación teórico-práctica</p>
-                                <small class="text-success"><i class="bi bi-check-circle me-1"></i>Completado - 10 de Diciembre</small>
-                            </div>
-                            <span class="badge bg-success">Completado</span>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted">Mejor tiempo</span>
+                        <span class="fw-bold text-success" id="tiempoMejor">-- min</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted">Tiempo de resolucion</span>
+                        <span class="fw-bold text-info" id="tiempoResolucion">-- min</span>
+                    </div>
+                    <hr>
+                    <div class="text-center">
+                        <small class="text-muted">Meta: &lt; 5 min atencion inicial</small>
+                        <div class="progress mt-2" style="height: 8px;">
+                            <div class="progress-bar bg-success" id="progressMeta" style="width: 0%"></div>
                         </div>
                     </div>
                 </div>
@@ -667,9 +429,66 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+// Configuracion de auto-refresh
+const REFRESH_INTERVAL = 30000; // 30 segundos
+let refreshTimers = {};
+let lastUpdate = null;
+let modalEmergencia = null;
+
+function getCookie(name) {
+    let v = null;
+    document.cookie.split(';').forEach(c => {
+        c = c.trim();
+        if (c.startsWith(name + '=')) v = decodeURIComponent(c.substring(name.length + 1));
+    });
+    return v;
+}
+
+function actualizarIndicadorTiempo() {
+    const ahora = new Date();
+    lastUpdate = ahora;
+    const indicator = document.getElementById('lastUpdateIndicator');
+    if (indicator) {
+        indicator.innerHTML = `<i class="bi bi-arrow-repeat me-1"></i>Actualizado: ${ahora.toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit', second:'2-digit'})}`;
+    }
+}
+
+function iniciarAutoRefresh() {
+    // Refrescar emergencias y timeline cada 15 segundos (critico)
+    refreshTimers.emergencias = setInterval(() => {
+        cargarEmergencias();
+        cargarTimeline();
+        actualizarIndicadorTiempo();
+    }, 15000);
+
+    // Refrescar brigadistas cada 30 segundos
+    refreshTimers.brigadistas = setInterval(() => {
+        cargarBrigadistas();
+    }, REFRESH_INTERVAL);
+
+    // Refrescar equipos y estadisticas cada 60 segundos
+    refreshTimers.equipos = setInterval(() => {
+        cargarEstadoEquipos();
+        cargarEstadisticas();
+    }, 60000);
+
+    console.log('Auto-refresh iniciado: emergencias/timeline cada 15s, brigadistas cada 30s, equipos/stats cada 60s');
+}
+
+function detenerAutoRefresh() {
+    Object.values(refreshTimers).forEach(timer => clearInterval(timer));
+    refreshTimers = {};
+    console.log('Auto-refresh detenido');
+}
+
 // Mapa de Evacuación
-const map = L.map('evacuationMap').setView([5.5339, -73.3674], 17);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+const map = L.map('evacuationMap').setView([5.7303596, -72.8943613], 17);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Esri'
+}).addTo(map);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
+    pane: 'overlayPane'
+}).addTo(map);
 
 // Iconos personalizados
 const puntoEncuentroIcon = L.divIcon({
@@ -684,109 +503,805 @@ const extintorIcon = L.divIcon({
     iconSize: [25, 25]
 });
 
-// Puntos de encuentro
-L.marker([5.5342, -73.3670], {icon: puntoEncuentroIcon}).addTo(map)
-    .bindPopup('<b>Punto de Encuentro 1</b><br>Cancha Principal<br>Capacidad: 200 personas');
-L.marker([5.5336, -73.3678], {icon: puntoEncuentroIcon}).addTo(map)
-    .bindPopup('<b>Punto de Encuentro 2</b><br>Parqueadero Trasero<br>Capacidad: 150 personas');
+// Cargar puntos de encuentro y equipamiento desde la API
+fetch('/api/mapas/api/puntos-encuentro/')
+    .then(r => r.json())
+    .then(data => {
+        (data.results || data).forEach(p => {
+            L.marker([p.latitud, p.longitud], {icon: puntoEncuentroIcon}).addTo(map)
+                .bindPopup(`<b>${p.nombre}</b><br>${p.descripcion || ''}<br>Capacidad: ${p.capacidad || '-'} personas`);
+        });
+    }).catch(() => {});
 
-// Extintores
-L.marker([5.5339, -73.3674], {icon: extintorIcon}).addTo(map).bindPopup('Extintor - Entrada');
-L.marker([5.5341, -73.3676], {icon: extintorIcon}).addTo(map).bindPopup('Extintor - Bloque A');
+fetch('/api/mapas/api/equipamientos/')
+    .then(r => r.json())
+    .then(data => {
+        (data.results || data).forEach(e => {
+            if (e.tipo === 'EXTINTOR') {
+                L.marker([e.latitud, e.longitud], {icon: extintorIcon}).addTo(map)
+                    .bindPopup(`<b>${e.nombre}</b><br>${e.descripcion || ''}<br>Estado: ${e.estado}`);
+            }
+        });
+    }).catch(() => {});
 
-// Gráfico de Emergencias
-const ctx = document.getElementById('emergenciasChart');
-if (ctx) {
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
-            datasets: [{
-                label: 'Emergencias',
-                data: [12, 10, 8, 15, 9, 11, 7, 13, 6, 8, 10, 8],
-                backgroundColor: 'rgba(244, 67, 54, 0.6)',
-                borderColor: '#f44336',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true } }
+// Cargar datos dinamicos
+document.addEventListener('DOMContentLoaded', function() {
+    modalEmergencia = new bootstrap.Modal(document.getElementById('modalEmergencia'));
+    cargarEmergencias();
+    cargarBrigadistas();
+    cargarEstadoEquipos();
+    cargarTiposEmergencia();
+    cargarTimeline();
+    cargarEstadisticas();
+    actualizarIndicadorTiempo();
+    iniciarAutoRefresh();
+});
+
+// Detener refresh cuando la pagina no es visible
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        detenerAutoRefresh();
+    } else {
+        cargarEmergencias();
+        cargarBrigadistas();
+        cargarEstadoEquipos();
+        cargarTimeline();
+        cargarEstadisticas();
+        actualizarIndicadorTiempo();
+        iniciarAutoRefresh();
+    }
+});
+
+async function cargarEmergencias() {
+    try {
+        const r = await fetch('/api/emergencias/emergencias/');
+        const data = await r.json();
+        const lista = data.results || data;
+
+        const activas = lista.filter(e => e.estado === 'REPORTADA' || e.estado === 'EN_ATENCION');
+        const recientes = lista.slice(0, 10);
+
+        // Actualizar estado
+        const card = document.getElementById('cardEstado');
+        const texto = document.getElementById('estadoTexto');
+        const sub = document.getElementById('estadoSub');
+        const icono = document.getElementById('estadoIcono');
+
+        if (activas.length > 0) {
+            card.classList.add('border-danger');
+            texto.className = 'fw-bold mb-0 text-danger';
+            texto.textContent = 'EMERGENCIA';
+            sub.innerHTML = `<i class="bi bi-exclamation-triangle"></i> ${activas.length} emergencia(s) activa(s)`;
+            sub.className = 'text-danger';
+            icono.className = 'bi bi-exclamation-triangle-fill fs-2 text-danger';
+        } else {
+            card.classList.add('border-success');
+            texto.className = 'fw-bold mb-0 text-success';
+            texto.textContent = 'NORMAL';
+            sub.innerHTML = '<i class="bi bi-shield-check"></i> Sin emergencias activas';
+            sub.className = 'text-success';
+            icono.className = 'bi bi-check-circle-fill fs-2 text-success';
         }
-    });
-}
 
-// Funciones existentes
-function activarEmergencia() {
-    if (confirm('⚠️ ¿ACTIVAR PROTOCOLO DE EMERGENCIA?\n\nEsto alertará a todo el personal y activará los sistemas de emergencia.')) {
-        const tipo = prompt('Tipo de emergencia:\n1. Incendio\n2. Evacuación\n3. Médica\n4. Seguridad\n5. Otra\n\nIngrese el número:');
-        if (tipo) {
-            alert('🚨 EMERGENCIA ACTIVADA\n\nNotificaciones enviadas:\n✓ Todo el personal de brigada\n✓ Vigilancia\n✓ Personal administrativo\n✓ Servicios de emergencia externos');
+        // Alerta
+        const alertaDiv = document.getElementById('alertaEmergencias');
+        if (activas.length > 0) {
+            alertaDiv.innerHTML = `<div class="alert alert-danger mb-3"><i class="bi bi-exclamation-triangle-fill me-2"></i><strong>${activas.length} emergencia(s) activa(s)</strong> requieren atencion inmediata.</div>`;
+        } else {
+            alertaDiv.innerHTML = '<div class="alert alert-success mb-3"><i class="bi bi-check-circle-fill me-2"></i>Sin emergencias activas. Sistema operando normalmente.</div>';
         }
+
+        // Tabla
+        const tbody = document.getElementById('tablaEmergencias');
+        if (!recientes.length) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Sin emergencias registradas</td></tr>';
+            return;
+        }
+        const estadoColor = {REPORTADA:'warning', EN_ATENCION:'info', CONTROLADA:'primary', RESUELTA:'success', FALSA_ALARMA:'secondary'};
+        tbody.innerHTML = recientes.map(e => `
+            <tr class="${(e.estado==='REPORTADA'||e.estado==='EN_ATENCION')?'table-warning':''}">
+                <td><strong>${e.tipo_nombre || 'Emergencia'}</strong></td>
+                <td>${e.descripcion_ubicacion || e.descripcion || '-'}</td>
+                <td><span class="badge bg-${estadoColor[e.estado]||'secondary'}">${e.estado}</span></td>
+                <td>${new Date(e.fecha_hora_reporte).toLocaleString('es-CO',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</td>
+                <td>
+                    <a href="/emergencias/" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i></a>
+                </td>
+            </tr>`).join('');
+    } catch(e) {
+        document.getElementById('tablaEmergencias').innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error al cargar</td></tr>';
     }
 }
 
-function evacuarZona() {
-    const zona = prompt('Ingrese la zona a evacuar (ej: Bloque A, Piso 2, Cafetería):');
-    if (zona) {
-        if (confirm(`¿Confirma evacuar: ${zona}?`)) {
-            alert(`🚨 EVACUACIÓN ACTIVADA\n\nZona: ${zona}\n\nAcciones tomadas:\n✓ Alarma activada\n✓ Salidas habilitadas\n✓ Brigadistas notificados\n✓ Punto de encuentro: Cancha Principal`);
+async function cargarBrigadistas() {
+    try {
+        const r = await fetch('/api/emergencias/brigada/');
+        const data = await r.json();
+        const lista = data.results || data;
+        const cont = document.getElementById('listaBrigadistas');
+
+        if (!lista.length) {
+            cont.innerHTML = '<p class="text-center text-muted py-3">No hay brigadistas registrados</p>';
+            return;
         }
+        const espNames = {PRIMEROS_AUXILIOS:'Primeros Auxilios', INCENDIOS:'Incendios', EVACUACION:'Evacuacion', RESCATE:'Rescate', COMUNICACIONES:'Comunicaciones', GENERAL:'General'};
+        cont.innerHTML = lista.map(b => {
+            const color = b.disponible ? 'success' : 'secondary';
+            const icon = b.disponible ? 'bi-person-check-fill' : 'bi-person-x-fill';
+            const estado = b.disponible ? 'Disponible' : 'No disponible';
+            return `
+                <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar bg-${color} text-white rounded-circle me-3" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;">
+                            <i class="bi ${icon}"></i>
+                        </div>
+                        <div>
+                            <strong>${b.usuario_nombre || 'Brigadista'}</strong>
+                            <p class="mb-0 small text-muted">${espNames[b.especializacion] || b.especializacion}</p>
+                        </div>
+                    </div>
+                    <span class="badge bg-${color}">${estado}</span>
+                </div>`;
+        }).join('');
+    } catch(e) {
+        document.getElementById('listaBrigadistas').innerHTML = '<p class="text-center text-danger py-3">Error al cargar</p>';
+    }
+}
+
+async function cargarEstadoEquipos() {
+    try {
+        const r = await fetch('/api/mapas/api/equipamientos/');
+        const data = await r.json();
+        const lista = data.results || data;
+        const cont = document.getElementById('estadoEquipos');
+
+        // Agrupar por tipo
+        const porTipo = {};
+        lista.forEach(e => {
+            if (!porTipo[e.tipo]) {
+                porTipo[e.tipo] = { total: 0, operativos: 0, items: [] };
+            }
+            porTipo[e.tipo].total++;
+            if (e.estado === 'OPERATIVO') {
+                porTipo[e.tipo].operativos++;
+            }
+            porTipo[e.tipo].items.push(e);
+        });
+
+        const iconos = {
+            EXTINTOR: 'bi-fire text-danger',
+            BOTIQUIN: 'bi-heart-pulse text-success',
+            CAMILLA: 'bi-hospital text-primary',
+            DESFIBRILADOR: 'bi-lightning-charge text-warning',
+            HIDRANTE: 'bi-droplet-fill text-info',
+            ALARMA: 'bi-bell text-warning',
+            SENALIZACION: 'bi-signpost text-secondary'
+        };
+
+        const nombres = {
+            EXTINTOR: 'Extintores',
+            BOTIQUIN: 'Botiquines',
+            CAMILLA: 'Camillas',
+            DESFIBRILADOR: 'Desfibriladores',
+            HIDRANTE: 'Hidrantes',
+            ALARMA: 'Alarmas',
+            SENALIZACION: 'Senalizacion'
+        };
+
+        if (Object.keys(porTipo).length === 0) {
+            cont.innerHTML = '<p class="text-center text-muted py-2">Sin equipos registrados</p>';
+            return;
+        }
+
+        let html = '';
+        for (const [tipo, info] of Object.entries(porTipo)) {
+            const pct = Math.round((info.operativos / info.total) * 100);
+            let colorBar = 'success';
+            let colorBadge = 'success';
+            if (pct < 100) colorBar = 'warning';
+            if (pct < 70) { colorBar = 'danger'; colorBadge = 'danger'; }
+
+            const noOperativos = info.items.filter(e => e.estado !== 'OPERATIVO');
+            let alertaHtml = '';
+            if (noOperativos.length > 0) {
+                alertaHtml = `<small class="text-muted">${noOperativos[0].nombre} requiere atencion</small>`;
+            }
+
+            html += `
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span><i class="bi ${iconos[tipo] || 'bi-tools text-secondary'} me-2"></i>${nombres[tipo] || tipo}</span>
+                        <span class="badge bg-${colorBadge}">${info.operativos}/${info.total}</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-${colorBar}" style="width: ${pct}%"></div>
+                    </div>
+                    ${alertaHtml}
+                </div>`;
+        }
+        cont.innerHTML = html;
+    } catch(e) {
+        document.getElementById('estadoEquipos').innerHTML = '<p class="text-center text-danger py-2">Error al cargar</p>';
+    }
+}
+
+async function cargarTiposEmergencia() {
+    try {
+        const r = await fetch('/api/emergencias/tipos/');
+        const data = await r.json();
+        const lista = data.results || data;
+        const select = document.getElementById('tipoEmergencia');
+
+        lista.forEach(tipo => {
+            const option = document.createElement('option');
+            option.value = tipo.id;
+            option.textContent = `${tipo.nombre} (${tipo.prioridad_display || tipo.prioridad})`;
+            select.appendChild(option);
+        });
+    } catch(e) {
+        console.error('Error cargando tipos de emergencia:', e);
+    }
+}
+
+function mostrarModalEmergencia() {
+    modalEmergencia.show();
+}
+
+async function confirmarEmergencia() {
+    const tipo = document.getElementById('tipoEmergencia').value;
+    const descripcion = document.getElementById('descripcionEmergencia').value;
+    const ubicacion = document.getElementById('ubicacionEmergencia').value;
+    const personasAfectadas = document.getElementById('personasAfectadas').value;
+    const requiereEvacuacion = document.getElementById('requiereEvacuacion').checked;
+
+    if (!tipo || !descripcion) {
+        alert('Por favor complete los campos obligatorios');
+        return;
+    }
+
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Activando...';
+
+    try {
+        // Obtener ubicacion actual si es posible
+        let latitud = 5.7303596; // Default SENA
+        let longitud = -72.8943613;
+
+        if (navigator.geolocation) {
+            try {
+                const pos = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {timeout: 5000});
+                });
+                latitud = pos.coords.latitude;
+                longitud = pos.coords.longitude;
+            } catch(e) {
+                console.log('No se pudo obtener ubicacion, usando default');
+            }
+        }
+
+        const r = await fetch('/api/emergencias/emergencias/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                tipo: tipo,
+                descripcion: descripcion,
+                descripcion_ubicacion: ubicacion,
+                latitud: latitud,
+                longitud: longitud,
+                personas_afectadas: parseInt(personasAfectadas) || 0,
+                requiere_evacuacion: requiereEvacuacion,
+                estado: 'REPORTADA'
+            })
+        });
+
+        if (r.ok) {
+            modalEmergencia.hide();
+            // Mostrar alerta de confirmacion
+            const alertHtml = `
+                <div class="alert alert-danger alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index:9999;" role="alert">
+                    <i class="bi bi-megaphone-fill me-2"></i>
+                    <strong>EMERGENCIA ACTIVADA</strong> - Se ha notificado a todo el personal de brigada.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                </div>`;
+            document.body.insertAdjacentHTML('beforeend', alertHtml);
+
+            // Limpiar formulario
+            document.getElementById('formEmergencia').reset();
+
+            // Recargar emergencias
+            cargarEmergencias();
+        } else {
+            const error = await r.json();
+            alert('Error al activar emergencia: ' + (error.detail || JSON.stringify(error)));
+        }
+    } catch(e) {
+        alert('Error de conexion: ' + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-megaphone-fill me-2"></i>CONFIRMAR EMERGENCIA';
+    }
+}
+
+function activarEmergencia() {
+    mostrarModalEmergencia();
+}
+
+function evacuarZona() {
+    if (confirm('EVACUAR ZONA?\n\nEsto activara el protocolo de evacuacion.')) {
+        mostrarModalEmergencia();
+        document.getElementById('requiereEvacuacion').checked = true;
     }
 }
 
 function verificarEquipos() {
-    alert('Sistema de verificación de equipos:\n\n✓ Extintores: 15/15 OK\n✓ Hidrantes: 8/8 OK\n✓ Botiquines: 6/6 OK\n⚠️ Alarmas: 4/5 (1 requiere revisión)\n\nPróxima inspección: 22 de Diciembre');
+    window.location.href = '{% url "equipos_brigada" %}';
 }
 
 function comunicarBrigada() {
-    alert('Sistema de comunicación de brigada:\n\n✓ Enviar mensaje grupal\n✓ Llamada de emergencia\n✓ Activar walkie-talkies\n✓ Notificación por SMS');
+    window.location.href = '{% url "mi_brigada" %}';
 }
 
-function verDetalleEmergencia(id) {
-    alert(`Ver detalles completos de emergencia #${id}:\n\n- Reporte inicial\n- Personal asignado\n- Acciones tomadas\n- Tiempo de respuesta\n- Recursos utilizados\n- Informe final`);
+function refrescarTodo() {
+    const btn = event.target.closest('button');
+    const icon = btn.querySelector('i');
+    icon.classList.add('spin-animation');
+
+    Promise.all([
+        cargarEmergencias(),
+        cargarBrigadistas(),
+        cargarEstadoEquipos(),
+        cargarTimeline(),
+        cargarEstadisticas()
+    ]).then(() => {
+        actualizarIndicadorTiempo();
+        icon.classList.remove('spin-animation');
+    }).catch(() => {
+        icon.classList.remove('spin-animation');
+    });
 }
 
-function verTodaBrigada() {
-    alert('Lista completa de brigadistas con:\n\n- Estado actual\n- Especialidades\n- Certificaciones\n- Historial de atención\n- Datos de contacto');
-}
+// Variables para el timeline
+let todasLasEmergencias = [];
+let filtroActual = 'todas';
 
-// NUEVAS FUNCIONES PARA LAS SECCIONES AGREGADAS
-function agregarSimulacro() {
-    alert('Agregar nuevo simulacro:\n\n1. Seleccionar tipo\n2. Definir fecha y hora\n3. Establecer ubicación\n4. Asignar personal\n5. Configurar objetivos\n\nEsta función abrirá el formulario de programación.');
-}
-
-function verHistorialSimulacros() {
-    alert('Historial de simulacros:\n\n- Últimos 6 meses\n- Tiempos de respuesta\n- Participación\n- Problemas identificados\n- Acciones de mejora\n\nGenerando reporte...');
-}
-
-function solicitarReposicion() {
-    alert('Solicitar reposición de EPP:\n\n1. Seleccionar equipo\n2. Especificar cantidad\n3. Prioridad (Normal/Urgente)\n4. Justificación\n5. Enviar a compras\n\nSolicitud enviada al área de compras.');
-}
-
-function reportarEmergenciaMedica() {
-    const tipo = prompt('Tipo de emergencia médica:\n1. Lesión\n2. Enfermedad\n3. Accidente\n4. Otro\n\nIngrese el número:');
-    if (tipo) {
-        alert('🚑 EMERGENCIA MÉDICA REPORTADA\n\nSe ha notificado a:\n✓ Brigadistas de primeros auxilios\n✓ Enfermería\n✓ Servicio médico externo\n✓ Coordinador SST\n\nMantenga al paciente cómodo hasta la llegada de ayuda.');
+async function cargarTimeline() {
+    try {
+        const r = await fetch('/api/emergencias/emergencias/');
+        const data = await r.json();
+        todasLasEmergencias = (data.results || data).sort((a, b) =>
+            new Date(b.fecha_hora_reporte) - new Date(a.fecha_hora_reporte)
+        );
+        renderizarTimeline(filtroActual);
+    } catch(e) {
+        document.getElementById('timelineEmergencias').innerHTML =
+            '<p class="text-center text-danger py-4">Error al cargar timeline</p>';
     }
 }
 
-function verBotiquines() {
-    alert('Estado de botiquines:\n\n✓ Botiquín Principal: Completamente surtido\n✓ Botiquín Área Producción: 95% surtido\n✓ Botiquín Oficinas: 90% surtido\n✓ Botiquín Almacén: 85% surtido\n\nPróxima revisión: 25 de Diciembre');
+function filtrarTimeline(filtro) {
+    filtroActual = filtro;
+    // Actualizar botones activos
+    document.querySelectorAll('.card-header-modern .btn-group .btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    renderizarTimeline(filtro);
+}
+
+function renderizarTimeline(filtro) {
+    const cont = document.getElementById('timelineEmergencias');
+    let lista = [...todasLasEmergencias];
+
+    if (filtro === 'activas') {
+        lista = lista.filter(e => e.estado === 'REPORTADA' || e.estado === 'EN_ATENCION');
+    } else if (filtro === 'resueltas') {
+        lista = lista.filter(e => e.estado === 'RESUELTA' || e.estado === 'CONTROLADA');
+    }
+
+    if (!lista.length) {
+        cont.innerHTML = `
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-check-circle fs-2 d-block mb-2"></i>
+                No hay emergencias ${filtro === 'activas' ? 'activas' : filtro === 'resueltas' ? 'resueltas' : ''} para mostrar
+            </div>`;
+        return;
+    }
+
+    const iconosEstado = {
+        REPORTADA: 'bi-exclamation',
+        EN_ATENCION: 'bi-person-gear',
+        CONTROLADA: 'bi-shield-check',
+        RESUELTA: 'bi-check-lg',
+        FALSA_ALARMA: 'bi-x-lg'
+    };
+
+    const estadosTexto = {
+        REPORTADA: 'Reportada',
+        EN_ATENCION: 'En Atencion',
+        CONTROLADA: 'Controlada',
+        RESUELTA: 'Resuelta',
+        FALSA_ALARMA: 'Falsa Alarma'
+    };
+
+    cont.innerHTML = lista.slice(0, 15).map(e => {
+        const fecha = new Date(e.fecha_hora_reporte);
+        const fechaStr = fecha.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' });
+        const horaStr = fecha.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+        const esActiva = e.estado === 'REPORTADA' || e.estado === 'EN_ATENCION';
+
+        // Calcular tiempo transcurrido
+        const ahora = new Date();
+        const diffMs = ahora - fecha;
+        const diffMins = Math.floor(diffMs / 60000);
+        let tiempoStr = '';
+        if (diffMins < 60) {
+            tiempoStr = `hace ${diffMins} min`;
+        } else if (diffMins < 1440) {
+            tiempoStr = `hace ${Math.floor(diffMins / 60)} h`;
+        } else {
+            tiempoStr = `hace ${Math.floor(diffMins / 1440)} dias`;
+        }
+
+        // Calcular tiempo de resolucion si esta resuelta
+        let tiempoResolucion = '';
+        if (e.fecha_hora_resolucion) {
+            const fechaRes = new Date(e.fecha_hora_resolucion);
+            const diffResMs = fechaRes - fecha;
+            const diffResMins = Math.floor(diffResMs / 60000);
+            if (diffResMins < 60) {
+                tiempoResolucion = `Resuelto en ${diffResMins} min`;
+            } else {
+                tiempoResolucion = `Resuelto en ${Math.floor(diffResMins / 60)}h ${diffResMins % 60}min`;
+            }
+        }
+
+        return `
+            <div class="timeline-item" data-estado="${e.estado}">
+                <div class="timeline-marker ${e.estado.toLowerCase()}">
+                    <i class="bi ${iconosEstado[e.estado] || 'bi-circle'}"></i>
+                </div>
+                <div class="timeline-content ${esActiva ? 'activa' : ''}">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <span class="timeline-time">${fechaStr} ${horaStr}</span>
+                            <span class="text-muted mx-2">•</span>
+                            <span class="timeline-time">${tiempoStr}</span>
+                        </div>
+                        <span class="badge bg-${esActiva ? 'danger' : e.estado === 'RESUELTA' ? 'success' : 'secondary'}">
+                            ${estadosTexto[e.estado] || e.estado}
+                        </span>
+                    </div>
+                    <div class="timeline-title">${e.tipo_nombre || 'Emergencia'}</div>
+                    <div class="timeline-description">${e.descripcion || 'Sin descripcion'}</div>
+                    <div class="timeline-meta">
+                        ${e.descripcion_ubicacion ? `
+                            <span class="timeline-meta-item">
+                                <i class="bi bi-geo-alt"></i> ${e.descripcion_ubicacion}
+                            </span>
+                        ` : ''}
+                        ${e.personas_afectadas ? `
+                            <span class="timeline-meta-item">
+                                <i class="bi bi-people"></i> ${e.personas_afectadas} afectados
+                            </span>
+                        ` : ''}
+                        ${e.requiere_evacuacion ? `
+                            <span class="timeline-meta-item text-danger">
+                                <i class="bi bi-sign-stop-fill"></i> Evacuacion
+                            </span>
+                        ` : ''}
+                        ${tiempoResolucion ? `
+                            <span class="timeline-meta-item text-success">
+                                <i class="bi bi-clock-history"></i> ${tiempoResolucion}
+                            </span>
+                        ` : ''}
+                    </div>
+                    ${esActiva ? `
+                        <div class="timeline-actions">
+                            <button class="btn btn-sm btn-info" onclick="atenderEmergencia(${e.id})">
+                                <i class="bi bi-person-check me-1"></i>Atender
+                            </button>
+                            <button class="btn btn-sm btn-success" onclick="resolverEmergencia(${e.id})">
+                                <i class="bi bi-check-circle me-1"></i>Resolver
+                            </button>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>`;
+    }).join('');
+}
+
+async function cargarEstadisticas() {
+    try {
+        const r = await fetch('/api/emergencias/emergencias/');
+        const data = await r.json();
+        const lista = data.results || data;
+
+        // Filtrar emergencias del mes actual
+        const ahora = new Date();
+        const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+        const emergenciasMes = lista.filter(e => new Date(e.fecha_hora_reporte) >= inicioMes);
+
+        // Contar por estado
+        const stats = {
+            reportadas: 0,
+            en_atencion: 0,
+            resueltas: 0,
+            falsas_alarmas: 0
+        };
+
+        emergenciasMes.forEach(e => {
+            if (e.estado === 'REPORTADA') stats.reportadas++;
+            else if (e.estado === 'EN_ATENCION') stats.en_atencion++;
+            else if (e.estado === 'RESUELTA' || e.estado === 'CONTROLADA') stats.resueltas++;
+            else if (e.estado === 'FALSA_ALARMA') stats.falsas_alarmas++;
+        });
+
+        const cont = document.getElementById('statsEmergencias');
+        cont.innerHTML = `
+            <div class="row text-center mb-3">
+                <div class="col-6 mb-3">
+                    <div class="p-3 bg-danger bg-opacity-10 rounded">
+                        <h4 class="text-danger mb-0">${stats.reportadas + stats.en_atencion}</h4>
+                        <small class="text-muted">Activas</small>
+                    </div>
+                </div>
+                <div class="col-6 mb-3">
+                    <div class="p-3 bg-success bg-opacity-10 rounded">
+                        <h4 class="text-success mb-0">${stats.resueltas}</h4>
+                        <small class="text-muted">Resueltas</small>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="p-3 bg-warning bg-opacity-10 rounded">
+                        <h4 class="text-warning mb-0">${emergenciasMes.length}</h4>
+                        <small class="text-muted">Total Mes</small>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="p-3 bg-secondary bg-opacity-10 rounded">
+                        <h4 class="text-secondary mb-0">${stats.falsas_alarmas}</h4>
+                        <small class="text-muted">Falsas Alarmas</small>
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted">Tasa de resolucion</small>
+                <strong>${emergenciasMes.length > 0 ? Math.round((stats.resueltas / emergenciasMes.length) * 100) : 0}%</strong>
+            </div>
+            <div class="progress mt-2" style="height: 6px;">
+                <div class="progress-bar bg-success" style="width: ${emergenciasMes.length > 0 ? Math.round((stats.resueltas / emergenciasMes.length) * 100) : 0}%"></div>
+            </div>
+        `;
+
+        // Calcular tiempos de respuesta
+        calcularTiemposRespuesta(lista);
+    } catch(e) {
+        document.getElementById('statsEmergencias').innerHTML =
+            '<p class="text-center text-danger py-2">Error al cargar</p>';
+    }
+}
+
+function calcularTiemposRespuesta(lista) {
+    const resueltas = lista.filter(e => e.estado === 'RESUELTA' && e.fecha_hora_resolucion);
+
+    if (resueltas.length === 0) {
+        return;
+    }
+
+    let tiempoTotal = 0;
+    let tiempoMinimo = Infinity;
+
+    resueltas.forEach(e => {
+        const inicio = new Date(e.fecha_hora_reporte);
+        const fin = new Date(e.fecha_hora_resolucion);
+        const diff = (fin - inicio) / 60000; // en minutos
+
+        tiempoTotal += diff;
+        if (diff < tiempoMinimo) tiempoMinimo = diff;
+    });
+
+    const promedio = Math.round(tiempoTotal / resueltas.length);
+
+    document.getElementById('tiempoPromedio').textContent = `${promedio} min`;
+    document.getElementById('tiempoMejor').textContent = tiempoMinimo < Infinity ? `${Math.round(tiempoMinimo)} min` : '-- min';
+    document.getElementById('tiempoResolucion').textContent = `${promedio} min`;
+
+    // Meta: menos de 5 minutos
+    const cumpleMeta = resueltas.filter(e => {
+        const inicio = new Date(e.fecha_hora_reporte);
+        const fin = new Date(e.fecha_hora_resolucion);
+        return (fin - inicio) / 60000 <= 5;
+    }).length;
+
+    const porcentajeMeta = Math.round((cumpleMeta / resueltas.length) * 100);
+    document.getElementById('progressMeta').style.width = `${porcentajeMeta}%`;
+}
+
+async function atenderEmergencia(id) {
+    if (!confirm('Confirmar que esta atendiendo esta emergencia?')) return;
+
+    try {
+        const r = await fetch(`/api/emergencias/emergencias/${id}/`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ estado: 'EN_ATENCION' })
+        });
+
+        if (r.ok) {
+            cargarEmergencias();
+            cargarTimeline();
+        } else {
+            alert('Error al actualizar emergencia');
+        }
+    } catch(e) {
+        alert('Error de conexion');
+    }
+}
+
+async function resolverEmergencia(id) {
+    if (!confirm('Confirmar que esta emergencia ha sido resuelta?')) return;
+
+    try {
+        const r = await fetch(`/api/emergencias/emergencias/${id}/`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                estado: 'RESUELTA',
+                fecha_hora_resolucion: new Date().toISOString()
+            })
+        });
+
+        if (r.ok) {
+            cargarEmergencias();
+            cargarTimeline();
+            cargarEstadisticas();
+        } else {
+            alert('Error al actualizar emergencia');
+        }
+    } catch(e) {
+        alert('Error de conexion');
+    }
 }
 </script>
 
-<!-- Estilos adicionales para las nuevas secciones -->
 <style>
-.bg-light-danger {
-    background-color: rgba(244, 67, 54, 0.1) !important;
-    border: 1px solid rgba(244, 67, 54, 0.2) !important;
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
-.bg-light-success {
-    background-color: rgba(76, 175, 80, 0.1) !important;
-    border: 1px solid rgba(76, 175, 80, 0.2) !important;
+.spin-animation {
+    animation: spin 1s linear infinite;
+}
+
+/* Timeline Styles */
+.timeline-container {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-container::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, #dee2e6 0%, #dee2e6 100%);
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 25px;
+    padding-left: 20px;
+}
+
+.timeline-item:last-child {
+    padding-bottom: 0;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -24px;
+    top: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.timeline-marker.reportada {
+    background: #ffc107;
+}
+
+.timeline-marker.en_atencion {
+    background: #17a2b8;
+    animation: pulse 2s infinite;
+}
+
+.timeline-marker.controlada {
+    background: #6f42c1;
+}
+
+.timeline-marker.resuelta {
+    background: #28a745;
+}
+
+.timeline-marker.falsa_alarma {
+    background: #6c757d;
+}
+
+@keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(23, 162, 184, 0.7); }
+    50% { box-shadow: 0 0 0 10px rgba(23, 162, 184, 0); }
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    border-left: 3px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.timeline-content:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.timeline-content.activa {
+    border-left-color: #dc3545;
+    background: #fff5f5;
+}
+
+.timeline-time {
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+.timeline-title {
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.timeline-description {
+    font-size: 0.9rem;
+    color: #495057;
+    margin-bottom: 8px;
+}
+
+.timeline-meta {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+}
+
+.timeline-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #6c757d;
+}
+
+.timeline-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
 }
 </style>
 {% endblock %}

@@ -41,6 +41,6 @@ class ContactoExternoAdmin(admin.ModelAdmin):
 
 @admin.register(NotificacionEmergencia)
 class NotificacionEmergenciaAdmin(admin.ModelAdmin):
-    list_display = ['emergencias', 'destinatario', 'tipo_notificacion', 'fecha_envio', 'leida']
+    list_display = ['emergencia', 'destinatario', 'tipo_notificacion', 'fecha_envio', 'leida']
     list_filter = ['tipo_notificacion', 'leida', 'fecha_envio']
     readonly_fields = ['fecha_envio']

@@ -24,6 +24,7 @@ class EmergenciaSerializer(serializers.ModelSerializer):
 
     # Serializer para emergencias
     tipo_detalle = TipoEmergenciaSerializer(source='tipo', read_only=True)
+    tipo_nombre = serializers.CharField(source='tipo.nombre', read_only=True)
     reportada_por_detalle = UsuarioSerializer(source='reportada_por', read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     tiempo_respuesta = serializers.ReadOnlyField()
@@ -35,7 +36,11 @@ class EmergenciaSerializer(serializers.ModelSerializer):
 
 class EmergenciaCreateSerializer(serializers.ModelSerializer):
 
-    # Serializer para crear emergencias (desde app móvil)
+    # Serializer para crear emergencias (desde app móvil y botón de pánico)
+    foto = serializers.ImageField(required=False, allow_null=True)
+    personas_afectadas = serializers.IntegerField(required=False, default=0)
+    requiere_evacuacion = serializers.BooleanField(required=False, default=False)
+
     class Meta:
         model = Emergencia
         fields = [
@@ -48,6 +53,7 @@ class BrigadaEmergenciaSerializer(serializers.ModelSerializer):
 
     # Serializer para brigada de emergencia
     usuario_detalle = UsuarioSerializer(source='usuario', read_only=True)
+    usuario_nombre = serializers.SerializerMethodField()
     especializacion_display = serializers.CharField(
         source='get_especializacion_display',
         read_only=True
@@ -61,6 +67,9 @@ class BrigadaEmergenciaSerializer(serializers.ModelSerializer):
     class Meta:
         model = BrigadaEmergencia
         fields = '__all__'
+
+    def get_usuario_nombre(self, obj):
+        return obj.usuario.get_full_name() or obj.usuario.username
 
 class NotificacionEmergenciaSerializer(serializers.ModelSerializer):
 

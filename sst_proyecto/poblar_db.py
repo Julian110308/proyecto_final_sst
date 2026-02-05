@@ -15,6 +15,7 @@ django.setup()
 
 from usuarios.models import Usuario, Visitante
 from control_acceso.models import Geocerca, RegistroAcceso, ConfiguracionAforo
+from mapas.models import EdificioBloque, PuntoEncuentro, EquipamientoSeguridad, RutaEvacuacion
 from django.utils import timezone
 from datetime import timedelta
 
@@ -145,8 +146,8 @@ def crear_geocerca():
         geocerca = Geocerca.objects.create(
             nombre='Centro Minero SENA Sogamoso',
             descripcion='Perímetro virtual del Centro Minero SENA en Sogamoso, Boyacá',
-            centro_latitud=5.5339,
-            centro_longitud=-73.3674,
+            centro_latitud=5.7303596,
+            centro_longitud=-72.8943613,
             radio_metros=200,
             activo=True
         )
@@ -246,12 +247,12 @@ def crear_registros_acceso(usuarios):
             defaults={
                 'tipo': 'INGRESO',
                 'metodo_ingreso': 'QR',
-                'latitud_ingreso': 5.5339,
-                'longitud_ingreso': -73.3674,
+                'latitud_ingreso': 5.7303596,
+                'longitud_ingreso': -72.8943613,
                 'fecha_hora_egreso': hora_egreso,
                 'metodo_egreso': 'QR',
-                'latitud_egreso': 5.5339,
-                'longitud_egreso': -73.3674
+                'latitud_egreso': 5.7303596,
+                'longitud_egreso': -72.8943613
             }
         )
 
@@ -270,8 +271,8 @@ def crear_registros_acceso(usuarios):
                 tipo='INGRESO',
                 fecha_hora_ingreso=hora_ingreso,
                 metodo_ingreso='MANUAL',
-                latitud_ingreso=5.5339,
-                longitud_ingreso=-73.3674
+                latitud_ingreso=5.7303596,
+                longitud_ingreso=-72.8943613
             )
             print(f"   ✅ Registro activo (dentro) para: {aprendiz.get_full_name()}")
         else:
@@ -288,10 +289,440 @@ def crear_registros_acceso(usuarios):
                 tipo='INGRESO',
                 fecha_hora_ingreso=hora_ingreso,
                 metodo_ingreso='AUTOMATICO',
-                latitud_ingreso=5.5339,
-                longitud_ingreso=-73.3674
+                latitud_ingreso=5.7303596,
+                longitud_ingreso=-72.8943613
             )
             print(f"   ✅ Registro activo para instructor: {instructor.get_full_name()}")
+
+
+def crear_edificios():
+    """Crea edificios/bloques del centro"""
+    print("\n🏢 Creando edificios/bloques...")
+
+    edificios_data = [
+        {
+            'nombre': 'Edificio Administrativo Principal',
+            'descripcion': 'Dirección y administración del Centro Nacional Minero',
+            'latitud': 5.73036,
+            'longitud': -72.89436,
+            'tipo': 'ADMINISTRATIVO',
+            'piso_minimo': 1,
+            'piso_maximo': 2,
+            'capacidad': 100,
+        },
+        {
+            'nombre': 'Bloque de Aulas Teóricas',
+            'descripcion': 'Aulas para formación teórica en minería',
+            'latitud': 5.73070,
+            'longitud': -72.89460,
+            'tipo': 'AULAS',
+            'piso_minimo': 1,
+            'piso_maximo': 2,
+            'capacidad': 300,
+        },
+        {
+            'nombre': 'Talleres de Minería',
+            'descripcion': 'Talleres prácticos de maquinaria y equipos mineros',
+            'latitud': 5.73000,
+            'longitud': -72.89410,
+            'tipo': 'TALLER',
+            'piso_minimo': 1,
+            'piso_maximo': 1,
+            'capacidad': 150,
+        },
+        {
+            'nombre': 'Mina Didáctica Subterránea',
+            'descripcion': 'Entrada a la mina didáctica para formación práctica',
+            'latitud': 5.72970,
+            'longitud': -72.89430,
+            'tipo': 'TALLER',
+            'piso_minimo': 1,
+            'piso_maximo': 1,
+            'capacidad': 50,
+        },
+        {
+            'nombre': 'Laboratorios de Geología y Topografía',
+            'descripcion': 'Laboratorios especializados en ciencias de la tierra',
+            'latitud': 5.73090,
+            'longitud': -72.89420,
+            'tipo': 'LABORATORIO',
+            'piso_minimo': 1,
+            'piso_maximo': 1,
+            'capacidad': 80,
+        },
+        {
+            'nombre': 'Cafetería y Bienestar',
+            'descripcion': 'Zona de alimentación y descanso para aprendices',
+            'latitud': 5.73050,
+            'longitud': -72.89480,
+            'tipo': 'Cafeteria',
+            'piso_minimo': 1,
+            'piso_maximo': 1,
+            'capacidad': 200,
+        },
+        {
+            'nombre': 'Parqueadero Principal',
+            'descripcion': 'Parqueadero de vehículos y motos',
+            'latitud': 5.73120,
+            'longitud': -72.89510,
+            'tipo': 'PARQUEADERO',
+            'piso_minimo': 1,
+            'piso_maximo': 1,
+            'capacidad': 100,
+        },
+    ]
+
+    edificios_creados = []
+    for data in edificios_data:
+        edificio, created = EdificioBloque.objects.get_or_create(
+            nombre=data['nombre'],
+            defaults=data
+        )
+        if created:
+            print(f"   ✅ Creado edificio: {edificio.nombre}")
+        else:
+            print(f"   ✓ Edificio '{edificio.nombre}' ya existe")
+        edificios_creados.append(edificio)
+
+    return edificios_creados
+
+
+def crear_puntos_encuentro():
+    """Crea puntos de encuentro para evacuación"""
+    print("\n🚩 Creando puntos de encuentro...")
+
+    puntos_data = [
+        {
+            'nombre': 'Punto Principal - Cancha Deportiva',
+            'descripcion': 'Cancha deportiva central - Espacio abierto amplio para evacuación masiva',
+            'latitud': 5.73040,
+            'longitud': -72.89430,
+            'capacidad': 500,
+            'tipo_terreno': 'ABIERTO',
+            'prioridad': 1,
+            'tiene_agua': True,
+            'tiene_sombra': False,
+            'tiene_baños': True,
+        },
+        {
+            'nombre': 'Punto Secundario - Parqueadero Norte',
+            'descripcion': 'Zona de parqueadero norte - Área despejada',
+            'latitud': 5.73130,
+            'longitud': -72.89510,
+            'capacidad': 250,
+            'tipo_terreno': 'ABIERTO',
+            'prioridad': 2,
+            'tiene_agua': False,
+            'tiene_sombra': True,
+            'tiene_baños': False,
+        },
+        {
+            'nombre': 'Punto Alterno - Entrada Principal',
+            'descripcion': 'Zona de acceso principal - Salida rápida del centro',
+            'latitud': 5.73150,
+            'longitud': -72.89460,
+            'capacidad': 200,
+            'tipo_terreno': 'ABIERTO',
+            'prioridad': 3,
+            'tiene_agua': False,
+            'tiene_sombra': False,
+            'tiene_baños': False,
+        },
+        {
+            'nombre': 'Punto de Evacuación Sur',
+            'descripcion': 'Punto sur para evacuación de talleres',
+            'latitud': 5.72960,
+            'longitud': -72.89410,
+            'capacidad': 150,
+            'tipo_terreno': 'PARQUE',
+            'prioridad': 2,
+            'tiene_agua': False,
+            'tiene_sombra': True,
+            'tiene_baños': False,
+        }
+    ]
+
+    puntos_creados = []
+    for data in puntos_data:
+        punto, created = PuntoEncuentro.objects.get_or_create(
+            nombre=data['nombre'],
+            defaults=data
+        )
+        if created:
+            print(f"   ✅ Creado punto de encuentro: {punto.nombre}")
+        else:
+            print(f"   ✓ Punto '{punto.nombre}' ya existe")
+        puntos_creados.append(punto)
+
+    return puntos_creados
+
+
+def crear_equipamientos(edificios):
+    """Crea equipamientos de seguridad"""
+    print("\n🧯 Creando equipamientos de seguridad...")
+
+    ahora = timezone.now()
+
+    # Mapear edificios por nombre para referencia
+    edificios_map = {e.nombre: e for e in edificios}
+
+    equipamientos_data = [
+        # Extintores
+        {
+            'nombre': 'Extintor entrada principal',
+            'codigo': 'EXT-001',
+            'tipo': 'EXTINTOR',
+            'descripcion': 'Extintor PQS 20 lbs - Entrada principal edificio administrativo',
+            'latitud': 5.73036,
+            'longitud': -72.89436,
+            'edificio': edificios_map.get('Edificio Administrativo Principal'),
+            'piso': 1,
+            'estado': 'OPERATIVO',
+            'ultima_revision': ahora - timedelta(days=30),
+            'proxima_revision': ahora + timedelta(days=150),
+        },
+        {
+            'nombre': 'Extintor pasillo segundo piso',
+            'codigo': 'EXT-002',
+            'tipo': 'EXTINTOR',
+            'descripcion': 'Extintor CO2 10 lbs - Pasillo segundo piso administrativo',
+            'latitud': 5.73038,
+            'longitud': -72.89438,
+            'edificio': edificios_map.get('Edificio Administrativo Principal'),
+            'piso': 2,
+            'estado': 'OPERATIVO',
+            'ultima_revision': ahora - timedelta(days=30),
+            'proxima_revision': ahora + timedelta(days=150),
+        },
+        {
+            'nombre': 'Extintor aulas primer piso',
+            'codigo': 'EXT-003',
+            'tipo': 'EXTINTOR',
+            'descripcion': 'Extintor PQS 20 lbs - Pasillo aulas primer piso',
+            'latitud': 5.73070,
+            'longitud': -72.89460,
+            'edificio': edificios_map.get('Bloque de Aulas Teóricas'),
+            'piso': 1,
+            'estado': 'OPERATIVO',
+            'ultima_revision': ahora - timedelta(days=45),
+            'proxima_revision': ahora + timedelta(days=135),
+        },
+        {
+            'nombre': 'Extintor entrada mina didáctica',
+            'codigo': 'EXT-004',
+            'tipo': 'EXTINTOR',
+            'descripcion': 'Extintor CO2 20 lbs - Entrada mina didáctica (zona especial)',
+            'latitud': 5.72970,
+            'longitud': -72.89430,
+            'edificio': edificios_map.get('Mina Didáctica Subterránea'),
+            'piso': 1,
+            'estado': 'OPERATIVO',
+            'ultima_revision': ahora - timedelta(days=15),
+            'proxima_revision': ahora + timedelta(days=165),
+        },
+        {
+            'nombre': 'Extintor talleres',
+            'codigo': 'EXT-005',
+            'tipo': 'EXTINTOR',
+            'descripcion': 'Extintor PQS 30 lbs - Área de talleres principal',
+            'latitud': 5.73000,
+            'longitud': -72.89410,
+            'edificio': edificios_map.get('Talleres de Minería'),
+            'piso': 1,
+            'estado': 'MANTENIMIENTO',
+            'ultima_revision': ahora - timedelta(days=200),
+            'proxima_revision': ahora - timedelta(days=20),  # Vencido
+        },
+        # Botiquines
+        {
+            'nombre': 'Botiquín administrativo',
+            'codigo': 'BOT-001',
+            'tipo': 'BOTIQUIN',
+            'descripcion': 'Botiquín tipo A completo - Recepción edificio administrativo',
+            'latitud': 5.73036,
+            'longitud': -72.89436,
+            'edificio': edificios_map.get('Edificio Administrativo Principal'),
+            'piso': 1,
+            'estado': 'OPERATIVO',
+            'ultima_revision': ahora - timedelta(days=20),
+            'proxima_revision': ahora + timedelta(days=70),
+        },
+        {
+            'nombre': 'Botiquín aulas',
+            'codigo': 'BOT-002',
+            'tipo': 'BOTIQUIN',
+            'descripcion': 'Botiquín tipo A - Bloque de aulas primer piso',
+            'latitud': 5.73070,
+            'longitud': -72.89460,
+            'edificio': edificios_map.get('Bloque de Aulas Teóricas'),
+            'piso': 1,
+            'estado': 'OPERATIVO',
+            'ultima_revision': ahora - timedelta(days=25),
+            'proxima_revision': ahora + timedelta(days=65),
+        },
+        {
+            'nombre': 'Botiquín talleres',
+            'codigo': 'BOT-003',
+            'tipo': 'BOTIQUIN',
+            'descripcion': 'Botiquín tipo B industrial - Talleres de minería',
+            'latitud': 5.73000,
+            'longitud': -72.89410,
+            'edificio': edificios_map.get('Talleres de Minería'),
+            'piso': 1,
+            'estado': 'OPERATIVO',
+            'ultima_revision': ahora - timedelta(days=10),
+            'proxima_revision': ahora + timedelta(days=80),
+        },
+        {
+            'nombre': 'Botiquín mina didáctica',
+            'codigo': 'BOT-004',
+            'tipo': 'BOTIQUIN',
+            'descripcion': 'Botiquín tipo B emergencias - Entrada mina didáctica',
+            'latitud': 5.72970,
+            'longitud': -72.89430,
+            'edificio': edificios_map.get('Mina Didáctica Subterránea'),
+            'piso': 1,
+            'estado': 'OPERATIVO',
+            'ultima_revision': ahora - timedelta(days=5),
+            'proxima_revision': ahora + timedelta(days=85),
+        },
+        # Camillas
+        {
+            'nombre': 'Camilla administrativa',
+            'codigo': 'CAM-001',
+            'tipo': 'CAMILLA',
+            'descripcion': 'Camilla plegable con inmovilizador cervical',
+            'latitud': 5.73036,
+            'longitud': -72.89436,
+            'edificio': edificios_map.get('Edificio Administrativo Principal'),
+            'piso': 1,
+            'estado': 'OPERATIVO',
+            'ultima_revision': ahora - timedelta(days=60),
+            'proxima_revision': ahora + timedelta(days=305),
+        },
+        {
+            'nombre': 'Camilla talleres',
+            'codigo': 'CAM-002',
+            'tipo': 'CAMILLA',
+            'descripcion': 'Camilla rígida para rescate en espacios confinados',
+            'latitud': 5.73000,
+            'longitud': -72.89410,
+            'edificio': edificios_map.get('Talleres de Minería'),
+            'piso': 1,
+            'estado': 'OPERATIVO',
+            'ultima_revision': ahora - timedelta(days=45),
+            'proxima_revision': ahora + timedelta(days=320),
+        },
+        # Alarmas
+        {
+            'nombre': 'Alarma central',
+            'codigo': 'ALR-001',
+            'tipo': 'ALARMA',
+            'descripcion': 'Alarma de emergencia central - Sistema de megafonía',
+            'latitud': 5.73040,
+            'longitud': -72.89440,
+            'edificio': edificios_map.get('Edificio Administrativo Principal'),
+            'piso': 1,
+            'estado': 'OPERATIVO',
+            'ultima_revision': ahora - timedelta(days=30),
+            'proxima_revision': ahora + timedelta(days=335),
+        },
+        {
+            'nombre': 'Alarma mina',
+            'codigo': 'ALR-002',
+            'tipo': 'ALARMA',
+            'descripcion': 'Alarma de emergencia mina didáctica - Sistema luminoso y sonoro',
+            'latitud': 5.72970,
+            'longitud': -72.89430,
+            'edificio': edificios_map.get('Mina Didáctica Subterránea'),
+            'piso': 1,
+            'estado': 'OPERATIVO',
+            'ultima_revision': ahora - timedelta(days=15),
+            'proxima_revision': ahora + timedelta(days=350),
+        },
+        # Hidrantes
+        {
+            'nombre': 'Hidrante parqueadero',
+            'codigo': 'HID-001',
+            'tipo': 'HIDRANTE',
+            'descripcion': 'Hidrante tipo poste - Zona parqueadero principal',
+            'latitud': 5.73120,
+            'longitud': -72.89510,
+            'edificio': edificios_map.get('Parqueadero Principal'),
+            'piso': 1,
+            'estado': 'OPERATIVO',
+            'ultima_revision': ahora - timedelta(days=90),
+            'proxima_revision': ahora + timedelta(days=90),
+        },
+        {
+            'nombre': 'Hidrante talleres',
+            'codigo': 'HID-002',
+            'tipo': 'HIDRANTE',
+            'descripcion': 'Hidrante tipo poste - Zona talleres',
+            'latitud': 5.73010,
+            'longitud': -72.89400,
+            'edificio': edificios_map.get('Talleres de Minería'),
+            'piso': 1,
+            'estado': 'FUERA_SERVICIO',
+            'ultima_revision': ahora - timedelta(days=180),
+            'proxima_revision': ahora - timedelta(days=30),  # Vencido
+        },
+        # DEA
+        {
+            'nombre': 'Desfibrilador administrativo',
+            'codigo': 'DEA-001',
+            'tipo': 'DEA',
+            'descripcion': 'Desfibrilador automático externo - Recepción administrativa',
+            'latitud': 5.73036,
+            'longitud': -72.89436,
+            'edificio': edificios_map.get('Edificio Administrativo Principal'),
+            'piso': 1,
+            'estado': 'OPERATIVO',
+            'ultima_revision': ahora - timedelta(days=7),
+            'proxima_revision': ahora + timedelta(days=83),
+        },
+        # Salidas de emergencia
+        {
+            'nombre': 'Salida emergencia norte',
+            'codigo': 'SAL-001',
+            'tipo': 'SALIDA_EMERGENCIA',
+            'descripcion': 'Señalización salida de emergencia norte - LED',
+            'latitud': 5.73080,
+            'longitud': -72.89470,
+            'edificio': edificios_map.get('Bloque de Aulas Teóricas'),
+            'piso': 1,
+            'estado': 'OPERATIVO',
+            'ultima_revision': ahora - timedelta(days=60),
+            'proxima_revision': ahora + timedelta(days=305),
+        },
+        {
+            'nombre': 'Salida emergencia sur',
+            'codigo': 'SAL-002',
+            'tipo': 'SALIDA_EMERGENCIA',
+            'descripcion': 'Señalización salida de emergencia sur - LED',
+            'latitud': 5.73060,
+            'longitud': -72.89450,
+            'edificio': edificios_map.get('Bloque de Aulas Teóricas'),
+            'piso': 1,
+            'estado': 'OPERATIVO',
+            'ultima_revision': ahora - timedelta(days=60),
+            'proxima_revision': ahora + timedelta(days=305),
+        },
+    ]
+
+    equipamientos_creados = []
+    for data in equipamientos_data:
+        equipo, created = EquipamientoSeguridad.objects.get_or_create(
+            codigo=data['codigo'],
+            defaults=data
+        )
+        if created:
+            print(f"   ✅ Creado {equipo.get_tipo_display()}: {equipo.codigo} - {equipo.nombre}")
+        else:
+            print(f"   ✓ Equipamiento '{equipo.codigo}' ya existe")
+        equipamientos_creados.append(equipo)
+
+    return equipamientos_creados
 
 
 def main():
@@ -308,6 +739,11 @@ def main():
         config_aforo = crear_configuracion_aforo()
         visitantes = crear_visitantes(usuarios)
         crear_registros_acceso(usuarios)
+
+        # Crear datos de mapas y equipamientos
+        edificios = crear_edificios()
+        puntos_encuentro = crear_puntos_encuentro()
+        equipamientos = crear_equipamientos(edificios)
 
         print("\n" + "=" * 60)
         print("✅ BASE DE DATOS POBLADA EXITOSAMENTE")

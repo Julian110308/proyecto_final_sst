@@ -70,7 +70,7 @@
         }
 
         .login-panel {
-            padding: 60px 50px;
+            padding: 40px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -88,7 +88,7 @@
         }
 
         .register-panel {
-            padding: 50px;
+            padding: 30px 40px 35px;
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
@@ -101,7 +101,6 @@
             right: 0;
             transform: translateX(100%);
             overflow-y: auto;
-            padding-top: 40px;
         }
 
         .register-panel::-webkit-scrollbar {
@@ -155,18 +154,28 @@
 
         .logo-section {
             text-align: center;
-            margin-bottom: 35px;
+            margin-bottom: 25px;
         }
 
-        /* NUEVO: Logo del SENA */
+        .register-panel .logo-section {
+            margin-bottom: 20px;
+        }
+
+        /* Logo del SENA */
         .sena-logo {
-            width: 100px;
-            height: 100px;
-            margin: 0 auto 15px;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             animation: pulse 2s ease-in-out infinite;
+        }
+
+        .register-panel .sena-logo {
+            width: 65px;
+            height: 65px;
+            margin-bottom: 10px;
         }
 
         .sena-logo img {
@@ -176,9 +185,9 @@
         }
 
         .logo-icon {
-            font-size: 50px;
+            font-size: 45px;
             color: #2e7d32;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             display: inline-block;
             animation: pulse 2s ease-in-out infinite;
         }
@@ -190,35 +199,35 @@
 
         .login-panel h1,
         .register-panel h1 {
-            font-size: 32px;
-            color: #1a1a1a;
-            margin-bottom: 8px;
+            font-size: 24px;
+            color: #212121;
+            margin-bottom: 4px;
             font-weight: 700;
         }
 
         .subtitle {
             color: #666;
-            font-size: 14px;
-            margin-bottom: 30px;
+            font-size: 13px;
+            margin-bottom: 0;
         }
 
         .system-name {
             color: #2e7d32;
             font-weight: 600;
-            font-size: 16px;
-            margin-top: 5px;
+            font-size: 14px;
+            margin-top: 4px;
         }
 
         .alert {
-            background: #fee;
-            border: 1px solid #fcc;
-            border-radius: 10px;
-            padding: 12px 15px;
-            margin-bottom: 20px;
+            background: #ffebee;
+            border: 1px solid #ffcdd2;
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 16px;
             display: flex;
             align-items: center;
             gap: 10px;
-            color: #c33;
+            color: #c62828;
             font-size: 13px;
             animation: shake 0.5s ease;
         }
@@ -236,35 +245,34 @@
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             position: relative;
         }
 
         .two-columns {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
+            gap: 16px;
+            margin-bottom: 0;
+        }
+
+        .two-columns .form-group {
+            margin-bottom: 16px;
         }
 
         .form-group label {
             display: block;
             font-size: 13px;
             font-weight: 600;
-            color: #333;
-            margin-bottom: 8px;
+            color: #444;
+            margin-bottom: 6px;
             letter-spacing: 0.3px;
         }
 
-        .form-group label i {
-            color: #2e7d32;
-            margin-right: 8px;
-            font-size: 15px;
-        }
-
         .form-group label .required {
-            color: #f44336;
+            color: #e53935;
             margin-left: 2px;
+            font-weight: 400;
         }
 
         .input-wrapper {
@@ -275,21 +283,22 @@
         .form-group input,
         .form-group select {
             width: 100%;
-            padding: 16px 50px 16px 50px;
+            padding: 12px 45px 12px 45px;
             border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            font-size: 15px;
+            border-radius: 10px;
+            font-size: 14px;
             color: #333;
             transition: all 0.3s ease;
             background: white;
             outline: none;
-            height: 52px;
+            height: 46px;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            box-sizing: border-box;
         }
 
         .form-group input::placeholder {
             color: #999;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .form-group input:not(:focus):not(:placeholder-shown),
@@ -318,11 +327,11 @@
 
         .input-icon-left {
             position: absolute;
-            left: 18px;
+            left: 14px;
             top: 50%;
             transform: translateY(-50%);
-            color: #666;
-            font-size: 18px;
+            color: #888;
+            font-size: 16px;
             pointer-events: none;
             transition: color 0.3s ease;
             z-index: 2;
@@ -335,11 +344,11 @@
 
         .input-icon-right {
             position: absolute;
-            right: 18px;
+            right: 14px;
             top: 50%;
             transform: translateY(-50%);
             color: #2e7d32;
-            font-size: 18px;
+            font-size: 16px;
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.3s ease;
@@ -353,17 +362,17 @@
 
         .toggle-password {
             position: absolute;
-            right: 18px;
+            right: 12px;
             top: 50%;
             transform: translateY(-50%);
             cursor: pointer;
-            color: #999;
-            font-size: 20px;
+            color: #888;
+            font-size: 18px;
             user-select: none;
             transition: all 0.3s ease;
             background: none;
             border: none;
-            padding: 5px;
+            padding: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -377,11 +386,11 @@
         }
 
         .password-input {
-            padding-right: 55px !important;
+            padding-right: 48px !important;
         }
 
         .password-input ~ .toggle-password {
-            right: 18px;
+            right: 12px;
         }
 
         .password-input ~ .input-icon-right {
@@ -397,8 +406,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            font-size: 14px;
+            margin-bottom: 16px;
+            font-size: 13px;
         }
 
         .remember-me {
@@ -406,7 +415,7 @@
             align-items: center;
             gap: 8px;
             cursor: pointer;
-            color: #555;
+            color: #666;
         }
 
         .remember-me input[type="checkbox"] {
@@ -418,7 +427,7 @@
         }
 
         .forgot-link {
-            color: #333;
+            color: #444;
             text-decoration: none;
             font-weight: 500;
             transition: color 0.3s ease;
@@ -431,10 +440,10 @@
 
         .btn {
             width: 100%;
-            padding: 18px;
+            padding: 14px;
             border: none;
             border-radius: 50px;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -443,20 +452,20 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .btn-login {
             background: linear-gradient(135deg, #2e7d32, #1a4d2e);
             color: white;
-            box-shadow: 0 8px 20px rgba(46, 125, 50, 0.3);
-            margin-bottom: 15px;
+            box-shadow: 0 6px 16px rgba(46, 125, 50, 0.3);
+            margin-top: 6px;
         }
 
         .btn-login:hover {
             background: linear-gradient(135deg, #1a4d2e, #0d3b1e);
             transform: translateY(-2px);
-            box-shadow: 0 12px 30px rgba(46, 125, 50, 0.4);
+            box-shadow: 0 10px 25px rgba(46, 125, 50, 0.4);
         }
 
         .btn-login:active {
@@ -465,8 +474,8 @@
 
         .switch-text {
             text-align: center;
-            margin-top: 20px;
-            font-size: 14px;
+            margin-top: 16px;
+            font-size: 13px;
             color: #666;
         }
 
@@ -479,7 +488,7 @@
             text-decoration: underline;
             transition: color 0.3s ease;
             padding: 0;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .switch-btn:hover {
@@ -487,12 +496,12 @@
         }
 
         .role-info {
-            background: #e8f5e9;
-            border-left: 4px solid #2e7d32;
-            padding: 10px 12px;
-            border-radius: 8px;
-            font-size: 12px;
-            color: #1a4d2e;
+            background: #f5f5f5;
+            border-left: 3px solid #2e7d32;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            color: #444;
             margin-top: 6px;
             display: none;
             line-height: 1.4;
@@ -563,8 +572,123 @@
         .form-group small {
             font-size: 11px;
             color: #666;
-            margin-top: 4px;
+            margin-top: 6px;
             display: block;
+            line-height: 1.4;
+        }
+
+        .role-note {
+            color: #888;
+            font-style: italic;
+            font-size: 11px;
+            margin-top: 6px;
+        }
+
+        /* Indicador de fortaleza de contraseña */
+        .password-strength {
+            margin-top: 8px;
+            display: none;
+        }
+
+        .password-strength.visible {
+            display: block;
+        }
+
+        .strength-bar {
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+
+        .strength-fill {
+            height: 100%;
+            width: 0%;
+            transition: all 0.3s ease;
+            border-radius: 3px;
+        }
+
+        .strength-fill.weak { width: 25%; background: #c62828; }
+        .strength-fill.fair { width: 50%; background: #e65100; }
+        .strength-fill.good { width: 75%; background: #1565c0; }
+        .strength-fill.strong { width: 100%; background: #2e7d32; }
+
+        .strength-text {
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .strength-text.weak { color: #c62828; }
+        .strength-text.fair { color: #e65100; }
+        .strength-text.good { color: #1565c0; }
+        .strength-text.strong { color: #2e7d32; }
+
+        /* Validación en tiempo real */
+        .validation-status {
+            font-size: 11px;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .validation-status.checking {
+            color: #757575;
+        }
+
+        .validation-status.available {
+            color: #2e7d32;
+        }
+
+        .validation-status.taken {
+            color: #c62828;
+        }
+
+        .validation-status i {
+            font-size: 11px;
+        }
+
+        /* Requisitos de contraseña */
+        .password-requirements {
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 10px 12px;
+            margin-top: 6px;
+            font-size: 11px;
+        }
+
+        .password-requirements p {
+            margin: 0 0 6px 0;
+            font-weight: 600;
+            color: #444;
+            font-size: 11px;
+        }
+
+        .requirement {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin: 3px 0;
+            color: #666;
+            font-size: 11px;
+        }
+
+        .requirement i {
+            font-size: 11px;
+        }
+
+        .requirement.met {
+            color: #2e7d32;
+        }
+
+        .requirement.met i::before {
+            content: "\F26B";
+        }
+
+        .requirement:not(.met) i::before {
+            content: "\F622";
         }
 
         @media (max-width: 1200px) {
@@ -601,7 +725,7 @@
 
             .login-panel,
             .register-panel {
-                padding: 40px 30px;
+                padding: 35px 30px;
             }
 
             .container-wrapper.register-mode .login-panel {
@@ -640,31 +764,32 @@
 
             .login-panel,
             .register-panel {
-                padding: 30px 20px;
+                padding: 25px 20px;
             }
 
             .login-panel h1,
             .register-panel h1 {
-                font-size: 24px;
+                font-size: 22px;
             }
 
             .form-group input,
             .form-group select {
-                padding: 14px 45px 14px 45px;
-                height: 48px;
+                padding: 12px 40px;
+                height: 44px;
+                font-size: 14px;
             }
 
             .options-row {
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 10px;
-                margin-bottom: 20px;
+                margin-bottom: 16px;
             }
-            
+
             .sena-logo {
-                width: 70px;
-                height: 70px;
-                margin-bottom: 10px;
+                width: 65px;
+                height: 65px;
+                margin-bottom: 8px;
             }
         }
 
@@ -716,7 +841,7 @@
                     
                     <div class="form-group">
                         <label for="id_username">
-                            <i class="bi bi-person"></i> Usuario <span class="required">*</span>
+                            Usuario <span class="required">*</span>
                         </label>
                         <div class="input-wrapper">
                             <span class="input-icon-left">
@@ -738,7 +863,7 @@
 
                     <div class="form-group">
                         <label for="id_password">
-                            <i class="bi bi-lock"></i> Contraseña <span class="required">*</span>
+                            Contraseña <span class="required">*</span>
                         </label>
                         <div class="input-wrapper">
                             <span class="input-icon-left">
@@ -802,17 +927,63 @@
                     <div class="two-columns">
                         <div class="form-group">
                             <label for="reg_username">
-                                <i class="bi bi-person-circle"></i> Usuario <span class="required">*</span>
+                                Usuario <span class="required">*</span>
                             </label>
                             <div class="input-wrapper">
                                 <span class="input-icon-left">
                                     <i class="bi bi-person-circle"></i>
                                 </span>
-                                <input 
-                                    type="text" 
-                                    name="username" 
-                                    id="reg_username" 
-                                    placeholder="usuario123"
+                                <input
+                                    type="text"
+                                    name="username"
+                                    id="reg_username"
+                                    placeholder="Ej: juan.perez"
+                                    required
+                                    minlength="3"
+                                    oninput="checkUsernameAvailability()"
+                                >
+                                <span class="input-icon-right">
+                                    <i class="bi bi-check-circle"></i>
+                                </span>
+                            </div>
+                            <div class="validation-status" id="username-status" style="display: none;"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="reg_rol">
+                                Rol <span class="required">*</span>
+                            </label>
+                            <div class="input-wrapper">
+                                <span class="input-icon-left">
+                                    <i class="bi bi-person-badge"></i>
+                                </span>
+                                <select name="rol" id="reg_rol" required onchange="showRoleInfo(this.value)" aria-describedby="role-info">
+                                    <option value="">Selecciona tu rol...</option>
+                                    <option value="APRENDIZ">Aprendiz SENA</option>
+                                    <option value="INSTRUCTOR">Instructor SENA</option>
+                                    <option value="VISITANTE">Visitante</option>
+                                </select>
+                            </div>
+                            <div id="role-info" class="role-info"></div>
+                            <small class="role-note">Los roles Administrativo, Vigilancia y Brigada son asignados por el administrador</small>
+                        </div>
+                    </div>
+
+                    <!-- Segunda fila: Nombre y Apellido -->
+                    <div class="two-columns">
+                        <div class="form-group">
+                            <label for="reg_first_name">
+                                Nombre <span class="required">*</span>
+                            </label>
+                            <div class="input-wrapper">
+                                <span class="input-icon-left">
+                                    <i class="bi bi-person"></i>
+                                </span>
+                                <input
+                                    type="text"
+                                    name="first_name"
+                                    id="reg_first_name"
+                                    placeholder="Tu nombre"
                                     required
                                 >
                                 <span class="input-icon-right">
@@ -822,54 +993,99 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="reg_rol">
-                                <i class="bi bi-person-badge"></i> Rol <span class="required">*</span>
+                            <label for="reg_last_name">
+                                Apellido <span class="required">*</span>
                             </label>
                             <div class="input-wrapper">
                                 <span class="input-icon-left">
-                                    <i class="bi bi-person-badge"></i>
+                                    <i class="bi bi-person"></i>
                                 </span>
-                                <select name="rol" id="reg_rol" required onchange="showRoleInfo(this.value)">
-                                    <option value="">Selecciona rol...</option>
-                                    <option value="APRENDIZ">Aprendiz</option>
-                                    <option value="INSTRUCTOR">Instructor</option>
-                                    <option value="ADMINISTRATIVO">Administrativo</option>
-                                    <option value="VIGILANCIA">Vigilancia</option>
-                                    <option value="BRIGADA">Brigada</option>
-                                    <option value="VISITANTE">Visitante</option>
-                                </select>
+                                <input
+                                    type="text"
+                                    name="last_name"
+                                    id="reg_last_name"
+                                    placeholder="Tu apellido"
+                                    required
+                                >
+                                <span class="input-icon-right">
+                                    <i class="bi bi-check-circle"></i>
+                                </span>
                             </div>
-                            <div id="role-info" class="role-info"></div>
                         </div>
                     </div>
 
-                    <!-- Segunda fila: Email en su propia línea -->
+                    <!-- Tercera fila: Email -->
                     <div class="form-group">
                         <label for="reg_email">
-                            <i class="bi bi-envelope"></i> Email <span class="required">*</span>
+                            Email <span class="required">*</span>
                         </label>
                         <div class="input-wrapper">
                             <span class="input-icon-left">
                                 <i class="bi bi-envelope"></i>
                             </span>
-                            <input 
-                                type="email" 
-                                name="email" 
-                                id="reg_email" 
-                                placeholder="correo@ejemplo.com"
+                            <input
+                                type="email"
+                                name="email"
+                                id="reg_email"
+                                placeholder="tu.correo@ejemplo.com"
                                 required
+                                oninput="checkEmailAvailability()"
                             >
                             <span class="input-icon-right">
                                 <i class="bi bi-check-circle"></i>
                             </span>
                         </div>
+                        <div class="validation-status" id="email-status" style="display: none;"></div>
                     </div>
 
-                    <!-- Tercera fila: Tipo Documento y Número de Documento en la misma línea -->
+                    <!-- Campos exclusivos para Aprendiz -->
+                    <div id="aprendiz-fields" style="display: none;">
+                        <div class="two-columns">
+                            <div class="form-group">
+                                <label for="reg_ficha">
+                                    N° Ficha <span class="required">*</span>
+                                </label>
+                                <div class="input-wrapper">
+                                    <span class="input-icon-left">
+                                        <i class="bi bi-journal-bookmark"></i>
+                                    </span>
+                                    <input
+                                        type="text"
+                                        name="ficha"
+                                        id="reg_ficha"
+                                        placeholder="Ej: 2543891"
+                                        maxlength="20"
+                                    >
+                                    <span class="input-icon-right">
+                                        <i class="bi bi-check-circle"></i>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="reg_programa">
+                                    Programa de Formación <span class="required">*</span>
+                                </label>
+                                <div class="input-wrapper">
+                                    <span class="input-icon-left">
+                                        <i class="bi bi-mortarboard"></i>
+                                    </span>
+                                    <select name="programa_formacion" id="reg_programa">
+                                        <option value="">Selecciona programa...</option>
+                                        <option value="Analisis y Desarrollo de Software">Análisis y Desarrollo de Software</option>
+                                        <option value="Maquinaria Pesada">Maquinaria Pesada</option>
+                                        <option value="Seguridad y Salud en el Trabajo">Seguridad y Salud en el Trabajo</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cuarta fila: Tipo Documento y Número de Documento -->
                     <div class="two-columns">
                         <div class="form-group">
                             <label for="reg_tipo_documento">
-                                <i class="bi bi-card-text"></i> Tipo Documento <span class="required">*</span>
+                                Tipo Documento <span class="required">*</span>
                             </label>
                             <div class="input-wrapper">
                                 <span class="input-icon-left">
@@ -887,78 +1103,98 @@
 
                         <div class="form-group">
                             <label for="reg_numero_documento">
-                                <i class="bi bi-123"></i> N° Documento <span class="required">*</span>
+                                N° Documento <span class="required">*</span>
                             </label>
                             <div class="input-wrapper">
                                 <span class="input-icon-left">
                                     <i class="bi bi-123"></i>
                                 </span>
-                                <input 
-                                    type="text" 
-                                    name="numero_documento" 
-                                    id="reg_numero_documento" 
-                                    placeholder="1234567890"
+                                <input
+                                    type="text"
+                                    name="numero_documento"
+                                    id="reg_numero_documento"
+                                    placeholder="Ingresa tu documento"
                                     required
-                                    maxlength="10"
-                                    pattern="\d{10}"
-                                    title="Debe tener exactamente 10 dígitos"
+                                    maxlength="15"
+                                    aria-describedby="doc-help"
                                 >
                                 <span class="input-icon-right">
                                     <i class="bi bi-check-circle"></i>
                                 </span>
                             </div>
-                            <small>* Máximo 10 dígitos numéricos</small>
+                            <small id="doc-help">Según el tipo: CC (8-10 dígitos), TI (10-11 dígitos), CE/PAS (alfanumérico)</small>
                         </div>
                     </div>
 
                     <!-- Cuarta fila: Contraseña en su propia línea -->
                     <div class="form-group">
                         <label for="reg_password1">
-                            <i class="bi bi-lock"></i> Contraseña <span class="required">*</span>
+                            Contraseña <span class="required">*</span>
                         </label>
                         <div class="input-wrapper">
                             <span class="input-icon-left">
                                 <i class="bi bi-lock"></i>
                             </span>
-                            <input 
-                                type="password" 
-                                name="password" 
-                                id="reg_password1" 
+                            <input
+                                type="password"
+                                name="password"
+                                id="reg_password1"
                                 class="password-input"
-                                placeholder="Mínimo 8 caracteres"
+                                placeholder="Crea una contraseña segura"
                                 required
                                 minlength="8"
+                                aria-describedby="password-requirements"
+                                oninput="checkPasswordStrength(this.value)"
                             >
                             <button type="button" class="toggle-password" onclick="togglePassword('reg_password1')">
                                 <i class="bi bi-eye"></i>
                             </button>
                         </div>
-                        <small>* Mínimo 8 caracteres con mayúsculas, minúsculas, números y caracteres especiales (@$!%*?&)</small>
+                        <!-- Indicador de fortaleza -->
+                        <div class="password-strength" id="password-strength">
+                            <div class="strength-bar">
+                                <div class="strength-fill" id="strength-fill"></div>
+                            </div>
+                            <span class="strength-text" id="strength-text">Muy débil</span>
+                        </div>
+                        <!-- Requisitos de contraseña -->
+                        <div class="password-requirements" id="password-requirements">
+                            <p>La contraseña debe tener:</p>
+                            <div class="requirement" id="req-length"><i class="bi bi-x-circle"></i> Mínimo 8 caracteres</div>
+                            <div class="requirement" id="req-upper"><i class="bi bi-x-circle"></i> Al menos una mayúscula (A-Z)</div>
+                            <div class="requirement" id="req-lower"><i class="bi bi-x-circle"></i> Al menos una minúscula (a-z)</div>
+                            <div class="requirement" id="req-number"><i class="bi bi-x-circle"></i> Al menos un número (0-9)</div>
+                            <div class="requirement" id="req-special"><i class="bi bi-x-circle"></i> Al menos un carácter especial (@$!%*?&)</div>
+                        </div>
                     </div>
 
                     <!-- Quinta fila: Confirmar Contraseña en su propia línea -->
                     <div class="form-group">
                         <label for="reg_password2">
-                            <i class="bi bi-lock-fill"></i> Confirmar Contraseña <span class="required">*</span>
+                            Confirmar Contraseña <span class="required">*</span>
                         </label>
                         <div class="input-wrapper">
                             <span class="input-icon-left">
                                 <i class="bi bi-lock-fill"></i>
                             </span>
-                            <input 
-                                type="password" 
-                                name="password2" 
-                                id="reg_password2" 
+                            <input
+                                type="password"
+                                name="password2"
+                                id="reg_password2"
                                 class="password-input"
                                 placeholder="Repite tu contraseña"
                                 required
                                 minlength="8"
+                                oninput="checkPasswordMatch()"
                             >
                             <button type="button" class="toggle-password" onclick="togglePassword('reg_password2')">
                                 <i class="bi bi-eye"></i>
                             </button>
                         </div>
-                        <small>* Debe coincidir con la contraseña anterior</small>
+                        <div class="validation-status" id="password-match-status" style="display: none;">
+                            <i class="bi bi-check-circle"></i>
+                            <span>Las contraseñas coinciden</span>
+                        </div>
                     </div>
 
                     <button type="submit" class="btn btn-login">
@@ -1042,17 +1278,17 @@
             }, 200);
         }
 
-        // Mostrar información del rol
+        // Mostrar información del rol y campos condicionales
         function showRoleInfo(rol) {
             const roleInfo = document.getElementById('role-info');
-            
+            const aprendizFields = document.getElementById('aprendiz-fields');
+            const fichaInput = document.getElementById('reg_ficha');
+            const programaInput = document.getElementById('reg_programa');
+
             const descriptions = {
-                'APRENDIZ': '👨‍🎓 Estudiante en formación del SENA - Acceso a módulos de aprendizaje y reportes',
-                'INSTRUCTOR': '👨‍🏫 Personal docente - Acceso completo a gestión de cursos y estudiantes',
-                'ADMINISTRATIVO': '💼 Personal administrativo - Gestión de usuarios y reportes',
-                'VIGILANCIA': '🛡️ Personal de seguridad - Control de acceso y emergencias',
-                'BRIGADA': '🚨 Brigada de emergencias - Acceso prioritario a módulos de seguridad',
-                'VISITANTE': '👤 Acceso temporal al centro - Restricciones específicas'
+                'APRENDIZ': 'Estudiante en formación del SENA - Acceso a módulos de aprendizaje, asistencia y reportes',
+                'INSTRUCTOR': 'Personal docente SENA - Gestión de aprendices, asistencia y seguimiento',
+                'VISITANTE': 'Acceso temporal al centro - Funciones limitadas durante la visita'
             };
 
             if (rol && descriptions[rol]) {
@@ -1061,81 +1297,359 @@
             } else {
                 roleInfo.style.display = 'none';
             }
+
+            // Mostrar campos de ficha y programa solo para APRENDIZ
+            if (rol === 'APRENDIZ') {
+                aprendizFields.style.display = 'block';
+                fichaInput.setAttribute('required', 'required');
+                programaInput.setAttribute('required', 'required');
+            } else {
+                aprendizFields.style.display = 'none';
+                fichaInput.removeAttribute('required');
+                programaInput.removeAttribute('required');
+                fichaInput.value = '';
+                programaInput.value = '';
+            }
         }
 
-        // Validación y limitación de número de documento a 10 dígitos
-        function limitDocumentNumber() {
-            const docInput = document.getElementById('reg_numero_documento');
-            
-            // Solo permitir números
-            docInput.value = docInput.value.replace(/[^0-9]/g, '');
-            
-            // Limitar a 10 dígitos
-            if (docInput.value.length > 10) {
-                docInput.value = docInput.value.slice(0, 10);
+        // Verificar fortaleza de contraseña
+        function checkPasswordStrength(password) {
+            const strengthDiv = document.getElementById('password-strength');
+            const strengthFill = document.getElementById('strength-fill');
+            const strengthText = document.getElementById('strength-text');
+
+            // Mostrar el indicador
+            if (password.length > 0) {
+                strengthDiv.classList.add('visible');
+            } else {
+                strengthDiv.classList.remove('visible');
             }
+
+            // Verificar requisitos individuales
+            const hasLength = password.length >= 8;
+            const hasUpper = /[A-Z]/.test(password);
+            const hasLower = /[a-z]/.test(password);
+            const hasNumber = /[0-9]/.test(password);
+            const hasSpecial = /[@$!%*?&]/.test(password);
+
+            // Actualizar indicadores visuales de requisitos
+            updateRequirement('req-length', hasLength);
+            updateRequirement('req-upper', hasUpper);
+            updateRequirement('req-lower', hasLower);
+            updateRequirement('req-number', hasNumber);
+            updateRequirement('req-special', hasSpecial);
+
+            // Calcular fortaleza
+            let strength = 0;
+            if (hasLength) strength++;
+            if (hasUpper) strength++;
+            if (hasLower) strength++;
+            if (hasNumber) strength++;
+            if (hasSpecial) strength++;
+
+            // Actualizar barra y texto
+            strengthFill.className = 'strength-fill';
+            strengthText.className = 'strength-text';
+
+            if (strength <= 1) {
+                strengthFill.classList.add('weak');
+                strengthText.classList.add('weak');
+                strengthText.textContent = 'Muy débil';
+            } else if (strength === 2) {
+                strengthFill.classList.add('fair');
+                strengthText.classList.add('fair');
+                strengthText.textContent = 'Débil';
+            } else if (strength === 3 || strength === 4) {
+                strengthFill.classList.add('good');
+                strengthText.classList.add('good');
+                strengthText.textContent = 'Buena';
+            } else {
+                strengthFill.classList.add('strong');
+                strengthText.classList.add('strong');
+                strengthText.textContent = 'Excelente';
+            }
+
+            // Verificar coincidencia si hay valor en password2
+            checkPasswordMatch();
+        }
+
+        // Actualizar requisito individual
+        function updateRequirement(elementId, isMet) {
+            const element = document.getElementById(elementId);
+            const icon = element.querySelector('i');
+            if (isMet) {
+                element.classList.add('met');
+                icon.className = 'bi bi-check-circle-fill';
+            } else {
+                element.classList.remove('met');
+                icon.className = 'bi bi-x-circle';
+            }
+        }
+
+        // Verificar coincidencia de contraseñas
+        function checkPasswordMatch() {
+            const password1 = document.getElementById('reg_password1').value;
+            const password2 = document.getElementById('reg_password2').value;
+            const matchStatus = document.getElementById('password-match-status');
+            const password2Input = document.getElementById('reg_password2');
+
+            if (password2.length > 0) {
+                matchStatus.style.display = 'flex';
+                if (password1 === password2) {
+                    matchStatus.className = 'validation-status available';
+                    matchStatus.innerHTML = '<i class="bi bi-check-circle-fill"></i><span>Las contraseñas coinciden</span>';
+                    password2Input.style.borderColor = '#4caf50';
+                } else {
+                    matchStatus.className = 'validation-status taken';
+                    matchStatus.innerHTML = '<i class="bi bi-x-circle-fill"></i><span>Las contraseñas no coinciden</span>';
+                    password2Input.style.borderColor = '#f44336';
+                }
+            } else {
+                matchStatus.style.display = 'none';
+                password2Input.style.borderColor = '';
+            }
+        }
+
+        // Validar documento según el tipo
+        function validateDocument() {
+            const tipoDoc = document.getElementById('reg_tipo_documento').value;
+            const numDoc = document.getElementById('reg_numero_documento');
+            const docHelp = document.getElementById('doc-help');
+            let isValid = true;
+            let message = '';
+
+            const value = numDoc.value.trim();
+
+            switch(tipoDoc) {
+                case 'CC': // Cédula de Ciudadanía: 8-10 dígitos
+                    numDoc.pattern = '\\d{8,10}';
+                    numDoc.maxLength = 10;
+                    isValid = /^\d{8,10}$/.test(value);
+                    message = 'Cédula de Ciudadanía: 8-10 dígitos numéricos';
+                    break;
+                case 'TI': // Tarjeta de Identidad: 10-11 dígitos
+                    numDoc.pattern = '\\d{10,11}';
+                    numDoc.maxLength = 11;
+                    isValid = /^\d{10,11}$/.test(value);
+                    message = 'Tarjeta de Identidad: 10-11 dígitos numéricos';
+                    break;
+                case 'CE': // Cédula de Extranjería: 6-7 dígitos
+                    numDoc.pattern = '\\d{6,7}';
+                    numDoc.maxLength = 7;
+                    isValid = /^\d{6,7}$/.test(value);
+                    message = 'Cédula de Extranjería: 6-7 dígitos numéricos';
+                    break;
+                case 'PAS': // Pasaporte: alfanumérico 6-9 caracteres
+                    numDoc.pattern = '[A-Za-z0-9]{6,9}';
+                    numDoc.maxLength = 9;
+                    isValid = /^[A-Za-z0-9]{6,9}$/.test(value);
+                    message = 'Pasaporte: 6-9 caracteres alfanuméricos';
+                    break;
+                default:
+                    message = 'Selecciona el tipo de documento primero';
+            }
+
+            docHelp.textContent = message;
+
+            if (value.length > 0 && tipoDoc) {
+                if (isValid) {
+                    numDoc.style.borderColor = '#4caf50';
+                    numDoc.style.background = 'rgba(76, 175, 80, 0.05)';
+                } else {
+                    numDoc.style.borderColor = '#f44336';
+                    numDoc.style.background = 'rgba(255, 68, 68, 0.05)';
+                }
+            } else {
+                numDoc.style.borderColor = '';
+                numDoc.style.background = '';
+            }
+
+            return isValid || value.length === 0;
+        }
+
+        // Debounce para validación asíncrona
+        let usernameTimeout, emailTimeout;
+
+        // Verificar disponibilidad de username
+        function checkUsernameAvailability() {
+            clearTimeout(usernameTimeout);
+            const username = document.getElementById('reg_username').value.trim();
+            const statusDiv = document.getElementById('username-status');
+
+            if (username.length < 3) {
+                statusDiv.style.display = 'none';
+                return;
+            }
+
+            statusDiv.style.display = 'flex';
+            statusDiv.className = 'validation-status checking';
+            statusDiv.innerHTML = '<i class="bi bi-hourglass-split"></i><span>Verificando disponibilidad...</span>';
+
+            usernameTimeout = setTimeout(() => {
+                fetch(`/api/auth/usuarios/?username=${encodeURIComponent(username)}`, {
+                    headers: { 'Accept': 'application/json' }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    const exists = Array.isArray(data) && data.some(u => u.username === username);
+                    if (exists) {
+                        statusDiv.className = 'validation-status taken';
+                        statusDiv.innerHTML = '<i class="bi bi-x-circle-fill"></i><span>Este usuario ya está en uso</span>';
+                    } else {
+                        statusDiv.className = 'validation-status available';
+                        statusDiv.innerHTML = '<i class="bi bi-check-circle-fill"></i><span>Usuario disponible</span>';
+                    }
+                })
+                .catch(() => {
+                    statusDiv.style.display = 'none';
+                });
+            }, 500);
+        }
+
+        // Verificar disponibilidad de email
+        function checkEmailAvailability() {
+            clearTimeout(emailTimeout);
+            const email = document.getElementById('reg_email').value.trim();
+            const statusDiv = document.getElementById('email-status');
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (!emailRegex.test(email)) {
+                statusDiv.style.display = 'none';
+                return;
+            }
+
+            statusDiv.style.display = 'flex';
+            statusDiv.className = 'validation-status checking';
+            statusDiv.innerHTML = '<i class="bi bi-hourglass-split"></i><span>Verificando...</span>';
+
+            emailTimeout = setTimeout(() => {
+                fetch(`/api/auth/usuarios/?email=${encodeURIComponent(email)}`, {
+                    headers: { 'Accept': 'application/json' }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    const exists = Array.isArray(data) && data.some(u => u.email === email);
+                    if (exists) {
+                        statusDiv.className = 'validation-status taken';
+                        statusDiv.innerHTML = '<i class="bi bi-x-circle-fill"></i><span>Este correo ya está registrado</span>';
+                    } else {
+                        statusDiv.className = 'validation-status available';
+                        statusDiv.innerHTML = '<i class="bi bi-check-circle-fill"></i><span>Correo disponible</span>';
+                    }
+                })
+                .catch(() => {
+                    statusDiv.style.display = 'none';
+                });
+            }, 500);
+        }
+
+        // Formatear documento según el tipo seleccionado
+        function formatDocumentNumber() {
+            const tipoDoc = document.getElementById('reg_tipo_documento').value;
+            const docInput = document.getElementById('reg_numero_documento');
+
+            if (tipoDoc === 'PAS') {
+                // Pasaporte: permitir letras y números, convertir a mayúsculas
+                docInput.value = docInput.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+            } else {
+                // Otros documentos: solo números
+                docInput.value = docInput.value.replace(/[^0-9]/g, '');
+            }
+
+            validateDocument();
+        }
+
+        // Mostrar mensaje de alerta
+        function showAlert(alertDiv, message, isSuccess = false) {
+            alertDiv.innerHTML = `
+                <div class="alert ${isSuccess ? 'success' : ''}" role="alert">
+                    <i class="bi bi-${isSuccess ? 'check-circle' : 'exclamation-triangle'}-fill"></i>
+                    <div>${message}</div>
+                </div>
+            `;
+            alertDiv.style.display = 'block';
+            // Scroll al mensaje
+            alertDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
         // Validación del formulario de registro
         document.getElementById('registerForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            
+
             const password1 = document.getElementById('reg_password1').value;
             const password2 = document.getElementById('reg_password2').value;
+            const tipoDoc = document.getElementById('reg_tipo_documento').value;
             const documento = document.getElementById('reg_numero_documento').value;
             const alertDiv = document.getElementById('register-alert');
-            
-            // Validar número de documento (debe tener 10 dígitos)
-            if (documento.length !== 10) {
-                alertDiv.innerHTML = `
-                    <div class="alert">
-                        <i class="bi bi-exclamation-triangle-fill"></i>
-                        <div>El número de documento debe tener exactamente 10 dígitos</div>
-                    </div>
-                `;
-                alertDiv.style.display = 'block';
+            const rol = document.getElementById('reg_rol').value;
+
+            // Validar tipo de documento seleccionado
+            if (!tipoDoc) {
+                showAlert(alertDiv, 'Por favor, selecciona un tipo de documento');
+                document.getElementById('reg_tipo_documento').focus();
+                return;
+            }
+
+            // Validar documento según el tipo
+            if (!validateDocument()) {
+                let docMessage = '';
+                switch(tipoDoc) {
+                    case 'CC': docMessage = 'La Cédula de Ciudadanía debe tener entre 8 y 10 dígitos'; break;
+                    case 'TI': docMessage = 'La Tarjeta de Identidad debe tener entre 10 y 11 dígitos'; break;
+                    case 'CE': docMessage = 'La Cédula de Extranjería debe tener entre 6 y 7 dígitos'; break;
+                    case 'PAS': docMessage = 'El Pasaporte debe tener entre 6 y 9 caracteres alfanuméricos'; break;
+                }
+                showAlert(alertDiv, docMessage);
                 document.getElementById('reg_numero_documento').focus();
                 return;
             }
 
-            // Validar contraseñas
+            // Validar contraseñas coincidan
             if (password1 !== password2) {
-                alertDiv.innerHTML = `
-                    <div class="alert">
-                        <i class="bi bi-exclamation-triangle-fill"></i>
-                        <div>Las contraseñas no coinciden. Por favor, verifica.</div>
-                    </div>
-                `;
-                alertDiv.style.display = 'block';
+                showAlert(alertDiv, 'Las contraseñas no coinciden. Verifica que ambas sean iguales.');
                 document.getElementById('reg_password2').focus();
                 return;
             }
 
+            // Validar longitud mínima de contraseña
             if (password1.length < 8) {
-                alertDiv.innerHTML = `
-                    <div class="alert">
-                        <i class="bi bi-exclamation-triangle-fill"></i>
-                        <div>La contraseña debe tener al menos 8 caracteres</div>
-                    </div>
-                `;
-                alertDiv.style.display = 'block';
+                showAlert(alertDiv, 'La contraseña debe tener al menos 8 caracteres');
+                document.getElementById('reg_password1').focus();
                 return;
             }
 
+            // Validar campos de aprendiz si el rol es APRENDIZ
+            if (rol === 'APRENDIZ') {
+                const ficha = document.getElementById('reg_ficha').value.trim();
+                const programa = document.getElementById('reg_programa').value.trim();
+                if (!ficha) {
+                    showAlert(alertDiv, 'El número de ficha es obligatorio para aprendices');
+                    document.getElementById('reg_ficha').focus();
+                    return;
+                }
+                if (!programa) {
+                    showAlert(alertDiv, 'Debes seleccionar tu programa de formación');
+                    document.getElementById('reg_programa').focus();
+                    return;
+                }
+            }
+
+            // Validar fortaleza de contraseña
             const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
             if (!strongRegex.test(password1)) {
-                alertDiv.innerHTML = `
-                    <div class="alert">
-                        <i class="bi bi-exclamation-triangle-fill"></i>
-                        <div>La contraseña debe contener mayúsculas, minúsculas, números y caracteres especiales (@$!%*?&)</div>
-                    </div>
-                `;
-                alertDiv.style.display = 'block';
+                showAlert(alertDiv, 'Tu contraseña no cumple todos los requisitos de seguridad. Revisa los indicadores debajo del campo.');
+                document.getElementById('reg_password1').focus();
                 return;
             }
 
+            // Deshabilitar botón mientras se procesa
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Creando cuenta...';
+
             const formData = new FormData(this);
-            
+
             fetch('/api/auth/usuarios/', {
                 method: 'POST',
                 body: formData,
@@ -1146,67 +1660,49 @@
             .then(response => response.json())
             .then(data => {
                 if (data.id || data.mensaje) {
-                    alertDiv.innerHTML = `
-                        <div class="alert success">
-                            <i class="bi bi-check-circle-fill"></i>
-                            <div>¡Cuenta creada exitosamente! Redirigiendo al login...</div>
-                        </div>
-                    `;
-                    alertDiv.style.display = 'block';
-                    
+                    showAlert(alertDiv, '¡Cuenta creada exitosamente! Redirigiendo al login...', true);
+
                     setTimeout(() => {
                         switchToLogin();
                         this.reset();
                         alertDiv.style.display = 'none';
-                        
-                        const loginAlert = document.querySelector('.login-panel .alert');
-                        if (loginAlert) {
-                            loginAlert.className = 'alert success';
-                            loginAlert.innerHTML = `
-                                <i class="bi bi-check-circle-fill"></i>
-                                <div>Cuenta creada exitosamente. Ahora puedes iniciar sesión.</div>
-                            `;
-                        }
-                    }, 3000);
+                        document.getElementById('password-strength').classList.remove('visible');
+
+                        // Mostrar mensaje en login
+                        const loginMessages = document.querySelector('.login-panel .logo-section');
+                        const successMsg = document.createElement('div');
+                        successMsg.className = 'alert success';
+                        successMsg.innerHTML = `
+                            <i class="bi bi-check-circle-fill"></i>
+                            <div>¡Registro exitoso! Ingresa tus credenciales para iniciar sesión.</div>
+                        `;
+                        loginMessages.insertAdjacentElement('afterend', successMsg);
+
+                        // Remover mensaje después de unos segundos
+                        setTimeout(() => successMsg.remove(), 5000);
+                    }, 2000);
                 } else {
-                    alertDiv.innerHTML = `
-                        <div class="alert">
-                            <i class="bi bi-exclamation-triangle-fill"></i>
-                            <div>${data.error || data.detail || 'Error al crear la cuenta. Verifica los datos.'}</div>
-                        </div>
-                    `;
-                    alertDiv.style.display = 'block';
+                    showAlert(alertDiv, data.error || data.detail || 'Error al crear la cuenta. Verifica los datos ingresados.');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alertDiv.innerHTML = `
-                    <div class="alert">
-                        <i class="bi bi-exclamation-triangle-fill"></i>
-                        <div>Error al crear la cuenta. Verifica tu conexión o intenta más tarde.</div>
-                    </div>
-                `;
-                alertDiv.style.display = 'block';
+                showAlert(alertDiv, 'Error de conexión. Verifica tu internet e intenta nuevamente.');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
             });
         });
 
         // Event listeners para el número de documento
         const docInput = document.getElementById('reg_numero_documento');
-        docInput.addEventListener('input', limitDocumentNumber);
-        docInput.addEventListener('focus', limitDocumentNumber);
+        docInput.addEventListener('input', formatDocumentNumber);
 
-        // Validación de email en tiempo real
-        document.getElementById('reg_email').addEventListener('blur', function() {
-            const email = this.value;
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            
-            if (email && !emailRegex.test(email)) {
-                this.style.borderColor = '#ff4444';
-                this.style.background = 'rgba(255, 68, 68, 0.05)';
-            } else if (email) {
-                this.style.borderColor = '#4CAF50';
-                this.style.background = 'rgba(76, 175, 80, 0.05)';
-            }
+        // Cuando cambie el tipo de documento, actualizar validación
+        document.getElementById('reg_tipo_documento').addEventListener('change', function() {
+            document.getElementById('reg_numero_documento').value = '';
+            validateDocument();
         });
 
         // Efecto de animación en inputs
@@ -1222,13 +1718,16 @@
             });
         });
 
-        // Auto-enfocar
+        // Auto-enfocar e inicialización
         document.addEventListener('DOMContentLoaded', function() {
             if (!document.getElementById('container').classList.contains('register-mode')) {
                 document.getElementById('id_username').focus();
             }
-            // Inicializar validación de documento
-            limitDocumentNumber();
+
+            // Inicializar tooltips de accesibilidad
+            document.querySelectorAll('.required').forEach(el => {
+                el.setAttribute('aria-label', 'Campo obligatorio');
+            });
         });
     </script>
 </body>

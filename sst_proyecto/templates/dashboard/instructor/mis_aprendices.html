@@ -10,32 +10,126 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="text-primary-green fw-bold">
-            <i class="bi bi-people-fill me-2"></i>Gestión de Aprendices
+            <i class="bi bi-people-fill me-2"></i>Mis Aprendices
         </h2>
-        <div class="badge bg-success fs-6">
-            Total: {{ total_aprendices }}
+        {% if ficha_seleccionada %}
+        <div class="d-flex gap-2">
+            <span class="badge bg-success fs-6">
+                Ficha {{ ficha_seleccionada }} - {{ total_aprendices }} aprendiz{{ total_aprendices|pluralize:"es" }}
+            </span>
+            <span class="badge bg-primary fs-6">
+                <i class="bi bi-person-check me-1"></i>{{ presentes_hoy }} presente{{ presentes_hoy|pluralize:"s" }} hoy
+            </span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Filtros: Programa y Ficha -->
+    <div class="card card-modern mb-4">
+        <div class="card-body">
+            <form method="GET" action="{% url 'mis_aprendices' %}" id="filtroForm">
+                <div class="row g-3 align-items-end">
+                    <!-- Selector de Programa -->
+                    <div class="col-md-4">
+                        <label for="selectPrograma" class="form-label fw-bold">
+                            <i class="bi bi-mortarboard me-1"></i>Programa de Formacion
+                        </label>
+                        <select class="form-select" id="selectPrograma" name="programa" onchange="this.form.submit()">
+                            <option value="">-- Seleccione un programa --</option>
+                            {% for programa in programas %}
+                                <option value="{{ programa }}" {% if programa_seleccionado == programa %}selected{% endif %}>{{ programa }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Selector de Ficha (solo si hay programa) -->
+                    {% if programa_seleccionado %}
+                    <div class="col-md-3">
+                        <label for="selectFicha" class="form-label fw-bold">
+                            <i class="bi bi-journal-bookmark me-1"></i>Ficha
+                        </label>
+                        <select class="form-select" id="selectFicha" name="ficha" onchange="this.form.submit()">
+                            <option value="">-- Seleccione una ficha --</option>
+                            {% for ficha in fichas %}
+                                <option value="{{ ficha }}" {% if ficha_seleccionada == ficha %}selected{% endif %}>{{ ficha }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+
+                    <!-- Buscador (solo si hay ficha seleccionada) -->
+                    {% if ficha_seleccionada %}
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">
+                            <i class="bi bi-search me-1"></i>Buscar
+                        </label>
+                        <input type="text" class="form-control" id="buscadorAprendiz" placeholder="Buscar por nombre o documento...">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-primary-custom w-100" onclick="registrarAsistenciaMasiva()">
+                            <i class="bi bi-check-all me-1"></i>Registrar Todos
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </form>
         </div>
     </div>
 
-    <!-- Filtros y Búsqueda -->
-    <div class="card card-modern mb-4">
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <div class="input-group">
-                        <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
-                        <input type="text" class="form-control" id="buscadorAprendiz" placeholder="Buscar por nombre o documento...">
-                    </div>
+    {% if not programa_seleccionado %}
+    <!-- Mensaje inicial -->
+    <div class="card card-modern">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-mortarboard text-muted" style="font-size: 3rem;"></i>
+            <h5 class="mt-3 text-muted">Seleccione un programa de formacion</h5>
+            <p class="text-muted">Escoja el programa para ver las fichas disponibles y sus aprendices.</p>
+        </div>
+    </div>
+
+    {% elif not ficha_seleccionada %}
+    <!-- Mensaje cuando hay programa pero no ficha -->
+    <div class="card card-modern">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-journal-bookmark text-muted" style="font-size: 3rem;"></i>
+            <h5 class="mt-3 text-muted">Seleccione una ficha</h5>
+            <p class="text-muted">Se encontraron <strong>{{ fichas|length }}</strong> ficha{{ fichas|length|pluralize:"s" }} en <strong>{{ programa_seleccionado }}</strong>. Seleccione una para ver sus aprendices.</p>
+        </div>
+    </div>
+
+    {% else %}
+
+    <!-- Resumen de Asistencia -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card card-modern h-100">
+                <div class="card-body text-center">
+                    <div class="fs-2 text-primary fw-bold">{{ total_aprendices }}</div>
+                    <div class="text-muted small">Total Aprendices</div>
                 </div>
-                <div class="col-md-3">
-                    <select class="form-select" id="filtroFicha">
-                        <option value="">Todas las Fichas</option>
-                        {% for aprendiz in aprendices %}
-                            {% ifchanged aprendiz.ficha %}
-                                <option value="{{ aprendiz.ficha }}">{{ aprendiz.ficha }}</option>
-                            {% endifchanged %}
-                        {% endfor %}
-                    </select>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-modern h-100 border-start border-success border-4">
+                <div class="card-body text-center">
+                    <div class="fs-2 text-success fw-bold">{{ presentes_hoy }}</div>
+                    <div class="text-muted small">Presentes Hoy</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-modern h-100 border-start border-danger border-4">
+                <div class="card-body text-center">
+                    <div class="fs-2 text-danger fw-bold">{{ total_aprendices|add:presentes_hoy|add:"-"|add:total_aprendices|default:0 }}</div>
+                    <div class="text-muted small">Ausentes</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-modern h-100 border-start border-info border-4">
+                <div class="card-body text-center">
+                    {% widthratio presentes_hoy total_aprendices 100 as porcentaje %}
+                    <div class="fs-2 text-info fw-bold">{{ porcentaje|default:0 }}%</div>
+                    <div class="text-muted small">Asistencia</div>
                 </div>
             </div>
         </div>
@@ -43,50 +137,251 @@
 
     <!-- Tabla de Aprendices -->
     <div class="card card-modern">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 fw-bold">
+                <i class="bi bi-list-check me-2"></i>Lista de Asistencia - {{ ficha_seleccionada }}
+            </h6>
+            <small class="text-muted">Hoy: {% now "d/m/Y" %}</small>
+        </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0" id="tablaAprendices">
                     <thead class="bg-light">
                         <tr>
-                            <th class="ps-4">Aprendiz</th>
+                            <th class="ps-4" style="width: 40%;">Aprendiz</th>
                             <th>Documento</th>
-                            <th>Ficha</th>
-                            <th>Programa</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
+                            <th class="text-center">Estado Hoy</th>
+                            <th class="text-center">Hora Ingreso</th>
+                            <th class="text-center">Asistencia</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for aprendiz in aprendices %}
-                        <tr>
+                        {% for item in aprendices %}
+                        <tr data-aprendiz-id="{{ item.usuario.id }}">
                             <td class="ps-4">
                                 <div class="d-flex align-items-center">
-                                    <div class="avatar-initials bg-light-green text-primary-green rounded-circle p-2 me-3 fw-bold">
-                                        {{ aprendiz.first_name|slice:":1" }}{{ aprendiz.last_name|slice:":1" }}
+                                    <div class="avatar-initials bg-light-green text-primary-green rounded-circle p-2 me-3 fw-bold" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                        {{ item.usuario.first_name|slice:":1" }}{{ item.usuario.last_name|slice:":1" }}
                                     </div>
                                     <div>
-                                        <div class="fw-bold">{{ aprendiz.get_full_name }}</div>
-                                        <small class="text-muted">{{ aprendiz.email }}</small>
+                                        <div class="fw-bold">{{ item.usuario.get_full_name }}</div>
+                                        <small class="text-muted">{{ item.usuario.email }}</small>
                                     </div>
                                 </div>
                             </td>
-                            <td>{{ aprendiz.tipo_documento }} {{ aprendiz.numero_documento }}</td>
-                            <td><span class="badge bg-secondary">{{ aprendiz.ficha|default:"Sin Ficha" }}</span></td>
-                            <td>{{ aprendiz.programa_formacion|default:"No asignado" }}</td>
-                            <td><span class="badge bg-success">Activo</span></td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary" title="Ver perfil"><i class="bi bi-eye"></i></button>
+                            <td>{{ item.usuario.tipo_documento }} {{ item.usuario.numero_documento }}</td>
+                            <td class="text-center">
+                                {% if item.presente %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                        <i class="bi bi-check-circle me-1"></i>En centro
+                                    </span>
+                                {% elif item.tiene_registro_hoy %}
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
+                                        <i class="bi bi-clock me-1"></i>Salio
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                        <i class="bi bi-x-circle me-1"></i>Sin registro
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if item.hora_ingreso %}
+                                    <span class="text-success">
+                                        <i class="bi bi-clock me-1"></i>{{ item.hora_ingreso|time:"H:i" }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">--:--</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if not item.tiene_registro_hoy %}
+                                    <button class="btn btn-sm btn-outline-success"
+                                            onclick="registrarAsistencia({{ item.usuario.id }}, '{{ item.usuario.get_full_name|escapejs }}')"
+                                            title="Registrar ingreso manual">
+                                        <i class="bi bi-person-check"></i> Registrar
+                                    </button>
+                                {% else %}
+                                    <span class="text-success">
+                                        <i class="bi bi-check-lg"></i> Registrado
+                                    </span>
+                                {% endif %}
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center py-4 text-muted">No se encontraron aprendices registrados.</td>
+                            <td colspan="5" class="text-center py-4 text-muted">No se encontraron aprendices en esta ficha.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
+        <div class="card-footer bg-light">
+            <small class="text-muted">
+                <i class="bi bi-info-circle me-1"></i>
+                Los registros de asistencia se basan en el control de acceso del centro.
+                Use "Registrar" para marcar asistencia manual.
+            </small>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal Confirmar Asistencia -->
+<div class="modal fade" id="modalAsistencia" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-person-check me-2"></i>Registrar Asistencia Manual
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="aprendizId">
+                <p>Va a registrar la asistencia de:</p>
+                <h5 class="text-primary fw-bold" id="aprendizNombre"></h5>
+                <div class="alert alert-info mt-3">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Esto creara un registro de ingreso manual para el dia de hoy.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="confirmarAsistencia()">
+                    <i class="bi bi-check-lg me-1"></i>Confirmar Asistencia
+                </button>
+            </div>
+        </div>
     </div>
 </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Obtener token CSRF
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const buscador = document.getElementById('buscadorAprendiz');
+    if (buscador) {
+        buscador.addEventListener('input', function() {
+            const filtro = this.value.toLowerCase();
+            const filas = document.querySelectorAll('#tablaAprendices tbody tr');
+            filas.forEach(function(fila) {
+                const texto = fila.textContent.toLowerCase();
+                fila.style.display = texto.includes(filtro) ? '' : 'none';
+            });
+        });
+    }
+
+    // Al cambiar programa, limpiar la ficha seleccionada
+    const selectPrograma = document.getElementById('selectPrograma');
+    if (selectPrograma) {
+        selectPrograma.addEventListener('change', function() {
+            const fichaInput = document.getElementById('selectFicha');
+            if (fichaInput) fichaInput.value = '';
+        });
+    }
+});
+
+function registrarAsistencia(aprendizId, nombreAprendiz) {
+    document.getElementById('aprendizId').value = aprendizId;
+    document.getElementById('aprendizNombre').textContent = nombreAprendiz;
+    const modal = new bootstrap.Modal(document.getElementById('modalAsistencia'));
+    modal.show();
+}
+
+function confirmarAsistencia() {
+    const aprendizId = document.getElementById('aprendizId').value;
+
+    fetch('/api/acceso/registrar_asistencia_manual/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            usuario_id: aprendizId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Asistencia registrada correctamente');
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'No se pudo registrar la asistencia'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al conectar con el servidor');
+    });
+}
+
+function registrarAsistenciaMasiva() {
+    if (!confirm('Va a registrar asistencia para TODOS los aprendices sin registro de hoy. Continuar?')) {
+        return;
+    }
+
+    // Obtener IDs de aprendices sin registro
+    const filas = document.querySelectorAll('#tablaAprendices tbody tr');
+    const aprendicesSinRegistro = [];
+
+    filas.forEach(fila => {
+        const btn = fila.querySelector('button[onclick^="registrarAsistencia"]');
+        if (btn) {
+            const aprendizId = fila.dataset.aprendizId;
+            if (aprendizId) {
+                aprendicesSinRegistro.push(aprendizId);
+            }
+        }
+    });
+
+    if (aprendicesSinRegistro.length === 0) {
+        alert('Todos los aprendices ya tienen registro de asistencia hoy.');
+        return;
+    }
+
+    fetch('/api/acceso/registrar_asistencia_masiva/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            usuarios_ids: aprendicesSinRegistro
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Asistencia registrada para ${data.registrados} aprendiz(es)`);
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'No se pudo registrar la asistencia'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al conectar con el servidor');
+    });
+}
+</script>
 {% endblock %}

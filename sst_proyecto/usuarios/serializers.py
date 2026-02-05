@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from .models import Usuario, Visitante
+from .models import Usuario, Visitante, Notificacion
 
 class UsuarioSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False)
@@ -64,3 +64,24 @@ class VisitanteSerializer(serializers.ModelSerializer):
         model = Visitante
         fields = '__all__'
         read_only_fields = ['fecha_visita', 'hora_ingreso', 'registrado_por']
+
+
+class NotificacionSerializer(serializers.ModelSerializer):
+    tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
+    prioridad_display = serializers.CharField(source='get_prioridad_display', read_only=True)
+    tiempo_transcurrido = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Notificacion
+        fields = [
+            'id', 'titulo', 'mensaje', 'tipo', 'tipo_display',
+            'prioridad', 'prioridad_display', 'leida',
+            'fecha_creacion', 'fecha_lectura', 'fecha_vencimiento',
+            'url_relacionada', 'tiempo_transcurrido'
+        ]
+        read_only_fields = ['fecha_creacion', 'fecha_lectura']
+
+    def get_tiempo_transcurrido(self, obj):
+        from django.utils import timezone
+        from django.utils.timesince import timesince
+        return timesince(obj.fecha_creacion, timezone.now())

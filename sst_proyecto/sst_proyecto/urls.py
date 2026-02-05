@@ -117,19 +117,113 @@ def dashboard_view(request):
         'ultimos_accesos': ultimos_accesos,
     }
 
+    # Datos adicionales para INSTRUCTOR
+    if usuario.rol == 'INSTRUCTOR':
+        total_aprendices = Usuario.objects.filter(rol='APRENDIZ', activo=True).count()
+        # Aprendices que ingresaron hoy
+        aprendices_ids_hoy = RegistroAcceso.objects.filter(
+            tipo='INGRESO',
+            fecha_hora_ingreso__date=hoy,
+            usuario__rol='APRENDIZ'
+        ).values_list('usuario_id', flat=True).distinct()
+        aprendices_presentes = aprendices_ids_hoy.count()
+        # Últimos 5 accesos de aprendices hoy
+        ultimos_accesos_aprendices = RegistroAcceso.objects.select_related('usuario').filter(
+            tipo='INGRESO',
+            fecha_hora_ingreso__date=hoy,
+            usuario__rol='APRENDIZ'
+        ).order_by('-fecha_hora_ingreso')[:5]
+        context['total_aprendices'] = total_aprendices
+        context['aprendices_presentes'] = aprendices_presentes
+        context['ultimos_accesos_aprendices'] = ultimos_accesos_aprendices
+
+        # Lista de todos los aprendices con estado presente/ausente
+        from django.db.models import Exists, OuterRef
+        aprendices_con_estado = Usuario.objects.filter(
+            rol='APRENDIZ', activo=True
+        ).annotate(
+            presente_hoy=Exists(
+                RegistroAcceso.objects.filter(
+                    usuario=OuterRef('pk'),
+                    tipo='INGRESO',
+                    fecha_hora_ingreso__date=hoy
+                )
+            )
+        ).order_by('ficha', 'last_name', 'first_name')[:20]
+        context['aprendices_con_estado'] = aprendices_con_estado
+
+        # Estadísticas de asistencia por ficha (top 5 fichas con más aprendices)
+        from django.db.models import Count
+        fichas_stats = Usuario.objects.filter(
+            rol='APRENDIZ', activo=True, ficha__isnull=False
+        ).exclude(ficha='').values('ficha').annotate(
+            total=Count('id')
+        ).order_by('-total')[:5]
+
+        for ficha in fichas_stats:
+            presentes = RegistroAcceso.objects.filter(
+                tipo='INGRESO',
+                fecha_hora_ingreso__date=hoy,
+                usuario__ficha=ficha['ficha'],
+                usuario__rol='APRENDIZ'
+            ).values('usuario_id').distinct().count()
+            ficha['presentes'] = presentes
+            ficha['porcentaje'] = round((presentes / ficha['total']) * 100) if ficha['total'] > 0 else 0
+
+        context['fichas_stats'] = list(fichas_stats)
+
+    # Datos adicionales para BRIGADA
+    if usuario.rol == 'BRIGADA':
+        from reportes.models import Incidente
+        incidentes_recientes = Incidente.objects.select_related('reportado_por').order_by('-fecha_reporte')[:10]
+        incidentes_pendientes = Incidente.objects.exclude(estado__in=['RESUELTO', 'CERRADO']).count()
+        incidentes_total_mes = Incidente.objects.filter(fecha_reporte__date__gte=inicio_mes).count()
+        context['incidentes_recientes'] = incidentes_recientes
+        context['incidentes_pendientes'] = incidentes_pendientes
+        context['incidentes_total_mes'] = incidentes_total_mes
+
+    # Datos adicionales para APRENDIZ
+    if usuario.rol == 'APRENDIZ':
+        mis_accesos = RegistroAcceso.objects.filter(
+            usuario=usuario,
+            tipo='INGRESO',
+            fecha_hora_ingreso__date__gte=inicio_mes
+        ).order_by('-fecha_hora_ingreso')[:5]
+        mis_ingresos_mes = RegistroAcceso.objects.filter(
+            usuario=usuario,
+            tipo='INGRESO',
+            fecha_hora_ingreso__date__gte=inicio_mes
+        ).count()
+        context['mis_accesos'] = mis_accesos
+        context['mis_ingresos_mes'] = mis_ingresos_mes
+
+        # Datos para gráfica de asistencia mensual (últimos 30 días)
+        asistencia_mensual = []
+        for i in range(29, -1, -1):
+            fecha = hoy - timedelta(days=i)
+            asistio = RegistroAcceso.objects.filter(
+                usuario=usuario,
+                tipo='INGRESO',
+                fecha_hora_ingreso__date=fecha
+            ).exists()
+            asistencia_mensual.append({
+                'fecha': fecha.strftime('%d'),
+                'fecha_completa': fecha.strftime('%d/%m'),
+                'asistio': 1 if asistio else 0
+            })
+        context['asistencia_mensual'] = asistencia_mensual
+        context['dias_asistidos_mes'] = sum(1 for d in asistencia_mensual if d['asistio'])
+
+        # Contactos de emergencia
+        from emergencias.models import ContactoExterno
+        contactos_emergencia = ContactoExterno.objects.filter(activo=True).order_by('orden_contacto')[:5]
+        context['contactos_emergencia'] = contactos_emergencia
+
     return render(request, template, context)
 
 # ==============================================
 # VISTAS ESPECÍFICAS PARA APRENDIZ
 # ==============================================
-
-@login_required
-@rol_requerido('APRENDIZ')
-def mi_horario_view(request):
-    """
-    Vista del horario del aprendiz
-    """
-    return render(request, 'dashboard/aprendiz/mi_horario.html')
 
 @login_required
 @rol_requerido('APRENDIZ')
@@ -171,20 +265,32 @@ def informacion_sst_view(request):
     return render(request, 'dashboard/aprendiz/informacion_sst.html')
 
 @login_required
-@rol_requerido('APRENDIZ')
+@excluir_visitantes
 def mis_alertas_view(request):
     """
-    Vista de alertas del aprendiz
+    Vista de alertas/notificaciones del usuario
+    Accesible por todos los roles excepto visitante
     """
-    return render(request, 'dashboard/aprendiz/mis_alertas.html')
+    from usuarios.models import Notificacion
 
-@login_required
-@rol_requerido('APRENDIZ')
-def mis_reportes_view(request):
-    """
-    Vista de reportes del aprendiz
-    """
-    return render(request, '/aprendiz/mis_reportes.html')
+    # Obtener notificaciones del usuario actual
+    notificaciones = Notificacion.objects.filter(destinatario=request.user)
+
+    # Separar por estado de lectura
+    no_leidas = notificaciones.filter(leida=False).order_by('-fecha_creacion')[:10]
+    leidas = notificaciones.filter(leida=True).order_by('-fecha_creacion')[:10]
+    historial = notificaciones.order_by('-fecha_creacion')[:20]
+
+    # Contar no leidas
+    total_no_leidas = notificaciones.filter(leida=False).count()
+
+    context = {
+        'no_leidas': no_leidas,
+        'leidas': leidas,
+        'historial': historial,
+        'total_no_leidas': total_no_leidas,
+    }
+    return render(request, 'dashboard/aprendiz/mis_alertas.html', context)
 
 # ==============================================
 # FIN VISTAS PARA APRENDIZ
@@ -198,32 +304,81 @@ def mis_reportes_view(request):
 @rol_requerido('INSTRUCTOR')
 def mis_aprendices_view(request):
     """
-    Vista para que el instructor vea el listado de aprendices
+    Vista para que el instructor filtre por programa -> ficha -> aprendices
+    Incluye información de asistencia del día actual
     """
     from usuarios.models import Usuario
-    # Obtenemos todos los aprendices activos, ordenados por ficha y apellido
-    aprendices = Usuario.objects.filter(rol='APRENDIZ', activo=True).order_by('ficha', 'last_name')
-    
+    from control_acceso.models import RegistroAcceso
+    from django.utils import timezone
+
+    PROGRAMAS = [
+        'Analisis y Desarrollo de Software',
+        'Maquinaria Pesada',
+        'Seguridad y Salud en el Trabajo',
+    ]
+
+    programa_seleccionado = request.GET.get('programa', '')
+    ficha_seleccionada = request.GET.get('ficha', '')
+    fichas = []
+    aprendices_con_asistencia = []
+    total_aprendices = 0
+    presentes_hoy = 0
+
+    if programa_seleccionado:
+        fichas = Usuario.objects.filter(
+            rol='APRENDIZ', activo=True, programa_formacion=programa_seleccionado
+        ).values_list('ficha', flat=True).distinct().order_by('ficha')
+
+    if ficha_seleccionada:
+        aprendices = Usuario.objects.filter(
+            rol='APRENDIZ', activo=True, ficha=ficha_seleccionada, programa_formacion=programa_seleccionado
+        ).order_by('last_name', 'first_name')
+        total_aprendices = aprendices.count()
+
+        # Obtener fecha de hoy
+        hoy = timezone.now().date()
+
+        # Para cada aprendiz, verificar si tiene registro de ingreso hoy
+        for aprendiz in aprendices:
+            # Verificar si tiene ingreso hoy (sin egreso = está presente)
+            registro_hoy = RegistroAcceso.objects.filter(
+                usuario=aprendiz,
+                fecha_hora_ingreso__date=hoy
+            ).order_by('-fecha_hora_ingreso').first()
+
+            esta_presente = False
+            hora_ingreso = None
+
+            if registro_hoy:
+                if registro_hoy.fecha_hora_egreso is None:
+                    # Está dentro del centro (ingresó y no ha salido)
+                    esta_presente = True
+                    hora_ingreso = registro_hoy.fecha_hora_ingreso
+                else:
+                    # Ya salió pero tiene registro de hoy
+                    hora_ingreso = registro_hoy.fecha_hora_ingreso
+
+            if esta_presente:
+                presentes_hoy += 1
+
+            aprendices_con_asistencia.append({
+                'usuario': aprendiz,
+                'presente': esta_presente,
+                'hora_ingreso': hora_ingreso,
+                'tiene_registro_hoy': registro_hoy is not None
+            })
+
     context = {
-        'aprendices': aprendices,
-        'total_aprendices': aprendices.count()
+        'programas': PROGRAMAS,
+        'programa_seleccionado': programa_seleccionado,
+        'fichas': fichas,
+        'ficha_seleccionada': ficha_seleccionada,
+        'aprendices': aprendices_con_asistencia,
+        'total_aprendices': total_aprendices,
+        'presentes_hoy': presentes_hoy,
     }
     return render(request, 'dashboard/instructor/mis_aprendices.html', context)
 
-@login_required
-@rol_requerido('INSTRUCTOR')
-def registrar_asistencia_view(request):
-    """
-    Vista específica para que el instructor registre asistencia
-    """
-    from usuarios.models import Usuario
-    # Obtener fichas únicas para filtrar
-    fichas = Usuario.objects.filter(rol='APRENDIZ', activo=True).values_list('ficha', flat=True).distinct().order_by('ficha')
-    
-    context = {
-        'fichas': fichas
-    }
-    return render(request, 'dashboard/instructor/registrar_asistencia.html', context)
 
 # ==============================================
 # VISTAS ESPECÍFICAS PARA ADMINISTRATIVO
@@ -289,14 +444,67 @@ def equipos_brigada_view(request):
     """
     Vista para gestión de equipos de emergencia (Brigada)
     """
-    # Placeholder data
+    from mapas.models import EquipamientoSeguridad, EdificioBloque
+    from django.utils import timezone
+    from datetime import timedelta
+
+    # Obtener parámetros de filtrado
+    tipo_filtro = request.GET.get('tipo', '')
+    estado_filtro = request.GET.get('estado', '')
+    busqueda = request.GET.get('q', '')
+
+    # Consultar equipos reales de la BD
+    equipos = EquipamientoSeguridad.objects.select_related('edificio', 'responsable').all()
+
+    # Aplicar filtros
+    if tipo_filtro:
+        equipos = equipos.filter(tipo=tipo_filtro)
+    if estado_filtro:
+        equipos = equipos.filter(estado=estado_filtro)
+    if busqueda:
+        equipos = equipos.filter(
+            models.Q(nombre__icontains=busqueda) |
+            models.Q(codigo__icontains=busqueda) |
+            models.Q(edificio__nombre__icontains=busqueda)
+        )
+
+    # Ordenar por estado (primero los que necesitan atención)
+    equipos = equipos.order_by(
+        models.Case(
+            models.When(estado='FUERA_SERVICIO', then=0),
+            models.When(estado='MANTENIMIENTO', then=1),
+            default=2
+        ),
+        'tipo', 'codigo'
+    )
+
+    # Estadísticas
+    total_equipos = EquipamientoSeguridad.objects.count()
+    operativos = EquipamientoSeguridad.objects.filter(estado='OPERATIVO').count()
+    en_mantenimiento = EquipamientoSeguridad.objects.filter(estado='MANTENIMIENTO').count()
+    fuera_servicio = EquipamientoSeguridad.objects.filter(estado='FUERA_SERVICIO').count()
+
+    # Equipos que necesitan revisión pronto (próximos 30 días)
+    fecha_limite = timezone.now() + timedelta(days=30)
+    proximos_revision = EquipamientoSeguridad.objects.filter(
+        proxima_revision__lte=fecha_limite,
+        proxima_revision__gte=timezone.now()
+    ).count()
+
+    # Tipos de equipamiento para el filtro
+    tipos_equipamiento = EquipamientoSeguridad.TIPO_EQUIPAMIENTO
+
     context = {
-        'equipos': [
-            {'id': 1, 'nombre': 'Extintor ABC (PQS)', 'ubicacion': 'Pasillo A-1', 'estado': 'ÓPTIMO', 'ultima_revision': '2026-01-15'},
-            {'id': 2, 'nombre': 'Botiquín de Primeros Auxilios', 'ubicacion': 'Taller de Soldadura', 'estado': 'REQUIERE REVISIÓN', 'ultima_revision': '2025-12-10'},
-            {'id': 3, 'nombre': 'Camilla de Emergencia', 'ubicacion': 'Punto de Encuentro 2', 'estado': 'ÓPTIMO', 'ultima_revision': '2026-01-20'},
-            {'id': 4, 'nombre': 'Gabinete Contra Incendios', 'ubicacion': 'Bloque B', 'estado': 'FUERA DE SERVICIO', 'ultima_revision': '2025-11-01'},
-        ]
+        'equipos': equipos,
+        'total_equipos': total_equipos,
+        'operativos': operativos,
+        'en_mantenimiento': en_mantenimiento,
+        'fuera_servicio': fuera_servicio,
+        'proximos_revision': proximos_revision,
+        'tipos_equipamiento': tipos_equipamiento,
+        'tipo_filtro': tipo_filtro,
+        'estado_filtro': estado_filtro,
+        'busqueda': busqueda,
     }
     return render(request, 'dashboard/brigada/equipos.html', context)
 
@@ -314,18 +522,6 @@ def mi_brigada_view(request):
     }
     return render(request, 'dashboard/brigada/mi_brigada.html', context)
 
-@login_required
-@rol_requerido('BRIGADA')
-def capacitaciones_brigada_view(request):
-    """
-    Vista para capacitaciones de la brigada
-    """
-    # Placeholder data
-    context = {
-        'capacitaciones_disponibles': [],
-        'capacitaciones_completadas': []
-    }
-    return render(request, 'dashboard/brigada/capacitaciones.html', context)
 # ==============================================
 
 # Vistas para usuarios autenticados (usan base.html)
@@ -409,16 +605,13 @@ urlpatterns = [
     # ==============================================
     # URLs ESPECÍFICAS PARA APRENDIZ
     # ==============================================
-    path('aprendiz/horario/', mi_horario_view, name='mi_horario'),
-    path('aprendiz/asistencia/', mi_asistencia_view, name='mi_asistencia'),
+    path('aprendiz/mis-accesos/', mi_asistencia_view, name='mi_asistencia'),
     path('aprendiz/informacion-sst/', informacion_sst_view, name='informacion_sst'),
     path('aprendiz/alertas/', mis_alertas_view, name='mis_alertas'),
-    path('aprendiz/mis-reportes/', mis_reportes_view, name='mis_reportes'),
     # ==============================================
 
     # URLs PARA INSTRUCTOR
     path('instructor/mis-aprendices/', mis_aprendices_view, name='mis_aprendices'),
-    path('instructor/asistencia/', registrar_asistencia_view, name='registrar_asistencia'),
 
     # URLs PARA ADMINISTRATIVO
     path('administrativo/usuarios/', gestion_usuarios_view, name='gestion_usuarios'),
@@ -430,8 +623,6 @@ urlpatterns = [
     # URLs PARA BRIGADA
     path('brigada/equipos/', equipos_brigada_view, name='equipos_brigada'),
     path('brigada/mi-brigada/', mi_brigada_view, name='mi_brigada'),
-    path('brigada/capacitaciones/', capacitaciones_brigada_view, name='capacitaciones_brigada'),
-
     # Vista General de Reportes
     path('reportes/general/', reportes_view, name='reportes_general'),
 

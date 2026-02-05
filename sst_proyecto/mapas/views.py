@@ -20,6 +20,8 @@ from .serializers import (
 )
 from .services import encontrar_mas_cercano
 from usuarios.permissions import NoEsVisitante, EsAdministrativo, excluir_visitantes
+# Servicio centralizado de notificaciones
+from usuarios.services import NotificacionService
 
 @login_required
 @excluir_visitantes
@@ -449,13 +451,13 @@ class EquipamientoSeguridadViewSet(viewsets.ModelViewSet):
 
         if not latitud or not longitud:
             return Response({'error': 'Latitud y longitud son requeridos.'}, status=400)
-        
+
         try:
             lat = float(latitud)
             lon = float(longitud)
         except ValueError:
             return Response({'error': 'Latitud y longitud deben ser números válidos.'}, status=400)
-        
+
         equipos_cercanos = []
         for equipo in self.queryset.filter(estado='OPERATIVO'):
             from .services import calcular_distancia
@@ -465,11 +467,145 @@ class EquipamientoSeguridadViewSet(viewsets.ModelViewSet):
                     'equipo': EquipamientoSeguridadSerializer(equipo).data,
                     'distancia_metros': round(distancia, 2)
                 })
-        
+
         # Ordenar por distancia
         equipos_cercanos.sort(key=lambda x: x['distancia_metros'])
 
         return Response(equipos_cercanos)
+
+    @action(detail=True, methods=['post'])
+    def verificar(self, request, pk=None):
+        """
+        Registrar verificación de un equipo específico
+        PERMISOS: BRIGADA y ADMINISTRATIVO
+        """
+        from django.utils import timezone
+        from datetime import timedelta
+
+        # Verificar permisos
+        if request.user.rol not in ['BRIGADA', 'ADMINISTRATIVO']:
+            return Response({
+                'success': False,
+                'error': 'No tiene permisos para verificar equipos'
+            }, status=403)
+
+        try:
+            equipo = self.get_object()
+            ahora = timezone.now()
+
+            # Actualizar fechas de revisión
+            equipo.ultima_revision = ahora
+            # Programar próxima revisión según el tipo de equipo
+            if equipo.tipo in ['EXTINTOR', 'HIDRANTE']:
+                equipo.proxima_revision = ahora + timedelta(days=180)  # 6 meses
+            elif equipo.tipo in ['BOTIQUIN', 'DEA']:
+                equipo.proxima_revision = ahora + timedelta(days=90)   # 3 meses
+            else:
+                equipo.proxima_revision = ahora + timedelta(days=365)  # 1 año
+
+            equipo.save()
+
+            return Response({
+                'success': True,
+                'message': f'Equipo {equipo.codigo} verificado correctamente',
+                'ultima_revision': equipo.ultima_revision.strftime('%d/%m/%Y'),
+                'proxima_revision': equipo.proxima_revision.strftime('%d/%m/%Y')
+            })
+        except Exception as e:
+            return Response({
+                'success': False,
+                'error': str(e)
+            }, status=400)
+
+    @action(detail=True, methods=['post'])
+    def cambiar_estado(self, request, pk=None):
+        """
+        Cambiar el estado de un equipo
+        PERMISOS: BRIGADA y ADMINISTRATIVO
+        """
+        # Verificar permisos
+        if request.user.rol not in ['BRIGADA', 'ADMINISTRATIVO']:
+            return Response({
+                'success': False,
+                'error': 'No tiene permisos para cambiar el estado de equipos'
+            }, status=403)
+
+        try:
+            equipo = self.get_object()
+            nuevo_estado = request.data.get('estado')
+            observaciones = request.data.get('observaciones', '')
+
+            if nuevo_estado not in ['OPERATIVO', 'MANTENIMIENTO', 'FUERA_SERVICIO']:
+                return Response({
+                    'success': False,
+                    'error': 'Estado no válido'
+                }, status=400)
+
+            equipo.estado = nuevo_estado
+            # Guardar observaciones en descripción si las hay
+            if observaciones:
+                equipo.descripcion = f"{equipo.descripcion or ''}\n[{request.user.get_full_name()}]: {observaciones}".strip()
+            equipo.save()
+
+            # Notificar a la brigada si el equipo necesita atención
+            if nuevo_estado in ['MANTENIMIENTO', 'FUERA_SERVICIO']:
+                NotificacionService.notificar_equipo_requiere_revision(equipo)
+
+            return Response({
+                'success': True,
+                'message': f'Estado del equipo {equipo.codigo} actualizado a {nuevo_estado}',
+                'nuevo_estado': nuevo_estado
+            })
+        except Exception as e:
+            return Response({
+                'success': False,
+                'error': str(e)
+            }, status=400)
+
+    @action(detail=False, methods=['post'])
+    def verificacion_general(self, request):
+        """
+        Realizar verificación general de todos los equipos operativos
+        PERMISOS: BRIGADA y ADMINISTRATIVO
+        """
+        from django.utils import timezone
+        from datetime import timedelta
+
+        # Verificar permisos
+        if request.user.rol not in ['BRIGADA', 'ADMINISTRATIVO']:
+            return Response({
+                'success': False,
+                'error': 'No tiene permisos para realizar verificación general'
+            }, status=403)
+
+        try:
+            ahora = timezone.now()
+            equipos_operativos = EquipamientoSeguridad.objects.filter(estado='OPERATIVO')
+            contador = 0
+
+            for equipo in equipos_operativos:
+                equipo.ultima_revision = ahora
+                # Programar próxima revisión según el tipo
+                if equipo.tipo in ['EXTINTOR', 'HIDRANTE']:
+                    equipo.proxima_revision = ahora + timedelta(days=180)
+                elif equipo.tipo in ['BOTIQUIN', 'DEA']:
+                    equipo.proxima_revision = ahora + timedelta(days=90)
+                else:
+                    equipo.proxima_revision = ahora + timedelta(days=365)
+                equipo.save()
+                contador += 1
+
+            return Response({
+                'success': True,
+                'message': f'Verificación general completada',
+                'equipos_verificados': contador,
+                'fecha_verificacion': ahora.strftime('%d/%m/%Y %H:%M')
+            })
+        except Exception as e:
+            return Response({
+                'success': False,
+                'error': str(e)
+            }, status=400)
     
 class RutaEvacuacionViewSet(viewsets.ModelViewSet):
     """

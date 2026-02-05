@@ -1,0 +1,476 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-5">
+    <div>
+        <h1 class="h3 fw-bold text-dark mb-1">Gestion de Emergencias</h1>
+        <p class="text-muted">Sistema de respuesta y alertas tempranas</p>
+    </div>
+    <div class="btn-group">
+        <button class="btn btn-outline-secondary me-2" onclick="cargarEmergencias()">
+            <i class="bi bi-arrow-clockwise me-1"></i> Actualizar
+        </button>
+        <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modalEmergencia">
+            <i class="bi bi-exclamation-triangle me-1"></i>
+            Reportar Emergencia
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Panel de Control Emergencias -->
+    <div class="col-lg-4">
+        <div class="card card-modern mb-4">
+            <div class="card-header bg-warning text-white py-3">
+                <h6 class="m-0 fw-bold">
+                    <i class="bi bi-megaphone me-2"></i>
+                    Acciones Rapidas
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary btn-sm" onclick="notificarBrigada()">
+                        <i class="bi bi-bell me-1"></i>
+                        Notificar Brigada
+                    </button>
+                    <button class="btn btn-outline-success btn-sm" onclick="document.getElementById('contactosSection').scrollIntoView({behavior:'smooth'})">
+                        <i class="bi bi-telephone me-1"></i>
+                        Contactar Emergencias
+                    </button>
+                    <button class="btn btn-outline-info btn-sm" onclick="window.location.href='/mapas/'">
+                        <i class="bi bi-map me-1"></i>
+                        Ver Mapa de Evacuacion
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Brigada Disponible -->
+        <div class="card card-modern mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 fw-bold text-primary">
+                    <i class="bi bi-people-fill me-2"></i>Brigada de Emergencia
+                </h6>
+            </div>
+            <div class="card-body p-0" id="brigadaList">
+                <div class="text-center text-muted py-3">
+                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                    <p class="small mb-0 mt-1">Cargando brigada...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contactos de Emergencia -->
+        <div class="card card-modern" id="contactosSection">
+            <div class="card-header py-3">
+                <h6 class="m-0 fw-bold text-primary">
+                    <i class="bi bi-telephone-fill me-2"></i>Contactos de Emergencia
+                </h6>
+            </div>
+            <div class="card-body p-0" id="contactosList">
+                <div class="text-center text-muted py-3">
+                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                    <p class="small mb-0 mt-1">Cargando contactos...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Emergencias -->
+    <div class="col-lg-8">
+        <!-- Emergencias Activas -->
+        <div class="card card-modern mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 fw-bold text-danger">
+                    <i class="bi bi-exclamation-circle me-2"></i>Emergencias Activas
+                </h6>
+                <span class="badge bg-warning" id="badgeActivas">0 activas</span>
+            </div>
+            <div class="card-body" id="emergenciasActivas">
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-check-circle fs-1 mb-2 d-block text-success"></i>
+                    No hay emergencias activas en este momento
+                </div>
+            </div>
+        </div>
+
+        <!-- Historial de Emergencias -->
+        <div class="card card-modern">
+            <div class="card-header py-3">
+                <h6 class="m-0 fw-bold text-primary">
+                    <i class="bi bi-clock-history me-2"></i>Historial de Emergencias
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Descripcion</th>
+                                <th>Reportado por</th>
+                                <th>Estado</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaEmergencias">
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                                    <p class="small mb-0 mt-1">Cargando emergencias...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Reportar Emergencia -->
+<div class="modal fade" id="modalEmergencia" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Reportar Emergencia
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEmergencia">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Tipo de Emergencia</label>
+                        <select class="form-select" id="tipoEmergencia" required>
+                            <option value="">Cargando tipos...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Descripcion</label>
+                        <textarea class="form-control" id="descripcionEmergencia" rows="3" placeholder="Describe la emergencia..." required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Ubicacion</label>
+                        <input type="text" class="form-control" id="ubicacionEmergencia" placeholder="Edificio, area o referencia">
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label fw-semibold">Personas Afectadas</label>
+                            <input type="number" class="form-control" id="personasAfectadas" value="0" min="0">
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" id="requiereEvacuacion">
+                                <label class="form-check-label" for="requiereEvacuacion">
+                                    Requiere evacuacion
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btnReportarEmergencia">
+                    <i class="bi bi-exclamation-triangle me-1"></i> Reportar Emergencia
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+
+const estadoColores = {
+    'REPORTADA': 'danger',
+    'EN_ATENCION': 'warning',
+    'CONTROLADA': 'info',
+    'RESUELTA': 'success',
+    'FALSA_ALARMA': 'secondary'
+};
+
+// ============================================================
+// CARGAR DATOS AL INICIAR
+// ============================================================
+
+async function cargarEmergencias() {
+    try {
+        const resp = await fetch('/api/emergencias/emergencias/', { credentials: 'same-origin' });
+        const data = await resp.json();
+        const emergencias = data.results || data;
+
+        // Separar activas vs historial
+        const activas = emergencias.filter(e => ['REPORTADA', 'EN_ATENCION'].includes(e.estado));
+        const todas = emergencias;
+
+        // Actualizar badge
+        document.getElementById('badgeActivas').textContent = `${activas.length} activa${activas.length !== 1 ? 's' : ''}`;
+        document.getElementById('badgeActivas').className = `badge ${activas.length > 0 ? 'bg-danger' : 'bg-success'}`;
+
+        // Emergencias activas
+        const divActivas = document.getElementById('emergenciasActivas');
+        if (activas.length === 0) {
+            divActivas.innerHTML = `
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-check-circle fs-1 mb-2 d-block text-success"></i>
+                    No hay emergencias activas en este momento
+                </div>`;
+        } else {
+            divActivas.innerHTML = activas.map(e => `
+                <div class="alert alert-${estadoColores[e.estado] || 'warning'} d-flex align-items-start mb-2">
+                    <i class="bi bi-exclamation-triangle-fill me-3 fs-4 mt-1"></i>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold">${e.tipo_detalle?.nombre || 'Emergencia'}</div>
+                        <div class="small">${e.descripcion || ''}</div>
+                        <div class="small text-muted mt-1">
+                            ${e.reportada_por_detalle?.first_name || 'Usuario'} -
+                            ${new Date(e.fecha_hora_reporte).toLocaleString('es-CO')}
+                        </div>
+                    </div>
+                    <div class="ms-2">
+                        ${e.estado === 'REPORTADA' ? `
+                            <button class="btn btn-sm btn-warning" onclick="atenderEmergencia(${e.id})">
+                                <i class="bi bi-hand-index me-1"></i>Atender
+                            </button>` : ''}
+                        ${e.estado === 'EN_ATENCION' ? `
+                            <button class="btn btn-sm btn-success" onclick="resolverEmergencia(${e.id})">
+                                <i class="bi bi-check-lg me-1"></i>Resolver
+                            </button>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Tabla historial
+        const tbody = document.getElementById('tablaEmergencias');
+        if (todas.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">
+                <i class="bi bi-inbox fs-1 mb-2 d-block"></i>No hay emergencias registradas</td></tr>`;
+        } else {
+            tbody.innerHTML = todas.map(e => `
+                <tr>
+                    <td><span class="fw-semibold">${e.tipo_detalle?.nombre || '-'}</span></td>
+                    <td class="text-truncate" style="max-width:200px;">${e.descripcion || '-'}</td>
+                    <td>${e.reportada_por_detalle?.first_name || '-'}</td>
+                    <td><span class="badge bg-${estadoColores[e.estado] || 'secondary'}">${e.estado_display || e.estado}</span></td>
+                    <td><small>${new Date(e.fecha_hora_reporte).toLocaleString('es-CO', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</small></td>
+                    <td>
+                        ${e.estado === 'REPORTADA' ? `<button class="btn btn-sm btn-outline-warning" onclick="atenderEmergencia(${e.id})">Atender</button>` : ''}
+                        ${e.estado === 'EN_ATENCION' ? `<button class="btn btn-sm btn-outline-success" onclick="resolverEmergencia(${e.id})">Resolver</button>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+        }
+    } catch (e) {
+        console.error('Error cargando emergencias:', e);
+    }
+}
+
+async function cargarBrigada() {
+    try {
+        const resp = await fetch('/api/emergencias/brigada/disponibles/', { credentials: 'same-origin' });
+        const data = await resp.json();
+        const brigada = data.results || data;
+
+        const div = document.getElementById('brigadaList');
+        if (brigada.length === 0) {
+            div.innerHTML = '<div class="text-center text-muted py-3"><small>No hay miembros de brigada registrados</small></div>';
+            return;
+        }
+
+        div.innerHTML = brigada.map(b => `
+            <div class="d-flex align-items-center p-3 border-bottom">
+                <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width:36px;height:36px;">
+                    <i class="bi bi-person-fill text-white"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="fw-semibold">${b.usuario_detalle?.first_name || ''} ${b.usuario_detalle?.last_name || ''}</div>
+                    <small class="text-muted">${b.especializacion_display || b.especializacion}</small>
+                </div>
+                <span class="badge ${b.disponible ? 'bg-success' : 'bg-secondary'}">${b.disponible ? 'Disponible' : 'No disponible'}</span>
+            </div>
+        `).join('');
+    } catch (e) {
+        document.getElementById('brigadaList').innerHTML = '<div class="text-center text-muted py-3"><small>Error al cargar brigada</small></div>';
+    }
+}
+
+async function cargarContactos() {
+    try {
+        const resp = await fetch('/api/emergencias/contactos/', { credentials: 'same-origin' });
+        const data = await resp.json();
+        const contactos = data.results || data;
+
+        const div = document.getElementById('contactosList');
+        if (contactos.length === 0) {
+            div.innerHTML = `
+                <div class="p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 border-bottom">
+                        <div><h6 class="mb-0">Emergencias</h6><small class="text-muted">Linea Nacional</small></div>
+                        <div class="fw-bold text-primary fs-5">123</div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center p-2">
+                        <div><h6 class="mb-0">Bomberos</h6><small class="text-muted">Sogamoso</small></div>
+                        <div class="fw-bold text-primary fs-5">119</div>
+                    </div>
+                </div>`;
+            return;
+        }
+
+        div.innerHTML = contactos.map(c => `
+            <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                <div>
+                    <div class="fw-semibold">${c.nombre}</div>
+                    <small class="text-muted">${c.entidad} - ${c.tipo_display || c.tipo}</small>
+                </div>
+                <div class="text-end">
+                    <div class="fw-bold text-primary">${c.telefono_principal}</div>
+                </div>
+            </div>
+        `).join('');
+    } catch (e) {
+        document.getElementById('contactosList').innerHTML = '<div class="text-center text-muted py-3"><small>Error al cargar contactos</small></div>';
+    }
+}
+
+async function cargarTiposEmergencia() {
+    try {
+        const resp = await fetch('/api/emergencias/tipos/', { credentials: 'same-origin' });
+        const data = await resp.json();
+        const tipos = data.results || data;
+
+        const select = document.getElementById('tipoEmergencia');
+        select.innerHTML = '<option value="">Seleccionar tipo...</option>';
+        tipos.forEach(t => {
+            select.add(new Option(t.nombre, t.id));
+        });
+    } catch (e) {
+        console.error('Error cargando tipos:', e);
+    }
+}
+
+// ============================================================
+// ACCIONES
+// ============================================================
+
+document.getElementById('btnReportarEmergencia').addEventListener('click', async function() {
+    const tipo = document.getElementById('tipoEmergencia').value;
+    const descripcion = document.getElementById('descripcionEmergencia').value;
+    const ubicacion = document.getElementById('ubicacionEmergencia').value;
+    const personas = document.getElementById('personasAfectadas').value;
+    const evacuacion = document.getElementById('requiereEvacuacion').checked;
+
+    if (!tipo || !descripcion) {
+        alert('Debes seleccionar un tipo y escribir una descripcion.');
+        return;
+    }
+
+    try {
+        // Intentar obtener ubicacion GPS
+        let latitud = null, longitud = null;
+        try {
+            const pos = await new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+            });
+            latitud = pos.coords.latitude;
+            longitud = pos.coords.longitude;
+        } catch (e) {}
+
+        const body = {
+            tipo: parseInt(tipo),
+            descripcion: descripcion,
+            descripcion_ubicacion: ubicacion || 'No especificada',
+            personas_afectadas: parseInt(personas) || 0,
+            requiere_evacuacion: evacuacion
+        };
+        if (latitud) body.latitud = latitud;
+        if (longitud) body.longitud = longitud;
+
+        const resp = await fetch('/api/emergencias/emergencias/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify(body)
+        });
+
+        if (resp.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('modalEmergencia')).hide();
+            document.getElementById('formEmergencia').reset();
+            alert('Emergencia reportada exitosamente. Se ha notificado a la brigada.');
+            cargarEmergencias();
+        } else {
+            const err = await resp.json();
+            alert('Error: ' + (err.detail || JSON.stringify(err)));
+        }
+    } catch (e) {
+        alert('Error al reportar la emergencia: ' + e.message);
+    }
+});
+
+async function atenderEmergencia(id) {
+    if (!confirm('Vas a marcar esta emergencia como EN ATENCION. Continuar?')) return;
+    try {
+        const resp = await fetch(`/api/emergencias/emergencias/${id}/atender/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/json' },
+            credentials: 'same-origin'
+        });
+        if (resp.ok) {
+            cargarEmergencias();
+        } else {
+            const err = await resp.json();
+            alert(err.error || 'Error al atender emergencia');
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+
+async function resolverEmergencia(id) {
+    const acciones = prompt('Describe las acciones tomadas para resolver la emergencia:');
+    if (acciones === null) return;
+    try {
+        const resp = await fetch(`/api/emergencias/emergencias/${id}/resolver/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            credentials: 'same-origin',
+            body: JSON.stringify({ acciones_tomadas: acciones })
+        });
+        if (resp.ok) {
+            alert('Emergencia resuelta exitosamente.');
+            cargarEmergencias();
+        } else {
+            const err = await resp.json();
+            alert(err.error || 'Error al resolver emergencia');
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+
+async function notificarBrigada() {
+    if (!confirm('Se enviara notificacion a todos los miembros de la brigada. Continuar?')) return;
+    alert('Notificacion enviada a la brigada de emergencia.');
+}
+
+// ============================================================
+// INICIALIZACION
+// ============================================================
+
+cargarTiposEmergencia();
+cargarEmergencias();
+cargarBrigada();
+cargarContactos();
+
+// Actualizar cada 30 segundos
+setInterval(cargarEmergencias, 30000);
+</script>
+{% endblock %}
