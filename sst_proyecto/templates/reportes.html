@@ -3,6 +3,7 @@
 {% block title %}Reportes y Estadísticas - Sistema SST{% endblock %}
 
 {% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
 <li class="breadcrumb-item active">Reportes y Estadísticas</li>
 {% endblock %}
 
@@ -10,7 +11,7 @@
 <div class="container-fluid">
     <div class="row mb-4">
         <div class="col-12">
-            <h2 class="text-primary-green fw-bold">
+            <h2 class="fw-bold text-dark">
                 <i class="bi bi-graph-up-arrow me-2"></i>Centro de Reportes
             </h2>
             <p class="text-muted">Visualización de indicadores y generación de informes SST.</p>
