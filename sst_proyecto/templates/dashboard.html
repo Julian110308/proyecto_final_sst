@@ -2,10 +2,14 @@
 
 {% block title %}Dashboard - Sistema SST{% endblock %}
 
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Dashboard</li>
+{% endblock %}
+
 {% block content %}
 <div class="row mb-4 align-items-center">
     <div class="col">
-        <h2 class="fw-bold text-dark mb-1">Panel de Control</h2>
+        <h2 class="fw-bold text-dark mb-1"><i class="bi bi-speedometer2 me-2"></i>Panel de Control</h2>
         <p class="text-muted mb-0">Bienvenido al sistema, {{ user.get_full_name|default:user.username }}</p>
     </div>
     <div class="col-auto">
@@ -167,7 +171,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('ingresosChart').getContext('2d');
-        
+
         // Datos inyectados desde Django
         const labels = [{% for item in ultimos_7_dias %}'{{ item.fecha }}',{% endfor %}];
         const data = [{% for item in ultimos_7_dias %}{{ item.cantidad }},{% endfor %}];
@@ -201,7 +205,7 @@
                 scales: {
                     y: {
                         beginAtZero: true,
-                        grid: { 
+                        grid: {
                             borderDash: [4, 4],
                             color: '#F3F4F6'
                         },

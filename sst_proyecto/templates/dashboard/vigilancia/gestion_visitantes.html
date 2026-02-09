@@ -3,6 +3,7 @@
 {% block title %}Gestion de Visitantes - Sistema SST{% endblock %}
 
 {% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
 <li class="breadcrumb-item active">Gestion de Visitantes</li>
 {% endblock %}
 
@@ -10,7 +11,7 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="text-primary-green fw-bold mb-0">
+            <h2 class="fw-bold text-dark mb-0">
                 <i class="bi bi-person-badge-fill me-2"></i>Control de Visitantes
             </h2>
             <p class="text-muted">Registro y seguimiento de personal externo</p>

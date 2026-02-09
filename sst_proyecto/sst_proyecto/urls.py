@@ -445,6 +445,7 @@ def equipos_brigada_view(request):
     Vista para gestión de equipos de emergencia (Brigada)
     """
     from mapas.models import EquipamientoSeguridad, EdificioBloque
+    from django.db.models import Q, Case, When
     from django.utils import timezone
     from datetime import timedelta
 
@@ -463,16 +464,16 @@ def equipos_brigada_view(request):
         equipos = equipos.filter(estado=estado_filtro)
     if busqueda:
         equipos = equipos.filter(
-            models.Q(nombre__icontains=busqueda) |
-            models.Q(codigo__icontains=busqueda) |
-            models.Q(edificio__nombre__icontains=busqueda)
+            Q(nombre__icontains=busqueda) |
+            Q(codigo__icontains=busqueda) |
+            Q(edificio__nombre__icontains=busqueda)
         )
 
     # Ordenar por estado (primero los que necesitan atención)
     equipos = equipos.order_by(
-        models.Case(
-            models.When(estado='FUERA_SERVICIO', then=0),
-            models.When(estado='MANTENIMIENTO', then=1),
+        Case(
+            When(estado='FUERA_SERVICIO', then=0),
+            When(estado='MANTENIMIENTO', then=1),
             default=2
         ),
         'tipo', 'codigo'

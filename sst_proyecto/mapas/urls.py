@@ -13,7 +13,7 @@ urlpatterns = [
     # Ruta principal para el mapa HTML
     path('', views.mapa_interactivo, name='mapa_interactivo'),
     # Rutas de la API REST
-    path('api/', include(router.urls)),
+    path('', include(router.urls)),
     # Endpoint adicional para punto más cercano
-    path('api/puntos-encuentro/<int:pk>/mas_cercano/', views.PuntoEncuentroViewSet.as_view({'get': 'mas_cercano'})),
+    path('puntos-encuentro/<int:pk>/mas_cercano/', views.PuntoEncuentroViewSet.as_view({'get': 'mas_cercano'})),
 ]

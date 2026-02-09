@@ -24,12 +24,17 @@
 </style>
 {% endblock %}
 
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+<li class="breadcrumb-item active">Mapa Interactivo</li>
+{% endblock %}
+
 {% block content %}
 <!-- Header del Mapa -->
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
     <div>
         <h1 class="h3 fw-bold text-dark mb-1">Mapa Interactivo - Centro Minero</h1>
-        <p class="text-muted mb-0 d-none d-md-block">Visualización en tiempo real con geolocalización y datos dinámicos</p>
+        <p class="text-muted">Visualización en tiempo real con geolocalización y datos dinámicos</p>
     </div>
     <div class="btn-group btn-group-mapa-vista" role="group">
         <input type="radio" class="btn-check" name="mapaVista" id="vistaNormal" autocomplete="off" checked>

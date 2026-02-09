@@ -14,64 +14,18 @@
     box-sizing: border-box;
 }
 
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    line-height: 1.6;
-}
-
-/* Mejoras para el botón de emergencia */
-.btn-emergency {
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 6px rgba(220, 53, 69, 0.3);
-}
-
-.btn-emergency:hover {
-    transform: scale(1.05);
-    box-shadow: 0 6px 12px rgba(220, 53, 69, 0.5);
-}
-
-.btn-emergency:active {
-    transform: scale(0.98);
-}
-
-/* Animación para notificaciones */
-@keyframes slideIn {
-    from {
-        transform: translateY(-20px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-.alert {
-    animation: slideIn 0.3s ease-out;
-}
-
-/* Estilos para tarjetas del dashboard */
-.card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-}
-
 /* Mejoras para tablas */
 .table {
     font-size: 0.95rem;
 }
 
 .table thead th {
-    background-color: var(--sena-verde);
-    color: white;
     font-weight: 600;
     text-transform: uppercase;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     letter-spacing: 0.5px;
+    color: var(--color-gray-500, #737373);
+    border-bottom: 2px solid var(--color-gray-200, #e5e5e5);
 }
 
 /* Estados de emergencia con colores */
@@ -93,10 +47,6 @@ body {
     .table {
         font-size: 0.85rem;
     }
-
-    .card {
-        margin-bottom: 1rem;
-    }
 }
 
 /* Loading spinner personalizado */
@@ -114,24 +64,9 @@ body {
     100% { transform: rotate(360deg); }
 }
 
-/* Mejoras de contraste para accesibilidad */
-.text-muted {
-    color: #6c757d !important;
-}
-
-/* Focus visible para teclado */
-a:focus,
-button:focus,
-input:focus,
-select:focus,
-textarea:focus {
-    outline: 2px solid var(--sena-verde);
-    outline-offset: 2px;
-}
-
 /* Estilos para mapas */
 .map-container {
-    border-radius: 8px;
+    border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }

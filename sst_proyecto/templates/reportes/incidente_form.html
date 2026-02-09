@@ -3,6 +3,7 @@
 {% block title %}Reportar Incidente - Sistema SST{% endblock %}
 
 {% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
 <li class="breadcrumb-item"><a href="{% url 'listar_incidentes' %}">Incidentes</a></li>
 <li class="breadcrumb-item active">Nuevo Reporte</li>
 {% endblock %}
@@ -111,10 +112,6 @@
                     </h4>
                 </div>
                 <div class="card-body p-4">
-<<<<<<< HEAD
-                    <form method="POST" enctype="multipart/form-data" id="incidenteForm" novalidate>
-                        {% csrf_token %}
-=======
 
                     {% if form.errors %}
                     <div class="alert alert-danger">
@@ -130,47 +127,11 @@
                     </div>
                     {% endif %}
 
-                    <form method="POST" enctype="multipart/form-data">
+                    <form method="POST" enctype="multipart/form-data" id="incidenteForm" novalidate>
                         {% csrf_token %}
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Título del Incidente</label>
-                            {{ form.titulo }}
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Tipo de Incidente</label>
-                                {{ form.tipo }}
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Nivel de Gravedad</label>
-                                {{ form.gravedad }}
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Ubicación Exacta</label>
-                            {{ form.ubicacion }}
-                            <div class="form-text">Ej: Bloque B, Laboratorio de Suelos, Pasillo 2.</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Fecha y Hora del Incidente</label>
-                            {{ form.fecha_incidente }}
-                            <div class="form-text">¿Cuándo ocurrió el incidente?</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Descripción Detallada</label>
-                            {{ form.descripcion }}
-                            <div class="form-text">Describa qué sucedió, personas involucradas y condiciones observadas.</div>
-                        </div>
->>>>>>> julian
 
                         <!-- Título -->
                         <div class="mb-4">
-<<<<<<< HEAD
                             <label for="id_titulo" class="form-label fw-bold required-field">Título del Incidente</label>
                             {{ form.titulo }}
                             <div class="invalid-feedback" id="titulo-error">
@@ -182,10 +143,6 @@
                             <div class="char-counter mt-1">
                                 <span id="titulo-counter">0</span>/200 caracteres
                             </div>
-=======
-                            <label class="form-label fw-bold">Evidencia Fotográfica (Opcional)</label>
-                            {{ form.foto }}
->>>>>>> julian
                         </div>
 
                         <!-- Tipo y Gravedad -->
@@ -302,7 +259,6 @@
     </div>
 </div>
 {% endblock %}
-<<<<<<< HEAD
 
 {% block extra_js %}
 <script>
@@ -515,5 +471,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
-=======
->>>>>>> julian

@@ -253,7 +253,6 @@
 
 {% block extra_js %}
 <script>
-<<<<<<< HEAD
 function reportarIncidente() {
     showConfirm(
         `<div class="text-center">
@@ -262,11 +261,9 @@ function reportarIncidente() {
             <p class="text-muted small mb-0">Serás redirigido al formulario de reporte</p>
         </div>`,
         function() {
-            // Mostrar loading toast
             showToast('Redirigiendo al formulario...', 'info', 1500);
-            // Redireccionar después de 1 segundo
             setTimeout(() => {
-                window.location.href = '/reportes/incidente/crear/';
+                window.location.href = '/reportes/incidentes/nuevo/';
             }, 1000);
         }
     );
@@ -446,7 +443,7 @@ function crearNuevoReporte() {
     bootstrap.Modal.getInstance(document.getElementById('globalModal')).hide();
     showToast('Redirigiendo al formulario de reporte...', 'info', 1500);
     setTimeout(() => {
-        window.location.href = '/reportes/incidente/crear/';
+        window.location.href = '/reportes/incidentes/nuevo/';
     }, 1000);
 }
 
@@ -457,7 +454,7 @@ function verMisReportesList() {
         window.location.href = '/reportes/incidentes/';
     }, 1000);
 }
-=======
+
 // Verificar estado actual del aprendiz (si esta en el centro)
 document.addEventListener('DOMContentLoaded', async function() {
     try {
@@ -538,6 +535,5 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 });
->>>>>>> julian
 </script>
 {% endblock %}

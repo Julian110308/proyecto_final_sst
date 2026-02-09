@@ -1062,13 +1062,58 @@
 
     <!-- Botón de Emergencia Flotante (Solo para roles autorizados) -->
     {% if user.rol != 'VISITANTE' %}
-    <button class="btn btn-emergencia text-white" id="botonPanico">
+    <button class="btn btn-emergencia text-white" id="botonPanico" data-bs-toggle="modal" data-bs-target="#modalEmergenciaPanico">
         <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
         EMERGENCIA
     </button>
     {% endif %}
 
-<<<<<<< HEAD
+    <!-- Modal de Emergencia -->
+    <div class="modal fade" id="modalEmergenciaPanico" tabindex="-1" aria-labelledby="modalEmergenciaPanicoLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header border-0 bg-danger text-white">
+                    <h5 class="modal-title fw-bold" id="modalEmergenciaPanicoLabel">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Reportar Emergencia
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <p class="text-muted mb-3">Selecciona el tipo de emergencia y describe brevemente la situacion.</p>
+
+                    <div class="mb-3">
+                        <label for="tipoEmergenciaSelect" class="form-label fw-bold">Tipo de emergencia</label>
+                        <select class="form-select" id="tipoEmergenciaSelect">
+                            <option value="" disabled selected>Cargando tipos...</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="descripcionEmergencia" class="form-label fw-bold">Descripcion breve</label>
+                        <textarea class="form-control" id="descripcionEmergencia" rows="2" placeholder="Ej: Se presenta un incendio en el bloque B, segundo piso..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="ubicacionEmergencia" class="form-label fw-bold">Ubicacion</label>
+                        <input type="text" class="form-control" id="ubicacionEmergencia" placeholder="Ej: Bloque A, Laboratorio de Suelos">
+                    </div>
+
+                    <div class="alert alert-warning small mb-0">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Se enviara tu ubicacion GPS automaticamente y se notificara a la brigada de emergencia.
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger fw-bold" id="btnEnviarEmergencia">
+                        <i class="bi bi-send-fill me-2"></i>Enviar Alerta
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ============================================= -->
     <!-- SISTEMA DE MODALES Y TOASTS REUTILIZABLE -->
     <!-- ============================================= -->
@@ -1129,10 +1174,9 @@
             </div>
         </div>
     </div>
-=======
+
     <!-- CSRF Token global para peticiones AJAX -->
     {% csrf_token %}
->>>>>>> julian
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -1210,19 +1254,8 @@
         });
 
         // ============================================================
-        // TIPOS DE EMERGENCIA - Cargar ANTES de usar en el botón
+        // BOTÓN DE EMERGENCIA
         // ============================================================
-        window._tiposEmergencia = [];
-
-        fetch('/api/emergencias/tipos/', { credentials: 'same-origin' })
-            .then(r => r.json())
-            .then(data => { window._tiposEmergencia = data.results || data; })
-            .catch(() => {});
-
-        // ============================================================
-        // BOTÓN DE EMERGENCIA (PÁNICO)
-        // ============================================================
-        // Coordenadas por defecto del Centro Minero SENA
         const CENTRO_MINERO_LAT = 5.7303596;
         const CENTRO_MINERO_LNG = -72.8943613;
 
@@ -1244,22 +1277,57 @@
                 });
                 return position.coords;
             } catch (e) {
-                // Si el usuario niega permisos o falla GPS, usar coordenadas del centro
                 return { latitude: CENTRO_MINERO_LAT, longitude: CENTRO_MINERO_LNG };
             }
         }
 
-        document.getElementById('botonPanico')?.addEventListener('click', async function() {
-            if (!confirm('¿ESTÁS EN UNA SITUACIÓN DE EMERGENCIA?\n\nSe notificará inmediatamente al personal de seguridad.')) {
+        // Cargar tipos de emergencia cuando se abre el modal
+        const modalEmergencia = document.getElementById('modalEmergenciaPanico');
+        if (modalEmergencia) {
+            modalEmergencia.addEventListener('show.bs.modal', async function() {
+                const select = document.getElementById('tipoEmergenciaSelect');
+                if (select.options.length <= 1) {
+                    try {
+                        const r = await fetch('/api/emergencias/tipos/', { credentials: 'same-origin' });
+                        const data = await r.json();
+                        const tipos = data.results || data;
+                        select.innerHTML = '<option value="" disabled selected>-- Selecciona el tipo --</option>';
+                        tipos.forEach(t => {
+                            select.innerHTML += `<option value="${t.id}">${t.nombre}</option>`;
+                        });
+                    } catch (e) {
+                        select.innerHTML = '<option value="1">Emergencia General</option>';
+                    }
+                }
+                // Limpiar campos
+                document.getElementById('descripcionEmergencia').value = '';
+                document.getElementById('ubicacionEmergencia').value = '';
+            });
+        }
+
+        // Enviar emergencia
+        document.getElementById('btnEnviarEmergencia')?.addEventListener('click', async function() {
+            const tipoSelect = document.getElementById('tipoEmergenciaSelect');
+            const descripcion = document.getElementById('descripcionEmergencia').value.trim();
+            const ubicacion = document.getElementById('ubicacionEmergencia').value.trim();
+
+            if (!tipoSelect.value) {
+                tipoSelect.classList.add('is-invalid');
                 return;
             }
+            tipoSelect.classList.remove('is-invalid');
+
+            if (!descripcion) {
+                document.getElementById('descripcionEmergencia').classList.add('is-invalid');
+                return;
+            }
+            document.getElementById('descripcionEmergencia').classList.remove('is-invalid');
 
             this.disabled = true;
-            this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Enviando...';
+            this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Enviando alerta...';
 
             try {
                 const coords = await obtenerUbicacion();
-                const tipoId = window._tiposEmergencia.length > 0 ? window._tiposEmergencia[0].id : 1;
 
                 const response = await fetch('/api/emergencias/emergencias/boton_panico/', {
                     method: 'POST',
@@ -1268,33 +1336,28 @@
                         'X-CSRFToken': obtenerCSRFToken()
                     },
                     body: JSON.stringify({
-                        tipo: tipoId,
-                        descripcion: 'Emergencia activada desde boton de panico',
-                        descripcion_ubicacion: 'Ubicacion GPS del usuario',
+                        tipo: parseInt(tipoSelect.value),
+                        descripcion: descripcion,
+                        descripcion_ubicacion: ubicacion || 'Ubicacion GPS del usuario',
                         latitud: coords.latitude,
                         longitud: coords.longitude
                     })
                 });
 
                 if (response.ok) {
-                    alert('ALERTA DE EMERGENCIA ENVIADA\n\n' +
-                          'La brigada de emergencia y personal de seguridad han sido notificados.\n' +
-                          'Ayuda en camino a tu ubicacion.\n\n' +
-                          'Permanezca seguro y siga las instrucciones del personal.');
+                    // Cerrar modal
+                    bootstrap.Modal.getInstance(modalEmergencia).hide();
+                    showToast('Alerta de emergencia enviada. La brigada ha sido notificada.', 'success', 5000);
                 } else {
                     const errData = await response.json().catch(() => ({}));
-                    console.error('Error respuesta:', response.status, errData);
                     throw new Error(errData.detail || 'Error al enviar la alerta');
                 }
             } catch (error) {
-                console.error('Error en boton de panico:', error);
-                alert('No se pudo enviar la alerta automaticamente.\n\n' +
-                      'Por favor contacta directamente:\n' +
-                      '- Emergencias: 123\n' +
-                      '- Vigilancia SENA: Ext. 100');
+                console.error('Error al reportar emergencia:', error);
+                showToast('No se pudo enviar la alerta. Contacta emergencias: 123 o Vigilancia SENA: Ext. 100', 'error', 8000);
             } finally {
                 this.disabled = false;
-                this.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>EMERGENCIA';
+                this.innerHTML = '<i class="bi bi-send-fill me-2"></i>Enviar Alerta';
             }
         });
 
@@ -1305,8 +1368,7 @@
                 bsAlert.close();
             });
         }, 5000);
-<<<<<<< HEAD
-        
+
         // ================================================================
         // SISTEMA DE MODALES Y TOASTS REUTILIZABLE
         // ================================================================
@@ -1482,8 +1544,6 @@
 
         /**
          * Agrega estado de loading a un botón
-         * @param {HTMLElement|string} button - Elemento del botón o selector
-         * @param {boolean} loading - true para activar, false para desactivar
          */
         function setButtonLoading(button, loading = true) {
             const btn = typeof button === 'string' ? document.querySelector(button) : button;
@@ -1492,12 +1552,10 @@
             if (loading) {
                 btn.disabled = true;
                 btn.classList.add('btn-loading');
-                // Guardar texto original
                 btn.dataset.originalText = btn.innerHTML;
             } else {
                 btn.disabled = false;
                 btn.classList.remove('btn-loading');
-                // Restaurar texto original
                 if (btn.dataset.originalText) {
                     btn.innerHTML = btn.dataset.originalText;
                     delete btn.dataset.originalText;
@@ -1507,8 +1565,6 @@
 
         /**
          * Agrega loading overlay a un contenedor
-         * @param {HTMLElement|string} container - Elemento contenedor o selector
-         * @param {boolean} loading - true para activar, false para desactivar
          */
         function setContainerLoading(container, loading = true) {
             const elem = typeof container === 'string' ? document.querySelector(container) : container;
@@ -1523,7 +1579,6 @@
 
         /**
          * Muestra/oculta la barra de loading global
-         * @param {boolean} show - true para mostrar, false para ocultar
          */
         function showLoadingBar(show = true) {
             let loadingBar = document.getElementById('globalLoadingBar');
@@ -1544,9 +1599,6 @@
 
         /**
          * Crea un skeleton screen en un contenedor
-         * @param {HTMLElement|string} container - Elemento contenedor o selector
-         * @param {string} type - Tipo de skeleton: 'text', 'card', 'table', 'avatar'
-         * @param {number} count - Cantidad de elementos skeleton a crear
          */
         function showSkeleton(container, type = 'text', count = 3) {
             const elem = typeof container === 'string' ? document.querySelector(container) : container;
@@ -1580,8 +1632,6 @@
 
         /**
          * Deshabilita todos los inputs de un formulario durante el envío
-         * @param {HTMLFormElement|string} form - Formulario o selector
-         * @param {boolean} disabled - true para deshabilitar, false para habilitar
          */
         function setFormDisabled(form, disabled = true) {
             const formElem = typeof form === 'string' ? document.querySelector(form) : form;
@@ -1592,7 +1642,6 @@
                 input.disabled = disabled;
             });
 
-            // Agregar loading state al botón submit
             const submitBtn = formElem.querySelector('button[type="submit"]');
             if (submitBtn) {
                 setButtonLoading(submitBtn, disabled);
@@ -1601,20 +1650,16 @@
 
         /**
          * Auto-manejo de loading en formularios
-         * Deshabilita el formulario al enviarlo y lo habilita si hay error
          */
         function enableFormLoadingStates() {
             document.querySelectorAll('form').forEach(form => {
-                // Evitar formularios de logout
                 if (form.action?.includes('logout')) return;
 
                 form.addEventListener('submit', function(e) {
-                    // Solo si no se previene por defecto
                     if (!e.defaultPrevented) {
                         setFormDisabled(this, true);
                         showLoadingBar(true);
 
-                        // Habilitar nuevamente después de 10 segundos por seguridad
                         setTimeout(() => {
                             setFormDisabled(this, false);
                             showLoadingBar(false);
@@ -1626,7 +1671,6 @@
 
         /**
          * Simula una carga de datos con skeleton
-         * Útil para desarrollo y testing
          */
         function simulateDataLoading(container, callback, delay = 2000) {
             showSkeleton(container, 'text', 5);
@@ -1639,7 +1683,6 @@
         // INICIALIZACIÓN AUTOMÁTICA DE LOADING STATES
         // ===================================================================
 
-        // Habilitar auto-manejo de loading en formularios cuando el DOM esté listo
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', enableFormLoadingStates);
         } else {
@@ -1650,14 +1693,10 @@
         document.addEventListener('click', function(e) {
             const link = e.target.closest('a[href]:not([target="_blank"]):not([href^="#"]):not([download])');
             if (link && !link.classList.contains('dropdown-item') && !link.dataset.bsToggle) {
-                // Mostrar loading bar en navegación
                 showLoadingBar(true);
-                // Ocultar después de 5 segundos por seguridad
                 setTimeout(() => showLoadingBar(false), 5000);
             }
         });
-
-=======
 
         // ============================================================
         // SISTEMA DE NOTIFICACIONES - Polling cada 30 segundos
@@ -1674,7 +1713,6 @@
 
         async function checkNotifications() {
             try {
-                // Consultar notificaciones generales del usuario
                 const response = await fetch('/api/auth/notificaciones/no_leidas/', {
                     credentials: 'same-origin'
                 });
@@ -1720,7 +1758,6 @@
                         </a>`;
                     }).join('');
 
-                    // Agregar boton "Ver todas" si hay notificaciones
                     list.innerHTML += `
                         <div class="border-top pt-2 mt-2">
                             <a href="#" class="dropdown-item text-center small text-primary" onclick="marcarTodasLeidas()">
@@ -1771,7 +1808,6 @@
         // Iniciar polling de notificaciones
         checkNotifications();
         setInterval(checkNotifications, 30000);
->>>>>>> julian
     </script>
 
     <!-- Design System JavaScript -->

@@ -504,7 +504,7 @@ const extintorIcon = L.divIcon({
 });
 
 // Cargar puntos de encuentro y equipamiento desde la API
-fetch('/api/mapas/api/puntos-encuentro/')
+fetch('/api/mapas/puntos-encuentro/')
     .then(r => r.json())
     .then(data => {
         (data.results || data).forEach(p => {
@@ -513,7 +513,7 @@ fetch('/api/mapas/api/puntos-encuentro/')
         });
     }).catch(() => {});
 
-fetch('/api/mapas/api/equipamientos/')
+fetch('/api/mapas/equipamientos/')
     .then(r => r.json())
     .then(data => {
         (data.results || data).forEach(e => {
@@ -650,7 +650,7 @@ async function cargarBrigadistas() {
 
 async function cargarEstadoEquipos() {
     try {
-        const r = await fetch('/api/mapas/api/equipamientos/');
+        const r = await fetch('/api/mapas/equipamientos/');
         const data = await r.json();
         const lista = data.results || data;
         const cont = document.getElementById('estadoEquipos');
