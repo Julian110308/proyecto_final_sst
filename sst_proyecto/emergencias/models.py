@@ -100,6 +100,17 @@ class Emergencia(models.Model):
     # Multimedia
     foto = models.ImageField(upload_to='emergencias/', null=True, blank=True)
 
+    # Falsa alarma
+    marcada_falsa_por = models.ForeignKey(
+        Usuario,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='falsas_alarmas_marcadas'
+    )
+    motivo_falsa_alarma = models.TextField(blank=True)
+    fecha_hora_falsa_alarma = models.DateTimeField(null=True, blank=True)
+
     # Impacto
     personas_afectadas = models.IntegerField(default=0)
     requiere_evacuacion = models.BooleanField(default=False)

@@ -100,6 +100,32 @@
             </div>
         </div>
 
+        <!-- Falsas Alarmas - Reincidentes -->
+        <div class="card card-modern mb-4" id="seccionFalsasAlarmas" style="display:none;">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 fw-bold text-danger">
+                    <i class="bi bi-shield-exclamation me-2"></i>Falsas Alarmas - Usuarios Identificados
+                </h6>
+                <span class="badge bg-danger" id="badgeFalsas">0</span>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Usuario</th>
+                                <th>Documento</th>
+                                <th>Rol</th>
+                                <th>Total Falsas Alarmas</th>
+                                <th>Nivel</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaReincidentes"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <!-- Historial de Emergencias -->
         <div class="card card-modern">
             <div class="card-header py-3">
@@ -188,6 +214,39 @@
     </div>
 </div>
 
+<!-- Modal Falsa Alarma -->
+<div class="modal fade" id="modalFalsaAlarma" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-secondary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-shield-exclamation me-2"></i>
+                    Marcar como Falsa Alarma
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Esta accion marcara la emergencia como falsa alarma. Se notificara al usuario que la reporto y a los administrativos.
+                </div>
+                <input type="hidden" id="falsaAlarmaEmergenciaId">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Motivo <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="motivoFalsaAlarma" rows="3"
+                        placeholder="Explique por que se considera falsa alarma..." required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarFalsaAlarma">
+                    <i class="bi bi-shield-exclamation me-1"></i> Confirmar Falsa Alarma
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
 
@@ -239,12 +298,16 @@ async function cargarEmergencias() {
                     </div>
                     <div class="ms-2">
                         ${e.estado === 'REPORTADA' ? `
-                            <button class="btn btn-sm btn-warning" onclick="atenderEmergencia(${e.id})">
+                            <button class="btn btn-sm btn-warning me-1" onclick="atenderEmergencia(${e.id})">
                                 <i class="bi bi-hand-index me-1"></i>Atender
                             </button>` : ''}
                         ${e.estado === 'EN_ATENCION' ? `
-                            <button class="btn btn-sm btn-success" onclick="resolverEmergencia(${e.id})">
+                            <button class="btn btn-sm btn-success me-1" onclick="resolverEmergencia(${e.id})">
                                 <i class="bi bi-check-lg me-1"></i>Resolver
+                            </button>` : ''}
+                        ${['REPORTADA', 'EN_ATENCION'].includes(e.estado) ? `
+                            <button class="btn btn-sm btn-outline-secondary mt-1" onclick="marcarFalsaAlarma(${e.id})">
+                                <i class="bi bi-x-circle me-1"></i>Falsa Alarma
                             </button>` : ''}
                     </div>
                 </div>
@@ -257,19 +320,24 @@ async function cargarEmergencias() {
             tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">
                 <i class="bi bi-inbox fs-1 mb-2 d-block"></i>No hay emergencias registradas</td></tr>`;
         } else {
-            tbody.innerHTML = todas.map(e => `
-                <tr>
+            tbody.innerHTML = todas.map(e => {
+                const nombreReportante = e.reportada_por_detalle
+                    ? `${e.reportada_por_detalle.first_name || ''} ${e.reportada_por_detalle.last_name || ''}`.trim()
+                    : '-';
+                return `
+                <tr class="${e.estado === 'FALSA_ALARMA' ? 'table-danger bg-opacity-10' : ''}">
                     <td><span class="fw-semibold">${e.tipo_detalle?.nombre || '-'}</span></td>
                     <td class="text-truncate" style="max-width:200px;">${e.descripcion || '-'}</td>
-                    <td>${e.reportada_por_detalle?.first_name || '-'}</td>
+                    <td>${nombreReportante}</td>
                     <td><span class="badge bg-${estadoColores[e.estado] || 'secondary'}">${e.estado_display || e.estado}</span></td>
                     <td><small>${new Date(e.fecha_hora_reporte).toLocaleString('es-CO', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</small></td>
                     <td>
-                        ${e.estado === 'REPORTADA' ? `<button class="btn btn-sm btn-outline-warning" onclick="atenderEmergencia(${e.id})">Atender</button>` : ''}
-                        ${e.estado === 'EN_ATENCION' ? `<button class="btn btn-sm btn-outline-success" onclick="resolverEmergencia(${e.id})">Resolver</button>` : ''}
+                        ${e.estado === 'REPORTADA' ? `<button class="btn btn-sm btn-outline-warning me-1" onclick="atenderEmergencia(${e.id})">Atender</button>` : ''}
+                        ${e.estado === 'EN_ATENCION' ? `<button class="btn btn-sm btn-outline-success me-1" onclick="resolverEmergencia(${e.id})">Resolver</button>` : ''}
+                        ${['REPORTADA', 'EN_ATENCION'].includes(e.estado) ? `<button class="btn btn-sm btn-outline-danger" onclick="marcarFalsaAlarma(${e.id})">Falsa Alarma</button>` : ''}
                     </td>
-                </tr>
-            `).join('');
+                </tr>`;
+            }).join('');
         }
     } catch (e) {
         console.error('Error cargando emergencias:', e);
@@ -461,6 +529,93 @@ async function resolverEmergencia(id) {
     }
 }
 
+function marcarFalsaAlarma(id) {
+    document.getElementById('falsaAlarmaEmergenciaId').value = id;
+    document.getElementById('motivoFalsaAlarma').value = '';
+    new bootstrap.Modal(document.getElementById('modalFalsaAlarma')).show();
+}
+
+document.getElementById('btnConfirmarFalsaAlarma').addEventListener('click', async function() {
+    const id = document.getElementById('falsaAlarmaEmergenciaId').value;
+    const motivo = document.getElementById('motivoFalsaAlarma').value.trim();
+
+    if (!motivo) {
+        alert('Debes escribir un motivo para marcar como falsa alarma.');
+        return;
+    }
+
+    try {
+        const resp = await fetch(`/api/emergencias/emergencias/${id}/marcar-falsa-alarma/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            credentials: 'same-origin',
+            body: JSON.stringify({ motivo: motivo })
+        });
+
+        if (resp.ok) {
+            const data = await resp.json();
+            bootstrap.Modal.getInstance(document.getElementById('modalFalsaAlarma')).hide();
+
+            let mensaje = `Emergencia marcada como falsa alarma.\nReportada por: ${data.reportada_por}`;
+            if (data.total_falsas_alarmas_usuario > 1) {
+                mensaje += `\n\nATENCION: Este usuario tiene ${data.total_falsas_alarmas_usuario} falsas alarmas registradas.`;
+            }
+            alert(mensaje);
+
+            cargarEmergencias();
+            cargarFalsasAlarmas();
+        } else {
+            const err = await resp.json();
+            alert(err.error || 'Error al marcar como falsa alarma');
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+});
+
+async function cargarFalsasAlarmas() {
+    try {
+        const resp = await fetch('/api/emergencias/emergencias/falsas-alarmas/', { credentials: 'same-origin' });
+        const data = await resp.json();
+
+        const seccion = document.getElementById('seccionFalsasAlarmas');
+        const tbody = document.getElementById('tablaReincidentes');
+        const badge = document.getElementById('badgeFalsas');
+
+        if (data.reincidentes && data.reincidentes.length > 0) {
+            seccion.style.display = 'block';
+            badge.textContent = data.total;
+
+            tbody.innerHTML = data.reincidentes.map(r => {
+                const nombre = `${r.reportada_por__first_name || ''} ${r.reportada_por__last_name || ''}`.trim();
+                let nivel = 'Leve';
+                let nivelClass = 'bg-warning text-dark';
+                if (r.total_falsas >= 3) {
+                    nivel = 'Critico';
+                    nivelClass = 'bg-danger';
+                } else if (r.total_falsas >= 2) {
+                    nivel = 'Moderado';
+                    nivelClass = 'bg-orange text-white';
+                }
+                return `
+                    <tr class="${r.total_falsas >= 3 ? 'table-danger' : r.total_falsas >= 2 ? 'table-warning' : ''}">
+                        <td class="fw-semibold">${nombre || 'Desconocido'}</td>
+                        <td>${r.reportada_por__numero_documento || 'N/A'}</td>
+                        <td>${r.reportada_por__rol || '-'}</td>
+                        <td>
+                            <span class="badge bg-danger rounded-pill fs-6">${r.total_falsas}</span>
+                        </td>
+                        <td><span class="badge ${nivelClass}">${nivel}</span></td>
+                    </tr>`;
+            }).join('');
+        } else {
+            seccion.style.display = 'none';
+        }
+    } catch (e) {
+        console.error('Error cargando falsas alarmas:', e);
+    }
+}
+
 async function notificarBrigada() {
     if (!confirm('Se enviara notificacion a todos los miembros de la brigada. Continuar?')) return;
     alert('Notificacion enviada a la brigada de emergencia.');
@@ -474,6 +629,7 @@ cargarTiposEmergencia();
 cargarEmergencias();
 cargarBrigada();
 cargarContactos();
+cargarFalsasAlarmas();
 
 // Actualizar cada 30 segundos
 setInterval(cargarEmergencias, 30000);

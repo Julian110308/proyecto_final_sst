@@ -3,7 +3,7 @@
 {% block title %}Dashboard Aprendiz - Sistema SST{% endblock %}
 
 {% block breadcrumb %}
-<li class="breadcrumb-item active">Dashboard Aprendiz</li>
+<li class="breadcrumb-item active">Panel de Aprendiz</li>
 {% endblock %}
 
 {% block content %}
@@ -22,8 +22,8 @@
 </div>
 
 <!-- Tarjetas de Informacion Rapida -->
-<div class="row g-4 mb-4">
-    {% include 'components/metric-card.html' with label="Mis Ingresos Este Mes" value=mis_ingresos_mes|default:0 sublabel="Dias con acceso registrado" sublabel_icon="bi bi-calendar-check" sublabel_color="success" icon="bi-calendar-check" icon_color="success" %}
+<div class="row g-3 mb-4">
+    {% include 'components/metric-card.html' with label="Mis Ingresos Este Mes" value=mis_ingresos_mes|default:0 sublabel="Dias con acceso registrado" sublabel_icon="bi bi-calendar-check" sublabel_color="success" icon="bi-calendar-check" icon_color="success" border_color="success" %}
 
     <div class="col-xl-3 col-md-6">
         <div class="card card-modern border-0">
@@ -44,57 +44,45 @@
         </div>
     </div>
 
-    {% include 'components/metric-card.html' with label="Personas en Centro" value=personas_en_centro|default:0 sublabel=porcentaje_ocupacion|default:0|add:"% ocupacion" sublabel_icon="bi bi-building" sublabel_color="primary" icon="bi-people-fill" icon_color="primary" %}
+    {% include 'components/metric-card.html' with label="Personas en Centro" value=personas_en_centro|default:0 sublabel=porcentaje_ocupacion|default:0|add:"% ocupacion" sublabel_icon="bi bi-building" sublabel_color="primary" icon="bi-people-fill" icon_color="primary" border_color="primary" %}
 
-    {% include 'components/metric-card.html' with label="Ingresos Hoy" value=ingresos_hoy|default:0 sublabel="Total del centro" sublabel_icon="bi bi-door-open" sublabel_color="info" icon="bi-door-open" icon_color="info" %}
+    {% include 'components/metric-card.html' with label="Ingresos Hoy" value=ingresos_hoy|default:0 sublabel="Total del centro" sublabel_icon="bi bi-door-open" sublabel_color="info" icon="bi-door-open" icon_color="info" border_color="info" %}
 </div>
 
 <!-- Acciones Rapidas -->
-<div class="row g-4 mb-4">
-    <div class="col-md-12">
-        <div class="card card-modern">
-            <div class="card-header-modern">
-                <h6 class="mb-0">
-                    <i class="bi bi-lightning-charge-fill me-2"></i>
-                    Acciones Rapidas
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <a href="{% url 'mi_asistencia' %}" class="btn btn-outline-primary w-100 py-3 text-decoration-none">
-                            <i class="bi bi-clock-history fs-4 d-block mb-2"></i>
-                            <span class="fw-bold">Mis Accesos</span>
-                        </a>
-                    </div>
-                    <div class="col-md-3">
-                        <a href="/reportes/incidentes/nuevo/" class="btn btn-outline-danger w-100 py-3 text-decoration-none">
-                            <i class="bi bi-exclamation-triangle-fill fs-4 d-block mb-2"></i>
-                            <span class="fw-bold">Reportar Incidente</span>
-                        </a>
-                    </div>
-                    <div class="col-md-3">
-                        <a href="/mapas/" class="btn btn-outline-success w-100 py-3 text-decoration-none">
-                            <i class="bi bi-map fs-4 d-block mb-2"></i>
-                            <span class="fw-bold">Mapa y Evacuacion</span>
-                        </a>
-                    </div>
-                    <div class="col-md-3">
-                        <a href="{% url 'informacion_sst' %}" class="btn btn-outline-info w-100 py-3 text-decoration-none">
-                            <i class="bi bi-shield-check fs-4 d-block mb-2"></i>
-                            <span class="fw-bold">Informacion SST</span>
-                        </a>
-                    </div>
-                </div>
-            </div>
+<div class="card card-modern mb-4">
+    <div class="card-header-modern">
+        <h6 class="mb-0">
+            <i class="bi bi-lightning-charge-fill me-2"></i>
+            Acciones Rapidas
+        </h6>
+    </div>
+    <div class="card-body">
+        <div class="d-flex flex-wrap gap-3">
+            <a href="{% url 'mi_asistencia' %}" class="btn btn-light border py-2 px-3 d-flex align-items-center text-decoration-none">
+                <i class="bi bi-clock-history text-primary fs-5 me-2"></i>
+                <span class="small">Mis Accesos</span>
+            </a>
+            <a href="/reportes/incidentes/nuevo/" class="btn btn-light border py-2 px-3 d-flex align-items-center text-decoration-none">
+                <i class="bi bi-exclamation-triangle-fill text-danger fs-5 me-2"></i>
+                <span class="small">Reportar Incidente</span>
+            </a>
+            <a href="/mapas/" class="btn btn-light border py-2 px-3 d-flex align-items-center text-decoration-none">
+                <i class="bi bi-map text-success fs-5 me-2"></i>
+                <span class="small">Mapa y Evacuacion</span>
+            </a>
+            <a href="{% url 'informacion_sst' %}" class="btn btn-light border py-2 px-3 d-flex align-items-center text-decoration-none">
+                <i class="bi bi-shield-check text-info fs-5 me-2"></i>
+                <span class="small">Informacion SST</span>
+            </a>
         </div>
     </div>
 </div>
 
-<!-- Grafica de Asistencia Mensual -->
+<!-- Grafica de Asistencia Mensual + Contactos de Emergencia -->
 <div class="row g-4 mb-4">
     <div class="col-lg-8">
-        <div class="card card-modern">
+        <div class="card card-modern h-100">
             <div class="card-header-modern d-flex justify-content-between align-items-center">
                 <h6 class="mb-0">
                     <i class="bi bi-graph-up me-2"></i>
@@ -108,7 +96,6 @@
         </div>
     </div>
 
-    <!-- Contactos de Emergencia -->
     <div class="col-lg-4">
         <div class="card card-modern border-start border-4 border-danger h-100">
             <div class="card-header-modern">
@@ -160,92 +147,89 @@
 </div>
 
 <!-- Historial de Acceso Reciente -->
-<div class="row g-4 mb-4">
-    <div class="col-lg-8">
-        <div class="card card-modern">
-            <div class="card-header-modern d-flex justify-content-between align-items-center">
-                <h6 class="mb-0">
-                    <i class="bi bi-clock-history me-2"></i>
-                    Mi Historial de Acceso Reciente
-                </h6>
-                <a href="{% url 'mi_asistencia' %}" class="btn btn-sm btn-outline-secondary">Ver todo</a>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-light">
-                            <tr>
-                                <th class="ps-4">Fecha</th>
-                                <th>Ingreso</th>
-                                <th>Salida</th>
-                                <th>Metodo</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for registro in mis_accesos %}
-                            <tr>
-                                <td class="ps-4 fw-bold">{{ registro.fecha_hora_ingreso|date:"d/m/Y" }}</td>
-                                <td>{{ registro.fecha_hora_ingreso|time:"H:i" }}</td>
-                                <td>
-                                    {% if registro.fecha_hora_egreso %}
-                                        {{ registro.fecha_hora_egreso|time:"H:i" }}
-                                    {% else %}
-                                        <span class="text-muted">--:--</span>
-                                    {% endif %}
-                                </td>
-                                <td><span class="badge bg-light text-dark border">{{ registro.get_metodo_ingreso_display }}</span></td>
-                                <td>
-                                    {% if registro.fecha_hora_egreso %}
-                                        <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3">Completado</span>
-                                    {% else %}
-                                        <span class="badge bg-success-subtle text-success rounded-pill px-3">En Centro</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="5" class="text-center py-4 text-muted">
-                                    <i class="bi bi-inbox fs-3 d-block mb-2"></i>
-                                    No hay registros de acceso este mes.
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+<div class="card card-modern mb-4">
+    <div class="card-header-modern d-flex justify-content-between align-items-center" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#collapseHistorial">
+        <h6 class="mb-0">
+            <i class="bi bi-clock-history me-2"></i>
+            Mi Historial de Acceso Reciente
+        </h6>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{% url 'mi_asistencia' %}" class="btn btn-sm btn-outline-secondary" onclick="event.stopPropagation();">Ver todo</a>
+            <i class="bi bi-chevron-down"></i>
+        </div>
+    </div>
+    <div class="collapse show" id="collapseHistorial">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Fecha</th>
+                            <th>Ingreso</th>
+                            <th>Salida</th>
+                            <th>Metodo</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for registro in mis_accesos %}
+                        <tr>
+                            <td class="ps-4 fw-bold">{{ registro.fecha_hora_ingreso|date:"d/m/Y" }}</td>
+                            <td>{{ registro.fecha_hora_ingreso|time:"H:i" }}</td>
+                            <td>
+                                {% if registro.fecha_hora_egreso %}
+                                    {{ registro.fecha_hora_egreso|time:"H:i" }}
+                                {% else %}
+                                    <span class="text-muted">--:--</span>
+                                {% endif %}
+                            </td>
+                            <td><span class="badge bg-light text-dark border">{{ registro.get_metodo_ingreso_display }}</span></td>
+                            <td>
+                                {% if registro.fecha_hora_egreso %}
+                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3">Completado</span>
+                                {% else %}
+                                    <span class="badge bg-success-subtle text-success rounded-pill px-3">En Centro</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">
+                                <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                                No hay registros de acceso este mes.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Informacion de Seguridad -->
-    <div class="col-lg-4">
-        <div class="card card-modern border-start border-4 border-info h-100">
-            <div class="card-header-modern">
-                <h6 class="mb-0">
-                    <i class="bi bi-shield-check me-2"></i>
-                    Seguridad en el Centro
-                </h6>
-            </div>
-            <div class="card-body">
-                <p class="text-muted small">
-                    Recuerda siempre portar tu carnet de identificacion y seguir los protocolos de seguridad del centro.
-                </p>
-                <ul class="list-unstyled small text-muted">
-                    <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Registra tu ingreso y salida</li>
-                    <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Conoce las rutas de evacuacion</li>
-                    <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Reporta cualquier incidente</li>
-                    <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Ubica los puntos de encuentro</li>
-                </ul>
-                <div class="d-grid gap-2 mt-3">
-                    <a href="/mapas/" class="btn btn-sm btn-outline-success">
-                        <i class="bi bi-map me-1"></i>Ver Rutas de Evacuacion
-                    </a>
-                    <a href="/emergencias/" class="btn btn-sm btn-outline-danger">
-                        <i class="bi bi-exclamation-triangle me-1"></i>Emergencias
-                    </a>
-                </div>
-            </div>
+<!-- Informacion de Seguridad -->
+<div class="card card-modern border-start border-4 border-info mb-4">
+    <div class="card-header-modern d-flex justify-content-between align-items-center" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#collapseSeguridad">
+        <h6 class="mb-0">
+            <i class="bi bi-shield-check me-2"></i>
+            Seguridad en el Centro
+        </h6>
+        <i class="bi bi-chevron-down"></i>
+    </div>
+    <div class="collapse" id="collapseSeguridad">
+        <div class="card-body">
+            <p class="text-muted small">
+                Recuerda siempre portar tu carnet de identificacion y seguir los protocolos de seguridad del centro.
+            </p>
+            <ul class="list-unstyled small text-muted">
+                <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Registra tu ingreso y salida</li>
+                <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Conoce las rutas de evacuacion</li>
+                <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Reporta cualquier incidente</li>
+                <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Ubica los puntos de encuentro</li>
+            </ul>
+            <a href="/mapas/" class="btn btn-sm btn-outline-success">
+                <i class="bi bi-map me-1"></i>Ver Rutas de Evacuacion
+            </a>
         </div>
     </div>
 </div>
@@ -253,13 +237,13 @@
 
 {% block extra_js %}
 <script>
-// Verificar estado actual del aprendiz (si esta en el centro)
 document.addEventListener('DOMContentLoaded', async function() {
+    // Verificar estado actual del aprendiz
     try {
         const r = await fetch('/api/acceso/registros/registros_recientes/?limite=50');
         const data = await r.json();
         const miDoc = '{{ user.numero_documento }}';
-        const miRegistro = data.find(d => d.usuario.documento === miDoc && !d.fecha_hora_egreso);
+        const miRegistro = data.find(d => d.usuario && d.usuario.documento === miDoc && !d.fecha_hora_egreso);
         const el = document.getElementById('estadoAprendiz');
         const sub = document.getElementById('estadoSub');
         if (miRegistro) {
@@ -323,7 +307,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                             font: { size: 9 },
                             maxRotation: 0,
                             callback: function(val, idx) {
-                                // Mostrar solo algunos dias para evitar saturacion
                                 return idx % 5 === 0 ? this.getLabelForValue(val) : '';
                             }
                         }

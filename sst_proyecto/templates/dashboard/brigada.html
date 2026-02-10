@@ -8,52 +8,342 @@
 {% endblock %}
 
 {% block content %}
-<!-- Header -->
-<div class="d-flex justify-content-between align-items-center mb-4">
+<!-- Seccion 1: Header + Estado del Brigadista -->
+<div class="d-flex justify-content-between align-items-center mb-3">
     <div>
         <h1 class="h3 fw-bold text-dark mb-1">
             <i class="bi bi-shield-fill-exclamation text-danger me-2"></i>
-            Brigada de Emergencia - {{ user.get_full_name|default:user.username }}
+            Brigada de Emergencia
         </h1>
         <p class="text-muted mb-0">
-            Sistema de respuesta a emergencias y evacuación
+            {{ user.get_full_name|default:user.username }}
             <span id="lastUpdateIndicator" class="ms-3 badge bg-light text-secondary">
                 <i class="bi bi-arrow-repeat me-1"></i>Cargando...
             </span>
         </p>
     </div>
-    <div class="btn-group">
-        <button class="btn btn-outline-secondary" onclick="refrescarTodo()" title="Actualizar ahora">
+    <div class="d-flex align-items-center gap-2">
+        <!-- Toggle de Disponibilidad -->
+        <div id="toggleDisponibilidad" class="d-flex align-items-center border rounded-pill px-3 py-2">
+            <span class="me-2 small fw-bold" id="textoDisponibilidad">Cargando...</span>
+            <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" role="switch" id="switchDisponible" onchange="toggleDisponibilidad()" style="cursor:pointer; width:3rem; height:1.5rem;">
+            </div>
+        </div>
+        <button class="btn btn-outline-secondary btn-sm" onclick="refrescarTodo()" title="Actualizar ahora">
             <i class="bi bi-arrow-clockwise"></i>
-        </button>
-        <button class="btn btn-danger btn-lg" onclick="mostrarModalEmergencia()" id="btnActivarEmergencia">
-            <i class="bi bi-megaphone-fill me-2"></i>ACTIVAR EMERGENCIA
-        </button>
-        <button class="btn btn-outline-warning" onclick="window.location.href='/emergencias/'">
-            <i class="bi bi-list-ul me-1"></i>Ver Todas
         </button>
     </div>
 </div>
 
-<!-- Modal de Activacion de Emergencia -->
-<div class="modal fade" id="modalEmergencia" tabindex="-1" aria-labelledby="modalEmergenciaLabel" aria-hidden="true">
+<!-- Seccion 2: Metricas (4 cards) -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0 border-start border-4 border-danger">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Emergencias Activas</h6>
+                        <h3 class="fw-bold mb-0" id="metricaActivas">
+                            <span class="spinner-border spinner-border-sm"></span>
+                        </h3>
+                    </div>
+                    <div class="rounded-3 p-2 bg-danger bg-opacity-10">
+                        <i class="bi bi-exclamation-triangle-fill fs-4 text-danger"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0 border-start border-4 border-warning">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Brigadistas Disponibles</h6>
+                        <h3 class="fw-bold mb-0" id="metricaBrigadistas">
+                            <span class="spinner-border spinner-border-sm"></span>
+                        </h3>
+                    </div>
+                    <div class="rounded-3 p-2 bg-warning bg-opacity-10">
+                        <i class="bi bi-people-fill fs-4 text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0 border-start border-4 border-info">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-1 small">Tiempo Promedio Resp.</h6>
+                        <h3 class="fw-bold mb-0" id="metricaTiempo">-- min</h3>
+                    </div>
+                    <div class="rounded-3 p-2 bg-info bg-opacity-10">
+                        <i class="bi bi-stopwatch fs-4 text-info"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% include 'components/metric-card.html' with label="Incidentes del Mes" value=incidentes_total_mes|default:0 sublabel=incidentes_pendientes|default:0|add:" pendientes" sublabel_icon="bi bi-exclamation-circle" sublabel_color="warning" icon="bi-clipboard-data" icon_color="primary" border_color="primary" %}
+</div>
+
+<!-- Seccion 3: Emergencias Activas + Mapa -->
+<div class="row g-4 mb-4">
+    <!-- Emergencias Activas -->
+    <div class="col-lg-7">
+        <div class="card card-modern">
+            <div class="card-header-modern d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-exclamation-octagon-fill text-danger me-2"></i>
+                    Emergencias Activas
+                    <span class="badge bg-danger ms-1" id="badgeActivas" style="display:none;">0</span>
+                </h6>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-danger btn-sm" onclick="mostrarModalEmergencia()">
+                        <i class="bi bi-megaphone-fill me-1"></i>Reportar
+                    </button>
+                    <a href="/emergencias/" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-list-ul me-1"></i>Ver Todas
+                    </a>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div id="listaEmergenciasActivas" class="p-3">
+                    <div class="text-center py-4 text-muted">
+                        <div class="spinner-border spinner-border-sm me-2"></div>Cargando emergencias...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mapa -->
+    <div class="col-lg-5">
+        <div class="card card-modern">
+            <div class="card-header-modern d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-geo-alt-fill me-2"></i>Mapa
+                </h6>
+                <a href="/mapas/" class="btn btn-sm btn-outline-primary">Mapa Completo</a>
+            </div>
+            <div class="card-body p-0">
+                <div id="evacuationMap" style="height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Seccion 4: Equipo de Brigada (colapsable) -->
+<div class="card card-modern mb-4">
+    <div class="card-header-modern d-flex justify-content-between align-items-center" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#collapseBrigadistas">
+        <h6 class="mb-0">
+            <i class="bi bi-people-fill me-2"></i>
+            Equipo de Brigada
+            <span class="badge bg-success ms-1" id="badgeBrigadistasDisp">0</span>
+            <small class="text-muted ms-1">disponibles</small>
+        </h6>
+        <i class="bi bi-chevron-down"></i>
+    </div>
+    <div class="collapse" id="collapseBrigadistas">
+        <div class="card-body">
+            <div class="row" id="listaBrigadistas">
+                <div class="text-center py-3 text-muted">
+                    <div class="spinner-border spinner-border-sm me-2"></div>Cargando...
+                </div>
+            </div>
+            <a href="{% url 'mi_brigada' %}" class="btn btn-sm btn-outline-secondary mt-2">
+                <i class="bi bi-people me-1"></i>Ver todos los brigadistas
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Seccion 5: Incidentes Reportados (colapsable) -->
+<div class="card card-modern mb-4">
+    <div class="card-header-modern d-flex justify-content-between align-items-center" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#collapseIncidentes">
+        <h6 class="mb-0">
+            <i class="bi bi-exclamation-triangle-fill me-2 text-warning"></i>
+            Incidentes Reportados
+            {% if incidentes_pendientes %}
+            <span class="badge bg-danger ms-2">{{ incidentes_pendientes }}</span>
+            {% endif %}
+        </h6>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{% url 'listar_incidentes' %}" class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation();">
+                <i class="bi bi-list-ul me-1"></i>Ver Todos
+            </a>
+            <i class="bi bi-chevron-down"></i>
+        </div>
+    </div>
+    <div class="collapse" id="collapseIncidentes">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Incidente</th>
+                            <th>Gravedad</th>
+                            <th>Estado</th>
+                            <th>Reportado por</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for incidente in incidentes_recientes %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold">{{ incidente.titulo }}</div>
+                                <small class="text-muted">{{ incidente.ubicacion }}</small>
+                            </td>
+                            <td>
+                                {% if incidente.gravedad == 'CRITICA' %}
+                                    <span class="badge bg-danger">Critica</span>
+                                {% elif incidente.gravedad == 'ALTA' %}
+                                    <span class="badge bg-warning text-dark">Alta</span>
+                                {% elif incidente.gravedad == 'MEDIA' %}
+                                    <span class="badge bg-info">Media</span>
+                                {% else %}
+                                    <span class="badge bg-success">Baja</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if incidente.estado == 'REPORTADO' %}
+                                    <span class="badge bg-warning text-dark">Reportado</span>
+                                {% elif incidente.estado == 'EN_REVISION' or incidente.estado == 'EN_PROCESO' %}
+                                    <span class="badge bg-info">En Proceso</span>
+                                {% elif incidente.estado == 'RESUELTO' %}
+                                    <span class="badge bg-success">Resuelto</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ incidente.get_estado_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div>{{ incidente.reportado_por.get_full_name|default:incidente.reportado_por.username }}</div>
+                                <small class="text-muted">{{ incidente.reportado_por.get_rol_display }}</small>
+                            </td>
+                            <td>
+                                <small>{{ incidente.fecha_reporte|date:"d/m/Y" }}</small><br>
+                                <small class="text-muted">{{ incidente.fecha_reporte|time:"h:i A" }}</small>
+                            </td>
+                            <td>
+                                <a href="{% url 'detalle_incidente' incidente.id %}" class="btn btn-sm btn-outline-primary" title="Ver detalle">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                <i class="bi bi-check-circle fs-4 d-block mb-2"></i>
+                                No hay incidentes reportados.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Seccion 6: Historial + Estadisticas (colapsable) -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card card-modern">
+            <div class="card-header-modern d-flex justify-content-between align-items-center" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#collapseHistorial">
+                <h6 class="mb-0">
+                    <i class="bi bi-clock-history me-2"></i>Historial Reciente
+                </h6>
+                <i class="bi bi-chevron-down"></i>
+            </div>
+            <div class="collapse" id="collapseHistorial">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-3">Tipo</th>
+                                    <th>Ubicacion</th>
+                                    <th>Estado</th>
+                                    <th>Fecha</th>
+                                    <th>Resolucion</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaHistorial">
+                                <tr><td colspan="5" class="text-center py-3 text-muted">
+                                    <div class="spinner-border spinner-border-sm me-2"></div>Cargando...
+                                </td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card card-modern">
+            <div class="card-header-modern d-flex justify-content-between align-items-center" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#collapseStats">
+                <h6 class="mb-0">
+                    <i class="bi bi-graph-up me-2"></i>Estadisticas del Mes
+                </h6>
+                <i class="bi bi-chevron-down"></i>
+            </div>
+            <div class="collapse" id="collapseStats">
+                <div class="card-body" id="statsEmergencias">
+                    <div class="text-center py-3 text-muted">
+                        <div class="spinner-border spinner-border-sm me-2"></div>Cargando...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Seccion 7: Equipamiento (colapsable) -->
+<div class="card card-modern mb-4">
+    <div class="card-header-modern d-flex justify-content-between align-items-center" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#collapseEquipos">
+        <h6 class="mb-0">
+            <i class="bi bi-tools me-2"></i>Estado de Equipos
+        </h6>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{% url 'equipos_brigada' %}" class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation();">Ver todos</a>
+            <i class="bi bi-chevron-down"></i>
+        </div>
+    </div>
+    <div class="collapse" id="collapseEquipos">
+        <div class="card-body" id="estadoEquipos">
+            <div class="text-center py-3 text-muted">
+                <div class="spinner-border spinner-border-sm me-2"></div>Cargando...
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Reportar Emergencia -->
+<div class="modal fade" id="modalEmergencia" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title" id="modalEmergenciaLabel">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>ACTIVAR EMERGENCIA
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Reportar Emergencia
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="alert alert-warning">
                     <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    <strong>Atencion:</strong> Esta accion activara una alerta de emergencia y notificara a todo el personal de brigada.
+                    <strong>Atencion:</strong> Esta accion activara una alerta y notificara a todo el personal de brigada.
                 </div>
                 <form id="formEmergencia">
                     <div class="mb-3">
                         <label for="tipoEmergencia" class="form-label fw-bold">Tipo de Emergencia *</label>
-                        <select class="form-select form-select-lg" id="tipoEmergencia" required>
+                        <select class="form-select" id="tipoEmergencia" required>
                             <option value="">Seleccione el tipo...</option>
                         </select>
                     </div>
@@ -67,23 +357,21 @@
                             <input type="text" class="form-control" id="ubicacionEmergencia" placeholder="Ej: Bloque A, segundo piso">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="personasAfectadas" class="form-label fw-bold">Personas afectadas (estimado)</label>
+                            <label for="personasAfectadas" class="form-label fw-bold">Personas afectadas</label>
                             <input type="number" class="form-control" id="personasAfectadas" value="0" min="0">
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="requiereEvacuacion">
-                            <label class="form-check-label fw-bold text-danger" for="requiereEvacuacion">
-                                <i class="bi bi-sign-stop-fill me-1"></i>Requiere evacuacion inmediata
-                            </label>
-                        </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="requiereEvacuacion">
+                        <label class="form-check-label fw-bold text-danger" for="requiereEvacuacion">
+                            <i class="bi bi-sign-stop-fill me-1"></i>Requiere evacuacion inmediata
+                        </label>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-danger btn-lg" onclick="confirmarEmergencia()">
+                <button type="button" class="btn btn-danger" onclick="confirmarEmergencia()" id="btnConfirmarEmergencia">
                     <i class="bi bi-megaphone-fill me-2"></i>CONFIRMAR EMERGENCIA
                 </button>
             </div>
@@ -91,350 +379,72 @@
     </div>
 </div>
 
-<!-- Estado de Emergencias -->
-<div class="row g-4 mb-4">
-    <div class="col-xl-3 col-md-6">
-        <div class="card card-modern border-0 border-start border-4" id="cardEstado">
-            <div class="card-body p-4">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Estado Actual</h6>
-                        <h3 class="fw-bold mb-0" id="estadoTexto">Cargando...</h3>
-                        <small id="estadoSub"><i class="bi bi-hourglass-split"></i> Verificando...</small>
-                    </div>
-                    <div class="bg-light rounded-3 p-3">
-                        <i class="bi bi-shield-check fs-2" id="estadoIcono"></i>
-                    </div>
+<!-- Modal: Resolver Emergencia -->
+<div class="modal fade" id="modalResolver" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="bi bi-check-circle me-2"></i>Resolver Emergencia</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="accionesTomadas" class="form-label fw-bold">Acciones tomadas</label>
+                    <textarea class="form-control" id="accionesTomadas" rows="3" placeholder="Describa las acciones que se tomaron para resolver la emergencia..."></textarea>
                 </div>
             </div>
-        </div>
-    </div>
-
-    {% include 'components/metric-card.html' with label="Personas en Centro" value=personas_en_centro|default:0 sublabel=porcentaje_ocupacion|default:0|add:"% ocupación" sublabel_icon="bi bi-building" sublabel_color="success" icon="bi-people-fill" icon_color="primary" border_color="primary" %}
-
-    {% include 'components/metric-card.html' with label="Brigadistas Disponibles" value=brigadistas_disponibles|default:8|add:"/10" sublabel="En servicio activo" sublabel_icon="bi bi-person-check" sublabel_color="success" icon="bi-people-fill" icon_color="warning" border_color="warning" %}
-
-    {% include 'components/metric-card.html' with label="Emergencias del Mes" value=emergencias_mes|default:8 sublabel="Atendidas" sublabel_icon="bi bi-exclamation-triangle" sublabel_color="info" icon="bi-shield-exclamation" icon_color="info" border_color="info" %}
-</div>
-
-<!-- Panel Principal -->
-<div class="row g-4 mb-4">
-    <!-- Emergencias Activas y Recientes -->
-    <div class="col-lg-8">
-        <div class="card card-modern">
-            <div class="card-header-modern">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0">
-                        <i class="bi bi-exclamation-octagon-fill me-2"></i>
-                        Estado de Emergencias
-                    </h6>
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-secondary active">Activas</button>
-                        <button class="btn btn-outline-secondary">Historial</button>
-                    </div>
-                </div>
-            </div>
-            <div class="card-body">
-                <div id="alertaEmergencias"></div>
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Tipo</th>
-                                <th>Ubicacion</th>
-                                <th>Estado</th>
-                                <th>Reportada</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaEmergencias">
-                            <tr><td colspan="5" class="text-center py-4 text-muted">
-                                <div class="spinner-border spinner-border-sm me-2"></div>Cargando...
-                            </td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Acciones Rápidas y Recursos -->
-    <div class="col-lg-4">
-        <!-- Acciones Rápidas -->
-        <div class="card card-modern mb-4">
-            <div class="card-header-modern">
-                <h6 class="mb-0">
-                    <i class="bi bi-lightning-charge-fill me-2"></i>
-                    Acciones de Emergencia
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-3">
-                    <button class="btn btn-danger text-start" onclick="activarEmergencia()">
-                        <i class="bi bi-megaphone-fill me-2"></i>
-                        Activar Emergencia
-                    </button>
-                    <button class="btn btn-outline-warning text-start" onclick="evacuarZona()">
-                        <i class="bi bi-sign-stop-fill me-2"></i>
-                        Evacuar Zona
-                    </button>
-                    <button class="btn btn-outline-info text-start" onclick="window.location.href='/mapas/'">
-                        <i class="bi bi-map me-2"></i>
-                        Mapa de Evacuación
-                    </button>
-                    <button class="btn btn-outline-primary text-start" onclick="verificarEquipos()">
-                        <i class="bi bi-box-seam me-2"></i>
-                        Verificar Equipos
-                    </button>
-                    <button class="btn btn-outline-secondary text-start" onclick="comunicarBrigada()">
-                        <i class="bi bi-chat-dots me-2"></i>
-                        Comunicar Brigada
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Estado de Equipos (Dinamico) -->
-        <div class="card card-modern">
-            <div class="card-header-modern d-flex justify-content-between align-items-center">
-                <h6 class="mb-0">
-                    <i class="bi bi-tools me-2"></i>
-                    Estado de Equipos <span class="badge bg-info ms-1" style="font-size:0.6rem;">EN VIVO</span>
-                </h6>
-                <a href="{% url 'equipos_brigada' %}" class="btn btn-sm btn-outline-primary">Ver todos</a>
-            </div>
-            <div class="card-body" id="estadoEquipos">
-                <div class="text-center py-3 text-muted">
-                    <div class="spinner-border spinner-border-sm me-2"></div>Cargando...
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Incidentes Reportados -->
-<div class="row g-4 mb-4">
-    <div class="col-12">
-        <div class="card card-modern">
-            <div class="card-header-modern d-flex justify-content-between align-items-center">
-                <h6 class="mb-0">
-                    <i class="bi bi-exclamation-triangle-fill me-2 text-warning"></i>
-                    Incidentes Reportados
-                    {% if incidentes_pendientes %}
-                    <span class="badge bg-danger ms-2">{{ incidentes_pendientes }} pendiente{{ incidentes_pendientes|pluralize:"s" }}</span>
-                    {% endif %}
-                </h6>
-                <a href="{% url 'listar_incidentes' %}" class="btn btn-sm btn-outline-primary">
-                    <i class="bi bi-list-ul me-1"></i>Ver Todos
-                </a>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-light">
-                            <tr>
-                                <th class="ps-4">Incidente</th>
-                                <th>Tipo</th>
-                                <th>Gravedad</th>
-                                <th>Estado</th>
-                                <th>Reportado por</th>
-                                <th>Fecha</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for incidente in incidentes_recientes %}
-                            <tr>
-                                <td class="ps-4">
-                                    <div class="fw-bold">{{ incidente.titulo }}</div>
-                                    <small class="text-muted">{{ incidente.ubicacion }}</small>
-                                </td>
-                                <td><span class="badge bg-secondary">{{ incidente.get_tipo_display }}</span></td>
-                                <td>
-                                    {% if incidente.gravedad == 'CRITICA' %}
-                                        <span class="badge bg-danger">Cr&iacute;tica</span>
-                                    {% elif incidente.gravedad == 'ALTA' %}
-                                        <span class="badge bg-warning text-dark">Alta</span>
-                                    {% elif incidente.gravedad == 'MEDIA' %}
-                                        <span class="badge bg-info">Media</span>
-                                    {% else %}
-                                        <span class="badge bg-success">Baja</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if incidente.estado == 'REPORTADO' %}
-                                        <span class="badge bg-warning text-dark">Reportado</span>
-                                    {% elif incidente.estado == 'EN_REVISION' or incidente.estado == 'EN_PROCESO' %}
-                                        <span class="badge bg-info">En Proceso</span>
-                                    {% elif incidente.estado == 'RESUELTO' %}
-                                        <span class="badge bg-success">Resuelto</span>
-                                    {% else %}
-                                        <span class="badge bg-secondary">{{ incidente.get_estado_display }}</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <div>{{ incidente.reportado_por.get_full_name|default:incidente.reportado_por.username }}</div>
-                                    <small class="text-muted">{{ incidente.reportado_por.get_rol_display }}</small>
-                                </td>
-                                <td>
-                                    <small>{{ incidente.fecha_reporte|date:"d/m/Y" }}</small><br>
-                                    <small class="text-muted">{{ incidente.fecha_reporte|time:"h:i A" }}</small>
-                                </td>
-                                <td>
-                                    <a href="{% url 'detalle_incidente' incidente.id %}" class="btn btn-sm btn-outline-primary" title="Ver detalle">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="7" class="text-center py-4 text-muted">
-                                    <i class="bi bi-check-circle fs-4 d-block mb-2"></i>
-                                    No hay incidentes reportados.
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Brigadistas y Mapa -->
-<div class="row g-4 mb-4">
-    <!-- Equipo de Brigada -->
-    <div class="col-lg-5">
-        <div class="card card-modern">
-            <div class="card-header-modern d-flex justify-content-between align-items-center">
-                <h6 class="mb-0">
-                    <i class="bi bi-people-fill me-2"></i>
-                    Equipo de Brigada (10 Miembros)
-                </h6>
-                <button class="btn btn-sm btn-outline-primary" onclick="comunicarBrigada()">
-                    <i class="bi bi-megaphone me-1"></i>Comunicar
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="btnConfirmarResolver">
+                    <i class="bi bi-check-circle me-1"></i>Confirmar Resolucion
                 </button>
             </div>
-            <div class="card-body">
-                <div class="list-group list-group-flush" id="listaBrigadistas">
-                    <div class="text-center py-3 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Cargando...</div>
-                </div>
-                <a href="{% url 'mi_brigada' %}" class="btn btn-sm btn-outline-secondary w-100 mt-3">
-                    Ver todos los brigadistas
-                </a>
-            </div>
         </div>
     </div>
+</div>
 
-    <!-- Mapa de Evacuación -->
-    <div class="col-lg-7">
-        <div class="card card-modern">
-            <div class="card-header-modern d-flex justify-content-between align-items-center">
-                <h6 class="mb-0">
-                    <i class="bi bi-geo-alt-fill me-2"></i>
-                    Mapa de Evacuación y Puntos de Encuentro
-                </h6>
-                <button class="btn btn-sm btn-outline-primary" onclick="window.location.href='/mapas/'">
-                    Ver Mapa Completo
+<!-- Modal: Falsa Alarma -->
+<div class="modal fade" id="modalFalsaAlarma" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-secondary text-white">
+                <h5 class="modal-title"><i class="bi bi-x-circle me-2"></i>Marcar Falsa Alarma</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-info-circle me-2"></i>Se notificara al usuario que reporto esta emergencia.
+                </div>
+                <div class="mb-3">
+                    <label for="motivoFalsa" class="form-label fw-bold">Motivo *</label>
+                    <textarea class="form-control" id="motivoFalsa" rows="3" placeholder="Explique por que se considera falsa alarma..." required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarFalsa">
+                    <i class="bi bi-x-circle me-1"></i>Confirmar Falsa Alarma
                 </button>
             </div>
-            <div class="card-body p-0">
-                <div id="evacuationMap" style="height: 450px;"></div>
-            </div>
         </div>
     </div>
 </div>
 
-<!-- Timeline de Emergencias y Estadísticas -->
-<div class="row g-4">
-    <!-- Timeline de Emergencias -->
-    <div class="col-lg-8">
-        <div class="card card-modern">
-            <div class="card-header-modern d-flex justify-content-between align-items-center">
-                <h6 class="mb-0">
-                    <i class="bi bi-clock-history me-2"></i>
-                    Timeline de Emergencias
-                    <span class="badge bg-info ms-1" style="font-size:0.6rem;">EN VIVO</span>
-                </h6>
-                <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-secondary active" onclick="filtrarTimeline('todas')">Todas</button>
-                    <button class="btn btn-outline-danger" onclick="filtrarTimeline('activas')">Activas</button>
-                    <button class="btn btn-outline-success" onclick="filtrarTimeline('resueltas')">Resueltas</button>
-                </div>
-            </div>
-            <div class="card-body" style="max-height: 500px; overflow-y: auto;">
-                <div id="timelineEmergencias" class="timeline-container">
-                    <div class="text-center py-4 text-muted">
-                        <div class="spinner-border spinner-border-sm me-2"></div>Cargando timeline...
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Estadísticas del Mes -->
-    <div class="col-lg-4">
-        <div class="card card-modern mb-4">
-            <div class="card-header-modern">
-                <h6 class="mb-0">
-                    <i class="bi bi-graph-up me-2"></i>
-                    Estadísticas del Mes
-                </h6>
-            </div>
-            <div class="card-body">
-                <div id="statsEmergencias">
-                    <div class="text-center py-3 text-muted">
-                        <div class="spinner-border spinner-border-sm me-2"></div>Cargando...
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tiempos de Respuesta -->
-        <div class="card card-modern">
-            <div class="card-header-modern">
-                <h6 class="mb-0">
-                    <i class="bi bi-stopwatch me-2"></i>
-                    Tiempos de Respuesta
-                </h6>
-            </div>
-            <div class="card-body">
-                <div id="tiemposRespuesta">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="text-muted">Promedio de atencion</span>
-                        <span class="fw-bold text-primary" id="tiempoPromedio">-- min</span>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="text-muted">Mejor tiempo</span>
-                        <span class="fw-bold text-success" id="tiempoMejor">-- min</span>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="text-muted">Tiempo de resolucion</span>
-                        <span class="fw-bold text-info" id="tiempoResolucion">-- min</span>
-                    </div>
-                    <hr>
-                    <div class="text-center">
-                        <small class="text-muted">Meta: &lt; 5 min atencion inicial</small>
-                        <div class="progress mt-2" style="height: 8px;">
-                            <div class="progress-bar bg-success" id="progressMeta" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+<!-- Toast de Feedback -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080;">
+    <div id="toastFeedback" class="toast align-items-center border-0" role="alert">
+        <div class="d-flex">
+            <div class="toast-body" id="toastMensaje"></div>
+            <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button>
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-// Configuracion de auto-refresh
-const REFRESH_INTERVAL = 30000; // 30 segundos
-let refreshTimers = {};
-let lastUpdate = null;
-let modalEmergencia = null;
 
+<script>
+// === UTILIDADES ===
 function getCookie(name) {
     let v = null;
     document.cookie.split(';').forEach(c => {
@@ -444,44 +454,29 @@ function getCookie(name) {
     return v;
 }
 
-function actualizarIndicadorTiempo() {
-    const ahora = new Date();
-    lastUpdate = ahora;
-    const indicator = document.getElementById('lastUpdateIndicator');
-    if (indicator) {
-        indicator.innerHTML = `<i class="bi bi-arrow-repeat me-1"></i>Actualizado: ${ahora.toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit', second:'2-digit'})}`;
-    }
+function mostrarToast(mensaje, tipo = 'success') {
+    const toast = document.getElementById('toastFeedback');
+    const body = document.getElementById('toastMensaje');
+    toast.className = `toast align-items-center border-0 text-white bg-${tipo}`;
+    body.textContent = mensaje;
+    new bootstrap.Toast(toast, { delay: 3000 }).show();
 }
 
-function iniciarAutoRefresh() {
-    // Refrescar emergencias y timeline cada 15 segundos (critico)
-    refreshTimers.emergencias = setInterval(() => {
-        cargarEmergencias();
-        cargarTimeline();
-        actualizarIndicadorTiempo();
-    }, 15000);
-
-    // Refrescar brigadistas cada 30 segundos
-    refreshTimers.brigadistas = setInterval(() => {
-        cargarBrigadistas();
-    }, REFRESH_INTERVAL);
-
-    // Refrescar equipos y estadisticas cada 60 segundos
-    refreshTimers.equipos = setInterval(() => {
-        cargarEstadoEquipos();
-        cargarEstadisticas();
-    }, 60000);
-
-    console.log('Auto-refresh iniciado: emergencias/timeline cada 15s, brigadistas cada 30s, equipos/stats cada 60s');
+function tiempoRelativo(fechaStr) {
+    const diff = Math.floor((new Date() - new Date(fechaStr)) / 60000);
+    if (diff < 1) return 'ahora';
+    if (diff < 60) return `hace ${diff} min`;
+    if (diff < 1440) return `hace ${Math.floor(diff / 60)}h`;
+    return `hace ${Math.floor(diff / 1440)}d`;
 }
 
-function detenerAutoRefresh() {
-    Object.values(refreshTimers).forEach(timer => clearInterval(timer));
-    refreshTimers = {};
-    console.log('Auto-refresh detenido');
-}
+// === VARIABLES GLOBALES ===
+let modalEmergencia, modalResolver, modalFalsaAlarma;
+let emergenciaResolviendoId = null;
+let emergenciaFalsaId = null;
+let markersEmergencias = [];
 
-// Mapa de Evacuación
+// === MAPA ===
 const map = L.map('evacuationMap').setView([5.7303596, -72.8943613], 17);
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     attribution: 'Esri'
@@ -490,68 +485,77 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.
     pane: 'overlayPane'
 }).addTo(map);
 
-// Iconos personalizados
 const puntoEncuentroIcon = L.divIcon({
     className: 'custom-div-icon',
-    html: '<div style="background-color:#4CAF50; width:35px; height:35px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">PE</div>',
-    iconSize: [35, 35]
+    html: '<div style="background:#4CAF50;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,.3);font-size:11px;">PE</div>',
+    iconSize: [30, 30]
 });
 
-const extintorIcon = L.divIcon({
+const emergenciaIcon = L.divIcon({
     className: 'custom-div-icon',
-    html: '<div style="background-color:#f44336; width:25px; height:25px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold;">E</div>',
-    iconSize: [25, 25]
+    html: '<div style="background:#dc3545;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;border:2px solid white;box-shadow:0 2px 6px rgba(220,53,69,.5);animation:pulseMarker 1.5s infinite;"><i class="bi bi-exclamation-triangle-fill" style="font-size:14px;"></i></div>',
+    iconSize: [30, 30]
 });
 
-// Cargar puntos de encuentro y equipamiento desde la API
+// Cargar puntos de encuentro
 fetch('/api/mapas/api/puntos-encuentro/')
     .then(r => r.json())
     .then(data => {
         (data.results || data).forEach(p => {
             L.marker([p.latitud, p.longitud], {icon: puntoEncuentroIcon}).addTo(map)
-                .bindPopup(`<b>${p.nombre}</b><br>${p.descripcion || ''}<br>Capacidad: ${p.capacidad || '-'} personas`);
+                .bindPopup(`<b>${p.nombre}</b><br>${p.descripcion || ''}<br>Capacidad: ${p.capacidad || '-'}`);
         });
     }).catch(() => {});
 
-fetch('/api/mapas/api/equipamientos/')
-    .then(r => r.json())
-    .then(data => {
-        (data.results || data).forEach(e => {
-            if (e.tipo === 'EXTINTOR') {
-                L.marker([e.latitud, e.longitud], {icon: extintorIcon}).addTo(map)
-                    .bindPopup(`<b>${e.nombre}</b><br>${e.descripcion || ''}<br>Estado: ${e.estado}`);
-            }
-        });
-    }).catch(() => {});
-
-// Cargar datos dinamicos
-document.addEventListener('DOMContentLoaded', function() {
-    modalEmergencia = new bootstrap.Modal(document.getElementById('modalEmergencia'));
-    cargarEmergencias();
-    cargarBrigadistas();
-    cargarEstadoEquipos();
-    cargarTiposEmergencia();
-    cargarTimeline();
-    cargarEstadisticas();
-    actualizarIndicadorTiempo();
-    iniciarAutoRefresh();
-});
-
-// Detener refresh cuando la pagina no es visible
-document.addEventListener('visibilitychange', function() {
-    if (document.hidden) {
-        detenerAutoRefresh();
-    } else {
-        cargarEmergencias();
-        cargarBrigadistas();
-        cargarEstadoEquipos();
-        cargarTimeline();
-        cargarEstadisticas();
-        actualizarIndicadorTiempo();
-        iniciarAutoRefresh();
+// === DISPONIBILIDAD DEL BRIGADISTA ===
+async function cargarDisponibilidad() {
+    try {
+        const r = await fetch('/api/emergencias/brigada/mi-disponibilidad/');
+        if (!r.ok) {
+            document.getElementById('toggleDisponibilidad').style.display = 'none';
+            return;
+        }
+        const data = await r.json();
+        const sw = document.getElementById('switchDisponible');
+        const txt = document.getElementById('textoDisponibilidad');
+        const container = document.getElementById('toggleDisponibilidad');
+        sw.checked = data.disponible;
+        txt.textContent = data.disponible ? 'Disponible' : 'No disponible';
+        txt.className = `me-2 small fw-bold text-${data.disponible ? 'success' : 'secondary'}`;
+        container.className = `d-flex align-items-center border rounded-pill px-3 py-2 border-${data.disponible ? 'success' : 'secondary'}`;
+    } catch(e) {
+        document.getElementById('toggleDisponibilidad').style.display = 'none';
     }
-});
+}
 
+async function toggleDisponibilidad() {
+    const sw = document.getElementById('switchDisponible');
+    try {
+        const r = await fetch('/api/emergencias/brigada/mi-disponibilidad/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+            body: JSON.stringify({ disponible: sw.checked })
+        });
+        if (r.ok) {
+            const data = await r.json();
+            const txt = document.getElementById('textoDisponibilidad');
+            const container = document.getElementById('toggleDisponibilidad');
+            txt.textContent = data.disponible ? 'Disponible' : 'No disponible';
+            txt.className = `me-2 small fw-bold text-${data.disponible ? 'success' : 'secondary'}`;
+            container.className = `d-flex align-items-center border rounded-pill px-3 py-2 border-${data.disponible ? 'success' : 'secondary'}`;
+            mostrarToast(data.mensaje, 'success');
+            cargarBrigadistas();
+        } else {
+            sw.checked = !sw.checked;
+            mostrarToast('Error al cambiar disponibilidad', 'danger');
+        }
+    } catch(e) {
+        sw.checked = !sw.checked;
+        mostrarToast('Error de conexion', 'danger');
+    }
+}
+
+// === EMERGENCIAS ===
 async function cargarEmergencias() {
     try {
         const r = await fetch('/api/emergencias/emergencias/');
@@ -559,95 +563,289 @@ async function cargarEmergencias() {
         const lista = data.results || data;
 
         const activas = lista.filter(e => e.estado === 'REPORTADA' || e.estado === 'EN_ATENCION');
-        const recientes = lista.slice(0, 10);
+        const resueltas = lista.filter(e => e.estado !== 'REPORTADA' && e.estado !== 'EN_ATENCION');
 
-        // Actualizar estado
-        const card = document.getElementById('cardEstado');
-        const texto = document.getElementById('estadoTexto');
-        const sub = document.getElementById('estadoSub');
-        const icono = document.getElementById('estadoIcono');
+        // Actualizar metricas
+        document.getElementById('metricaActivas').textContent = activas.length;
+        const badgeActivas = document.getElementById('badgeActivas');
+        badgeActivas.textContent = activas.length;
+        badgeActivas.style.display = activas.length > 0 ? 'inline' : 'none';
 
-        if (activas.length > 0) {
-            card.classList.add('border-danger');
-            texto.className = 'fw-bold mb-0 text-danger';
-            texto.textContent = 'EMERGENCIA';
-            sub.innerHTML = `<i class="bi bi-exclamation-triangle"></i> ${activas.length} emergencia(s) activa(s)`;
-            sub.className = 'text-danger';
-            icono.className = 'bi bi-exclamation-triangle-fill fs-2 text-danger';
+        // Renderizar emergencias activas como tarjetas
+        const cont = document.getElementById('listaEmergenciasActivas');
+        if (!activas.length) {
+            cont.innerHTML = `
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-check-circle fs-1 d-block mb-2 text-success"></i>
+                    <strong>Sin emergencias activas</strong>
+                    <p class="small mb-0">El sistema esta operando normalmente</p>
+                </div>`;
         } else {
-            card.classList.add('border-success');
-            texto.className = 'fw-bold mb-0 text-success';
-            texto.textContent = 'NORMAL';
-            sub.innerHTML = '<i class="bi bi-shield-check"></i> Sin emergencias activas';
-            sub.className = 'text-success';
-            icono.className = 'bi bi-check-circle-fill fs-2 text-success';
+            const estadoBadge = { REPORTADA: 'warning', EN_ATENCION: 'info' };
+            const estadoTexto = { REPORTADA: 'Reportada', EN_ATENCION: 'En Atencion' };
+            cont.innerHTML = activas.map(e => `
+                <div class="border rounded-3 p-3 mb-3 border-start border-4 border-${estadoBadge[e.estado]} bg-${estadoBadge[e.estado]} bg-opacity-10">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <strong>${e.tipo_nombre || 'Emergencia'}</strong>
+                            <span class="badge bg-${estadoBadge[e.estado]} ms-2">${estadoTexto[e.estado]}</span>
+                        </div>
+                        <small class="text-muted">${tiempoRelativo(e.fecha_hora_reporte)}</small>
+                    </div>
+                    <p class="mb-2 small text-dark">${e.descripcion || ''}</p>
+                    <div class="d-flex flex-wrap gap-2 mb-2 small text-muted">
+                        ${e.descripcion_ubicacion ? `<span><i class="bi bi-geo-alt me-1"></i>${e.descripcion_ubicacion}</span>` : ''}
+                        ${e.personas_afectadas ? `<span><i class="bi bi-people me-1"></i>${e.personas_afectadas} afectados</span>` : ''}
+                        ${e.requiere_evacuacion ? `<span class="text-danger fw-bold"><i class="bi bi-sign-stop-fill me-1"></i>Evacuacion</span>` : ''}
+                        ${e.reportada_por_detalle ? `<span><i class="bi bi-person me-1"></i>${e.reportada_por_detalle.first_name || ''} ${e.reportada_por_detalle.last_name || ''}</span>` : ''}
+                    </div>
+                    <div class="d-flex gap-2">
+                        ${e.estado === 'REPORTADA' ? `
+                            <button class="btn btn-info btn-sm" onclick="atenderEmergencia(${e.id})">
+                                <i class="bi bi-person-check me-1"></i>Atender
+                            </button>` : ''}
+                        <button class="btn btn-success btn-sm" onclick="iniciarResolucion(${e.id})">
+                            <i class="bi bi-check-circle me-1"></i>Resolver
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="iniciarFalsaAlarma(${e.id})">
+                            <i class="bi bi-x-circle me-1"></i>Falsa Alarma
+                        </button>
+                    </div>
+                </div>`).join('');
         }
 
-        // Alerta
-        const alertaDiv = document.getElementById('alertaEmergencias');
-        if (activas.length > 0) {
-            alertaDiv.innerHTML = `<div class="alert alert-danger mb-3"><i class="bi bi-exclamation-triangle-fill me-2"></i><strong>${activas.length} emergencia(s) activa(s)</strong> requieren atencion inmediata.</div>`;
+        // Actualizar marcadores de emergencias en el mapa
+        markersEmergencias.forEach(m => map.removeLayer(m));
+        markersEmergencias = [];
+        activas.forEach(e => {
+            if (e.latitud && e.longitud) {
+                const marker = L.marker([e.latitud, e.longitud], {icon: emergenciaIcon}).addTo(map)
+                    .bindPopup(`<b>${e.tipo_nombre || 'Emergencia'}</b><br>${e.descripcion_ubicacion || ''}<br><span class="badge bg-danger">${e.estado}</span>`);
+                markersEmergencias.push(marker);
+            }
+        });
+
+        // Historial (resueltas, max 10)
+        const historial = resueltas.slice(0, 10);
+        const tbody = document.getElementById('tablaHistorial');
+        const estadoColor = { CONTROLADA: 'primary', RESUELTA: 'success', FALSA_ALARMA: 'secondary' };
+        const estadoNombre = { CONTROLADA: 'Controlada', RESUELTA: 'Resuelta', FALSA_ALARMA: 'Falsa Alarma' };
+        if (!historial.length) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted">Sin historial</td></tr>';
         } else {
-            alertaDiv.innerHTML = '<div class="alert alert-success mb-3"><i class="bi bi-check-circle-fill me-2"></i>Sin emergencias activas. Sistema operando normalmente.</div>';
+            tbody.innerHTML = historial.map(e => {
+                let resolucion = '--';
+                if (e.fecha_hora_resolucion) {
+                    const mins = Math.floor((new Date(e.fecha_hora_resolucion) - new Date(e.fecha_hora_reporte)) / 60000);
+                    resolucion = mins < 60 ? `${mins} min` : `${Math.floor(mins/60)}h ${mins%60}m`;
+                }
+                return `
+                <tr class="${e.estado === 'FALSA_ALARMA' ? 'table-danger' : ''}">
+                    <td class="ps-3"><strong>${e.tipo_nombre || 'Emergencia'}</strong></td>
+                    <td>${e.descripcion_ubicacion || '-'}</td>
+                    <td><span class="badge bg-${estadoColor[e.estado] || 'secondary'}">${estadoNombre[e.estado] || e.estado}</span></td>
+                    <td><small>${new Date(e.fecha_hora_reporte).toLocaleDateString('es-CO', {day:'2-digit',month:'2-digit',year:'2-digit'})}</small></td>
+                    <td><small>${resolucion}</small></td>
+                </tr>`;
+            }).join('');
         }
 
-        // Tabla
-        const tbody = document.getElementById('tablaEmergencias');
-        if (!recientes.length) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Sin emergencias registradas</td></tr>';
-            return;
-        }
-        const estadoColor = {REPORTADA:'warning', EN_ATENCION:'info', CONTROLADA:'primary', RESUELTA:'success', FALSA_ALARMA:'secondary'};
-        tbody.innerHTML = recientes.map(e => `
-            <tr class="${(e.estado==='REPORTADA'||e.estado==='EN_ATENCION')?'table-warning':''}">
-                <td><strong>${e.tipo_nombre || 'Emergencia'}</strong></td>
-                <td>${e.descripcion_ubicacion || e.descripcion || '-'}</td>
-                <td><span class="badge bg-${estadoColor[e.estado]||'secondary'}">${e.estado}</span></td>
-                <td>${new Date(e.fecha_hora_reporte).toLocaleString('es-CO',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</td>
-                <td>
-                    <a href="/emergencias/" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i></a>
-                </td>
-            </tr>`).join('');
+        // Estadisticas del mes
+        calcularEstadisticas(lista);
     } catch(e) {
-        document.getElementById('tablaEmergencias').innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error al cargar</td></tr>';
+        document.getElementById('listaEmergenciasActivas').innerHTML = '<div class="text-center py-3 text-danger"><i class="bi bi-exclamation-circle me-2"></i>Error al cargar emergencias</div>';
     }
 }
 
+function calcularEstadisticas(lista) {
+    const ahora = new Date();
+    const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+    const mes = lista.filter(e => new Date(e.fecha_hora_reporte) >= inicioMes);
+
+    const stats = { activas: 0, resueltas: 0, falsas: 0 };
+    mes.forEach(e => {
+        if (e.estado === 'REPORTADA' || e.estado === 'EN_ATENCION') stats.activas++;
+        else if (e.estado === 'RESUELTA' || e.estado === 'CONTROLADA') stats.resueltas++;
+        else if (e.estado === 'FALSA_ALARMA') stats.falsas++;
+    });
+
+    const cont = document.getElementById('statsEmergencias');
+    const tasa = mes.length > 0 ? Math.round((stats.resueltas / mes.length) * 100) : 0;
+    cont.innerHTML = `
+        <div class="row text-center g-2 mb-3">
+            <div class="col-4">
+                <div class="p-2 bg-danger bg-opacity-10 rounded">
+                    <h4 class="text-danger mb-0">${stats.activas}</h4>
+                    <small class="text-muted">Activas</small>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="p-2 bg-success bg-opacity-10 rounded">
+                    <h4 class="text-success mb-0">${stats.resueltas}</h4>
+                    <small class="text-muted">Resueltas</small>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="p-2 bg-secondary bg-opacity-10 rounded">
+                    <h4 class="text-secondary mb-0">${stats.falsas}</h4>
+                    <small class="text-muted">Falsas</small>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mb-1">
+            <small class="text-muted">Tasa de resolucion</small>
+            <strong>${tasa}%</strong>
+        </div>
+        <div class="progress" style="height: 6px;">
+            <div class="progress-bar bg-success" style="width: ${tasa}%"></div>
+        </div>
+        <div class="text-center mt-2">
+            <small class="text-muted">Total del mes: ${mes.length}</small>
+        </div>`;
+
+    // Tiempo promedio
+    const resueltas = lista.filter(e => e.estado === 'RESUELTA' && e.fecha_hora_resolucion);
+    if (resueltas.length > 0) {
+        let total = 0;
+        resueltas.forEach(e => {
+            total += (new Date(e.fecha_hora_resolucion) - new Date(e.fecha_hora_reporte)) / 60000;
+        });
+        document.getElementById('metricaTiempo').textContent = `${Math.round(total / resueltas.length)} min`;
+    }
+}
+
+// === ACCIONES DE EMERGENCIA ===
+async function atenderEmergencia(id) {
+    if (!confirm('Confirmar que esta atendiendo esta emergencia?')) return;
+    try {
+        const r = await fetch(`/api/emergencias/emergencias/${id}/atender/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }
+        });
+        if (r.ok) {
+            mostrarToast('Emergencia marcada como en atencion', 'info');
+            cargarEmergencias();
+        } else {
+            const err = await r.json();
+            mostrarToast(err.error || 'Error al atender emergencia', 'danger');
+        }
+    } catch(e) {
+        mostrarToast('Error de conexion', 'danger');
+    }
+}
+
+function iniciarResolucion(id) {
+    emergenciaResolviendoId = id;
+    document.getElementById('accionesTomadas').value = '';
+    modalResolver.show();
+}
+
+function iniciarFalsaAlarma(id) {
+    emergenciaFalsaId = id;
+    document.getElementById('motivoFalsa').value = '';
+    modalFalsaAlarma.show();
+}
+
+async function resolverEmergencia() {
+    const acciones = document.getElementById('accionesTomadas').value;
+    const btn = document.getElementById('btnConfirmarResolver');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Procesando...';
+    try {
+        const r = await fetch(`/api/emergencias/emergencias/${emergenciaResolviendoId}/resolver/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+            body: JSON.stringify({ acciones_tomadas: acciones })
+        });
+        if (r.ok) {
+            modalResolver.hide();
+            mostrarToast('Emergencia resuelta exitosamente', 'success');
+            cargarEmergencias();
+        } else {
+            const err = await r.json();
+            mostrarToast(err.error || 'Error al resolver', 'danger');
+        }
+    } catch(e) {
+        mostrarToast('Error de conexion', 'danger');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Confirmar Resolucion';
+    }
+}
+
+async function marcarFalsaAlarma() {
+    const motivo = document.getElementById('motivoFalsa').value.trim();
+    if (!motivo) {
+        mostrarToast('Debe proporcionar un motivo', 'warning');
+        return;
+    }
+    const btn = document.getElementById('btnConfirmarFalsa');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Procesando...';
+    try {
+        const r = await fetch(`/api/emergencias/emergencias/${emergenciaFalsaId}/marcar-falsa-alarma/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+            body: JSON.stringify({ motivo: motivo })
+        });
+        if (r.ok) {
+            modalFalsaAlarma.hide();
+            const data = await r.json();
+            mostrarToast(data.mensaje || 'Marcada como falsa alarma', 'warning');
+            cargarEmergencias();
+        } else {
+            const err = await r.json();
+            mostrarToast(err.error || 'Error', 'danger');
+        }
+    } catch(e) {
+        mostrarToast('Error de conexion', 'danger');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-x-circle me-1"></i>Confirmar Falsa Alarma';
+    }
+}
+
+// === BRIGADISTAS ===
 async function cargarBrigadistas() {
     try {
         const r = await fetch('/api/emergencias/brigada/');
         const data = await r.json();
         const lista = data.results || data;
         const cont = document.getElementById('listaBrigadistas');
+        const badge = document.getElementById('badgeBrigadistasDisp');
+
+        const disponibles = lista.filter(b => b.disponible && b.activo);
+        badge.textContent = disponibles.length;
+        document.getElementById('metricaBrigadistas').textContent = `${disponibles.length}/${lista.length}`;
 
         if (!lista.length) {
             cont.innerHTML = '<p class="text-center text-muted py-3">No hay brigadistas registrados</p>';
             return;
         }
+
         const espNames = {PRIMEROS_AUXILIOS:'Primeros Auxilios', INCENDIOS:'Incendios', EVACUACION:'Evacuacion', RESCATE:'Rescate', COMUNICACIONES:'Comunicaciones', GENERAL:'General'};
-        cont.innerHTML = lista.map(b => {
+        cont.innerHTML = '<div class="row g-2">' + lista.map(b => {
             const color = b.disponible ? 'success' : 'secondary';
             const icon = b.disponible ? 'bi-person-check-fill' : 'bi-person-x-fill';
-            const estado = b.disponible ? 'Disponible' : 'No disponible';
             return `
-                <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center">
-                        <div class="avatar bg-${color} text-white rounded-circle me-3" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;">
+                <div class="col-md-6 col-lg-4">
+                    <div class="d-flex align-items-center p-2 border rounded">
+                        <div class="rounded-circle bg-${color} bg-opacity-10 text-${color} me-2 d-flex align-items-center justify-content-center" style="width:35px;height:35px;min-width:35px;">
                             <i class="bi ${icon}"></i>
                         </div>
-                        <div>
-                            <strong>${b.usuario_nombre || 'Brigadista'}</strong>
-                            <p class="mb-0 small text-muted">${espNames[b.especializacion] || b.especializacion}</p>
+                        <div class="overflow-hidden">
+                            <div class="fw-bold small text-truncate">${b.usuario_nombre || 'Brigadista'}</div>
+                            <small class="text-muted">${espNames[b.especializacion] || b.especializacion}</small>
                         </div>
                     </div>
-                    <span class="badge bg-${color}">${estado}</span>
                 </div>`;
-        }).join('');
+        }).join('') + '</div>';
     } catch(e) {
         document.getElementById('listaBrigadistas').innerHTML = '<p class="text-center text-danger py-3">Error al cargar</p>';
     }
 }
 
+// === EQUIPOS ===
 async function cargarEstadoEquipos() {
     try {
         const r = await fetch('/api/mapas/api/equipamientos/');
@@ -655,94 +853,56 @@ async function cargarEstadoEquipos() {
         const lista = data.results || data;
         const cont = document.getElementById('estadoEquipos');
 
-        // Agrupar por tipo
         const porTipo = {};
         lista.forEach(e => {
-            if (!porTipo[e.tipo]) {
-                porTipo[e.tipo] = { total: 0, operativos: 0, items: [] };
-            }
+            if (!porTipo[e.tipo]) porTipo[e.tipo] = { total: 0, operativos: 0 };
             porTipo[e.tipo].total++;
-            if (e.estado === 'OPERATIVO') {
-                porTipo[e.tipo].operativos++;
-            }
-            porTipo[e.tipo].items.push(e);
+            if (e.estado === 'OPERATIVO') porTipo[e.tipo].operativos++;
         });
 
-        const iconos = {
-            EXTINTOR: 'bi-fire text-danger',
-            BOTIQUIN: 'bi-heart-pulse text-success',
-            CAMILLA: 'bi-hospital text-primary',
-            DESFIBRILADOR: 'bi-lightning-charge text-warning',
-            HIDRANTE: 'bi-droplet-fill text-info',
-            ALARMA: 'bi-bell text-warning',
-            SENALIZACION: 'bi-signpost text-secondary'
-        };
-
-        const nombres = {
-            EXTINTOR: 'Extintores',
-            BOTIQUIN: 'Botiquines',
-            CAMILLA: 'Camillas',
-            DESFIBRILADOR: 'Desfibriladores',
-            HIDRANTE: 'Hidrantes',
-            ALARMA: 'Alarmas',
-            SENALIZACION: 'Senalizacion'
-        };
+        const iconos = { EXTINTOR:'bi-fire text-danger', BOTIQUIN:'bi-heart-pulse text-success', CAMILLA:'bi-hospital text-primary', DESFIBRILADOR:'bi-lightning-charge text-warning', HIDRANTE:'bi-droplet-fill text-info', ALARMA:'bi-bell text-warning', SENALIZACION:'bi-signpost text-secondary' };
+        const nombres = { EXTINTOR:'Extintores', BOTIQUIN:'Botiquines', CAMILLA:'Camillas', DESFIBRILADOR:'Desfibriladores', HIDRANTE:'Hidrantes', ALARMA:'Alarmas', SENALIZACION:'Senalizacion' };
 
         if (Object.keys(porTipo).length === 0) {
             cont.innerHTML = '<p class="text-center text-muted py-2">Sin equipos registrados</p>';
             return;
         }
 
-        let html = '';
-        for (const [tipo, info] of Object.entries(porTipo)) {
+        cont.innerHTML = Object.entries(porTipo).map(([tipo, info]) => {
             const pct = Math.round((info.operativos / info.total) * 100);
-            let colorBar = 'success';
-            let colorBadge = 'success';
-            if (pct < 100) colorBar = 'warning';
-            if (pct < 70) { colorBar = 'danger'; colorBadge = 'danger'; }
-
-            const noOperativos = info.items.filter(e => e.estado !== 'OPERATIVO');
-            let alertaHtml = '';
-            if (noOperativos.length > 0) {
-                alertaHtml = `<small class="text-muted">${noOperativos[0].nombre} requiere atencion</small>`;
-            }
-
-            html += `
+            const colorBar = pct >= 100 ? 'success' : pct >= 70 ? 'warning' : 'danger';
+            return `
                 <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span><i class="bi ${iconos[tipo] || 'bi-tools text-secondary'} me-2"></i>${nombres[tipo] || tipo}</span>
-                        <span class="badge bg-${colorBadge}">${info.operativos}/${info.total}</span>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small"><i class="bi ${iconos[tipo] || 'bi-tools text-secondary'} me-1"></i>${nombres[tipo] || tipo}</span>
+                        <span class="badge bg-${colorBar}">${info.operativos}/${info.total}</span>
                     </div>
-                    <div class="progress" style="height: 6px;">
+                    <div class="progress" style="height: 5px;">
                         <div class="progress-bar bg-${colorBar}" style="width: ${pct}%"></div>
                     </div>
-                    ${alertaHtml}
                 </div>`;
-        }
-        cont.innerHTML = html;
+        }).join('');
     } catch(e) {
         document.getElementById('estadoEquipos').innerHTML = '<p class="text-center text-danger py-2">Error al cargar</p>';
     }
 }
 
+// === TIPOS DE EMERGENCIA (para modal) ===
 async function cargarTiposEmergencia() {
     try {
         const r = await fetch('/api/emergencias/tipos/');
         const data = await r.json();
-        const lista = data.results || data;
         const select = document.getElementById('tipoEmergencia');
-
-        lista.forEach(tipo => {
-            const option = document.createElement('option');
-            option.value = tipo.id;
-            option.textContent = `${tipo.nombre} (${tipo.prioridad_display || tipo.prioridad})`;
-            select.appendChild(option);
+        (data.results || data).forEach(tipo => {
+            const opt = document.createElement('option');
+            opt.value = tipo.id;
+            opt.textContent = `${tipo.nombre} (${tipo.prioridad_display || tipo.prioridad})`;
+            select.appendChild(opt);
         });
-    } catch(e) {
-        console.error('Error cargando tipos de emergencia:', e);
-    }
+    } catch(e) { console.error('Error cargando tipos:', e); }
 }
 
+// === CREAR EMERGENCIA ===
 function mostrarModalEmergencia() {
     modalEmergencia.show();
 }
@@ -751,428 +911,120 @@ async function confirmarEmergencia() {
     const tipo = document.getElementById('tipoEmergencia').value;
     const descripcion = document.getElementById('descripcionEmergencia').value;
     const ubicacion = document.getElementById('ubicacionEmergencia').value;
-    const personasAfectadas = document.getElementById('personasAfectadas').value;
-    const requiereEvacuacion = document.getElementById('requiereEvacuacion').checked;
+    const personas = document.getElementById('personasAfectadas').value;
+    const evacuacion = document.getElementById('requiereEvacuacion').checked;
 
     if (!tipo || !descripcion) {
-        alert('Por favor complete los campos obligatorios');
+        mostrarToast('Complete los campos obligatorios', 'warning');
         return;
     }
 
-    const btn = event.target;
+    const btn = document.getElementById('btnConfirmarEmergencia');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Activando...';
 
     try {
-        // Obtener ubicacion actual si es posible
-        let latitud = 5.7303596; // Default SENA
-        let longitud = -72.8943613;
-
+        let latitud = 5.7303596, longitud = -72.8943613;
         if (navigator.geolocation) {
             try {
-                const pos = await new Promise((resolve, reject) => {
-                    navigator.geolocation.getCurrentPosition(resolve, reject, {timeout: 5000});
-                });
+                const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, {timeout: 5000}));
                 latitud = pos.coords.latitude;
                 longitud = pos.coords.longitude;
-            } catch(e) {
-                console.log('No se pudo obtener ubicacion, usando default');
-            }
+            } catch(e) {}
         }
 
         const r = await fetch('/api/emergencias/emergencias/', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
             body: JSON.stringify({
-                tipo: tipo,
-                descripcion: descripcion,
-                descripcion_ubicacion: ubicacion,
-                latitud: latitud,
-                longitud: longitud,
-                personas_afectadas: parseInt(personasAfectadas) || 0,
-                requiere_evacuacion: requiereEvacuacion,
-                estado: 'REPORTADA'
+                tipo, descripcion, descripcion_ubicacion: ubicacion,
+                latitud, longitud,
+                personas_afectadas: parseInt(personas) || 0,
+                requiere_evacuacion: evacuacion
             })
         });
 
         if (r.ok) {
             modalEmergencia.hide();
-            // Mostrar alerta de confirmacion
-            const alertHtml = `
-                <div class="alert alert-danger alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index:9999;" role="alert">
-                    <i class="bi bi-megaphone-fill me-2"></i>
-                    <strong>EMERGENCIA ACTIVADA</strong> - Se ha notificado a todo el personal de brigada.
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-                </div>`;
-            document.body.insertAdjacentHTML('beforeend', alertHtml);
-
-            // Limpiar formulario
             document.getElementById('formEmergencia').reset();
-
-            // Recargar emergencias
+            mostrarToast('EMERGENCIA ACTIVADA - Se ha notificado al personal', 'danger');
             cargarEmergencias();
         } else {
-            const error = await r.json();
-            alert('Error al activar emergencia: ' + (error.detail || JSON.stringify(error)));
+            const err = await r.json();
+            mostrarToast('Error: ' + (err.detail || JSON.stringify(err)), 'danger');
         }
     } catch(e) {
-        alert('Error de conexion: ' + e.message);
+        mostrarToast('Error de conexion: ' + e.message, 'danger');
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-megaphone-fill me-2"></i>CONFIRMAR EMERGENCIA';
     }
 }
 
-function activarEmergencia() {
-    mostrarModalEmergencia();
-}
-
-function evacuarZona() {
-    if (confirm('EVACUAR ZONA?\n\nEsto activara el protocolo de evacuacion.')) {
-        mostrarModalEmergencia();
-        document.getElementById('requiereEvacuacion').checked = true;
+// === REFRESH UNIFICADO ===
+function actualizarIndicadorTiempo() {
+    const indicator = document.getElementById('lastUpdateIndicator');
+    if (indicator) {
+        indicator.innerHTML = `<i class="bi bi-arrow-repeat me-1"></i>${new Date().toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit', second:'2-digit'})}`;
     }
 }
 
-function verificarEquipos() {
-    window.location.href = '{% url "equipos_brigada" %}';
-}
+let refreshTimer = null;
 
-function comunicarBrigada() {
-    window.location.href = '{% url "mi_brigada" %}';
+function iniciarAutoRefresh() {
+    refreshTimer = setInterval(() => {
+        cargarEmergencias();
+        cargarBrigadistas();
+        cargarEstadoEquipos();
+        actualizarIndicadorTiempo();
+    }, 20000);
 }
 
 function refrescarTodo() {
     const btn = event.target.closest('button');
     const icon = btn.querySelector('i');
     icon.classList.add('spin-animation');
-
     Promise.all([
         cargarEmergencias(),
         cargarBrigadistas(),
         cargarEstadoEquipos(),
-        cargarTimeline(),
-        cargarEstadisticas()
+        cargarDisponibilidad()
     ]).then(() => {
         actualizarIndicadorTiempo();
         icon.classList.remove('spin-animation');
-    }).catch(() => {
-        icon.classList.remove('spin-animation');
-    });
+    }).catch(() => icon.classList.remove('spin-animation'));
 }
 
-// Variables para el timeline
-let todasLasEmergencias = [];
-let filtroActual = 'todas';
+// === INICIALIZACION ===
+document.addEventListener('DOMContentLoaded', function() {
+    modalEmergencia = new bootstrap.Modal(document.getElementById('modalEmergencia'));
+    modalResolver = new bootstrap.Modal(document.getElementById('modalResolver'));
+    modalFalsaAlarma = new bootstrap.Modal(document.getElementById('modalFalsaAlarma'));
 
-async function cargarTimeline() {
-    try {
-        const r = await fetch('/api/emergencias/emergencias/');
-        const data = await r.json();
-        todasLasEmergencias = (data.results || data).sort((a, b) =>
-            new Date(b.fecha_hora_reporte) - new Date(a.fecha_hora_reporte)
-        );
-        renderizarTimeline(filtroActual);
-    } catch(e) {
-        document.getElementById('timelineEmergencias').innerHTML =
-            '<p class="text-center text-danger py-4">Error al cargar timeline</p>';
+    document.getElementById('btnConfirmarResolver').addEventListener('click', resolverEmergencia);
+    document.getElementById('btnConfirmarFalsa').addEventListener('click', marcarFalsaAlarma);
+
+    cargarDisponibilidad();
+    cargarEmergencias();
+    cargarBrigadistas();
+    cargarEstadoEquipos();
+    cargarTiposEmergencia();
+    actualizarIndicadorTiempo();
+    iniciarAutoRefresh();
+});
+
+// Pausar refresh cuando la pagina no es visible
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+    } else {
+        cargarEmergencias();
+        cargarBrigadistas();
+        cargarDisponibilidad();
+        actualizarIndicadorTiempo();
+        iniciarAutoRefresh();
     }
-}
-
-function filtrarTimeline(filtro) {
-    filtroActual = filtro;
-    // Actualizar botones activos
-    document.querySelectorAll('.card-header-modern .btn-group .btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    event.target.classList.add('active');
-    renderizarTimeline(filtro);
-}
-
-function renderizarTimeline(filtro) {
-    const cont = document.getElementById('timelineEmergencias');
-    let lista = [...todasLasEmergencias];
-
-    if (filtro === 'activas') {
-        lista = lista.filter(e => e.estado === 'REPORTADA' || e.estado === 'EN_ATENCION');
-    } else if (filtro === 'resueltas') {
-        lista = lista.filter(e => e.estado === 'RESUELTA' || e.estado === 'CONTROLADA');
-    }
-
-    if (!lista.length) {
-        cont.innerHTML = `
-            <div class="text-center py-4 text-muted">
-                <i class="bi bi-check-circle fs-2 d-block mb-2"></i>
-                No hay emergencias ${filtro === 'activas' ? 'activas' : filtro === 'resueltas' ? 'resueltas' : ''} para mostrar
-            </div>`;
-        return;
-    }
-
-    const iconosEstado = {
-        REPORTADA: 'bi-exclamation',
-        EN_ATENCION: 'bi-person-gear',
-        CONTROLADA: 'bi-shield-check',
-        RESUELTA: 'bi-check-lg',
-        FALSA_ALARMA: 'bi-x-lg'
-    };
-
-    const estadosTexto = {
-        REPORTADA: 'Reportada',
-        EN_ATENCION: 'En Atencion',
-        CONTROLADA: 'Controlada',
-        RESUELTA: 'Resuelta',
-        FALSA_ALARMA: 'Falsa Alarma'
-    };
-
-    cont.innerHTML = lista.slice(0, 15).map(e => {
-        const fecha = new Date(e.fecha_hora_reporte);
-        const fechaStr = fecha.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' });
-        const horaStr = fecha.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
-        const esActiva = e.estado === 'REPORTADA' || e.estado === 'EN_ATENCION';
-
-        // Calcular tiempo transcurrido
-        const ahora = new Date();
-        const diffMs = ahora - fecha;
-        const diffMins = Math.floor(diffMs / 60000);
-        let tiempoStr = '';
-        if (diffMins < 60) {
-            tiempoStr = `hace ${diffMins} min`;
-        } else if (diffMins < 1440) {
-            tiempoStr = `hace ${Math.floor(diffMins / 60)} h`;
-        } else {
-            tiempoStr = `hace ${Math.floor(diffMins / 1440)} dias`;
-        }
-
-        // Calcular tiempo de resolucion si esta resuelta
-        let tiempoResolucion = '';
-        if (e.fecha_hora_resolucion) {
-            const fechaRes = new Date(e.fecha_hora_resolucion);
-            const diffResMs = fechaRes - fecha;
-            const diffResMins = Math.floor(diffResMs / 60000);
-            if (diffResMins < 60) {
-                tiempoResolucion = `Resuelto en ${diffResMins} min`;
-            } else {
-                tiempoResolucion = `Resuelto en ${Math.floor(diffResMins / 60)}h ${diffResMins % 60}min`;
-            }
-        }
-
-        return `
-            <div class="timeline-item" data-estado="${e.estado}">
-                <div class="timeline-marker ${e.estado.toLowerCase()}">
-                    <i class="bi ${iconosEstado[e.estado] || 'bi-circle'}"></i>
-                </div>
-                <div class="timeline-content ${esActiva ? 'activa' : ''}">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <div>
-                            <span class="timeline-time">${fechaStr} ${horaStr}</span>
-                            <span class="text-muted mx-2">•</span>
-                            <span class="timeline-time">${tiempoStr}</span>
-                        </div>
-                        <span class="badge bg-${esActiva ? 'danger' : e.estado === 'RESUELTA' ? 'success' : 'secondary'}">
-                            ${estadosTexto[e.estado] || e.estado}
-                        </span>
-                    </div>
-                    <div class="timeline-title">${e.tipo_nombre || 'Emergencia'}</div>
-                    <div class="timeline-description">${e.descripcion || 'Sin descripcion'}</div>
-                    <div class="timeline-meta">
-                        ${e.descripcion_ubicacion ? `
-                            <span class="timeline-meta-item">
-                                <i class="bi bi-geo-alt"></i> ${e.descripcion_ubicacion}
-                            </span>
-                        ` : ''}
-                        ${e.personas_afectadas ? `
-                            <span class="timeline-meta-item">
-                                <i class="bi bi-people"></i> ${e.personas_afectadas} afectados
-                            </span>
-                        ` : ''}
-                        ${e.requiere_evacuacion ? `
-                            <span class="timeline-meta-item text-danger">
-                                <i class="bi bi-sign-stop-fill"></i> Evacuacion
-                            </span>
-                        ` : ''}
-                        ${tiempoResolucion ? `
-                            <span class="timeline-meta-item text-success">
-                                <i class="bi bi-clock-history"></i> ${tiempoResolucion}
-                            </span>
-                        ` : ''}
-                    </div>
-                    ${esActiva ? `
-                        <div class="timeline-actions">
-                            <button class="btn btn-sm btn-info" onclick="atenderEmergencia(${e.id})">
-                                <i class="bi bi-person-check me-1"></i>Atender
-                            </button>
-                            <button class="btn btn-sm btn-success" onclick="resolverEmergencia(${e.id})">
-                                <i class="bi bi-check-circle me-1"></i>Resolver
-                            </button>
-                        </div>
-                    ` : ''}
-                </div>
-            </div>`;
-    }).join('');
-}
-
-async function cargarEstadisticas() {
-    try {
-        const r = await fetch('/api/emergencias/emergencias/');
-        const data = await r.json();
-        const lista = data.results || data;
-
-        // Filtrar emergencias del mes actual
-        const ahora = new Date();
-        const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
-        const emergenciasMes = lista.filter(e => new Date(e.fecha_hora_reporte) >= inicioMes);
-
-        // Contar por estado
-        const stats = {
-            reportadas: 0,
-            en_atencion: 0,
-            resueltas: 0,
-            falsas_alarmas: 0
-        };
-
-        emergenciasMes.forEach(e => {
-            if (e.estado === 'REPORTADA') stats.reportadas++;
-            else if (e.estado === 'EN_ATENCION') stats.en_atencion++;
-            else if (e.estado === 'RESUELTA' || e.estado === 'CONTROLADA') stats.resueltas++;
-            else if (e.estado === 'FALSA_ALARMA') stats.falsas_alarmas++;
-        });
-
-        const cont = document.getElementById('statsEmergencias');
-        cont.innerHTML = `
-            <div class="row text-center mb-3">
-                <div class="col-6 mb-3">
-                    <div class="p-3 bg-danger bg-opacity-10 rounded">
-                        <h4 class="text-danger mb-0">${stats.reportadas + stats.en_atencion}</h4>
-                        <small class="text-muted">Activas</small>
-                    </div>
-                </div>
-                <div class="col-6 mb-3">
-                    <div class="p-3 bg-success bg-opacity-10 rounded">
-                        <h4 class="text-success mb-0">${stats.resueltas}</h4>
-                        <small class="text-muted">Resueltas</small>
-                    </div>
-                </div>
-                <div class="col-6">
-                    <div class="p-3 bg-warning bg-opacity-10 rounded">
-                        <h4 class="text-warning mb-0">${emergenciasMes.length}</h4>
-                        <small class="text-muted">Total Mes</small>
-                    </div>
-                </div>
-                <div class="col-6">
-                    <div class="p-3 bg-secondary bg-opacity-10 rounded">
-                        <h4 class="text-secondary mb-0">${stats.falsas_alarmas}</h4>
-                        <small class="text-muted">Falsas Alarmas</small>
-                    </div>
-                </div>
-            </div>
-            <hr>
-            <div class="d-flex justify-content-between align-items-center">
-                <small class="text-muted">Tasa de resolucion</small>
-                <strong>${emergenciasMes.length > 0 ? Math.round((stats.resueltas / emergenciasMes.length) * 100) : 0}%</strong>
-            </div>
-            <div class="progress mt-2" style="height: 6px;">
-                <div class="progress-bar bg-success" style="width: ${emergenciasMes.length > 0 ? Math.round((stats.resueltas / emergenciasMes.length) * 100) : 0}%"></div>
-            </div>
-        `;
-
-        // Calcular tiempos de respuesta
-        calcularTiemposRespuesta(lista);
-    } catch(e) {
-        document.getElementById('statsEmergencias').innerHTML =
-            '<p class="text-center text-danger py-2">Error al cargar</p>';
-    }
-}
-
-function calcularTiemposRespuesta(lista) {
-    const resueltas = lista.filter(e => e.estado === 'RESUELTA' && e.fecha_hora_resolucion);
-
-    if (resueltas.length === 0) {
-        return;
-    }
-
-    let tiempoTotal = 0;
-    let tiempoMinimo = Infinity;
-
-    resueltas.forEach(e => {
-        const inicio = new Date(e.fecha_hora_reporte);
-        const fin = new Date(e.fecha_hora_resolucion);
-        const diff = (fin - inicio) / 60000; // en minutos
-
-        tiempoTotal += diff;
-        if (diff < tiempoMinimo) tiempoMinimo = diff;
-    });
-
-    const promedio = Math.round(tiempoTotal / resueltas.length);
-
-    document.getElementById('tiempoPromedio').textContent = `${promedio} min`;
-    document.getElementById('tiempoMejor').textContent = tiempoMinimo < Infinity ? `${Math.round(tiempoMinimo)} min` : '-- min';
-    document.getElementById('tiempoResolucion').textContent = `${promedio} min`;
-
-    // Meta: menos de 5 minutos
-    const cumpleMeta = resueltas.filter(e => {
-        const inicio = new Date(e.fecha_hora_reporte);
-        const fin = new Date(e.fecha_hora_resolucion);
-        return (fin - inicio) / 60000 <= 5;
-    }).length;
-
-    const porcentajeMeta = Math.round((cumpleMeta / resueltas.length) * 100);
-    document.getElementById('progressMeta').style.width = `${porcentajeMeta}%`;
-}
-
-async function atenderEmergencia(id) {
-    if (!confirm('Confirmar que esta atendiendo esta emergencia?')) return;
-
-    try {
-        const r = await fetch(`/api/emergencias/emergencias/${id}/`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({ estado: 'EN_ATENCION' })
-        });
-
-        if (r.ok) {
-            cargarEmergencias();
-            cargarTimeline();
-        } else {
-            alert('Error al actualizar emergencia');
-        }
-    } catch(e) {
-        alert('Error de conexion');
-    }
-}
-
-async function resolverEmergencia(id) {
-    if (!confirm('Confirmar que esta emergencia ha sido resuelta?')) return;
-
-    try {
-        const r = await fetch(`/api/emergencias/emergencias/${id}/`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
-                estado: 'RESUELTA',
-                fecha_hora_resolucion: new Date().toISOString()
-            })
-        });
-
-        if (r.ok) {
-            cargarEmergencias();
-            cargarTimeline();
-            cargarEstadisticas();
-        } else {
-            alert('Error al actualizar emergencia');
-        }
-    } catch(e) {
-        alert('Error de conexion');
-    }
-}
+});
 </script>
 
 <style>
@@ -1183,125 +1035,9 @@ async function resolverEmergencia(id) {
 .spin-animation {
     animation: spin 1s linear infinite;
 }
-
-/* Timeline Styles */
-.timeline-container {
-    position: relative;
-    padding-left: 30px;
-}
-
-.timeline-container::before {
-    content: '';
-    position: absolute;
-    left: 10px;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: linear-gradient(to bottom, #dee2e6 0%, #dee2e6 100%);
-}
-
-.timeline-item {
-    position: relative;
-    padding-bottom: 25px;
-    padding-left: 20px;
-}
-
-.timeline-item:last-child {
-    padding-bottom: 0;
-}
-
-.timeline-marker {
-    position: absolute;
-    left: -24px;
-    top: 0;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    color: white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
-.timeline-marker.reportada {
-    background: #ffc107;
-}
-
-.timeline-marker.en_atencion {
-    background: #17a2b8;
-    animation: pulse 2s infinite;
-}
-
-.timeline-marker.controlada {
-    background: #6f42c1;
-}
-
-.timeline-marker.resuelta {
-    background: #28a745;
-}
-
-.timeline-marker.falsa_alarma {
-    background: #6c757d;
-}
-
-@keyframes pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(23, 162, 184, 0.7); }
-    50% { box-shadow: 0 0 0 10px rgba(23, 162, 184, 0); }
-}
-
-.timeline-content {
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 15px;
-    border-left: 3px solid #dee2e6;
-    transition: all 0.3s ease;
-}
-
-.timeline-content:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-.timeline-content.activa {
-    border-left-color: #dc3545;
-    background: #fff5f5;
-}
-
-.timeline-time {
-    font-size: 0.75rem;
-    color: #6c757d;
-}
-
-.timeline-title {
-    font-weight: 600;
-    margin-bottom: 5px;
-}
-
-.timeline-description {
-    font-size: 0.9rem;
-    color: #495057;
-    margin-bottom: 8px;
-}
-
-.timeline-meta {
-    display: flex;
-    gap: 15px;
-    flex-wrap: wrap;
-    font-size: 0.8rem;
-}
-
-.timeline-meta-item {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    color: #6c757d;
-}
-
-.timeline-actions {
-    margin-top: 10px;
-    display: flex;
-    gap: 8px;
+@keyframes pulseMarker {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+    50% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
 }
 </style>
 {% endblock %}

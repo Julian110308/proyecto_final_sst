@@ -9,56 +9,49 @@
 
 {% block content %}
 <!-- Header -->
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-3">
     <div>
         <h1 class="h3 fw-bold text-dark mb-1">
             <i class="bi bi-shield-check text-primary me-2"></i>
-            Control de Seguridad - {{ user.get_full_name|default:user.username }}
+            Control de Seguridad
         </h1>
         <p class="text-muted mb-0">
-            Control de acceso y vigilancia del centro
+            {{ user.get_full_name|default:user.username }}
             <span id="lastUpdateIndicator" class="ms-3 badge bg-light text-secondary">
                 <i class="bi bi-arrow-repeat me-1"></i>Cargando...
             </span>
         </p>
     </div>
-    <div class="btn-group">
-        <button class="btn btn-outline-secondary" onclick="refrescarTodo()" title="Actualizar ahora">
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary btn-sm" onclick="refrescarTodo()" title="Actualizar">
             <i class="bi bi-arrow-clockwise"></i>
         </button>
-        <a href="/acceso/" class="btn btn-primary">
+        <a href="/acceso/" class="btn btn-primary btn-sm">
             <i class="bi bi-door-open me-1"></i>Control de Acceso
         </a>
-        <button class="btn btn-outline-danger" onclick="alertaSeguridad()">
+        <button class="btn btn-outline-danger btn-sm" onclick="alertaSeguridad()">
             <i class="bi bi-exclamation-triangle me-1"></i>Alerta
         </button>
     </div>
 </div>
 
-<!-- Alerta de Aforo Critico (oculta por defecto) -->
-<div id="alertaAforoCritico" class="alert alert-danger alert-dismissible fade mb-4" role="alert" style="display: none;">
+<!-- Alerta de Aforo Critico -->
+<div id="alertaAforoCritico" class="alert alert-danger alert-dismissible fade mb-3" role="alert" style="display:none;">
     <div class="d-flex align-items-center">
-        <div class="me-3">
-            <i class="bi bi-exclamation-triangle-fill fs-1"></i>
-        </div>
+        <i class="bi bi-exclamation-triangle-fill fs-3 me-3"></i>
         <div class="flex-grow-1">
-            <h5 class="alert-heading mb-1">
-                <i class="bi bi-volume-up-fill me-2"></i>ALERTA: Aforo Critico
-            </h5>
-            <p class="mb-0" id="alertaAforoMensaje">
-                El centro ha alcanzado mas del 90% de su capacidad maxima.
-            </p>
+            <strong>ALERTA: Aforo Critico</strong>
+            <p class="mb-0 small" id="alertaAforoMensaje">El centro ha alcanzado mas del 90% de su capacidad.</p>
         </div>
-        <div class="ms-3 text-end">
-            <span class="badge bg-danger fs-5" id="alertaAforoPorcentaje">0%</span>
-            <br>
-            <small id="alertaAforoNumeros">0 / 0</small>
+        <div class="text-end ms-3">
+            <span class="badge bg-danger fs-6" id="alertaAforoPorcentaje">0%</span>
+            <br><small id="alertaAforoNumeros">0 / 0</small>
         </div>
     </div>
 </div>
 
-<!-- Estado del Sistema -->
-<div class="row g-4 mb-4">
+<!-- Metricas -->
+<div class="row g-3 mb-4">
     {% include 'components/metric-card.html' with label="Personas en Centro" value=personas_en_centro|default:0 sublabel=porcentaje_ocupacion|default:0|add:"% ocupacion" sublabel_icon="bi bi-shield-check" sublabel_color="success" icon="bi-people-fill" icon_color="primary" border_color="primary" %}
 
     {% include 'components/metric-card.html' with label="Ingresos Hoy" value=ingresos_hoy|default:0 sublabel="Total del dia" sublabel_color="info" icon="bi-box-arrow-in-right" icon_color="success" border_color="success" %}
@@ -67,17 +60,17 @@
 
     <div class="col-xl-3 col-md-6">
         <div class="card card-modern border-0 border-start border-4 border-info">
-            <div class="card-body p-4">
+            <div class="card-body p-3">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Aforo <span class="badge bg-info ms-1" style="font-size:0.6rem;">EN VIVO</span></h6>
+                        <h6 class="text-muted mb-1 small">Aforo</h6>
                         <h3 class="fw-bold mb-0" id="aforoDisplay">{{ personas_en_centro|default:0 }} / {{ aforo_maximo|default:2000 }}</h3>
                         <small id="aforoIndicator" class="{% if porcentaje_ocupacion > 90 %}text-danger{% elif porcentaje_ocupacion > 70 %}text-warning{% else %}text-success{% endif %}">
                             <i class="bi bi-bar-chart"></i> {{ porcentaje_ocupacion|default:0 }}% capacidad
                         </small>
                     </div>
-                    <div class="bg-light rounded-3 p-3">
-                        <i class="bi bi-bar-chart-fill fs-2 text-info"></i>
+                    <div class="rounded-3 p-2 bg-info bg-opacity-10">
+                        <i class="bi bi-bar-chart-fill fs-4 text-info"></i>
                     </div>
                 </div>
             </div>
@@ -85,25 +78,23 @@
     </div>
 </div>
 
-<!-- Registro de Accesos y Acciones Rapidas -->
+<!-- Accesos Recientes + Acciones -->
 <div class="row g-4 mb-4">
     <div class="col-lg-8">
         <div class="card card-modern">
-            <div class="card-header-modern">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0">
-                        <i class="bi bi-clock-history me-2"></i>
-                        Registros de Acceso Recientes
-                    </h6>
-                    <a href="/acceso/" class="btn btn-sm btn-outline-secondary">Ver historial completo</a>
-                </div>
+            <div class="card-header-modern d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-clock-history me-2"></i>
+                    Registros de Acceso Recientes
+                </h6>
+                <a href="/acceso/" class="btn btn-sm btn-outline-secondary">Ver historial</a>
             </div>
-            <div class="card-body">
+            <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle">
+                    <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>Hora</th>
+                                <th class="ps-3">Hora</th>
                                 <th>Usuario</th>
                                 <th>Rol</th>
                                 <th>Accion</th>
@@ -125,34 +116,32 @@
         <div class="card card-modern mb-4">
             <div class="card-header-modern">
                 <h6 class="mb-0">
-                    <i class="bi bi-lightning-charge-fill me-2"></i>
-                    Acciones Rapidas
+                    <i class="bi bi-lightning-charge-fill me-2"></i>Acciones Rapidas
                 </h6>
             </div>
             <div class="card-body">
-                <div class="d-grid gap-3">
-                    <a href="/acceso/" class="btn btn-primary text-start">
+                <div class="d-grid gap-2">
+                    <a href="/acceso/" class="btn btn-primary btn-sm text-start">
                         <i class="bi bi-door-open me-2"></i>Registrar Ingreso/Egreso
                     </a>
-                    <a href="{% url 'gestion_visitantes' %}" class="btn btn-outline-warning text-start">
+                    <a href="{% url 'gestion_visitantes' %}" class="btn btn-outline-warning btn-sm text-start">
                         <i class="bi bi-person-plus me-2"></i>Registrar Visitante
                     </a>
-                    <a href="/mapas/" class="btn btn-outline-info text-start">
+                    <a href="/mapas/" class="btn btn-outline-info btn-sm text-start">
                         <i class="bi bi-map me-2"></i>Ver Mapa del Centro
                     </a>
-                    <a href="/reportes/incidentes/nuevo/" class="btn btn-outline-danger text-start">
+                    <a href="/reportes/incidentes/nuevo/" class="btn btn-outline-danger btn-sm text-start">
                         <i class="bi bi-exclamation-triangle me-2"></i>Reportar Incidente
                     </a>
                 </div>
             </div>
         </div>
 
-        <!-- Personas en centro por rol -->
+        <!-- Distribucion por Rol -->
         <div class="card card-modern">
             <div class="card-header-modern">
                 <h6 class="mb-0">
-                    <i class="bi bi-people me-2"></i>
-                    Distribucion por Rol
+                    <i class="bi bi-people me-2"></i>Distribucion por Rol
                 </h6>
             </div>
             <div class="card-body" id="distribucionRoles">
@@ -164,47 +153,50 @@
     </div>
 </div>
 
-<!-- Visitantes y Mapa -->
+<!-- Visitantes + Mapa (colapsable) -->
 <div class="row g-4 mb-4">
     <div class="col-lg-7">
         <div class="card card-modern">
-            <div class="card-header-modern d-flex justify-content-between align-items-center">
+            <div class="card-header-modern d-flex justify-content-between align-items-center" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#collapseVisitantes">
                 <h6 class="mb-0">
                     <i class="bi bi-person-badge me-2"></i>
                     Visitantes Activos (<span id="contadorVisitantes">0</span>)
                 </h6>
-                <a href="{% url 'gestion_visitantes' %}" class="btn btn-sm btn-primary">
-                    <i class="bi bi-plus-circle me-1"></i>Nuevo Visitante
-                </a>
+                <div class="d-flex align-items-center gap-2">
+                    <a href="{% url 'gestion_visitantes' %}" class="btn btn-sm btn-primary" onclick="event.stopPropagation();">
+                        <i class="bi bi-plus-circle me-1"></i>Nuevo
+                    </a>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
             </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Visitante</th>
-                                <th>Entidad</th>
-                                <th>Visita a</th>
-                                <th>Ingreso</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaVisitantes">
-                            <tr><td colspan="5" class="text-center py-4 text-muted">Cargando...</td></tr>
-                        </tbody>
-                    </table>
+            <div class="collapse show" id="collapseVisitantes">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Visitante</th>
+                                    <th>Entidad</th>
+                                    <th>Visita a</th>
+                                    <th>Ingreso</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaVisitantes">
+                                <tr><td colspan="5" class="text-center py-3 text-muted">Cargando...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Mapa -->
     <div class="col-lg-5">
         <div class="card card-modern">
             <div class="card-header-modern d-flex justify-content-between align-items-center">
                 <h6 class="mb-0">
-                    <i class="bi bi-geo-alt me-2"></i>
-                    Mapa del Centro
+                    <i class="bi bi-geo-alt me-2"></i>Mapa del Centro
                 </h6>
                 <a href="/mapas/" class="btn btn-sm btn-outline-primary">Ver Completo</a>
             </div>
@@ -215,13 +207,19 @@
     </div>
 </div>
 
+<!-- Toast -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index:1080;">
+    <div id="toastFeedback" class="toast align-items-center border-0" role="alert">
+        <div class="d-flex">
+            <div class="toast-body" id="toastMensaje"></div>
+            <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-// Configuracion de auto-refresh
-const REFRESH_INTERVAL = 30000; // 30 segundos
-let refreshTimers = {};
-let lastUpdate = null;
-
 function getCookie(name) {
     let v = null;
     document.cookie.split(';').forEach(c => {
@@ -231,44 +229,35 @@ function getCookie(name) {
     return v;
 }
 
+function mostrarToast(mensaje, tipo = 'success') {
+    const toast = document.getElementById('toastFeedback');
+    const body = document.getElementById('toastMensaje');
+    toast.className = `toast align-items-center border-0 text-white bg-${tipo}`;
+    body.textContent = mensaje;
+    new bootstrap.Toast(toast, { delay: 3000 }).show();
+}
+
 function actualizarIndicadorTiempo() {
-    const ahora = new Date();
-    lastUpdate = ahora;
     const indicator = document.getElementById('lastUpdateIndicator');
     if (indicator) {
-        indicator.innerHTML = `<i class="bi bi-arrow-repeat me-1"></i>Actualizado: ${ahora.toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit', second:'2-digit'})}`;
+        indicator.innerHTML = `<i class="bi bi-arrow-repeat me-1"></i>${new Date().toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit', second:'2-digit'})}`;
     }
 }
 
+// Refresh unificado
+let refreshTimer = null;
+
 function iniciarAutoRefresh() {
-    // Refrescar tablas cada 30 segundos
-    refreshTimers.accesos = setInterval(() => {
+    refreshTimer = setInterval(() => {
         cargarAccesosRecientes();
-        actualizarIndicadorTiempo();
-    }, REFRESH_INTERVAL);
-
-    refreshTimers.visitantes = setInterval(() => {
         cargarVisitantes();
-    }, REFRESH_INTERVAL);
-
-    refreshTimers.distribucion = setInterval(() => {
         cargarDistribucion();
-    }, REFRESH_INTERVAL);
-
-    // Refrescar indicadores de aforo cada 15 segundos
-    refreshTimers.aforo = setInterval(() => {
         actualizarAforo();
-    }, 15000);
-
-    console.log('Auto-refresh iniciado: tablas cada 30s, aforo cada 15s');
+        actualizarIndicadorTiempo();
+    }, 20000);
 }
 
-function detenerAutoRefresh() {
-    Object.values(refreshTimers).forEach(timer => clearInterval(timer));
-    refreshTimers = {};
-    console.log('Auto-refresh detenido');
-}
-
+// Aforo
 async function actualizarAforo() {
     try {
         const r = await fetch('/api/acceso/registros/personas_en_centro/');
@@ -277,18 +266,14 @@ async function actualizarAforo() {
         const aforoMax = {{ aforo_maximo|default:2000 }};
         const porcentaje = Math.round((total / aforoMax) * 100);
 
-        // Actualizar display de aforo
         const aforoDisplay = document.getElementById('aforoDisplay');
-        if (aforoDisplay) {
-            aforoDisplay.textContent = `${total} / ${aforoMax}`;
-        }
+        if (aforoDisplay) aforoDisplay.textContent = `${total} / ${aforoMax}`;
 
-        // Actualizar indicador de color segun ocupacion
         const aforoIndicator = document.getElementById('aforoIndicator');
         if (aforoIndicator) {
             if (porcentaje > 90) {
                 aforoIndicator.className = 'text-danger';
-                aforoIndicator.innerHTML = `<i class="bi bi-exclamation-triangle-fill"></i> ${porcentaje}% capacidad - ALTO`;
+                aforoIndicator.innerHTML = `<i class="bi bi-exclamation-triangle-fill"></i> ${porcentaje}% - ALTO`;
             } else if (porcentaje > 70) {
                 aforoIndicator.className = 'text-warning';
                 aforoIndicator.innerHTML = `<i class="bi bi-bar-chart"></i> ${porcentaje}% capacidad`;
@@ -298,74 +283,192 @@ async function actualizarAforo() {
             }
         }
 
-        // Mostrar/ocultar alerta de aforo critico
-        const alertaAforo = document.getElementById('alertaAforoCritico');
-        if (alertaAforo) {
+        // Alerta aforo critico
+        const alerta = document.getElementById('alertaAforoCritico');
+        if (alerta) {
             if (porcentaje >= 90) {
-                // Actualizar contenido de la alerta
-                const alertaMensaje = document.getElementById('alertaAforoMensaje');
-                const alertaPorcentaje = document.getElementById('alertaAforoPorcentaje');
-                const alertaNumeros = document.getElementById('alertaAforoNumeros');
-
-                if (alertaMensaje) {
-                    if (porcentaje >= 100) {
-                        alertaMensaje.innerHTML = `<strong>CAPACIDAD MAXIMA ALCANZADA.</strong> No se permiten mas ingresos al centro.`;
-                    } else if (porcentaje >= 95) {
-                        alertaMensaje.innerHTML = `El centro esta al <strong>${porcentaje}%</strong> de su capacidad. Restriccion de ingresos recomendada.`;
-                    } else {
-                        alertaMensaje.innerHTML = `El centro ha alcanzado mas del 90% de su capacidad maxima. Monitorear ingresos.`;
-                    }
-                }
-                if (alertaPorcentaje) alertaPorcentaje.textContent = `${porcentaje}%`;
-                if (alertaNumeros) alertaNumeros.textContent = `${total} / ${aforoMax}`;
-
-                // Mostrar alerta con animacion
-                alertaAforo.style.display = 'block';
-                setTimeout(() => alertaAforo.classList.add('show'), 10);
-
-                // Reproducir sonido de alerta si el porcentaje acaba de cruzar el umbral
-                if (!alertaAforo.dataset.alertaActiva) {
-                    alertaAforo.dataset.alertaActiva = 'true';
-                    reproducirSonidoAlerta();
-                }
+                document.getElementById('alertaAforoMensaje').innerHTML = porcentaje >= 100
+                    ? '<strong>CAPACIDAD MAXIMA ALCANZADA.</strong> No se permiten mas ingresos.'
+                    : `El centro esta al <strong>${porcentaje}%</strong> de su capacidad.`;
+                document.getElementById('alertaAforoPorcentaje').textContent = `${porcentaje}%`;
+                document.getElementById('alertaAforoNumeros').textContent = `${total} / ${aforoMax}`;
+                alerta.style.display = 'block';
+                setTimeout(() => alerta.classList.add('show'), 10);
             } else {
-                // Ocultar alerta
-                alertaAforo.classList.remove('show');
-                setTimeout(() => {
-                    alertaAforo.style.display = 'none';
-                    alertaAforo.dataset.alertaActiva = '';
-                }, 150);
+                alerta.classList.remove('show');
+                setTimeout(() => alerta.style.display = 'none', 150);
             }
         }
-    } catch(e) {
-        console.error('Error actualizando aforo:', e);
-    }
+    } catch(e) { console.error('Error aforo:', e); }
 }
 
-function reproducirSonidoAlerta() {
-    // Crear un sonido de alerta simple usando Web Audio API
+// Accesos recientes
+async function cargarAccesosRecientes() {
     try {
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-
-        oscillator.frequency.value = 800;
-        oscillator.type = 'sine';
-        gainNode.gain.value = 0.3;
-
-        oscillator.start();
-        setTimeout(() => {
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-            setTimeout(() => oscillator.stop(), 300);
-        }, 200);
+        const r = await fetch('/api/acceso/registros/registros_recientes/?limite=10');
+        const data = await r.json();
+        const tbody = document.getElementById('tablaAccesos');
+        if (!data.length) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted"><i class="bi bi-inbox me-2"></i>Sin registros hoy</td></tr>';
+            return;
+        }
+        tbody.innerHTML = data.map(reg => {
+            const hora = new Date(reg.fecha_hora_egreso || reg.fecha_hora_ingreso).toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit'});
+            const esEgreso = reg.fecha_hora_egreso;
+            return `
+                <tr>
+                    <td class="ps-3"><strong>${hora}</strong></td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle bg-primary bg-opacity-10 text-primary me-2 d-flex align-items-center justify-content-center" style="width:30px;height:30px;font-size:11px;">
+                                ${reg.usuario.nombre.split(' ').map(n=>n[0]).join('').substring(0,2)}
+                            </div>
+                            <span class="small">${reg.usuario.nombre}</span>
+                        </div>
+                    </td>
+                    <td><span class="badge bg-light text-dark border small">${reg.usuario.rol}</span></td>
+                    <td>${esEgreso
+                        ? '<span class="text-danger small"><i class="bi bi-box-arrow-right me-1"></i>Egreso</span>'
+                        : '<span class="text-success small"><i class="bi bi-box-arrow-in-right me-1"></i>Ingreso</span>'}</td>
+                    <td><small class="text-muted">${reg.metodo_ingreso || 'Manual'}</small></td>
+                </tr>`;
+        }).join('');
     } catch(e) {
-        console.log('Audio no disponible');
+        document.getElementById('tablaAccesos').innerHTML = '<tr><td colspan="5" class="text-center text-danger py-3">Error al cargar</td></tr>';
     }
 }
 
+// Visitantes
+async function cargarVisitantes() {
+    try {
+        const r = await fetch('/api/auth/visitantes/');
+        const data = await r.json();
+        const lista = data.results || data;
+        const hoy = new Date().toISOString().split('T')[0];
+        const activos = lista.filter(v => v.fecha_visita === hoy && !v.hora_salida);
+
+        document.getElementById('contadorVisitantes').textContent = activos.length;
+        const tbody = document.getElementById('tablaVisitantes');
+
+        if (!activos.length) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted"><i class="bi bi-person-badge me-2"></i>No hay visitantes activos</td></tr>';
+            return;
+        }
+        tbody.innerHTML = activos.map(v => `
+            <tr>
+                <td class="ps-3"><strong class="small">${v.nombre_completo}</strong></td>
+                <td><small>${v.entidad || 'Particular'}</small></td>
+                <td><small>${v.persona_a_visitar_nombre || '-'}</small></td>
+                <td><small>${v.hora_ingreso || '-'}</small></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-danger" onclick="registrarSalidaVisitante(${v.id}, '${v.nombre_completo.replace(/'/g, "\\'")}')">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </button>
+                </td>
+            </tr>`).join('');
+    } catch(e) {
+        document.getElementById('tablaVisitantes').innerHTML = '<tr><td colspan="5" class="text-center text-danger py-3">Error al cargar</td></tr>';
+    }
+}
+
+// Distribucion por rol
+async function cargarDistribucion() {
+    try {
+        const r = await fetch('/api/acceso/registros/personas_en_centro/');
+        const data = await r.json();
+        const cont = document.getElementById('distribucionRoles');
+
+        const roles = {};
+        const colores = {APRENDIZ:'success', INSTRUCTOR:'primary', ADMINISTRATIVO:'info', VIGILANCIA:'warning', BRIGADA:'danger'};
+        const nombres = {APRENDIZ:'Aprendices', INSTRUCTOR:'Instructores', ADMINISTRATIVO:'Administrativos', VIGILANCIA:'Vigilancia', BRIGADA:'Brigada'};
+        (data.personas || []).forEach(p => { roles[p.rol_code] = (roles[p.rol_code] || 0) + 1; });
+
+        if (!Object.keys(roles).length) {
+            cont.innerHTML = '<p class="text-center text-muted py-2 small">Sin personas registradas</p>';
+            return;
+        }
+
+        cont.innerHTML = Object.entries(roles).map(([rol, cant]) => {
+            const pct = Math.round((cant / data.total) * 100);
+            return `
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small>${nombres[rol] || rol}</small>
+                        <small class="fw-bold">${cant}</small>
+                    </div>
+                    <div class="progress" style="height:5px;">
+                        <div class="progress-bar bg-${colores[rol] || 'secondary'}" style="width:${pct}%"></div>
+                    </div>
+                </div>`;
+        }).join('');
+    } catch(e) {
+        document.getElementById('distribucionRoles').innerHTML = '<p class="text-center text-muted small">Error</p>';
+    }
+}
+
+// Mapa
+function initMapa() {
+    const map = L.map('securityMap').setView([5.7303596, -72.8943613], 17);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {maxZoom:19}).addTo(map);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {maxZoom:19, opacity:0.7}).addTo(map);
+
+    // Cargar puntos de encuentro
+    const peIcon = L.divIcon({
+        className: 'custom-div-icon',
+        html: '<div style="background:#4CAF50;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,.3);font-size:10px;">PE</div>',
+        iconSize: [28, 28]
+    });
+
+    fetch('/api/mapas/api/puntos-encuentro/')
+        .then(r => r.json())
+        .then(data => {
+            (data.results || data).forEach(p => {
+                L.marker([p.latitud, p.longitud], {icon: peIcon}).addTo(map)
+                    .bindPopup(`<b>${p.nombre}</b><br>${p.descripcion || ''}`);
+            });
+        }).catch(() => {});
+}
+
+// Salida visitante
+async function registrarSalidaVisitante(id, nombre) {
+    if (!confirm(`Registrar salida de ${nombre}?`)) return;
+    try {
+        const r = await fetch(`/api/auth/visitantes/${id}/`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+            body: JSON.stringify({hora_salida: new Date().toTimeString().split(' ')[0]})
+        });
+        if (r.ok) {
+            mostrarToast(`Salida de ${nombre} registrada`, 'success');
+            cargarVisitantes();
+        } else {
+            mostrarToast('Error al registrar salida', 'danger');
+        }
+    } catch(e) { mostrarToast('Error de conexion', 'danger'); }
+}
+
+function alertaSeguridad() {
+    if (confirm('Desea reportar una ALERTA DE SEGURIDAD?\nEsto lo redirigira al modulo de emergencias.')) {
+        window.location.href = '/emergencias/';
+    }
+}
+
+function refrescarTodo() {
+    const btn = event.target.closest('button');
+    const icon = btn.querySelector('i');
+    icon.classList.add('spin-animation');
+    Promise.all([
+        cargarAccesosRecientes(),
+        cargarVisitantes(),
+        cargarDistribucion(),
+        actualizarAforo()
+    ]).then(() => {
+        actualizarIndicadorTiempo();
+        icon.classList.remove('spin-animation');
+    }).catch(() => icon.classList.remove('spin-animation'));
+}
+
+// Init
 document.addEventListener('DOMContentLoaded', function() {
     cargarAccesosRecientes();
     cargarVisitantes();
@@ -376,10 +479,9 @@ document.addEventListener('DOMContentLoaded', function() {
     iniciarAutoRefresh();
 });
 
-// Detener refresh cuando la pagina no es visible
 document.addEventListener('visibilitychange', function() {
     if (document.hidden) {
-        detenerAutoRefresh();
+        if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
     } else {
         cargarAccesosRecientes();
         cargarVisitantes();
@@ -389,187 +491,10 @@ document.addEventListener('visibilitychange', function() {
         iniciarAutoRefresh();
     }
 });
-
-async function cargarAccesosRecientes() {
-    try {
-        const r = await fetch('/api/acceso/registros/registros_recientes/?limite=10');
-        const data = await r.json();
-        const tbody = document.getElementById('tablaAccesos');
-        if (!data.length) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Sin registros hoy</td></tr>';
-            return;
-        }
-        tbody.innerHTML = data.map(reg => {
-            const esIngreso = !reg.fecha_hora_egreso || new Date(reg.fecha_hora_ingreso) > new Date(reg.fecha_hora_egreso || 0);
-            const hora = new Date(reg.fecha_hora_egreso || reg.fecha_hora_ingreso).toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit'});
-            return `
-                <tr class="${!reg.fecha_hora_egreso ? '' : 'table-light'}">
-                    <td><strong>${hora}</strong></td>
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <div class="rounded-circle bg-primary text-white me-2 d-flex align-items-center justify-content-center" style="width:32px;height:32px;font-size:12px;">
-                                ${reg.usuario.nombre.split(' ').map(n=>n[0]).join('').substring(0,2)}
-                            </div>
-                            <span>${reg.usuario.nombre}</span>
-                        </div>
-                    </td>
-                    <td><span class="badge bg-light text-dark border">${reg.usuario.rol}</span></td>
-                    <td>${!reg.fecha_hora_egreso
-                        ? '<i class="bi bi-box-arrow-in-right text-success"></i> Ingreso'
-                        : '<i class="bi bi-box-arrow-right text-danger"></i> Egreso'}</td>
-                    <td>${reg.metodo_ingreso || 'Manual'}</td>
-                </tr>`;
-        }).join('');
-    } catch(e) {
-        document.getElementById('tablaAccesos').innerHTML = '<tr><td colspan="5" class="text-center text-danger py-3">Error al cargar</td></tr>';
-    }
-}
-
-async function cargarVisitantes() {
-    try {
-        const r = await fetch('/api/auth/visitantes/');
-        const data = await r.json();
-        const lista = data.results || data;
-        const hoy = new Date().toISOString().split('T')[0];
-        const visitantesHoy = lista.filter(v => v.fecha_visita === hoy);
-        const activos = visitantesHoy.filter(v => !v.hora_salida);
-
-        document.getElementById('contadorVisitantes').textContent = activos.length;
-        const tbody = document.getElementById('tablaVisitantes');
-
-        if (!activos.length) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No hay visitantes activos</td></tr>';
-            return;
-        }
-        tbody.innerHTML = activos.map(v => `
-            <tr>
-                <td><strong>${v.nombre_completo}</strong></td>
-                <td>${v.entidad || 'Particular'}</td>
-                <td>${v.persona_a_visitar_nombre || '-'}</td>
-                <td>${v.hora_ingreso || '-'}</td>
-                <td>
-                    <button class="btn btn-sm btn-outline-danger" onclick="registrarSalidaVisitante(${v.id}, '${v.nombre_completo}')">
-                        <i class="bi bi-box-arrow-right"></i>
-                    </button>
-                </td>
-            </tr>`).join('');
-    } catch(e) {
-        document.getElementById('tablaVisitantes').innerHTML = '<tr><td colspan="5" class="text-center text-danger py-3">Error al cargar</td></tr>';
-    }
-}
-
-async function cargarDistribucion() {
-    try {
-        const r = await fetch('/api/acceso/registros/personas_en_centro/');
-        const data = await r.json();
-        const cont = document.getElementById('distribucionRoles');
-
-        const roles = {};
-        const colores = {APRENDIZ:'success', INSTRUCTOR:'primary', ADMINISTRATIVO:'info', VIGILANCIA:'warning', BRIGADA:'danger'};
-        (data.personas || []).forEach(p => {
-            roles[p.rol_code] = (roles[p.rol_code] || 0) + 1;
-        });
-
-        if (!Object.keys(roles).length) {
-            cont.innerHTML = '<p class="text-center text-muted py-2">Sin personas registradas</p>';
-            return;
-        }
-
-        cont.innerHTML = Object.entries(roles).map(([rol, cant]) => {
-            const pct = Math.round((cant / data.total) * 100);
-            const color = colores[rol] || 'secondary';
-            const nombres = {APRENDIZ:'Aprendices', INSTRUCTOR:'Instructores', ADMINISTRATIVO:'Administrativos', VIGILANCIA:'Vigilancia', BRIGADA:'Brigada'};
-            return `
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between mb-1">
-                        <small>${nombres[rol] || rol}</small>
-                        <small class="fw-bold">${cant}</small>
-                    </div>
-                    <div class="progress" style="height:6px;">
-                        <div class="progress-bar bg-${color}" style="width:${pct}%"></div>
-                    </div>
-                </div>`;
-        }).join('');
-    } catch(e) {
-        document.getElementById('distribucionRoles').innerHTML = '<p class="text-center text-muted">Error</p>';
-    }
-}
-
-function initMapa() {
-    const map = L.map('securityMap').setView([5.7303596, -72.8943613], 17);
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {maxZoom:19}).addTo(map);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {maxZoom:19, opacity:0.7}).addTo(map);
-
-    // Cargar personas en centro como marcadores
-    fetch('/api/acceso/registros/personas_en_centro/')
-        .then(r => r.json())
-        .then(data => {
-            const colores = {APRENDIZ:'#4CAF50', INSTRUCTOR:'#2196F3', ADMINISTRATIVO:'#9C27B0', VIGILANCIA:'#FF9800', BRIGADA:'#F44336'};
-            (data.personas || []).forEach(p => {
-                if (!p.latitud || !p.longitud) return;
-                const color = colores[p.rol_code] || '#666';
-                const icon = L.divIcon({
-                    className: 'custom-div-icon',
-                    html: `<div style="background:${color};width:12px;height:12px;border-radius:50%;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.4);"></div>`,
-                    iconSize: [12, 12]
-                });
-                L.marker([p.latitud, p.longitud], {icon}).addTo(map)
-                    .bindPopup(`<b>${p.nombre}</b><br>${p.rol}<br>Ingreso: ${p.hora_ingreso}`);
-            });
-        }).catch(() => {});
-}
-
-async function registrarSalidaVisitante(id, nombre) {
-    if (!confirm(`Registrar salida de ${nombre}?`)) return;
-    try {
-        const r = await fetch(`/api/auth/visitantes/${id}/`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({hora_salida: new Date().toTimeString().split(' ')[0]})
-        });
-        if (r.ok) {
-            cargarVisitantes();
-        } else {
-            alert('Error al registrar salida');
-        }
-    } catch(e) { alert('Error de conexion'); }
-}
-
-function alertaSeguridad() {
-    if (confirm('Desea reportar una ALERTA DE SEGURIDAD?\n\nEsto creara una emergencia y notificara al personal.')) {
-        window.location.href = '/emergencias/';
-    }
-}
-
-function refrescarTodo() {
-    const btn = event.target.closest('button');
-    const icon = btn.querySelector('i');
-    icon.classList.add('spin-animation');
-
-    Promise.all([
-        cargarAccesosRecientes(),
-        cargarVisitantes(),
-        cargarDistribucion(),
-        actualizarAforo()
-    ]).then(() => {
-        actualizarIndicadorTiempo();
-        icon.classList.remove('spin-animation');
-    }).catch(() => {
-        icon.classList.remove('spin-animation');
-    });
-}
 </script>
 
 <style>
-@keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-.spin-animation {
-    animation: spin 1s linear infinite;
-}
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.spin-animation { animation: spin 1s linear infinite; }
 </style>
 {% endblock %}
