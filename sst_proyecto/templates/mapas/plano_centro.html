@@ -1,0 +1,424 @@
+{% extends 'base.html' %}
+
+{% block title %}Plano del Centro Minero - Sistema SST{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="/mapas/">Mapa</a></li>
+<li class="breadcrumb-item active">Plano del Centro</li>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    #planoMapa {
+        height: 600px;
+        border-radius: 12px;
+        border: 2px solid #dee2e6;
+        z-index: 1;
+    }
+    .leyenda-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 0;
+    }
+    .leyenda-color {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 2px solid white;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        flex-shrink: 0;
+    }
+    .leyenda-linea {
+        width: 30px;
+        height: 4px;
+        border-radius: 2px;
+        flex-shrink: 0;
+    }
+    .plano-numero {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        color: white;
+        font-size: 11px;
+        font-weight: bold;
+        border: 2px solid white;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    @media print {
+        .sidebar, .navbar, .breadcrumb, .no-print { display: none !important; }
+        #planoMapa { height: 100vh !important; border: none !important; }
+        .card { break-inside: avoid; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h2 class="fw-bold text-dark mb-0">
+            <i class="bi bi-map-fill me-2 text-primary"></i>Plano del Centro Minero SENA
+        </h2>
+        <p class="text-muted mb-0">Ubicacion de edificaciones y rutas de evacuacion</p>
+    </div>
+    <div class="d-flex gap-2 no-print">
+        <button class="btn btn-outline-secondary" onclick="window.print()">
+            <i class="bi bi-printer me-1"></i>Imprimir
+        </button>
+        <a href="/mapas/" class="btn btn-primary">
+            <i class="bi bi-geo-alt me-1"></i>Mapa Interactivo
+        </a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- Mapa -->
+    <div class="col-lg-9">
+        <div class="card card-modern">
+            <div class="card-body p-2">
+                <div id="planoMapa"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel lateral -->
+    <div class="col-lg-3">
+        <!-- Leyenda de Edificaciones -->
+        <div class="card card-modern mb-3">
+            <div class="card-header bg-primary text-white py-2">
+                <h6 class="mb-0"><i class="bi bi-building me-2"></i>Edificaciones</h6>
+            </div>
+            <div class="card-body py-2" style="max-height: 280px; overflow-y: auto;">
+                <div id="listaEdificaciones" class="small"></div>
+            </div>
+        </div>
+
+        <!-- Leyenda de Rutas -->
+        <div class="card card-modern mb-3">
+            <div class="card-header bg-success text-white py-2">
+                <h6 class="mb-0"><i class="bi bi-signpost-2 me-2"></i>Rutas de Evacuacion</h6>
+            </div>
+            <div class="card-body py-2">
+                <div id="listaRutas" class="small"></div>
+            </div>
+        </div>
+
+        <!-- Puntos de Encuentro -->
+        <div class="card card-modern mb-3">
+            <div class="card-header bg-warning py-2">
+                <h6 class="mb-0"><i class="bi bi-geo-alt-fill me-2"></i>Puntos de Encuentro</h6>
+            </div>
+            <div class="card-body py-2">
+                <div class="leyenda-item">
+                    <div class="leyenda-color" style="background: #4CAF50;"></div>
+                    <span class="small">P1 - Cancha Deportiva</span>
+                </div>
+                <div class="leyenda-item">
+                    <div class="leyenda-color" style="background: #2196F3;"></div>
+                    <span class="small">P2 - Parqueadero Trasero</span>
+                </div>
+                <div class="leyenda-item">
+                    <div class="leyenda-color" style="background: #FF9800;"></div>
+                    <span class="small">P3 - Jardin Central</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instrucciones -->
+        <div class="card card-modern border-danger">
+            <div class="card-header bg-danger text-white py-2">
+                <h6 class="mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>En caso de Emergencia</h6>
+            </div>
+            <div class="card-body py-2 small">
+                <ol class="mb-2 ps-3">
+                    <li>Mantenga la calma</li>
+                    <li>Siga las rutas de evacuacion (lineas punteadas)</li>
+                    <li>Dirijase al punto de encuentro mas cercano</li>
+                    <li>Espere instrucciones del personal de seguridad</li>
+                </ol>
+                <div class="alert alert-danger py-1 px-2 mb-0 small">
+                    <strong>Emergencias: 123</strong> | Bomberos: 119
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Crear mapa centrado en el Centro Minero
+    const mapa = L.map('planoMapa', {
+        zoomControl: true,
+        attributionControl: false
+    }).setView([5.7302, -72.8940], 17);
+
+    // Capa satelital
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 20
+    }).addTo(mapa);
+
+    // Etiquetas
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
+        maxZoom: 20, opacity: 0.7
+    }).addTo(mapa);
+
+    // ============================================================
+    // EDIFICACIONES DEL CENTRO (26 puntos reales)
+    // ============================================================
+    const edificaciones = [
+        { id: 1,  lat: 5.7308266, lng: -72.8944621, nombre: 'Edificacion 1',  color: '#5C6BC0' },
+        { id: 2,  lat: 5.7306089, lng: -72.8944388, nombre: 'Edificacion 2',  color: '#5C6BC0' },
+        { id: 3,  lat: 5.7307180, lng: -72.8943197, nombre: 'Edificacion 3',  color: '#5C6BC0' },
+        { id: 4,  lat: 5.7305964, lng: -72.8943091, nombre: 'Edificacion 4',  color: '#5C6BC0' },
+        { id: 5,  lat: 5.7307631, lng: -72.8941685, nombre: 'Edificacion 5',  color: '#00897B' },
+        { id: 6,  lat: 5.7306055, lng: -72.8941807, nombre: 'Edificacion 6',  color: '#00897B' },
+        { id: 7,  lat: 5.7308157, lng: -72.8947557, nombre: 'Edificacion 7',  color: '#8E24AA' },
+        { id: 8,  lat: 5.7304729, lng: -72.8946135, nombre: 'Edificacion 8',  color: '#8E24AA' },
+        { id: 9,  lat: 5.7306724, lng: -72.8948627, nombre: 'Edificacion 9',  color: '#8E24AA' },
+        { id: 10, lat: 5.7306460, lng: -72.8947499, nombre: 'Edificacion 10', color: '#8E24AA' },
+        { id: 11, lat: 5.7303035, lng: -72.8948299, nombre: 'Edificacion 11', color: '#FF9800' },
+        { id: 12, lat: 5.7303504, lng: -72.8944825, nombre: 'Edificacion 12', color: '#FF9800' },
+        { id: 13, lat: 5.7302012, lng: -72.8944738, nombre: 'Edificacion 13', color: '#FF9800' },
+        { id: 14, lat: 5.7300200, lng: -72.8947224, nombre: 'Edificacion 14', color: '#D84315' },
+        { id: 15, lat: 5.7296547, lng: -72.8947003, nombre: 'Edificacion 15', color: '#D84315' },
+        { id: 16, lat: 5.7304283, lng: -72.8938899, nombre: 'Edificacion 16', color: '#1976D2' },
+        { id: 17, lat: 5.7303758, lng: -72.8936851, nombre: 'Edificacion 17', color: '#1976D2' },
+        { id: 18, lat: 5.7300397, lng: -72.8942211, nombre: 'Edificacion 18', color: '#546E7A' },
+        { id: 19, lat: 5.7299135, lng: -72.8937115, nombre: 'Edificacion 19', color: '#795548' },
+        { id: 20, lat: 5.7301815, lng: -72.8933961, nombre: 'Edificacion 20', color: '#795548' },
+        { id: 21, lat: 5.7298857, lng: -72.8933810, nombre: 'Edificacion 21', color: '#795548' },
+        { id: 22, lat: 5.7297219, lng: -72.8935096, nombre: 'Edificacion 22', color: '#424242' },
+        { id: 23, lat: 5.7296522, lng: -72.8937856, nombre: 'Edificacion 23', color: '#424242' },
+        { id: 24, lat: 5.7297075, lng: -72.8932150, nombre: 'Edificacion 24', color: '#2E7D32' },
+        { id: 25, lat: 5.7296381, lng: -72.8930312, nombre: 'Edificacion 25', color: '#2E7D32' },
+    ];
+
+    // Dibujar marcadores con numeros
+    const listaHTML = [];
+    edificaciones.forEach(edif => {
+        // Marcador circular
+        L.circleMarker([edif.lat, edif.lng], {
+            radius: 14,
+            fillColor: edif.color,
+            color: '#ffffff',
+            weight: 2,
+            fillOpacity: 0.9
+        }).addTo(mapa).bindPopup(`
+            <div style="min-width: 160px;">
+                <h6 style="color: ${edif.color}; margin-bottom: 4px;">
+                    <i class="bi bi-building"></i> ${edif.nombre}
+                </h6>
+                <p class="mb-0 small text-muted">Punto #${edif.id}</p>
+            </div>
+        `);
+
+        // Etiqueta con numero
+        const label = L.divIcon({
+            className: 'plano-label',
+            html: `<div style="
+                background: ${edif.color};
+                color: white;
+                border-radius: 50%;
+                width: 24px;
+                height: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 11px;
+                font-weight: bold;
+                border: 2px solid white;
+                box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+            ">${edif.id}</div>`,
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
+        });
+        L.marker([edif.lat, edif.lng], { icon: label }).addTo(mapa);
+
+        // Agregar a la lista lateral
+        listaHTML.push(`
+            <div class="leyenda-item" style="cursor:pointer;" onclick="mapaPlano.setView([${edif.lat}, ${edif.lng}], 19)">
+                <span class="plano-numero" style="background: ${edif.color};">${edif.id}</span>
+                <span>${edif.nombre}</span>
+            </div>
+        `);
+    });
+
+    document.getElementById('listaEdificaciones').innerHTML = listaHTML.join('');
+
+    // ============================================================
+    // RUTAS DE EVACUACION
+    // ============================================================
+    const rutasEvacuacion = [
+        {
+            nombre: 'Ruta Norte - Zona Aulas',
+            color: '#4CAF50',
+            waypoints: [
+                [5.7308266, -72.8944621],
+                [5.7307180, -72.8943197],
+                [5.7306089, -72.8944388],
+                [5.7305964, -72.8943091],
+                [5.7304729, -72.8946135],
+                [5.7303035, -72.8948299]
+            ]
+        },
+        {
+            nombre: 'Ruta Centro - Edificios Centrales',
+            color: '#2196F3',
+            waypoints: [
+                [5.7303504, -72.8944825],
+                [5.7304729, -72.8946135],
+                [5.7306460, -72.8947499],
+                [5.7308157, -72.8947557]
+            ]
+        },
+        {
+            nombre: 'Ruta Sur - Talleres',
+            color: '#FF9800',
+            waypoints: [
+                [5.7296547, -72.8947003],
+                [5.7300200, -72.8947224],
+                [5.7303035, -72.8948299],
+                [5.7304729, -72.8946135]
+            ]
+        },
+        {
+            nombre: 'Ruta Este - Laboratorios',
+            color: '#9C27B0',
+            waypoints: [
+                [5.7304283, -72.8938899],
+                [5.7303758, -72.8936851],
+                [5.7300397, -72.8942211],
+                [5.7302012, -72.8944738],
+                [5.7303504, -72.8944825]
+            ]
+        },
+        {
+            nombre: 'Ruta Sureste - Zona Baja',
+            color: '#F44336',
+            waypoints: [
+                [5.7296381, -72.8930312],
+                [5.7297075, -72.8932150],
+                [5.7298857, -72.8933810],
+                [5.7301815, -72.8933961],
+                [5.7303758, -72.8936851],
+                [5.7304283, -72.8938899]
+            ]
+        },
+        {
+            nombre: 'Ruta Suroeste - Mina Didactica',
+            color: '#E91E63',
+            waypoints: [
+                [5.7297219, -72.8935096],
+                [5.7296522, -72.8937856],
+                [5.7299135, -72.8937115],
+                [5.7300397, -72.8942211],
+                [5.7302012, -72.8944738]
+            ]
+        }
+    ];
+
+    const listaRutasHTML = [];
+    rutasEvacuacion.forEach(ruta => {
+        // Dibujar ruta
+        const polyline = L.polyline(ruta.waypoints, {
+            color: ruta.color,
+            weight: 5,
+            opacity: 0.85,
+            dashArray: '12, 8',
+            lineCap: 'round',
+            lineJoin: 'round'
+        }).addTo(mapa);
+
+        polyline.bindPopup(`<strong style="color:${ruta.color};">${ruta.nombre}</strong><br><small>Siga esta ruta en caso de evacuacion</small>`);
+
+        // Flecha al final
+        const ultimo = ruta.waypoints[ruta.waypoints.length - 1];
+        const flechaIcon = L.divIcon({
+            className: 'ruta-fin',
+            html: `<div style="color:${ruta.color}; font-size:20px; text-shadow: 0 0 4px white;"><i class="bi bi-geo-alt-fill"></i></div>`,
+            iconSize: [20, 20],
+            iconAnchor: [10, 20]
+        });
+        L.marker(ultimo, { icon: flechaIcon }).addTo(mapa);
+
+        // Lista lateral
+        listaRutasHTML.push(`
+            <div class="leyenda-item">
+                <div class="leyenda-linea" style="background: ${ruta.color}; border: 1px dashed rgba(0,0,0,0.2);"></div>
+                <span>${ruta.nombre}</span>
+            </div>
+        `);
+    });
+
+    document.getElementById('listaRutas').innerHTML = listaRutasHTML.join('');
+
+    // ============================================================
+    // PUNTOS DE ENCUENTRO
+    // ============================================================
+    const puntosEncuentro = [
+        { nombre: 'P1 - Cancha Deportiva', lat: 5.7310, lng: -72.8942, color: '#4CAF50', capacidad: 200 },
+        { nombre: 'P2 - Parqueadero Trasero', lat: 5.7312, lng: -72.8951, color: '#2196F3', capacidad: 150 },
+        { nombre: 'P3 - Jardin Central', lat: 5.7304, lng: -72.8950, color: '#FF9800', capacidad: 100 },
+    ];
+
+    puntosEncuentro.forEach(pe => {
+        // Circulo pulsante
+        L.circle([pe.lat, pe.lng], {
+            radius: 15,
+            fillColor: pe.color,
+            color: pe.color,
+            weight: 3,
+            fillOpacity: 0.4
+        }).addTo(mapa);
+
+        // Marcador con icono
+        const peIcon = L.divIcon({
+            className: 'pe-icon',
+            html: `<div style="
+                background: ${pe.color};
+                color: white;
+                border-radius: 8px;
+                padding: 3px 8px;
+                font-size: 11px;
+                font-weight: bold;
+                border: 2px solid white;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+                white-space: nowrap;
+            "><i class="bi bi-geo-alt-fill"></i> ${pe.nombre}</div>`,
+            iconSize: [120, 28],
+            iconAnchor: [60, 14]
+        });
+        L.marker([pe.lat, pe.lng], { icon: peIcon }).addTo(mapa)
+            .bindPopup(`<strong>${pe.nombre}</strong><br>Capacidad: ${pe.capacidad} personas`);
+    });
+
+    // ============================================================
+    // GEOCERCA DEL CENTRO
+    // ============================================================
+    L.polygon([
+        [5.73140, -72.89560],
+        [5.73140, -72.89280],
+        [5.72940, -72.89280],
+        [5.72940, -72.89560]
+    ], {
+        color: '#C62828',
+        fillColor: '#C62828',
+        fillOpacity: 0.05,
+        weight: 2,
+        dashArray: '8, 4'
+    }).addTo(mapa).bindPopup('<strong>Perimetro del Centro Minero SENA</strong>');
+
+    // Guardar referencia global para la lista clicable
+    window.mapaPlano = mapa;
+});
+</script>
+{% endblock %}

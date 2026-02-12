@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+
+{% block title %}Mi Perfil - SST Centro Minero SENA{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active" aria-current="page">Mi Perfil</li>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Columna izquierda: Info del usuario -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body text-center p-4">
+                <!-- Avatar -->
+                <div class="mb-3">
+                    {% if usuario.foto %}
+                        <img src="{{ usuario.foto.url }}" alt="Foto de perfil"
+                             class="rounded-circle border border-3 border-success"
+                             style="width: 120px; height: 120px; object-fit: cover;">
+                    {% else %}
+                        <div class="rounded-circle bg-success bg-opacity-10 d-inline-flex align-items-center justify-content-center border border-3 border-success"
+                             style="width: 120px; height: 120px;">
+                            <span class="fw-bold text-success" style="font-size: 3rem;">
+                                {{ usuario.first_name|slice:":1"|upper }}{{ usuario.last_name|slice:":1"|upper }}
+                            </span>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <h4 class="fw-bold mb-1">{{ usuario.get_full_name|default:usuario.username }}</h4>
+                <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill fs-6">
+                    {{ usuario.get_rol_display }}
+                </span>
+
+                <hr class="my-3">
+
+                <!-- Datos de solo lectura -->
+                <div class="text-start">
+                    <div class="d-flex justify-content-between py-2 border-bottom">
+                        <span class="text-muted"><i class="bi bi-person-vcard me-2"></i>Documento</span>
+                        <span class="fw-semibold">{{ usuario.get_tipo_documento_display }} {{ usuario.numero_documento }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-2 border-bottom">
+                        <span class="text-muted"><i class="bi bi-at me-2"></i>Usuario</span>
+                        <span class="fw-semibold">{{ usuario.username }}</span>
+                    </div>
+                    {% if usuario.ficha %}
+                    <div class="d-flex justify-content-between py-2 border-bottom">
+                        <span class="text-muted"><i class="bi bi-bookmark me-2"></i>Ficha</span>
+                        <span class="fw-semibold">{{ usuario.ficha }}</span>
+                    </div>
+                    {% endif %}
+                    {% if usuario.programa_formacion %}
+                    <div class="d-flex justify-content-between py-2 border-bottom">
+                        <span class="text-muted"><i class="bi bi-mortarboard me-2"></i>Programa</span>
+                        <span class="fw-semibold small">{{ usuario.programa_formacion }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="d-flex justify-content-between py-2 border-bottom">
+                        <span class="text-muted"><i class="bi bi-calendar-check me-2"></i>Registro</span>
+                        <span class="fw-semibold">{{ usuario.fecha_registro|date:"d/m/Y" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estadisticas de acceso -->
+        <div class="card shadow-sm border-0 rounded-4 mt-3">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-3"><i class="bi bi-bar-chart me-2"></i>Actividad del mes</h6>
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="bg-success bg-opacity-10 rounded-3 p-3 text-center">
+                            <div class="fw-bold fs-4 text-success">{{ total_accesos_mes }}</div>
+                            <div class="text-muted small">Accesos</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="bg-primary bg-opacity-10 rounded-3 p-3 text-center">
+                            {% if ultimo_acceso %}
+                            <div class="fw-bold fs-6 text-primary">{{ ultimo_acceso.fecha_hora_ingreso|date:"d/m" }}</div>
+                            <div class="text-muted small">Ultimo acceso</div>
+                            {% else %}
+                            <div class="fw-bold fs-6 text-muted">--</div>
+                            <div class="text-muted small">Sin accesos</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Columna derecha: Formulario editable -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-header bg-transparent border-0 pt-4 px-4">
+                <h5 class="fw-bold mb-0"><i class="bi bi-pencil-square me-2"></i>Editar informacion personal</h5>
+                <p class="text-muted small mb-0">Los campos marcados con * se pueden modificar</p>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <div class="row g-3">
+                        <!-- Nombre -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Nombre *</label>
+                            <input type="text" class="form-control" name="first_name"
+                                   value="{{ usuario.first_name }}" required maxlength="150">
+                        </div>
+                        <!-- Apellido -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Apellido *</label>
+                            <input type="text" class="form-control" name="last_name"
+                                   value="{{ usuario.last_name }}" required maxlength="150">
+                        </div>
+                        <!-- Email -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Correo electronico *</label>
+                            <input type="email" class="form-control" name="email"
+                                   value="{{ usuario.email }}" maxlength="254">
+                        </div>
+                        <!-- Telefono -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Telefono *</label>
+                            <input type="tel" class="form-control" name="telefono"
+                                   value="{{ usuario.telefono }}" maxlength="15"
+                                   placeholder="Ej: 3001234567">
+                        </div>
+
+                        <hr class="my-2">
+                        <h6 class="fw-bold text-danger"><i class="bi bi-heart-pulse me-2"></i>Contacto de emergencia</h6>
+
+                        <!-- Contacto emergencia -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Nombre del contacto *</label>
+                            <input type="text" class="form-control" name="contacto_emergencia"
+                                   value="{{ usuario.contacto_emergencia }}" maxlength="100"
+                                   placeholder="Nombre del familiar o contacto">
+                        </div>
+                        <!-- Telefono emergencia -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Telefono de emergencia *</label>
+                            <input type="tel" class="form-control" name="telefono_emergencia"
+                                   value="{{ usuario.telefono_emergencia }}" maxlength="15"
+                                   placeholder="Ej: 3009876543">
+                        </div>
+
+                        <hr class="my-2">
+
+                        <!-- Foto -->
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Foto de perfil *</label>
+                            <input type="file" class="form-control" name="foto" accept="image/*">
+                            <div class="form-text">Formatos permitidos: JPG, PNG, WEBP. Maximo 5 MB.</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-success px-4">
+                            <i class="bi bi-check-lg me-2"></i>Guardar cambios
+                        </button>
+                        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary px-4">
+                            Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Seguridad: Cambio de contraseña -->
+        <div class="card shadow-sm border-0 rounded-4 mt-3">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-3"><i class="bi bi-shield-lock me-2"></i>Seguridad</h6>
+                <p class="text-muted small">Para cambiar tu contrasena, usa la opcion de recuperacion.</p>
+                <a href="{% url 'password_reset' %}" class="btn btn-outline-warning btn-sm">
+                    <i class="bi bi-key me-1"></i>Cambiar contrasena
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
