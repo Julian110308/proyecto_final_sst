@@ -1,10 +1,9 @@
 {% extends 'base.html' %}
-{% load static %}
 
 {% block title %}Dashboard Instructor - Sistema SST{% endblock %}
 
 {% block breadcrumb %}
-<li class="breadcrumb-item active">Dashboard Instructor</li>
+<li class="breadcrumb-item active">Panel de Instructor</li>
 {% endblock %}
 
 {% block content %}
@@ -13,76 +12,38 @@
     <div>
         <h1 class="h3 fw-bold text-dark mb-1">
             <i class="bi bi-person-video3 text-primary me-2"></i>
-            Panel de Instructor - {{ user.get_full_name|default:user.username }}
+            Panel de Instructor
         </h1>
-        <p class="text-muted mb-0">Gestión y supervisión de aprendices</p>
+        <p class="text-muted mb-0">
+            {{ user.get_full_name|default:user.username }} - Gestion y supervision de aprendices
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'mis_aprendices' %}" class="btn btn-primary btn-sm text-white">
+            <i class="bi bi-people me-1"></i>Mis Aprendices
+        </a>
     </div>
 </div>
 
-<!-- Métricas Principales -->
-<div class="row g-4 mb-4">
-    <div class="col-md-6 col-lg-3">
-        <div class="card card-modern h-100">
-            <div class="card-body d-flex align-items-center">
-                <div class="metric-icon bg-light-green me-3">
-                    <i class="bi bi-people-fill text-primary-green fs-4"></i>
-                </div>
-                <div>
-                    <div class="metric-value">{{ total_aprendices|default:0 }}</div>
-                    <div class="metric-label">Aprendices Activos</div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6 col-lg-3">
-        <div class="card card-modern h-100">
-            <div class="card-body d-flex align-items-center">
-                <div class="metric-icon bg-light me-3">
-                    <i class="bi bi-person-check-fill text-primary fs-4"></i>
-                </div>
-                <div>
-                    <div class="metric-value">{{ aprendices_presentes|default:0 }}</div>
-                    <div class="metric-label">Presentes Hoy</div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6 col-lg-3">
-        <div class="card card-modern h-100">
-            <div class="card-body d-flex align-items-center">
-                <div class="metric-icon bg-light me-3">
-                    <i class="bi bi-door-open text-info fs-4"></i>
-                </div>
-                <div>
-                    <div class="metric-value">{{ ingresos_hoy|default:0 }}</div>
-                    <div class="metric-label">Ingresos Hoy</div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6 col-lg-3">
-        <div class="card card-modern h-100">
-            <div class="card-body d-flex align-items-center">
-                <div class="metric-icon bg-light me-3">
-                    <i class="bi bi-building text-secondary fs-4"></i>
-                </div>
-                <div>
-                    <div class="metric-value">{{ personas_en_centro|default:0 }}</div>
-                    <div class="metric-label">En el Centro</div>
-                </div>
-            </div>
-        </div>
-    </div>
+<!-- Metricas Principales -->
+<div class="row g-3 mb-4">
+    {% include 'components/metric-card.html' with label="Aprendices Activos" value=total_aprendices|default:0 sublabel="Asignados a mis fichas" sublabel_icon="bi bi-people" sublabel_color="muted" icon="bi-people-fill" icon_color="success" border_color="success" %}
+
+    {% include 'components/metric-card.html' with label="Presentes Hoy" value=aprendices_presentes|default:0 sublabel="En el centro ahora" sublabel_icon="bi bi-check-circle" sublabel_color="success" icon="bi-person-check-fill" icon_color="primary" border_color="primary" %}
+
+    {% include 'components/metric-card.html' with label="Ingresos Hoy" value=ingresos_hoy|default:0 sublabel="Registros de entrada" sublabel_color="muted" icon="bi-door-open" icon_color="info" border_color="info" %}
+
+    {% include 'components/metric-card.html' with label="Personas en Centro" value=personas_en_centro|default:0 sublabel=porcentaje_ocupacion|default:0|add:"% ocupacion" sublabel_icon="bi bi-building" sublabel_color="primary" icon="bi-building" icon_color="secondary" border_color="secondary" %}
 </div>
 
-<!-- Gráfico de Ingresos Semanal y Accesos de Aprendices Hoy -->
+<!-- Grafico + Accesos de Aprendices -->
 <div class="row g-4 mb-4">
     <div class="col-lg-7">
         <div class="card card-modern h-100">
             <div class="card-header-modern">
                 <h6 class="mb-0">
                     <i class="bi bi-bar-chart-line me-2"></i>
-                    Ingresos al Centro - Últimos 7 Días
+                    Ingresos al Centro - Ultimos 7 Dias
                 </h6>
             </div>
             <div class="card-body">
@@ -96,33 +57,33 @@
             <div class="card-header-modern d-flex justify-content-between align-items-center">
                 <h6 class="mb-0">
                     <i class="bi bi-people me-2"></i>
-                    Últimos Accesos de Aprendices
+                    Accesos de Aprendices Hoy
                 </h6>
-                <a href="{% url 'mis_aprendices' %}" class="btn btn-sm btn-outline-primary">Ver Aprendices</a>
             </div>
-            <div class="card-body">
+            <div class="card-body p-0">
                 {% if ultimos_accesos_aprendices %}
                 <div class="list-group list-group-flush">
                     {% for acceso in ultimos_accesos_aprendices %}
-                    <div class="list-group-item px-0 d-flex align-items-center">
-                        <div class="avatar-initials bg-light-green text-primary-green rounded-circle p-2 me-3 fw-bold" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">
-                            {{ acceso.usuario.first_name|slice:":1" }}{{ acceso.usuario.last_name|slice:":1" }}
-                        </div>
-                        <div class="flex-grow-1">
-                            <div class="fw-bold" style="font-size: 0.9rem;">{{ acceso.usuario.get_full_name|default:acceso.usuario.username }}</div>
-                            <small class="text-muted">Ficha {{ acceso.usuario.ficha|default:"N/A" }}</small>
-                        </div>
-                        <div class="text-end">
-                            <span class="badge bg-success">Ingreso</span>
-                            <div><small class="text-muted">{{ acceso.fecha_hora_ingreso|time:"h:i A" }}</small></div>
+                    <div class="list-group-item border-0 px-3 py-2">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center me-2" style="width:35px;height:35px;min-width:35px;">
+                                <span class="fw-bold small">{{ acceso.usuario.first_name|slice:":1" }}{{ acceso.usuario.last_name|slice:":1" }}</span>
+                            </div>
+                            <div class="flex-grow-1 overflow-hidden">
+                                <div class="fw-bold small text-truncate">{{ acceso.usuario.get_full_name|default:acceso.usuario.username }}</div>
+                                <small class="text-muted">Ficha {{ acceso.usuario.ficha|default:"N/A" }}</small>
+                            </div>
+                            <div class="text-end">
+                                <small class="fw-bold">{{ acceso.fecha_hora_ingreso|time:"h:i A" }}</small>
+                            </div>
                         </div>
                     </div>
                     {% endfor %}
                 </div>
                 {% else %}
                 <div class="text-center py-4 text-muted">
-                    <i class="bi bi-clock-history fs-1 d-block mb-2"></i>
-                    <p>No hay accesos de aprendices hoy.</p>
+                    <i class="bi bi-clock-history fs-3 d-block mb-2"></i>
+                    No hay accesos de aprendices hoy.
                 </div>
                 {% endif %}
             </div>
@@ -130,21 +91,21 @@
     </div>
 </div>
 
-<!-- Asistencia por Ficha y Lista de Aprendices -->
-<div class="row g-4 mb-4">
-    <!-- Estadísticas por Ficha -->
-    <div class="col-lg-5">
-        <div class="card card-modern h-100">
-            <div class="card-header-modern">
-                <h6 class="mb-0">
-                    <i class="bi bi-pie-chart me-2"></i>
-                    Asistencia por Ficha - Hoy
-                </h6>
-            </div>
-            <div class="card-body">
-                {% if fichas_stats %}
+<!-- Asistencia por Ficha -->
+<div class="card card-modern mb-4">
+    <div class="card-header-modern d-flex justify-content-between align-items-center" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#collapseAsistenciaFicha">
+        <h6 class="mb-0">
+            <i class="bi bi-pie-chart me-2"></i>
+            Asistencia por Ficha - Hoy
+        </h6>
+        <i class="bi bi-chevron-down"></i>
+    </div>
+    <div class="collapse show" id="collapseAsistenciaFicha">
+        <div class="card-body">
+            {% if fichas_stats %}
+            <div class="row g-3">
                 {% for ficha in fichas_stats %}
-                <div class="mb-3">
+                <div class="col-md-6">
                     <div class="d-flex justify-content-between align-items-center mb-1">
                         <span class="fw-bold small">Ficha {{ ficha.ficha }}</span>
                         <span class="small text-muted">{{ ficha.presentes }}/{{ ficha.total }} ({{ ficha.porcentaje }}%)</span>
@@ -157,133 +118,131 @@
                     </div>
                 </div>
                 {% endfor %}
-                {% else %}
-                <div class="text-center py-4 text-muted">
-                    <i class="bi bi-clipboard-data fs-1 d-block mb-2"></i>
-                    <p>No hay datos de fichas disponibles.</p>
-                </div>
-                {% endif %}
             </div>
+            {% else %}
+            <div class="text-center py-3 text-muted">
+                <i class="bi bi-clipboard-data fs-3 d-block mb-2"></i>
+                No hay datos de fichas disponibles.
+            </div>
+            {% endif %}
         </div>
     </div>
+</div>
 
-    <!-- Lista de Aprendices con Estado -->
-    <div class="col-lg-7">
-        <div class="card card-modern h-100">
-            <div class="card-header-modern d-flex justify-content-between align-items-center">
-                <h6 class="mb-0">
-                    <i class="bi bi-person-lines-fill me-2"></i>
-                    Aprendices - Estado de Hoy
-                </h6>
-                <div>
-                    <span class="badge bg-success me-1"><i class="bi bi-check"></i> Presentes: {{ aprendices_presentes|default:0 }}</span>
-                    <span class="badge bg-secondary"><i class="bi bi-x"></i> Ausentes: {{ total_aprendices|default:0|add:"-"|add:aprendices_presentes|default:0 }}</span>
-                </div>
-            </div>
-            <div class="card-body p-0" style="max-height: 350px; overflow-y: auto;">
-                <table class="table table-hover table-sm align-middle mb-0">
-                    <thead class="bg-light sticky-top">
-                        <tr>
-                            <th class="ps-3">Aprendiz</th>
-                            <th>Ficha</th>
-                            <th class="text-center">Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for aprendiz in aprendices_con_estado %}
-                        <tr>
-                            <td class="ps-3">
-                                <div class="d-flex align-items-center">
-                                    <div class="avatar-initials {% if aprendiz.presente_hoy %}bg-success-subtle text-success{% else %}bg-secondary-subtle text-secondary{% endif %} rounded-circle me-2"
-                                         style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold;">
-                                        {{ aprendiz.first_name|slice:":1" }}{{ aprendiz.last_name|slice:":1" }}
-                                    </div>
-                                    <div>
-                                        <div class="fw-medium small">{{ aprendiz.get_full_name|default:aprendiz.username }}</div>
-                                        <small class="text-muted">{{ aprendiz.numero_documento }}</small>
-                                    </div>
+<!-- Lista de Aprendices con Estado -->
+<div class="card card-modern mb-4">
+    <div class="card-header-modern d-flex justify-content-between align-items-center" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#collapseAprendices">
+        <h6 class="mb-0">
+            <i class="bi bi-person-lines-fill me-2"></i>
+            Aprendices - Estado de Hoy
+        </h6>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-success"><i class="bi bi-check me-1"></i>{{ aprendices_presentes|default:0 }}</span>
+            <i class="bi bi-chevron-down"></i>
+        </div>
+    </div>
+    <div class="collapse show" id="collapseAprendices">
+        <div class="card-body p-0" style="max-height: 400px; overflow-y: auto;">
+            <table class="table table-hover table-sm align-middle mb-0">
+                <thead class="bg-light sticky-top">
+                    <tr>
+                        <th class="ps-3">Aprendiz</th>
+                        <th>Ficha</th>
+                        <th class="text-center">Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for aprendiz in aprendices_con_estado %}
+                    <tr>
+                        <td class="ps-3">
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle {% if aprendiz.presente_hoy %}bg-success bg-opacity-10 text-success{% else %}bg-secondary bg-opacity-10 text-secondary{% endif %} d-flex align-items-center justify-content-center me-2"
+                                     style="width:32px;height:32px;min-width:32px;font-size:0.7rem;font-weight:bold;">
+                                    {{ aprendiz.first_name|slice:":1" }}{{ aprendiz.last_name|slice:":1" }}
                                 </div>
-                            </td>
-                            <td><span class="badge bg-light text-dark border">{{ aprendiz.ficha|default:"N/A" }}</span></td>
-                            <td class="text-center">
-                                {% if aprendiz.presente_hoy %}
-                                <span class="badge bg-success-subtle text-success rounded-pill px-3">
-                                    <i class="bi bi-check-circle-fill me-1"></i>Presente
-                                </span>
-                                {% else %}
-                                <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3">
-                                    <i class="bi bi-x-circle me-1"></i>Ausente
-                                </span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="3" class="text-center py-4 text-muted">
-                                <i class="bi bi-people fs-3 d-block mb-2"></i>
-                                No hay aprendices registrados.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <div class="card-footer bg-transparent text-center">
-                <a href="{% url 'mis_aprendices' %}" class="btn btn-sm btn-outline-primary">
-                    <i class="bi bi-list-ul me-1"></i>Ver todos los aprendices
-                </a>
-            </div>
+                                <div>
+                                    <div class="fw-medium small">{{ aprendiz.get_full_name|default:aprendiz.username }}</div>
+                                    <small class="text-muted">{{ aprendiz.numero_documento }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="badge bg-light text-dark border">{{ aprendiz.ficha|default:"N/A" }}</span></td>
+                        <td class="text-center">
+                            {% if aprendiz.presente_hoy %}
+                            <span class="badge bg-success-subtle text-success rounded-pill px-3">
+                                <i class="bi bi-check-circle-fill me-1"></i>Presente
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3">
+                                <i class="bi bi-x-circle me-1"></i>Ausente
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="text-center py-4 text-muted">
+                            <i class="bi bi-people fs-3 d-block mb-2"></i>
+                            No hay aprendices registrados.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer bg-transparent text-center">
+            <a href="{% url 'mis_aprendices' %}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-list-ul me-1"></i>Ver todos los aprendices
+            </a>
         </div>
     </div>
 </div>
 
 <!-- Accesos Recientes Generales -->
-<div class="row g-4">
-    <div class="col-12">
-        <div class="card card-modern">
-            <div class="card-header-modern">
-                <h6 class="mb-0">
-                    <i class="bi bi-clock-history me-2"></i>
-                    Últimos Accesos Registrados
-                </h6>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-light">
-                            <tr>
-                                <th class="ps-4">Usuario</th>
-                                <th>Rol</th>
-                                <th>Tipo</th>
-                                <th>Hora de Ingreso</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for acceso in ultimos_accesos %}
-                            <tr>
-                                <td class="ps-4">
-                                    <div class="fw-bold">{{ acceso.usuario.get_full_name|default:acceso.usuario.username }}</div>
-                                    <small class="text-muted">{{ acceso.usuario.numero_documento }}</small>
-                                </td>
-                                <td><span class="badge bg-secondary">{{ acceso.usuario.get_rol_display }}</span></td>
-                                <td><span class="badge bg-success">{{ acceso.tipo }}</span></td>
-                                <td>{{ acceso.fecha_hora_ingreso|date:"d/m/Y h:i A" }}</td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="4" class="text-center py-4 text-muted">No hay registros de acceso recientes.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+<div class="card card-modern mb-4">
+    <div class="card-header-modern d-flex justify-content-between align-items-center" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#collapseAccesos">
+        <h6 class="mb-0">
+            <i class="bi bi-clock-history me-2"></i>
+            Ultimos Accesos Registrados
+        </h6>
+        <i class="bi bi-chevron-down"></i>
+    </div>
+    <div class="collapse" id="collapseAccesos">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Usuario</th>
+                            <th>Rol</th>
+                            <th>Tipo</th>
+                            <th>Hora de Ingreso</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for acceso in ultimos_accesos %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold">{{ acceso.usuario.get_full_name|default:acceso.usuario.username }}</div>
+                                <small class="text-muted">{{ acceso.usuario.numero_documento }}</small>
+                            </td>
+                            <td><span class="badge bg-secondary">{{ acceso.usuario.get_rol_display }}</span></td>
+                            <td><span class="badge bg-success">{{ acceso.tipo }}</span></td>
+                            <td>{{ acceso.fecha_hora_ingreso|date:"d/m/Y h:i A" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-muted">No hay registros de acceso recientes.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-// Gráfico de ingresos últimos 7 días
 const ctx = document.getElementById('ingresosChart');
 if (ctx) {
     new Chart(ctx, {
@@ -293,23 +252,19 @@ if (ctx) {
             datasets: [{
                 label: 'Ingresos',
                 data: [{% for dia in ultimos_7_dias %}{{ dia.cantidad }}{% if not forloop.last %}, {% endif %}{% endfor %}],
-                backgroundColor: 'rgba(46, 125, 50, 0.7)',
-                borderColor: '#2e7d32',
-                borderWidth: 1,
+                backgroundColor: '#39A900',
+                hoverBackgroundColor: '#2E8B00',
                 borderRadius: 6,
+                barThickness: 25
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: true,
-            plugins: {
-                legend: { display: false }
-            },
+            plugins: { legend: { display: false } },
             scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: { stepSize: 1 }
-                }
+                y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { borderDash: [4, 4], color: '#F3F4F6' } },
+                x: { grid: { display: false } }
             }
         }
     });

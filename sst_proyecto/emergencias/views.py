@@ -44,7 +44,7 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
         """
         from usuarios.permissions import EsBrigadaOAdministrativo, EsAdministrativo
 
-        if self.action in ['atender', 'resolver']:
+        if self.action in ['atender', 'resolver', 'marcar_falsa_alarma']:
             return [EsBrigadaOAdministrativo()]
         elif self.action in ['update', 'partial_update', 'destroy']:
             return [EsAdministrativo()]
@@ -130,6 +130,74 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
             'tiempo_total_minutos': emergencia.tiempo_resolucion
         })
     
+    @action(detail=True, methods=['post'], url_path='marcar-falsa-alarma')
+    def marcar_falsa_alarma(self, request, pk=None):
+        emergencia = self.get_object()
+
+        if emergencia.estado in ['RESUELTA', 'FALSA_ALARMA']:
+            return Response(
+                {'error': 'Esta emergencia ya fue resuelta o ya está marcada como falsa alarma.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        motivo = request.data.get('motivo', '')
+        if not motivo.strip():
+            return Response(
+                {'error': 'Debe proporcionar un motivo para marcar como falsa alarma.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        emergencia.estado = 'FALSA_ALARMA'
+        emergencia.motivo_falsa_alarma = motivo
+        emergencia.marcada_falsa_por = request.user
+        emergencia.fecha_hora_falsa_alarma = timezone.now()
+        emergencia.save()
+
+        # Notificar al reportante y a administrativos
+        NotificacionService.notificar_falsa_alarma(emergencia, request.user)
+
+        # Contar falsas alarmas del usuario que reportó
+        total_falsas = Emergencia.objects.filter(
+            reportada_por=emergencia.reportada_por,
+            estado='FALSA_ALARMA'
+        ).count()
+
+        return Response({
+            'mensaje': 'Emergencia marcada como falsa alarma',
+            'reportada_por': emergencia.reportada_por.get_full_name() if emergencia.reportada_por else 'Desconocido',
+            'total_falsas_alarmas_usuario': total_falsas
+        })
+
+    @action(detail=False, methods=['get'], url_path='falsas-alarmas')
+    def falsas_alarmas(self, request):
+        from django.db.models import Count
+
+        falsas = Emergencia.objects.filter(
+            estado='FALSA_ALARMA'
+        ).select_related('reportada_por', 'tipo', 'marcada_falsa_por')
+
+        # Estadísticas por usuario
+        reincidentes = Emergencia.objects.filter(
+            estado='FALSA_ALARMA',
+            reportada_por__isnull=False
+        ).values(
+            'reportada_por__id',
+            'reportada_por__first_name',
+            'reportada_por__last_name',
+            'reportada_por__numero_documento',
+            'reportada_por__rol'
+        ).annotate(
+            total_falsas=Count('id')
+        ).order_by('-total_falsas')
+
+        serializer = EmergenciaSerializer(falsas, many=True)
+
+        return Response({
+            'falsas_alarmas': serializer.data,
+            'reincidentes': list(reincidentes),
+            'total': falsas.count()
+        })
+
     @action(detail=False, methods=['get'])
     def por_tipo(self, request):
 

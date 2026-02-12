@@ -74,13 +74,18 @@ class NotificacionService:
 
         # Notificar al usuario que reportó (si existe)
         if emergencia.reportada_por:
+            # Usar dashboard para roles sin acceso a emergencias
+            url_reportante = '/dashboard/'
+            if emergencia.reportada_por.rol in ['BRIGADA', 'ADMINISTRATIVO', 'VIGILANCIA', 'INSTRUCTOR']:
+                url_reportante = '/emergencias/'
+
             Notificacion.crear_notificacion(
                 destinatario=emergencia.reportada_por,
                 titulo=titulo,
                 mensaje=mensaje,
                 tipo='EMERGENCIA',
                 prioridad='ALTA',
-                url='/emergencias/'
+                url=url_reportante
             )
 
     @staticmethod
@@ -97,23 +102,100 @@ class NotificacionService:
             f"Tipo: {emergencia.tipo.nombre if hasattr(emergencia.tipo, 'nombre') else emergencia.tipo}"
         )
 
-        # Notificar al reportante y administrativos
-        destinatarios = list(Usuario.objects.filter(
+        # Notificar a administrativos
+        administradores = list(Usuario.objects.filter(
             rol='ADMINISTRATIVO',
             activo=True
         ))
 
-        if emergencia.reportada_por and emergencia.reportada_por not in destinatarios:
-            destinatarios.append(emergencia.reportada_por)
-
         notificaciones = []
-        for usuario in destinatarios:
+        for admin in administradores:
             notificaciones.append(Notificacion(
-                destinatario=usuario,
+                destinatario=admin,
                 titulo=titulo,
                 mensaje=mensaje,
                 tipo='EMERGENCIA',
                 prioridad='MEDIA',
+                url_relacionada='/emergencias/'
+            ))
+
+        # Notificar al reportante con URL según su rol
+        if emergencia.reportada_por and emergencia.reportada_por not in administradores:
+            url_reportante = '/dashboard/'
+            if emergencia.reportada_por.rol in ['BRIGADA', 'ADMINISTRATIVO', 'VIGILANCIA', 'INSTRUCTOR']:
+                url_reportante = '/emergencias/'
+            notificaciones.append(Notificacion(
+                destinatario=emergencia.reportada_por,
+                titulo=titulo,
+                mensaje=mensaje,
+                tipo='EMERGENCIA',
+                prioridad='MEDIA',
+                url_relacionada=url_reportante
+            ))
+
+        if notificaciones:
+            Notificacion.objects.bulk_create(notificaciones)
+
+    @staticmethod
+    def notificar_falsa_alarma(emergencia, marcada_por):
+        """
+        Notifica cuando una emergencia es marcada como falsa alarma.
+        Notifica al usuario que reportó y a los administrativos.
+        """
+        nombre_reportante = emergencia.reportada_por.get_full_name() if emergencia.reportada_por else 'Desconocido'
+        documento = getattr(emergencia.reportada_por, 'numero_documento', 'N/A') if emergencia.reportada_por else 'N/A'
+
+        # Contar falsas alarmas del usuario
+        total_falsas = 0
+        if emergencia.reportada_por:
+            from emergencias.models import Emergencia as EmergenciaModel
+            total_falsas = EmergenciaModel.objects.filter(
+                reportada_por=emergencia.reportada_por,
+                estado='FALSA_ALARMA'
+            ).count()
+
+        # Notificar al usuario que reportó la falsa alarma
+        if emergencia.reportada_por:
+            # Usar dashboard como URL para roles sin acceso a emergencias
+            url_reportante = '/dashboard/'
+            if emergencia.reportada_por.rol in ['BRIGADA', 'ADMINISTRATIVO', 'VIGILANCIA', 'INSTRUCTOR']:
+                url_reportante = '/emergencias/'
+
+            Notificacion.crear_notificacion(
+                destinatario=emergencia.reportada_por,
+                titulo="Emergencia marcada como Falsa Alarma",
+                mensaje=(
+                    f"Tu reporte de emergencia fue marcado como falsa alarma.\n"
+                    f"Motivo: {emergencia.motivo_falsa_alarma}\n"
+                    f"Marcada por: {marcada_por.get_full_name()}\n\n"
+                    f"Llevas {total_falsas} falsa(s) alarma(s) registrada(s). "
+                    f"El uso indebido del sistema de emergencias puede tener consecuencias."
+                ),
+                tipo='EMERGENCIA',
+                prioridad='ALTA',
+                url=url_reportante
+            )
+
+        # Notificar a administrativos con datos del responsable
+        reincidente_texto = f" (REINCIDENTE: {total_falsas} falsas alarmas)" if total_falsas > 1 else ""
+        notificaciones = []
+        administradores = Usuario.objects.filter(rol='ADMINISTRATIVO', activo=True)
+
+        for admin in administradores:
+            notificaciones.append(Notificacion(
+                destinatario=admin,
+                titulo=f"Falsa Alarma Identificada{reincidente_texto}",
+                mensaje=(
+                    f"Se identifico una falsa alarma.\n"
+                    f"Reportada por: {nombre_reportante}\n"
+                    f"Documento: {documento}\n"
+                    f"Tipo de emergencia: {emergencia.tipo.nombre if hasattr(emergencia.tipo, 'nombre') else emergencia.tipo}\n"
+                    f"Motivo: {emergencia.motivo_falsa_alarma}\n"
+                    f"Marcada por: {marcada_por.get_full_name()}\n"
+                    f"Total falsas alarmas de este usuario: {total_falsas}"
+                ),
+                tipo='EMERGENCIA',
+                prioridad='ALTA',
                 url_relacionada='/emergencias/'
             ))
 

@@ -26,6 +26,7 @@ class EmergenciaSerializer(serializers.ModelSerializer):
     tipo_detalle = TipoEmergenciaSerializer(source='tipo', read_only=True)
     tipo_nombre = serializers.CharField(source='tipo.nombre', read_only=True)
     reportada_por_detalle = UsuarioSerializer(source='reportada_por', read_only=True)
+    marcada_falsa_por_detalle = UsuarioSerializer(source='marcada_falsa_por', read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     tiempo_respuesta = serializers.ReadOnlyField()
     tiempo_resolucion = serializers.ReadOnlyField()
