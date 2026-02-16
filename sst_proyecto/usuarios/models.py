@@ -96,6 +96,7 @@ class RolePermissions:
             'can_register_visitors': True,
             'can_view_all_visitors': True,
             'can_report_emergency': True,
+            'can_view_emergencies': True,
             'can_view_security_emergencies': True,
             'can_view_all_emergencies': False,
             'can_view_map': True,
@@ -210,10 +211,15 @@ class Usuario(AbstractUser):
         verbose_name = 'Usuario'
         verbose_name_plural = 'Usuarios'
         ordering = ['-fecha_registro']
-    
+
+    def save(self, *args, **kwargs):
+        # Mantener sincronizados activo e is_active
+        self.is_active = self.activo
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f'{self.get_full_name()} - {self.get_rol_display()}'
-    
+
     @property
     def esta_en_centro(self):
         # Verifica si el usuario está actualmente en el centro
@@ -228,9 +234,19 @@ class Usuario(AbstractUser):
     
     # Métodos para el sistema de permisos
     def has_perm(self, perm, obj=None):
-        """Sobreescribe el método has_perm para usar nuestro sistema de permisos"""
-        return RolePermissions.has_permission(self, perm)
-    
+        """
+        Mantiene compatibilidad con el sistema de permisos nativo de Django
+        (necesario para admin, is_superuser, etc.) y agrega soporte para
+        permisos personalizados del sistema SST.
+        """
+        if self.is_superuser:
+            return True
+        # Si el permiso es del sistema SST (no tiene formato 'app.perm')
+        if '.' not in perm:
+            return RolePermissions.has_permission(self, perm)
+        # Para permisos estándar de Django, usar el comportamiento por defecto
+        return super().has_perm(perm, obj)
+
     def has_permission(self, permission_name):
         """Método conveniente para verificar permisos específicos"""
         return RolePermissions.has_permission(self, permission_name)
@@ -268,10 +284,6 @@ class Usuario(AbstractUser):
     def is_visitante(self):
         """Verifica si el usuario es visitante"""
         return self.rol == 'VISITANTE'
-    
-    def puede_ver_ingresos(self):
-        """Verifica si puede ver datos financieros"""
-        return self.has_permission('can_view_income')
     
     def puede_gestionar_usuarios(self):
         """Verifica si puede gestionar otros usuarios"""
@@ -349,10 +361,12 @@ class Visitante(models.Model):
     def duracion_visita(self):
         """Calcula la duración de la visita si ya salió"""
         if self.hora_salida:
-            from datetime import datetime, date
-            # Combinar fecha y hora
+            from datetime import datetime, timedelta
             entrada = datetime.combine(self.fecha_visita, self.hora_ingreso)
             salida = datetime.combine(self.fecha_visita, self.hora_salida)
+            # Si la hora de salida es menor que la de entrada, cruzó medianoche
+            if salida < entrada:
+                salida += timedelta(days=1)
             duracion = salida - entrada
             return duracion.total_seconds() / 3600  # Horas
         return None

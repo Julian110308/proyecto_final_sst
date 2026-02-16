@@ -83,6 +83,97 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
     serializer_class = RegistroAccesoSerializer
     permission_classes = [EsVigilanciaOAdministrativo]
 
+    def get_permissions(self):
+        """
+        Instructor puede acceder a acciones de asistencia y estadísticas/registros recientes.
+        Las demás acciones requieren VIGILANCIA o ADMINISTRATIVO.
+        """
+        if self.action in [
+            'registrar_asistencia_manual',
+            'registrar_asistencia_masiva',
+            'estadisticas',
+            'registros_recientes',
+            'auto_registro',
+        ]:
+            return [IsAuthenticated()]
+        return super().get_permissions()
+
+    @action(detail=False, methods=['post'], url_path='auto-registro')
+    def auto_registro(self, request):
+        """
+        Endpoint llamado periodicamente por el frontend con la ubicacion GPS.
+        Detecta automaticamente si el usuario cruza la geocerca y registra
+        ingreso/egreso segun corresponda.
+        """
+        latitud = request.data.get('latitud')
+        longitud = request.data.get('longitud')
+
+        if latitud is None or longitud is None:
+            return Response({
+                'error': 'Se requieren latitud y longitud'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            lat = float(latitud)
+            lng = float(longitud)
+        except (ValueError, TypeError):
+            return Response({
+                'error': 'Coordenadas invalidas'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        usuario = request.user
+        hoy = timezone.now().date()
+
+        # Verificar si esta dentro de la geocerca
+        geocerca = Geocerca.verificar_ubicacion_usuario(lat, lng)
+        esta_dentro = geocerca is not None
+
+        # Buscar registro abierto de hoy (ingreso sin egreso)
+        registro_abierto = RegistroAcceso.objects.filter(
+            usuario=usuario,
+            tipo='INGRESO',
+            fecha_hora_egreso__isnull=True,
+            fecha_hora_ingreso__date=hoy
+        ).order_by('-fecha_hora_ingreso').first()
+
+        accion = None
+
+        if esta_dentro and not registro_abierto:
+            # Usuario entro al centro: registrar INGRESO
+            # Verificar aforo
+            aforo = verificar_aforo_actual()
+            if aforo['alerta'] == 'CRITICO':
+                return Response({
+                    'estado': 'FUERA',
+                    'accion': None,
+                    'mensaje': 'Aforo maximo alcanzado, no se puede registrar ingreso'
+                })
+
+            RegistroAcceso.objects.create(
+                usuario=usuario,
+                tipo='INGRESO',
+                latitud_ingreso=lat,
+                longitud_ingreso=lng,
+                metodo_ingreso='AUTOMATICO'
+            )
+            accion = 'INGRESO'
+
+        elif not esta_dentro and registro_abierto:
+            # Usuario salio del centro: registrar EGRESO
+            registro_abierto.fecha_hora_egreso = timezone.now()
+            registro_abierto.latitud_egreso = lat
+            registro_abierto.longitud_egreso = lng
+            registro_abierto.metodo_egreso = 'AUTOMATICO'
+            registro_abierto.save()
+            accion = 'EGRESO'
+
+        return Response({
+            'estado': 'DENTRO' if esta_dentro else 'FUERA',
+            'accion': accion,
+            'dentro_geocerca': esta_dentro,
+            'registro_abierto': registro_abierto is not None if accion != 'EGRESO' else False,
+        })
+
     def get_queryset(self):
         """
         Filtrar registros según parámetros de consulta
@@ -498,37 +589,44 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
         lng_default = geocerca.centro_longitud if geocerca else -72.8943613
 
         hoy = timezone.now().date()
-        registrados = 0
         errores = []
 
-        for usuario_id in usuarios_ids:
-            try:
-                usuario = Usuario.objects.get(id=usuario_id)
+        # Obtener todos los usuarios de una sola query
+        usuarios = Usuario.objects.filter(id__in=usuarios_ids)
+        usuarios_dict = {u.id: u for u in usuarios}
 
-                # Verificar que no tenga ya un registro de hoy
-                registro_existente = RegistroAcceso.objects.filter(
-                    usuario=usuario,
-                    fecha_hora_ingreso__date=hoy
-                ).exists()
+        # IDs no encontrados
+        ids_no_encontrados = set(usuarios_ids) - set(usuarios_dict.keys())
+        for uid in ids_no_encontrados:
+            errores.append(f'Usuario ID {uid} no encontrado')
 
-                if registro_existente:
-                    errores.append(f'{usuario.get_full_name()} ya tiene registro')
-                    continue
+        # Obtener IDs que ya tienen registro hoy (una sola query)
+        ids_con_registro = set(
+            RegistroAcceso.objects.filter(
+                usuario_id__in=usuarios_dict.keys(),
+                fecha_hora_ingreso__date=hoy
+            ).values_list('usuario_id', flat=True)
+        )
 
-                # Crear registro
-                RegistroAcceso.objects.create(
+        for uid in ids_con_registro:
+            errores.append(f'{usuarios_dict[uid].get_full_name()} ya tiene registro')
+
+        # Crear registros en bulk para los que sí proceden
+        registros_nuevos = []
+        for uid, usuario in usuarios_dict.items():
+            if uid not in ids_con_registro:
+                registros_nuevos.append(RegistroAcceso(
                     usuario=usuario,
                     tipo='INGRESO',
                     latitud_ingreso=lat_default,
                     longitud_ingreso=lng_default,
                     metodo_ingreso='MANUAL'
-                )
-                registrados += 1
+                ))
 
-            except Usuario.DoesNotExist:
-                errores.append(f'Usuario ID {usuario_id} no encontrado')
-            except Exception as e:
-                errores.append(f'Error con usuario {usuario_id}: {str(e)}')
+        if registros_nuevos:
+            RegistroAcceso.objects.bulk_create(registros_nuevos)
+
+        registrados = len(registros_nuevos)
 
         return Response({
             'success': True,

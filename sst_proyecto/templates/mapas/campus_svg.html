@@ -1,0 +1,1296 @@
+{% extends 'base.html' %}
+
+{% block title %}Mapa del Campus - Sistema SST{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="/mapas/">Mapa</a></li>
+<li class="breadcrumb-item active">Mapa del Campus</li>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ============================================================
+       SVG CAMPUS MAP STYLES
+       ============================================================ */
+    #svgContainer {
+        background: #f0f7f0;
+        border-radius: 12px;
+        border: 2px solid #dee2e6;
+        overflow: hidden;
+        position: relative;
+    }
+    #campusMap {
+        width: 100%;
+        height: 620px;
+        cursor: grab;
+    }
+    #campusMap:active { cursor: grabbing; }
+
+    /* Building states */
+    .building {
+        cursor: pointer;
+        transition: fill 0.5s ease, opacity 0.3s, stroke 0.3s;
+        stroke: #333;
+        stroke-width: 1.5;
+    }
+    .building:hover {
+        stroke: #000;
+        stroke-width: 3;
+        filter: brightness(1.15);
+    }
+    .building-normal    { fill: #4CAF50; opacity: 0.8; }
+    .building-danado    { fill: #F44336; opacity: 0.9; }
+    .building-evacuando { fill: #FF9800; opacity: 0.9; }
+    .building-cerrado   { fill: #9E9E9E; opacity: 0.65; }
+    .building-en_emergencia { fill: #D32F2F; opacity: 0.95; }
+
+    /* Animations for emergency states */
+    .building-danado, .building-en_emergencia {
+        animation: pulse-danger 1.5s ease-in-out infinite;
+    }
+    .building-evacuando {
+        animation: pulse-warning 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-danger {
+        0%, 100% { opacity: 0.9; }
+        50% { opacity: 0.45; }
+    }
+    @keyframes pulse-warning {
+        0%, 100% { opacity: 0.9; }
+        50% { opacity: 0.5; }
+    }
+
+    /* Route animation */
+    .route-path {
+        animation: dash-flow 1.5s linear infinite;
+    }
+    @keyframes dash-flow {
+        to { stroke-dashoffset: -30; }
+    }
+
+    /* Assembly point pulse */
+    .assembly-pulse {
+        animation: ap-pulse 2s ease-in-out infinite;
+    }
+    @keyframes ap-pulse {
+        0%, 100% { r: 14; opacity: 0.6; }
+        50% { r: 20; opacity: 0.25; }
+    }
+
+    /* Labels */
+    .bldg-label {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        font-size: 8px;
+        font-weight: bold;
+        fill: #fff;
+        text-anchor: middle;
+        pointer-events: none;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    }
+    .bldg-name {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        font-size: 5px;
+        fill: #333;
+        text-anchor: middle;
+        pointer-events: none;
+    }
+    .assembly-label {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        font-size: 12px;
+        font-weight: bold;
+        fill: #fff;
+        text-anchor: middle;
+        pointer-events: none;
+    }
+    .walkway {
+        stroke: #d4c8a0;
+        stroke-width: 6;
+        stroke-linecap: round;
+        fill: none;
+        opacity: 0.4;
+    }
+
+    /* Tooltip */
+    .svg-tooltip {
+        position: absolute;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 13px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        pointer-events: none;
+        z-index: 100;
+        display: none;
+        max-width: 220px;
+    }
+
+    /* Panel cards */
+    .estado-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        color: white;
+    }
+    .panel-edif-item {
+        padding: 5px 8px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .panel-edif-item:hover {
+        background: #f0f0f0;
+    }
+    .edif-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        flex-shrink: 0;
+    }
+
+    /* Zoom controls */
+    .svg-controls {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 50;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .svg-controls button {
+        width: 36px;
+        height: 36px;
+        border: 1px solid #ccc;
+        background: white;
+        border-radius: 8px;
+        font-size: 18px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .svg-controls button:hover { background: #f0f0f0; }
+
+    /* Route info bar */
+    #routeInfoBar {
+        display: none;
+        background: linear-gradient(135deg, #1565C0, #1976D2);
+        color: white;
+        border-radius: 10px;
+        padding: 10px 16px;
+        margin-top: 8px;
+        font-size: 13px;
+    }
+
+    @media print {
+        .sidebar, .navbar, .breadcrumb, .no-print, .svg-controls { display: none !important; }
+        #campusMap { height: 100vh !important; }
+        .card { break-inside: avoid; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h2 class="fw-bold text-dark mb-0">
+            <i class="bi bi-map-fill me-2 text-success"></i>Mapa del Campus
+        </h2>
+        <p class="text-muted mb-0">Vista interactiva con estados de edificios y rutas de evacuacion</p>
+    </div>
+    <div class="d-flex gap-2 no-print">
+        <a href="/mapas/" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-geo-alt me-1"></i>Mapa Satelital
+        </a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- SVG Map -->
+    <div class="col-lg-9">
+        <div class="card card-modern">
+            <div class="card-body p-2">
+                <div id="svgContainer" style="position: relative;">
+                    <!-- Zoom controls -->
+                    <div class="svg-controls no-print">
+                        <button onclick="svgZoom(1.2)" title="Acercar"><i class="bi bi-plus"></i></button>
+                        <button onclick="svgZoom(0.83)" title="Alejar"><i class="bi bi-dash"></i></button>
+                        <button onclick="svgReset()" title="Restablecer"><i class="bi bi-arrows-fullscreen"></i></button>
+                    </div>
+
+                    <!-- Tooltip -->
+                    <div class="svg-tooltip" id="svgTooltip"></div>
+
+                    <svg id="campusMap" viewBox="0 0 1000 800" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+                        <!-- Background -->
+                        <defs>
+                            <pattern id="grassPattern" width="20" height="20" patternUnits="userSpaceOnUse">
+                                <rect width="20" height="20" fill="#c8e6c9"/>
+                                <circle cx="5" cy="5" r="1" fill="#a5d6a7" opacity="0.5"/>
+                                <circle cx="15" cy="15" r="1" fill="#a5d6a7" opacity="0.5"/>
+                            </pattern>
+                            <pattern id="roadPattern" width="10" height="10" patternUnits="userSpaceOnUse">
+                                <rect width="10" height="10" fill="#e0d8c0"/>
+                            </pattern>
+                            <!-- Arrow marker for routes -->
+                            <marker id="arrowGreen" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#2E7D32"/>
+                            </marker>
+                        </defs>
+
+                        <!-- Campus background -->
+                        <rect x="0" y="0" width="1000" height="800" fill="url(#grassPattern)" rx="12"/>
+
+                        <!-- Campus border -->
+                        <rect x="5" y="5" width="990" height="790" fill="none" stroke="#C62828" stroke-width="2" stroke-dasharray="10,5" rx="12"/>
+                        <text x="500" y="25" text-anchor="middle" font-size="10" fill="#C62828" font-weight="bold">PERIMETRO CENTRO MINERO SENA - SOGAMOSO</text>
+
+                        <!-- Walkways (campus paths) -->
+                        <g id="walkways">
+                        </g>
+
+                        <!-- Buildings -->
+                        <g id="buildings">
+                        </g>
+
+                        <!-- Assembly Points -->
+                        <g id="assemblyPoints">
+                        </g>
+
+                        <!-- Route overlay -->
+                        <g id="routeOverlay" style="display:none;">
+                            <path id="routePath" d="" fill="none" stroke="#1565C0" stroke-width="6" stroke-dasharray="12,6" stroke-linecap="round" class="route-path"/>
+                            <circle id="routeStart" r="10" fill="#4CAF50" stroke="white" stroke-width="3"/>
+                            <circle id="routeEnd" r="10" fill="#F44336" stroke="white" stroke-width="3"/>
+                        </g>
+
+                        <!-- Building labels -->
+                        <g id="buildingLabels">
+                        </g>
+                    </svg>
+                </div>
+
+                <!-- Route info bar -->
+                <div id="routeInfoBar">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="bi bi-signpost-2 me-2"></i>
+                            <strong id="routeInfoText">Ruta calculada</strong>
+                        </div>
+                        <button class="btn btn-sm btn-outline-light" onclick="limpiarRuta()">
+                            <i class="bi bi-x-lg me-1"></i>Cerrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="col-lg-3">
+        <!-- Where Am I? -->
+        <div class="card card-modern mb-3">
+            <div class="card-header bg-primary text-white py-2">
+                <h6 class="mb-0"><i class="bi bi-geo-alt-fill me-2"></i>Ruta de Evacuacion</h6>
+            </div>
+            <div class="card-body py-2">
+                <label class="form-label small fw-bold mb-1">Donde te encuentras?</label>
+                <select id="selectUbicacion" class="form-select form-select-sm mb-2">
+                    <option value="">-- Selecciona tu ubicacion --</option>
+                </select>
+                <button class="btn btn-primary btn-sm w-100" onclick="calcularRutaEvacuacion()">
+                    <i class="bi bi-signpost-2 me-1"></i>Mostrar Ruta Segura
+                </button>
+            </div>
+        </div>
+
+        {% if es_brigada %}
+        <!-- BRIGADA Control Panel -->
+        <div class="card card-modern mb-3 border-danger">
+            <div class="card-header bg-danger text-white py-2">
+                <h6 class="mb-0"><i class="bi bi-shield-fill-exclamation me-2"></i>Control de Edificios</h6>
+            </div>
+            <div class="card-body py-2">
+                <div class="mb-2">
+                    <label class="form-label small fw-bold mb-1">Edificio:</label>
+                    <select id="selectEdificio" class="form-select form-select-sm"></select>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label small fw-bold mb-1">Nuevo estado:</label>
+                    <select id="selectEstado" class="form-select form-select-sm">
+                        <option value="NORMAL">Normal</option>
+                        <option value="DANADO">Danado</option>
+                        <option value="EVACUANDO">Evacuando</option>
+                        <option value="CERRADO">Cerrado</option>
+                        <option value="EN_EMERGENCIA">En Emergencia</option>
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label small fw-bold mb-1">Motivo:</label>
+                    <textarea id="motivoEstado" class="form-control form-control-sm" rows="2" placeholder="Describe la situacion..."></textarea>
+                </div>
+                <button class="btn btn-danger btn-sm w-100" onclick="cambiarEstadoEdificio()">
+                    <i class="bi bi-exclamation-triangle me-1"></i>Cambiar Estado
+                </button>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Legend -->
+        <div class="card card-modern mb-3">
+            <div class="card-header bg-dark text-white py-2">
+                <h6 class="mb-0"><i class="bi bi-palette me-2"></i>Leyenda de Estados</h6>
+            </div>
+            <div class="card-body py-2 small">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <div style="width:16px;height:16px;background:#4CAF50;border-radius:3px;"></div>
+                    <span>Normal - Operativo</span>
+                </div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <div style="width:16px;height:16px;background:#F44336;border-radius:3px;"></div>
+                    <span>Danado - Fuera de servicio</span>
+                </div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <div style="width:16px;height:16px;background:#FF9800;border-radius:3px;"></div>
+                    <span>Evacuando</span>
+                </div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <div style="width:16px;height:16px;background:#9E9E9E;border-radius:3px;"></div>
+                    <span>Cerrado</span>
+                </div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <div style="width:16px;height:16px;background:#D32F2F;border-radius:3px;"></div>
+                    <span>En Emergencia</span>
+                </div>
+                <hr class="my-2">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <div style="width:16px;height:16px;background:#2E7D32;border-radius:50%;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div>
+                    <span>Punto de Encuentro</span>
+                </div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <div style="width:30px;height:4px;background:#d4c8a0;border-radius:2px;"></div>
+                    <span>Camino peatonal</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <div style="width:30px;height:4px;background:#1565C0;border-radius:2px;border:1px dashed #0D47A1;"></div>
+                    <span>Ruta de evacuacion</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buildings list -->
+        <div class="card card-modern mb-3">
+            <div class="card-header bg-success text-white py-2">
+                <h6 class="mb-0"><i class="bi bi-building me-2"></i>Edificaciones</h6>
+            </div>
+            <div class="card-body py-1" style="max-height: 220px; overflow-y: auto;">
+                <div id="listaEdificios" class="small"></div>
+            </div>
+        </div>
+
+        <!-- Emergency -->
+        <div class="card card-modern border-danger">
+            <div class="card-header bg-danger text-white py-2">
+                <h6 class="mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>Emergencia</h6>
+            </div>
+            <div class="card-body py-2 small">
+                <ol class="mb-2 ps-3">
+                    <li>Mantenga la calma</li>
+                    <li>Seleccione su ubicacion en el mapa</li>
+                    <li>Siga la ruta indicada (linea azul)</li>
+                    <li>Dirijase al punto de encuentro</li>
+                </ol>
+                <div class="alert alert-danger py-1 px-2 mb-0 small">
+                    <strong>Emergencias: 123</strong> | Bomberos: 119
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    // ============================================================
+    // COORDINATE CONVERSION: GPS -> SVG
+    // ============================================================
+    const LAT_MIN = 5.72940, LAT_MAX = 5.73160;
+    const LNG_MIN = -72.89560, LNG_MAX = -72.89280;
+    const SVG_W = 1000, SVG_H = 800;
+
+    function gpsToSvg(lat, lng) {
+        const x = ((lng - LNG_MIN) / (LNG_MAX - LNG_MIN)) * SVG_W;
+        const y = ((LAT_MAX - lat) / (LAT_MAX - LAT_MIN)) * SVG_H;
+        return { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 };
+    }
+
+    // ============================================================
+    // BUILDING DATA - 20 EDIFICIOS INDIVIDUALES (GPS desde KML)
+    // ============================================================
+    const edificaciones = [
+        {
+            id: 1, nombre: 'Edificio 1',
+            gpsPoints: [
+                [5.7307912, -72.8948967], [5.7308004, -72.8948264],
+                [5.7305493, -72.8948189], [5.7305440, -72.8948931]
+            ]
+        },
+        {
+            id: 2, nombre: 'Edificio 2',
+            gpsPoints: [
+                [5.7309987, -72.8948041], [5.7310051, -72.8947227],
+                [5.7309105, -72.8947184], [5.7309012, -72.8947986]
+            ]
+        },
+        {
+            id: 3, nombre: 'Edificio 3',
+            gpsPoints: [
+                [5.7308709, -72.8947974], [5.7308777, -72.8947116],
+                [5.7307683, -72.8947062], [5.7307556, -72.8947495],
+                [5.7307559, -72.8947932]
+            ]
+        },
+        {
+            id: 4, nombre: 'Edificio 4',
+            gpsPoints: [
+                [5.7307479, -72.8947905], [5.7307467, -72.8947448],
+                [5.7307576, -72.8947053], [5.7305613, -72.8947022],
+                [5.7305538, -72.8947851]
+            ]
+        },
+        {
+            id: 5, nombre: 'Edificio 5',
+            gpsPoints: [
+                [5.7306267, -72.8946539], [5.7306315, -72.8945763],
+                [5.7304138, -72.8945674], [5.7304080, -72.8946453]
+            ]
+        },
+        {
+            id: 6, nombre: 'Edificio 6',
+            gpsPoints: [
+                [5.7304454, -72.8945342], [5.7304497, -72.8944440],
+                [5.7301614, -72.8944296], [5.7301590, -72.8945223]
+            ]
+        },
+        {
+            id: 7, nombre: 'Edificio 7',
+            gpsPoints: [
+                [5.7301237, -72.8948926], [5.7301361, -72.8945740],
+                [5.7299361, -72.8945729], [5.7299160, -72.8948826]
+            ]
+        },
+        {
+            id: 8, nombre: 'Edificio 8',
+            gpsPoints: [
+                [5.7309114, -72.8945560], [5.7309290, -72.8943625],
+                [5.7308567, -72.8943588], [5.7308474, -72.8943890],
+                [5.7308111, -72.8943880], [5.7308062, -72.8944036],
+                [5.7307212, -72.8944029], [5.7307224, -72.8943930],
+                [5.7305319, -72.8943904], [5.7305248, -72.8944974],
+                [5.7308015, -72.8945128], [5.7307978, -72.8945538]
+            ]
+        },
+        {
+            id: 9, nombre: 'Edificio 9',
+            gpsPoints: [
+                [5.7308234, -72.8943705], [5.7308340, -72.8942648],
+                [5.7306677, -72.8942575], [5.7306565, -72.8943658]
+            ]
+        },
+        {
+            id: 10, nombre: 'Edificio 10',
+            gpsPoints: [
+                [5.7306441, -72.8943666], [5.7306498, -72.8942364],
+                [5.7308386, -72.8942439], [5.7308445, -72.8941332],
+                [5.7305388, -72.8941199], [5.7305277, -72.8943641]
+            ]
+        },
+        {
+            id: 11, nombre: 'Edificio 11',
+            gpsPoints: [
+                [5.7300022, -72.8949615], [5.7299900, -72.8949143],
+                [5.7298755, -72.8949452], [5.7298909, -72.8949925]
+            ]
+        },
+        {
+            id: 12, nombre: 'Edificio 12',
+            gpsPoints: [
+                [5.7302641, -72.8950979], [5.7302405, -72.8950028],
+                [5.7301310, -72.8950286], [5.7301540, -72.8951237]
+            ]
+        },
+        {
+            id: 13, nombre: 'Edificio 13',
+            gpsPoints: [
+                [5.7297625, -72.8948200], [5.7297314, -72.8945791],
+                [5.7296251, -72.8945865], [5.7296554, -72.8948349]
+            ]
+        },
+        {
+            id: 14, nombre: 'Edificio 14',
+            gpsPoints: [
+                [5.7305397, -72.8938955], [5.7304727, -72.8937999],
+                [5.7303172, -72.8939032], [5.7303881, -72.8939965]
+            ]
+        },
+        {
+            id: 15, nombre: 'Edificio 15',
+            gpsPoints: [
+                [5.7305674, -72.8936951], [5.7304682, -72.8935472],
+                [5.7303099, -72.8936547], [5.7302989, -72.8936320],
+                [5.7301793, -72.8937113], [5.7302912, -72.8938716]
+            ]
+        },
+        {
+            id: 16, nombre: 'Edificio 16',
+            gpsPoints: [
+                [5.7303587, -72.8942692], [5.7302399, -72.8939893],
+                [5.7296996, -72.8942344], [5.7298458, -72.8944955]
+            ]
+        },
+        {
+            id: 17, nombre: 'Edificio 17',
+            gpsPoints: [
+                [5.7300665, -72.8937353], [5.7300287, -72.8936043],
+                [5.7297781, -72.8936870], [5.7298153, -72.8938105]
+            ]
+        },
+        {
+            id: 18, nombre: 'Edificio 18',
+            gpsPoints: [
+                [5.7298255, -72.8935337], [5.7297943, -72.8934360],
+                [5.7296450, -72.8934831], [5.7296794, -72.8935764]
+            ]
+        },
+        {
+            id: 19, nombre: 'Edificio 19',
+            gpsPoints: [
+                [5.7299963, -72.8934039], [5.7299932, -72.8933583],
+                [5.7299507, -72.8933601], [5.7299464, -72.8933336],
+                [5.7297784, -72.8933460], [5.7297871, -72.8934210]
+            ]
+        },
+        {
+            id: 20, nombre: 'Edificio 20',
+            gpsPoints: [
+                [5.7297374, -72.8932245], [5.7297461, -72.8931855],
+                [5.7296987, -72.8931746], [5.7296855, -72.8932093]
+            ]
+        },
+    ];
+
+    // Convert GPS polygon points to SVG and compute centroids
+    edificaciones.forEach(e => {
+        e.svgPoints = e.gpsPoints.map(([lat, lng]) => gpsToSvg(lat, lng));
+        e.pointsStr = e.svgPoints.map(p => `${p.x},${p.y}`).join(' ');
+        // Centroid for label placement
+        const cx = e.svgPoints.reduce((s, p) => s + p.x, 0) / e.svgPoints.length;
+        const cy = e.svgPoints.reduce((s, p) => s + p.y, 0) / e.svgPoints.length;
+        e.sx = Math.round(cx * 10) / 10;
+        e.sy = Math.round(cy * 10) / 10;
+    });
+
+    // ============================================================
+    // ASSEMBLY POINTS
+    // ============================================================
+    const puntosEncuentro = [
+        { id: 'PE1', nombre: 'P1 - Cancha Deportiva',   lat: 5.7310, lng: -72.8942, capacidad: 200, color: '#2E7D32' },
+        { id: 'PE2', nombre: 'P2 - Parqueadero Trasero', lat: 5.7312, lng: -72.8951, capacidad: 150, color: '#1565C0' },
+        { id: 'PE3', nombre: 'P3 - Jardin Central',      lat: 5.7304, lng: -72.8950, capacidad: 100, color: '#E65100' },
+    ];
+
+    puntosEncuentro.forEach(p => {
+        const pos = gpsToSvg(p.lat, p.lng);
+        p.sx = pos.x;
+        p.sy = pos.y;
+    });
+
+    // ============================================================
+    // WALKWAY GRAPH (nodes + edges for pathfinding)
+    // ============================================================
+    // Nodes: intersection points + building entries + assembly points
+    // Named: W = walkway intersection, B = building entry, P = assembly point
+
+    const graphNodes = {};
+
+    // Add building nodes
+    edificaciones.forEach(e => {
+        graphNodes[`B${e.id}`] = { x: e.sx, y: e.sy, building: e.id };
+    });
+
+    // Add assembly point nodes
+    puntosEncuentro.forEach(p => {
+        graphNodes[p.id] = { x: p.sx, y: p.sy, assembly: true };
+    });
+
+    // Walkway intersection nodes - positioned in corridors BETWEEN buildings
+    // Based on gaps between building polygons from KML
+    const walkwayNodes = {
+        // ── ENTRADA NORTE Y PERIMETRO OESTE (N→S) ──
+        'W1':  gpsToSvg(5.73110, -72.89490),  // Entrada norte campus
+        'W2':  gpsToSvg(5.73100, -72.89490),  // Esquina NW, oeste de B2
+        'W3':  gpsToSvg(5.73090, -72.89495),  // Oeste de B1 (arriba)
+        'W4':  gpsToSvg(5.73052, -72.89495),  // Oeste de B1 (abajo)
+        'W5':  gpsToSvg(5.73045, -72.89495),  // SW de B1, hacia PE3
+        'W6':  gpsToSvg(5.73015, -72.89495),  // NW de B7
+        'W7':  gpsToSvg(5.72990, -72.89495),  // SW de B7 / cerca B11
+        'W8':  gpsToSvg(5.72965, -72.89480),  // Sur de B13
+
+        // ── CORREDOR ENTRE B1/B3/B4 Y B8 (gap ~lng -72.89463) ──
+        'W9':  gpsToSvg(5.73095, -72.89463),  // Norte, entre B2 y B8
+        'W10': gpsToSvg(5.73085, -72.89463),  // Entre B3 y B8 (arriba)
+        'W11': gpsToSvg(5.73075, -72.89463),  // Entre B3/B4 y B8
+        'W12': gpsToSvg(5.73062, -72.89463),  // Entre B4 y B5, junto a B8
+        'W13': gpsToSvg(5.73050, -72.89463),  // Sur de B5, borde oeste B8
+
+        // ── CORREDOR ENTRE B5/B6 Y B8 (gap ~lng -72.89455) ──
+        'W14': gpsToSvg(5.73042, -72.89458),  // Hueco entre B5 y B6
+        'W15': gpsToSvg(5.73030, -72.89455),  // Oeste de B6 (abajo)
+        'W16': gpsToSvg(5.73018, -72.89455),  // Sur de B6, norte de B7
+
+        // ── CORREDOR ESTE DE B8/B9/B10 (gap ~lng -72.89410) ──
+        'W17': gpsToSvg(5.73092, -72.89425),  // NE de B9
+        'W18': gpsToSvg(5.73080, -72.89410),  // Este de B10 (arriba)
+        'W19': gpsToSvg(5.73060, -72.89410),  // Este de B10 (abajo)
+        'W20': gpsToSvg(5.73048, -72.89410),  // SE de B10, hacia B14
+
+        // ── CORREDOR HACIA EDIFICIOS DEL ESTE (B14, B15) ──
+        'W21': gpsToSvg(5.73048, -72.89395),  // Camino a B14
+        'W22': gpsToSvg(5.73042, -72.89392),  // Norte de B14
+        'W23': gpsToSvg(5.73030, -72.89378),  // Entre B14 y B15
+        'W24': gpsToSvg(5.73018, -72.89385),  // Sur de B15
+
+        // ── CORREDOR SUR-ESTE (B17, B18, B19, B20) ──
+        'W25': gpsToSvg(5.73005, -72.89378),  // Norte de B17
+        'W26': gpsToSvg(5.72990, -72.89368),  // Entre B17 y B18
+        'W27': gpsToSvg(5.72980, -72.89350),  // Entre B18/B19
+        'W28': gpsToSvg(5.72970, -72.89335),  // Cerca B19/B20
+        'W29': gpsToSvg(5.72963, -72.89325),  // Sur de B20
+
+        // ── CORREDORES SUR Y CONEXIONES ──
+        'W30': gpsToSvg(5.73035, -72.89448),  // Hueco entre B6 y B16
+        'W31': gpsToSvg(5.73020, -72.89445),  // Borde norte B16
+        'W32': gpsToSvg(5.73005, -72.89445),  // Borde oeste B16
+        'W33': gpsToSvg(5.72985, -72.89450),  // Sur de B16, norte B13
+        'W34': gpsToSvg(5.73025, -72.89510),  // Cerca B12
+        'W35': gpsToSvg(5.73015, -72.89510),  // Corredor oeste B12/B7
+
+        // ── CORREDOR HORIZONTAL NORTE (E-W entre clusters) ──
+        'W36': gpsToSvg(5.73095, -72.89445),  // Norte de B8
+        'W37': gpsToSvg(5.73050, -72.89435),  // Sur B8, norte B16
+    };
+
+    Object.assign(graphNodes, walkwayNodes);
+
+    // Edges: [nodeA, nodeB, weight in meters]
+    // Weight approxima distancia real en metros entre nodos
+    const graphEdges = [
+        // ── CONEXIONES EDIFICIO → CAMINO MAS CERCANO ──
+        // Bloque noroeste (B1-B4)
+        ['B1', 'W3', 5],  ['B1', 'W4', 5],   // B1 sale al corredor oeste
+        ['B2', 'W2', 5],  ['B2', 'W9', 8],   // B2 sale norte y al corredor central
+        ['B3', 'W10', 5], ['B3', 'W3', 8],   // B3 entre corredor central y oeste
+        ['B4', 'W11', 5], ['B4', 'W12', 5],  // B4 al corredor central
+        // Bloque centro-oeste (B5-B6)
+        ['B5', 'W13', 5], ['B5', 'W14', 8],  // B5 al corredor central
+        ['B6', 'W15', 5], ['B6', 'W30', 8],  // B6 al corredor sur
+        // Bloque sur-oeste (B7)
+        ['B7', 'W6', 5],  ['B7', 'W16', 8],  // B7 al corredor oeste y sur
+        // Edificio 8 (L-shape, multiples salidas)
+        ['B8', 'W36', 5], ['B8', 'W12', 5], ['B8', 'W13', 5], ['B8', 'W37', 5],
+        // Bloque este (B9-B10)
+        ['B9', 'W17', 5],  ['B9', 'W18', 8],  // B9 al corredor este
+        ['B10', 'W18', 5], ['B10', 'W19', 5], // B10 al corredor este
+        // Edificios sueltos oeste (B11, B12)
+        ['B11', 'W7', 8],                      // B11 al corredor sur-oeste
+        ['B12', 'W34', 5],                     // B12 al corredor oeste
+        // Edificio 13 (far south)
+        ['B13', 'W33', 8], ['B13', 'W8', 10], // B13 al corredor sur
+        // Bloque este (B14, B15)
+        ['B14', 'W22', 5], ['B14', 'W23', 8], // B14 al corredor este
+        ['B15', 'W23', 5], ['B15', 'W24', 8], // B15 al corredor este
+        // Edificio 16 (grande, sur-centro)
+        ['B16', 'W31', 8], ['B16', 'W32', 8], // B16 bordes norte y oeste
+        // Bloque sur-este (B17-B20)
+        ['B17', 'W25', 5], ['B17', 'W26', 8],
+        ['B18', 'W27', 5],
+        ['B19', 'W27', 8], ['B19', 'W28', 5],
+        ['B20', 'W28', 5], ['B20', 'W29', 5],
+
+        // ── CORREDOR PERIMETRO OESTE (N→S) ──
+        ['W1', 'W2', 12],  // Entrada → esquina NW
+        ['W2', 'W3', 12],  // Esquina → oeste B1
+        ['W3', 'W4', 40],  // A lo largo de B1 (oeste)
+        ['W4', 'W5', 8],   // Esquina SW de B1
+        ['W5', 'W6', 35],  // Bajando al oeste (pasa B5/B6)
+        ['W6', 'W7', 25],  // Oeste B7
+        ['W7', 'W8', 30],  // Sur de B7 hacia B13
+        ['W6', 'W35', 15], // Conexion a B12
+
+        // ── CORREDOR CENTRAL N-S (entre B1/B3/B4 y B8) ──
+        ['W9', 'W10', 10],  // Norte corredor central
+        ['W10', 'W11', 10], // Bajando entre B3 y B8
+        ['W11', 'W12', 12], // Entre B4 y B8
+        ['W12', 'W13', 12], // Entre B5 y B8
+        ['W13', 'W14', 10], // Sur de B5
+
+        // ── CORREDOR OESTE B5/B6 ──
+        ['W14', 'W15', 12], // Bajando por oeste de B6
+        ['W15', 'W16', 12], // Continuando sur
+        ['W16', 'W6', 15],  // Conectando al perimetro oeste
+
+        // ── CONEXIONES E-W NORTE ──
+        ['W2', 'W9', 20],   // Perimetro oeste → corredor central (norte)
+        ['W3', 'W10', 20],  // Perimetro oeste → corredor central (medio)
+        ['W9', 'W36', 15],  // Corredor central → norte B8
+        ['W36', 'W17', 15], // Norte B8 → corredor este
+
+        // ── CORREDOR ESTE DE B8/B9/B10 ──
+        ['W17', 'W18', 12], // NE bajando por B9/B10
+        ['W18', 'W19', 20], // Este de B10
+        ['W19', 'W20', 12], // SE de B10
+
+        // ── CONEXIONES E-W CENTRO ──
+        ['W13', 'W37', 20], // Corredor central → sur B8
+        ['W37', 'W20', 20], // Sur B8 → este B10
+        ['W14', 'W37', 15], // Hueco B5/B6 → sur B8
+
+        // ── CORREDOR HACIA B14/B15 ──
+        ['W20', 'W21', 12], // SE B10 → camino a B14
+        ['W21', 'W22', 8],  // Hacia B14
+        ['W22', 'W23', 15], // Entre B14 y B15
+        ['W23', 'W24', 15], // Sur de B15
+
+        // ── CORREDOR SUR-ESTE (B17→B20) ──
+        ['W24', 'W25', 15], // Sur B15 → B17
+        ['W25', 'W26', 18], // B17 → B18
+        ['W26', 'W27', 15], // B18 → B19
+        ['W27', 'W28', 15], // B19 → B20
+        ['W28', 'W29', 10], // B20 → salida sur
+
+        // ── CORREDOR SUR (B6→B16→B13) ──
+        ['W15', 'W30', 8],  // Oeste B6 → hueco B6/B16
+        ['W30', 'W31', 15], // Hueco → norte B16
+        ['W31', 'W32', 15], // Norte B16 → oeste B16
+        ['W32', 'W33', 20], // Oeste B16 → sur B16
+        ['W33', 'W8', 20],  // Sur B16 → sur B13
+
+        // ── CONEXION SUR-ESTE A SUR ──
+        ['W32', 'W25', 30], // Oeste B16 → B17
+        ['W31', 'W24', 35], // Norte B16 → sur B15
+
+        // ── CORREDOR OESTE B12/B7 ──
+        ['W34', 'W35', 10], // B12 norte-sur
+        ['W35', 'W6', 15],  // B12 → B7
+
+        // ── PUNTOS DE ENCUENTRO ──
+        ['PE1', 'W1', 15],  ['PE1', 'W9', 20],  ['PE1', 'W36', 18],
+        ['PE2', 'W1', 30],  ['PE2', 'W34', 20], ['PE2', 'W2', 25],
+        ['PE3', 'W5', 10],  ['PE3', 'W4', 12],  ['PE3', 'W14', 15],
+    ];
+
+    // ============================================================
+    // DRAW SVG ELEMENTS
+    // ============================================================
+    const svg = document.getElementById('campusMap');
+    const walkwaysGroup = document.getElementById('walkways');
+    const buildingsGroup = document.getElementById('buildings');
+    const assemblyGroup = document.getElementById('assemblyPoints');
+    const labelsGroup = document.getElementById('buildingLabels');
+
+    // Draw walkways
+    graphEdges.forEach(([a, b, w]) => {
+        const na = graphNodes[a], nb = graphNodes[b];
+        if (!na || !nb) return;
+        // Only draw edges between walkway nodes (not building entries)
+        if (a.startsWith('W') || b.startsWith('W') || a.startsWith('PE') || b.startsWith('PE')) {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', na.x);
+            line.setAttribute('y1', na.y);
+            line.setAttribute('x2', nb.x);
+            line.setAttribute('y2', nb.y);
+            line.setAttribute('class', 'walkway');
+            walkwaysGroup.appendChild(line);
+        }
+    });
+
+    // Draw buildings as real polygons
+    edificaciones.forEach(e => {
+        const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        poly.setAttribute('id', `bldg-${e.id}`);
+        poly.setAttribute('points', e.pointsStr);
+        poly.setAttribute('class', 'building building-normal');
+        poly.setAttribute('data-id', e.id);
+        poly.setAttribute('data-nombre', e.nombre);
+        poly.setAttribute('data-estado', 'NORMAL');
+
+        // Tooltip on hover
+        poly.addEventListener('mouseenter', function(ev) {
+            const estado = this.dataset.estado || 'NORMAL';
+            const motivo = this.dataset.motivo || '';
+            const tooltip = document.getElementById('svgTooltip');
+            const estadoColors = {
+                'NORMAL': '#4CAF50', 'DANADO': '#F44336', 'EVACUANDO': '#FF9800',
+                'CERRADO': '#9E9E9E', 'EN_EMERGENCIA': '#D32F2F'
+            };
+            tooltip.innerHTML = `
+                <div class="fw-bold mb-1">${this.dataset.nombre}</div>
+                <div class="mb-1">
+                    <span class="estado-badge" style="background:${estadoColors[estado] || '#4CAF50'}">
+                        ${estado}
+                    </span>
+                </div>
+                ${motivo ? '<div class="text-muted small">' + motivo + '</div>' : ''}
+                <div class="text-muted small mt-1">Clic para seleccionar</div>
+            `;
+            tooltip.style.display = 'block';
+        });
+
+        poly.addEventListener('mousemove', function(ev) {
+            const tooltip = document.getElementById('svgTooltip');
+            const container = document.getElementById('svgContainer');
+            const containerRect = container.getBoundingClientRect();
+            tooltip.style.left = (ev.clientX - containerRect.left + 15) + 'px';
+            tooltip.style.top = (ev.clientY - containerRect.top - 10) + 'px';
+        });
+
+        poly.addEventListener('mouseleave', function() {
+            document.getElementById('svgTooltip').style.display = 'none';
+        });
+
+        // Click to select building
+        poly.addEventListener('click', function() {
+            const id = this.dataset.id;
+            document.getElementById('selectUbicacion').value = id;
+            {% if es_brigada %}
+            document.getElementById('selectEdificio').value = id;
+            {% endif %}
+            // Highlight selected
+            document.querySelectorAll('.building').forEach(b => b.style.filter = '');
+            this.style.filter = 'drop-shadow(0 0 8px rgba(0,0,0,0.6))';
+        });
+
+        buildingsGroup.appendChild(poly);
+
+        // Building name label at centroid
+        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('x', e.sx);
+        label.setAttribute('y', e.sy + 4);
+        label.setAttribute('class', 'bldg-label');
+        label.textContent = e.id;
+        labelsGroup.appendChild(label);
+
+        // Name below number
+        const nameLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        nameLabel.setAttribute('x', e.sx);
+        nameLabel.setAttribute('y', e.sy + 16);
+        nameLabel.setAttribute('class', 'bldg-name');
+        nameLabel.setAttribute('fill', '#fff');
+        nameLabel.setAttribute('font-size', '7');
+        nameLabel.textContent = e.nombre;
+        labelsGroup.appendChild(nameLabel);
+    });
+
+    // Draw assembly points
+    puntosEncuentro.forEach(p => {
+        // Pulsing background circle
+        const pulseCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        pulseCircle.setAttribute('cx', p.sx);
+        pulseCircle.setAttribute('cy', p.sy);
+        pulseCircle.setAttribute('r', '14');
+        pulseCircle.setAttribute('fill', p.color);
+        pulseCircle.setAttribute('class', 'assembly-pulse');
+        assemblyGroup.appendChild(pulseCircle);
+
+        // Main circle
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', p.sx);
+        circle.setAttribute('cy', p.sy);
+        circle.setAttribute('r', '12');
+        circle.setAttribute('fill', p.color);
+        circle.setAttribute('stroke', 'white');
+        circle.setAttribute('stroke-width', '3');
+        assemblyGroup.appendChild(circle);
+
+        // Label
+        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('x', p.sx);
+        label.setAttribute('y', p.sy + 4);
+        label.setAttribute('class', 'assembly-label');
+        label.textContent = p.id.replace('PE', 'P');
+        assemblyGroup.appendChild(label);
+
+        // Name label below
+        const nameLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        nameLabel.setAttribute('x', p.sx);
+        nameLabel.setAttribute('y', p.sy + 26);
+        nameLabel.setAttribute('text-anchor', 'middle');
+        nameLabel.setAttribute('font-size', '9');
+        nameLabel.setAttribute('fill', '#333');
+        nameLabel.setAttribute('font-weight', 'bold');
+        nameLabel.textContent = p.nombre;
+        assemblyGroup.appendChild(nameLabel);
+    });
+
+    // ============================================================
+    // POPULATE DROPDOWNS
+    // ============================================================
+    const selectUbicacion = document.getElementById('selectUbicacion');
+    const selectEdificio = document.getElementById('selectEdificio');
+    const listaEdificios = document.getElementById('listaEdificios');
+
+    let listaHTML = '';
+    edificaciones.forEach(e => {
+        selectUbicacion.innerHTML += `<option value="${e.id}">${e.nombre}</option>`;
+        if (selectEdificio) {
+            selectEdificio.innerHTML += `<option value="${e.id}">${e.nombre}</option>`;
+        }
+        listaHTML += `
+            <div class="panel-edif-item" onclick="highlightBuilding(${e.id})">
+                <div class="edif-dot" id="dot-${e.id}" style="background: #4CAF50;"></div>
+                <span>${e.id}. ${e.nombre}</span>
+            </div>
+        `;
+    });
+    listaEdificios.innerHTML = listaHTML;
+
+    // ============================================================
+    // DIJKSTRA PATHFINDING
+    // ============================================================
+    window.blockedBuildings = [];
+
+    function dijkstra(startId, endId) {
+        const dist = {};
+        const prev = {};
+        const visited = new Set();
+        const queue = [];
+
+        for (const nodeId of Object.keys(graphNodes)) {
+            dist[nodeId] = Infinity;
+        }
+        dist[startId] = 0;
+        queue.push({ node: startId, dist: 0 });
+
+        // Filter out edges near blocked buildings
+        const blockedNodes = new Set();
+        window.blockedBuildings.forEach(bId => {
+            blockedNodes.add(`B${bId}`);
+        });
+
+        while (queue.length > 0) {
+            queue.sort((a, b) => a.dist - b.dist);
+            const { node: current } = queue.shift();
+
+            if (visited.has(current)) continue;
+            visited.add(current);
+            if (current === endId) break;
+
+            // Get neighbors
+            graphEdges.forEach(([a, b, w]) => {
+                let neighbor = null, weight = w;
+                if (a === current) neighbor = b;
+                else if (b === current) neighbor = a;
+                if (!neighbor || visited.has(neighbor)) return;
+
+                // Block paths to damaged buildings
+                if (blockedNodes.has(neighbor)) return;
+
+                const newDist = dist[current] + weight;
+                if (newDist < dist[neighbor]) {
+                    dist[neighbor] = newDist;
+                    prev[neighbor] = current;
+                    queue.push({ node: neighbor, dist: newDist });
+                }
+            });
+        }
+
+        // Reconstruct path
+        if (dist[endId] === Infinity) return null;
+
+        const path = [];
+        let node = endId;
+        while (node) {
+            path.unshift(node);
+            node = prev[node];
+        }
+
+        return {
+            path,
+            distance: Math.round(dist[endId]),
+            points: path.map(n => graphNodes[n])
+        };
+    }
+
+    // ============================================================
+    // ROUTE CALCULATION
+    // ============================================================
+    window.calcularRutaEvacuacion = function() {
+        const buildingId = document.getElementById('selectUbicacion').value;
+        if (!buildingId) {
+            alert('Selecciona tu ubicacion primero');
+            return;
+        }
+
+        const startNode = `B${buildingId}`;
+        let bestRoute = null;
+        let bestPE = null;
+
+        // Find route to nearest safe assembly point
+        puntosEncuentro.forEach(pe => {
+            const route = dijkstra(startNode, pe.id);
+            if (route && (!bestRoute || route.distance < bestRoute.distance)) {
+                bestRoute = route;
+                bestPE = pe;
+            }
+        });
+
+        if (bestRoute) {
+            displayRoute(bestRoute, edificaciones.find(e => e.id == buildingId), bestPE);
+        } else {
+            alert('No se encontro ruta segura. Contacte a la brigada de emergencia.');
+        }
+    };
+
+    function displayRoute(route, fromBuilding, toPE) {
+        const overlay = document.getElementById('routeOverlay');
+        const pathEl = document.getElementById('routePath');
+        const startCircle = document.getElementById('routeStart');
+        const endCircle = document.getElementById('routeEnd');
+
+        const points = route.points;
+        const d = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+        pathEl.setAttribute('d', d);
+
+        startCircle.setAttribute('cx', points[0].x);
+        startCircle.setAttribute('cy', points[0].y);
+        endCircle.setAttribute('cx', points[points.length - 1].x);
+        endCircle.setAttribute('cy', points[points.length - 1].y);
+
+        overlay.style.display = 'block';
+
+        // Show info bar
+        const infoBar = document.getElementById('routeInfoBar');
+        const infoText = document.getElementById('routeInfoText');
+        const timeMin = Math.ceil(route.distance / 80); // ~80m/min walking speed
+        infoText.textContent = `${fromBuilding.nombre} → ${toPE.nombre} | ~${route.distance}m | ~${timeMin} min`;
+        infoBar.style.display = 'block';
+    }
+
+    window.limpiarRuta = function() {
+        document.getElementById('routeOverlay').style.display = 'none';
+        document.getElementById('routeInfoBar').style.display = 'none';
+    };
+
+    window.highlightBuilding = function(id) {
+        const el = document.getElementById(`bldg-${id}`);
+        if (el) {
+            document.querySelectorAll('.building').forEach(b => b.style.filter = '');
+            el.style.filter = 'drop-shadow(0 0 8px rgba(0,0,0,0.6))';
+            document.getElementById('selectUbicacion').value = id;
+            {% if es_brigada %}
+            document.getElementById('selectEdificio').value = id;
+            {% endif %}
+
+            // Scroll SVG to show building centroid if zoomed
+            const bldgData = edificaciones.find(e => e.id == id);
+            if (bldgData) {
+                const vb = svg.viewBox.baseVal;
+                if (vb.width < 900) {
+                    vb.x = bldgData.sx - vb.width / 2;
+                    vb.y = bldgData.sy - vb.height / 2;
+                }
+            }
+        }
+    };
+
+    // ============================================================
+    // SVG ZOOM AND PAN
+    // ============================================================
+    let viewBox = { x: 0, y: 0, w: SVG_W, h: SVG_H };
+    let isPanning = false, panStart = { x: 0, y: 0 };
+
+    window.svgZoom = function(factor) {
+        const cx = viewBox.x + viewBox.w / 2;
+        const cy = viewBox.y + viewBox.h / 2;
+        viewBox.w = Math.max(200, Math.min(SVG_W, viewBox.w / factor));
+        viewBox.h = Math.max(160, Math.min(SVG_H, viewBox.h / factor));
+        viewBox.x = cx - viewBox.w / 2;
+        viewBox.y = cy - viewBox.h / 2;
+        applyViewBox();
+    };
+
+    window.svgReset = function() {
+        viewBox = { x: 0, y: 0, w: SVG_W, h: SVG_H };
+        applyViewBox();
+    };
+
+    function applyViewBox() {
+        svg.setAttribute('viewBox', `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`);
+    }
+
+    svg.addEventListener('mousedown', function(e) {
+        if (e.target.classList.contains('building')) return;
+        isPanning = true;
+        panStart = { x: e.clientX, y: e.clientY };
+        svg.style.cursor = 'grabbing';
+    });
+
+    svg.addEventListener('mousemove', function(e) {
+        if (!isPanning) return;
+        const dx = (e.clientX - panStart.x) * (viewBox.w / svg.clientWidth);
+        const dy = (e.clientY - panStart.y) * (viewBox.h / svg.clientHeight);
+        viewBox.x -= dx;
+        viewBox.y -= dy;
+        panStart = { x: e.clientX, y: e.clientY };
+        applyViewBox();
+    });
+
+    svg.addEventListener('mouseup', function() {
+        isPanning = false;
+        svg.style.cursor = 'grab';
+    });
+
+    svg.addEventListener('mouseleave', function() {
+        isPanning = false;
+        svg.style.cursor = 'grab';
+    });
+
+    svg.addEventListener('wheel', function(e) {
+        e.preventDefault();
+        const factor = e.deltaY < 0 ? 1.15 : 0.87;
+        svgZoom(factor);
+    });
+
+    // ============================================================
+    // POLLING: FETCH BUILDING STATES EVERY 12 SECONDS
+    // ============================================================
+    let pollTimer = null;
+    const POLL_INTERVAL = 12000;
+
+    const ESTADO_COLORS = {
+        'NORMAL': '#4CAF50',
+        'DANADO': '#F44336',
+        'EVACUANDO': '#FF9800',
+        'CERRADO': '#9E9E9E',
+        'EN_EMERGENCIA': '#D32F2F'
+    };
+
+    async function fetchBuildingStates() {
+        try {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+            const r = await fetch('/mapas/api/edificios/estados/', {
+                credentials: 'same-origin',
+                headers: { 'X-CSRFToken': csrfToken }
+            });
+            if (!r.ok) return;
+            const data = await r.json();
+            updateBuildingStates(data);
+        } catch (e) {
+            console.log('Error fetching states:', e);
+        }
+    }
+
+    function updateBuildingStates(buildings) {
+        const blocked = [];
+        buildings.forEach(b => {
+            const el = document.getElementById(`bldg-${b.id}`);
+            if (!el) return;
+
+            const estado = b.estado || 'NORMAL';
+            el.className.baseVal = `building building-${estado.toLowerCase()}`;
+            el.dataset.estado = estado;
+            el.dataset.motivo = b.motivo || '';
+
+            // Update sidebar dot
+            const dot = document.getElementById(`dot-${b.id}`);
+            if (dot) dot.style.background = ESTADO_COLORS[estado] || '#4CAF50';
+
+            if (['DANADO', 'EN_EMERGENCIA'].includes(estado)) {
+                blocked.push(b.id);
+            }
+        });
+        window.blockedBuildings = blocked;
+    }
+
+    function startPolling() {
+        fetchBuildingStates();
+        pollTimer = setInterval(fetchBuildingStates, POLL_INTERVAL);
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+        } else {
+            fetchBuildingStates();
+            if (!pollTimer) pollTimer = setInterval(fetchBuildingStates, POLL_INTERVAL);
+        }
+    });
+
+    startPolling();
+
+    // ============================================================
+    // BRIGADA: CHANGE BUILDING STATE
+    // ============================================================
+    {% if es_brigada %}
+    window.cambiarEstadoEdificio = function() {
+        const edificioId = document.getElementById('selectEdificio').value;
+        const estado = document.getElementById('selectEstado').value;
+        const motivo = document.getElementById('motivoEstado').value;
+
+        if (!edificioId) {
+            alert('Seleccione un edificio');
+            return;
+        }
+
+        if (estado !== 'NORMAL' && !motivo.trim()) {
+            alert('Ingrese un motivo para el cambio de estado');
+            return;
+        }
+
+        if (!confirm(`Cambiar estado de edificio a "${estado}"?\n\nMotivo: ${motivo || 'Sin motivo'}\n\nTodos los usuarios veran este cambio.`)) {
+            return;
+        }
+
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+
+        fetch(`/mapas/api/edificios/${edificioId}/cambiar-estado/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ estado, motivo })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Estado actualizado: ${data.edificio} -> ${data.estado}`);
+                document.getElementById('motivoEstado').value = '';
+                fetchBuildingStates();
+            } else {
+                alert('Error: ' + (data.error || 'No se pudo cambiar el estado'));
+            }
+        })
+        .catch(err => {
+            console.error('Error:', err);
+            alert('Error de conexion al cambiar estado');
+        });
+    };
+    {% endif %}
+
+}); // End DOMContentLoaded
+</script>
+{% endblock %}

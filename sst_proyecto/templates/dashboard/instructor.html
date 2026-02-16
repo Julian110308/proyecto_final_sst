@@ -33,7 +33,7 @@
 
     {% include 'components/metric-card.html' with label="Ingresos Hoy" value=ingresos_hoy|default:0 sublabel="Registros de entrada" sublabel_color="muted" icon="bi-door-open" icon_color="info" border_color="info" %}
 
-    {% include 'components/metric-card.html' with label="Personas en Centro" value=personas_en_centro|default:0 sublabel=porcentaje_ocupacion|default:0|add:"% ocupacion" sublabel_icon="bi bi-building" sublabel_color="primary" icon="bi-building" icon_color="secondary" border_color="secondary" %}
+    {% include 'components/metric-card.html' with label="Incidentes del Mes" value=incidentes_mes|default:0 sublabel="Reportados este mes" sublabel_icon="bi bi-exclamation-triangle" sublabel_color="warning" icon="bi-exclamation-triangle-fill" icon_color="warning" border_color="warning" %}
 </div>
 
 <!-- Grafico + Accesos de Aprendices -->

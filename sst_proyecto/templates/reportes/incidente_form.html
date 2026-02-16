@@ -11,10 +11,11 @@
 {% block content %}
 <div class="container-fluid">
     <div class="row justify-content-center">
-        <div class="col-lg-8">
+        <div class="col-lg-10">
             <div class="card card-modern">
                 <div class="card-header-modern bg-danger text-white">
                     <h4 class="mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>Reportar Nuevo Incidente</h4>
+                    <small class="opacity-75">Complete todos los campos con la mayor cantidad de informacion posible</small>
                 </div>
                 <div class="card-body p-4">
 
@@ -35,48 +36,168 @@
                     <form method="POST" enctype="multipart/form-data">
                         {% csrf_token %}
 
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Título del Incidente</label>
-                            {{ form.titulo }}
-                        </div>
+                        <!-- SECCION 1: Informacion del Incidente -->
+                        <div class="border rounded-3 p-3 mb-4">
+                            <h6 class="fw-bold text-danger mb-3">
+                                <i class="bi bi-1-circle-fill me-2"></i>Informacion del Incidente
+                            </h6>
 
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Tipo de Incidente</label>
-                                {{ form.tipo }}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">{{ form.titulo.label }} <span class="text-danger">*</span></label>
+                                {{ form.titulo }}
+                                {% if form.titulo.help_text %}<div class="form-text">{{ form.titulo.help_text }}</div>{% endif %}
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Nivel de Gravedad</label>
-                                {{ form.gravedad }}
+
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">{{ form.tipo.label }} <span class="text-danger">*</span></label>
+                                    {{ form.tipo }}
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">{{ form.gravedad.label }} <span class="text-danger">*</span></label>
+                                    {{ form.gravedad }}
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">{{ form.area_incidente.label }} <span class="text-danger">*</span></label>
+                                    {{ form.area_incidente }}
+                                </div>
                             </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Ubicación Exacta</label>
-                            {{ form.ubicacion }}
-                            <div class="form-text">Ej: Bloque B, Laboratorio de Suelos, Pasillo 2.</div>
+                        <!-- SECCION 2: Fecha, Hora y Lugar -->
+                        <div class="border rounded-3 p-3 mb-4">
+                            <h6 class="fw-bold text-primary mb-3">
+                                <i class="bi bi-2-circle-fill me-2"></i>Fecha, Hora y Lugar del Incidente
+                            </h6>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">{{ form.fecha_incidente.label }} <span class="text-danger">*</span></label>
+                                    {{ form.fecha_incidente }}
+                                    <div class="form-text">Seleccione la fecha y hora exacta en que ocurrio el incidente</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">{{ form.ubicacion.label }}</label>
+                                    {{ form.ubicacion }}
+                                    <div class="form-text">Bloque, edificio o zona general</div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">{{ form.lugar_exacto.label }}</label>
+                                {{ form.lugar_exacto }}
+                                <div class="form-text">Describa con precision el lugar exacto dentro del area</div>
+                            </div>
+
+                            <!-- Mini mapa para seleccionar ubicacion -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">
+                                    <i class="bi bi-geo-alt-fill text-danger me-1"></i>Ubicacion en el Mapa
+                                </label>
+                                <div class="form-text mb-2">Haga clic en el mapa para marcar el lugar exacto del incidente</div>
+                                <div id="mapaIncidente" style="height: 300px; border-radius: 8px; border: 2px solid #dee2e6;"></div>
+                                <div class="mt-1">
+                                    <small id="coordenadasSeleccionadas" class="text-muted">
+                                        <i class="bi bi-geo-alt me-1"></i>Haga clic en el mapa para seleccionar ubicacion
+                                    </small>
+                                </div>
+                            </div>
+
+                            {{ form.latitud }}
+                            {{ form.longitud }}
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Fecha y Hora del Incidente</label>
-                            {{ form.fecha_incidente }}
-                            <div class="form-text">¿Cuándo ocurrió el incidente?</div>
+                        <!-- SECCION 3: Persona Afectada -->
+                        <div class="border rounded-3 p-3 mb-4">
+                            <h6 class="fw-bold text-warning mb-3">
+                                <i class="bi bi-3-circle-fill me-2"></i>Persona Afectada
+                            </h6>
+
+                            <div class="row mb-3">
+                                <div class="col-md-5">
+                                    <label class="form-label fw-bold">{{ form.persona_afectada.label }}</label>
+                                    {{ form.persona_afectada }}
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">{{ form.documento_afectado.label }}</label>
+                                    {{ form.documento_afectado }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">{{ form.rol_afectado.label }}</label>
+                                    {{ form.rol_afectado }}
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Descripción Detallada</label>
-                            {{ form.descripcion }}
-                            <div class="form-text">Describa qué sucedió, personas involucradas y condiciones observadas.</div>
+                        <!-- SECCION 4: Descripcion y Version del Accidente -->
+                        <div class="border rounded-3 p-3 mb-4">
+                            <h6 class="fw-bold text-info mb-3">
+                                <i class="bi bi-4-circle-fill me-2"></i>Descripcion y Version del Accidente
+                            </h6>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">{{ form.descripcion.label }} <span class="text-danger">*</span></label>
+                                {{ form.descripcion }}
+                                {% if form.descripcion.help_text %}<div class="form-text">{{ form.descripcion.help_text }}</div>{% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">{{ form.version_accidente.label }}</label>
+                                {{ form.version_accidente }}
+                                {% if form.version_accidente.help_text %}<div class="form-text">{{ form.version_accidente.help_text }}</div>{% endif %}
+                            </div>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="form-label fw-bold">Evidencia Fotográfica (Opcional)</label>
-                            {{ form.foto }}
+                        <!-- SECCION 5: Riesgos Identificados -->
+                        <div class="border rounded-3 p-3 mb-4">
+                            <h6 class="fw-bold text-success mb-3">
+                                <i class="bi bi-5-circle-fill me-2"></i>Riesgos Identificados en el Area
+                            </h6>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">{{ form.riesgos_identificados.label }}</label>
+                                {{ form.riesgos_identificados }}
+                                {% if form.riesgos_identificados.help_text %}<div class="form-text">{{ form.riesgos_identificados.help_text }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <!-- SECCION 6: Testigos -->
+                        <div class="border rounded-3 p-3 mb-4">
+                            <h6 class="fw-bold mb-3" style="color: #6f42c1;">
+                                <i class="bi bi-6-circle-fill me-2"></i>Testigos del Incidente
+                            </h6>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">{{ form.testigos.label }}</label>
+                                {{ form.testigos }}
+                                {% if form.testigos.help_text %}<div class="form-text">{{ form.testigos.help_text }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <!-- SECCION 7: Evidencia Fotografica -->
+                        <div class="border rounded-3 p-3 mb-4 border-danger">
+                            <h6 class="fw-bold text-danger mb-3">
+                                <i class="bi bi-7-circle-fill me-2"></i>Evidencia Fotografica <span class="badge bg-danger">Obligatoria</span>
+                            </h6>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">{{ form.foto.label }} <span class="text-danger">*</span></label>
+                                {{ form.foto }}
+                                {% if form.foto.help_text %}<div class="form-text">{{ form.foto.help_text }}</div>{% endif %}
+                            </div>
+
+                            <!-- Vista previa de la foto -->
+                            <div id="vistaPrevia" class="text-center d-none">
+                                <img id="imagenPrevia" src="#" alt="Vista previa" class="img-fluid rounded" style="max-height: 200px;">
+                                <p class="text-muted small mt-1">Vista previa de la imagen seleccionada</p>
+                            </div>
                         </div>
 
                         <div class="d-flex justify-content-end gap-2">
                             <a href="{% url 'listar_incidentes' %}" class="btn btn-secondary">Cancelar</a>
-                            <button type="submit" class="btn btn-danger"><i class="bi bi-send me-2"></i>Enviar Reporte</button>
+                            <button type="submit" class="btn btn-danger btn-lg">
+                                <i class="bi bi-send me-2"></i>Enviar Reporte de Incidente
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -84,4 +205,99 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    #mapaIncidente { z-index: 1; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mini mapa para seleccionar ubicacion del incidente
+    const mapaInc = L.map('mapaIncidente').setView([5.7303596, -72.8943613], 17);
+
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Esri', maxZoom: 19
+    }).addTo(mapaInc);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19, opacity: 0.7
+    }).addTo(mapaInc);
+
+    let marcadorIncidente = null;
+
+    mapaInc.on('click', function(e) {
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+
+        // Actualizar campos ocultos
+        document.getElementById('id_latitud').value = lat.toFixed(6);
+        document.getElementById('id_longitud').value = lng.toFixed(6);
+
+        // Actualizar texto
+        document.getElementById('coordenadasSeleccionadas').innerHTML =
+            '<i class="bi bi-check-circle-fill text-success me-1"></i>' +
+            '<strong>Ubicacion seleccionada:</strong> ' + lat.toFixed(6) + ', ' + lng.toFixed(6);
+
+        // Marcador
+        if (marcadorIncidente) {
+            marcadorIncidente.setLatLng(e.latlng);
+        } else {
+            marcadorIncidente = L.marker(e.latlng, {
+                icon: L.icon({
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+                    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+                })
+            }).addTo(mapaInc);
+        }
+        marcadorIncidente.bindPopup('<strong>Lugar del incidente</strong>').openPopup();
+    });
+
+    // Si ya hay coordenadas (edicion), mostrar marcador
+    const latVal = document.getElementById('id_latitud').value;
+    const lngVal = document.getElementById('id_longitud').value;
+    if (latVal && lngVal) {
+        const lat = parseFloat(latVal);
+        const lng = parseFloat(lngVal);
+        marcadorIncidente = L.marker([lat, lng], {
+            icon: L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+                iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+            })
+        }).addTo(mapaInc);
+        mapaInc.setView([lat, lng], 18);
+        document.getElementById('coordenadasSeleccionadas').innerHTML =
+            '<i class="bi bi-check-circle-fill text-success me-1"></i>' +
+            '<strong>Ubicacion seleccionada:</strong> ' + lat.toFixed(6) + ', ' + lng.toFixed(6);
+    }
+
+    // Vista previa de foto
+    const inputFoto = document.getElementById('id_foto');
+    if (inputFoto) {
+        inputFoto.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const vistaPrevia = document.getElementById('vistaPrevia');
+            const imagenPrevia = document.getElementById('imagenPrevia');
+
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    imagenPrevia.src = ev.target.result;
+                    vistaPrevia.classList.remove('d-none');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                vistaPrevia.classList.add('d-none');
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

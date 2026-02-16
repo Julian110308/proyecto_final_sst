@@ -66,10 +66,14 @@ def crear_incidente(request):
             # Guardar
             incidente.save()
 
-            # Notificar a administrativos (y a instructores si es crítico)
+            # Notificar a administrativos (y a instructores si es critico)
             NotificacionService.notificar_incidente_creado(incidente)
 
-            messages.success(request, f'Incidente "{incidente.titulo}" reportado exitosamente.')
+            # Generar alarma para brigada si gravedad es ALTA o CRITICA
+            if incidente.gravedad in ['ALTA', 'CRITICA']:
+                NotificacionService.notificar_alarma_incidente(incidente)
+
+            messages.success(request, f'Incidente "{incidente.titulo}" reportado exitosamente. Se ha generado una alerta al personal correspondiente.')
             return redirect('listar_incidentes')
     else:
         form = IncidenteForm()
@@ -89,8 +93,8 @@ def detalle_incidente(request, pk):
     """
     incidente = get_object_or_404(Incidente, pk=pk)
 
-    # Verificar permisos: solo el que reportó o admin pueden ver
-    if request.user.rol != 'ADMINISTRATIVO' and incidente.reportado_por != request.user:
+    # Verificar permisos: solo el que reportó, admin o brigada pueden ver
+    if request.user.rol not in ['ADMINISTRATIVO', 'BRIGADA'] and incidente.reportado_por != request.user:
         messages.error(request, 'No tienes permiso para ver este incidente.')
         return redirect('listar_incidentes')
 

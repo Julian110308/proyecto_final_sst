@@ -13,8 +13,14 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
-    <!-- Design System CSS -->
+    <!-- PWA -->
     {% load static %}
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <link rel="apple-touch-icon" href="{% static 'icons/icon-192.png' %}">
+    <meta name="theme-color" content="#39A900">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <!-- Design System CSS -->
     <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
 
     <!-- CSS Personalizado para componentes específicos -->
@@ -292,16 +298,16 @@
                         </li>
 
                         <li>
-                            <a class="dropdown-item d-flex align-items-center" href="#">
+                            <a class="dropdown-item d-flex align-items-center" href="{% url 'mi_perfil' %}">
                                 <i class="bi bi-person-badge me-3 fs-5 text-primary"></i>
                                 <span>Mi Perfil</span>
                             </a>
                         </li>
-                        {% if user.rol != 'VISITANTE' %}
+                        {% if user.rol == 'ADMINISTRATIVO' %}
                         <li>
-                            <a class="dropdown-item d-flex align-items-center" href="#">
+                            <a class="dropdown-item d-flex align-items-center" href="{% url 'configuracion_sistema' %}">
                                 <i class="bi bi-gear me-3 fs-5 text-secondary"></i>
-                                <span>Configuración</span>
+                                <span>Configuracion</span>
                             </a>
                         </li>
                         {% endif %}
@@ -349,6 +355,12 @@
                             <i class="bi bi-map me-2"></i>Mapa Interactivo
                         </a>
                     </li>
+
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="{% url 'campus_svg' %}">
+                            <i class="bi bi-grid-3x3-gap me-2"></i>Mapa Campus
+                        </a>
+                    </li>
                     <li class="nav-item mb-2">
                         <a class="nav-link" href="/emergencias/">
                             <i class="bi bi-exclamation-octagon me-2"></i>Emergencias
@@ -387,6 +399,12 @@
                             <i class="bi bi-map me-2"></i>Mapa del Centro
                         </a>
                     </li>
+
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="{% url 'campus_svg' %}">
+                            <i class="bi bi-grid-3x3-gap me-2"></i>Mapa Campus
+                        </a>
+                    </li>
                     <li class="nav-item mb-2">
                         <a class="nav-link" href="/emergencias/">
                             <i class="bi bi-exclamation-octagon me-2"></i>Emergencias
@@ -420,14 +438,15 @@
                             <i class="bi bi-map me-2"></i>Mapa de Seguridad
                         </a>
                     </li>
+
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="/emergencias/">
-                            <i class="bi bi-exclamation-triangle me-2"></i>Gestión de Emergencias
+                        <a class="nav-link" href="{% url 'campus_svg' %}">
+                            <i class="bi bi-grid-3x3-gap me-2"></i>Mapa Campus
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="#">
-                            <i class="bi bi-camera-video me-2"></i>Cámaras
+                        <a class="nav-link" href="/emergencias/">
+                            <i class="bi bi-exclamation-triangle me-2"></i>Gestión de Emergencias
                         </a>
                     </li>
                     <li class="nav-item mb-2">
@@ -453,6 +472,12 @@
                             <i class="bi bi-map me-2"></i>Mapa de Evacuación
                         </a>
                     </li>
+
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="{% url 'campus_svg' %}">
+                            <i class="bi bi-grid-3x3-gap me-2"></i>Mapa Campus
+                        </a>
+                    </li>
                     <li class="nav-item mb-2">
                         <a class="nav-link" href="{% url 'equipos_brigada' %}">
                             <i class="bi bi-tools me-2"></i>Equipos
@@ -474,7 +499,7 @@
                         </a>
                     </li>
 
-                <!-- OPCIONES PARA APRENDIZ - ✅ CORREGIDO CON URLs FUNCIONALES -->
+                <!-- OPCIONES PARA APRENDIZ -->
                 {% elif user.rol == 'APRENDIZ' %}
                     <li class="nav-item mb-2">
                         <a class="nav-link" href="{% url 'mi_asistencia' %}">
@@ -486,9 +511,10 @@
                             <i class="bi bi-map me-2"></i>Mapa del Centro
                         </a>
                     </li>
+
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'informacion_sst' %}">
-                            <i class="bi bi-info-circle me-2"></i>Información SST
+                        <a class="nav-link" href="{% url 'campus_svg' %}">
+                            <i class="bi bi-grid-3x3-gap me-2"></i>Mapa Campus
                         </a>
                     </li>
                     <li class="nav-item mb-2">
@@ -497,36 +523,22 @@
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="/reportes/">
-                            <i class="bi bi-file-text me-2"></i>Mis Reportes
-                        </a>
-                    </li>
-                    <li class="nav-item mb-2">
                         <a class="nav-link" href="/reportes/incidentes/">
-                            <i class="bi bi-exclamation-triangle me-2"></i>Reportar Incidente
+                            <i class="bi bi-exclamation-triangle me-2"></i>Mis Incidentes
                         </a>
                     </li>
 
-                <!-- OPCIONES PARA VISITANTE - Muy limitado -->
+                <!-- OPCIONES PARA VISITANTE -->
                 {% elif user.rol == 'VISITANTE' %}
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="/mapas/">
                             <i class="bi bi-map me-2"></i>Mapa del Centro
                         </a>
                     </li>
+
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="#">
-                            <i class="bi bi-shield-check me-2"></i>Normas SST
-                        </a>
-                    </li>
-                    <li class="nav-item mb-2">
-                        <a class="nav-link" href="#">
-                            <i class="bi bi-info-circle me-2"></i>Información
-                        </a>
-                    </li>
-                    <li class="nav-item mb-2">
-                        <a class="nav-link" href="#">
-                            <i class="bi bi-question-circle me-2"></i>Ayuda
+                        <a class="nav-link" href="{% url 'campus_svg' %}">
+                            <i class="bi bi-grid-3x3-gap me-2"></i>Mapa Campus
                         </a>
                     </li>
                 {% endif %}
@@ -570,13 +582,11 @@
         </div>
     </main>
 
-    <!-- Botón de Emergencia Flotante (Solo para roles autorizados) -->
-    {% if user.rol != 'VISITANTE' %}
-    <button class="btn btn-emergencia text-white" id="botonPanico">
+    <!-- Boton de Emergencia Flotante (Todos los roles) -->
+    <button class="btn btn-emergencia text-white" id="botonEmergencia">
         <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
         EMERGENCIA
     </button>
-    {% endif %}
 
     <!-- CSRF Token global para peticiones AJAX -->
     {% csrf_token %}
@@ -603,7 +613,7 @@
             .catch(() => {});
 
         // ============================================================
-        // BOTÓN DE EMERGENCIA (PÁNICO)
+        // BOTON DE EMERGENCIA
         // ============================================================
         // Coordenadas por defecto del Centro Minero SENA
         const CENTRO_MINERO_LAT = 5.7303596;
@@ -632,7 +642,7 @@
             }
         }
 
-        document.getElementById('botonPanico')?.addEventListener('click', async function() {
+        document.getElementById('botonEmergencia')?.addEventListener('click', async function() {
             if (!confirm('¿ESTÁS EN UNA SITUACIÓN DE EMERGENCIA?\n\nSe notificará inmediatamente al personal de seguridad.')) {
                 return;
             }
@@ -652,7 +662,7 @@
                     },
                     body: JSON.stringify({
                         tipo: tipoId,
-                        descripcion: 'Emergencia activada desde boton de panico',
+                        descripcion: 'Emergencia activada desde boton de emergencia',
                         descripcion_ubicacion: 'Ubicacion GPS del usuario',
                         latitud: coords.latitude,
                         longitud: coords.longitude
@@ -670,7 +680,7 @@
                     throw new Error(errData.detail || 'Error al enviar la alerta');
                 }
             } catch (error) {
-                console.error('Error en boton de panico:', error);
+                console.error('Error en boton de emergencia:', error);
                 alert('No se pudo enviar la alerta automaticamente.\n\n' +
                       'Por favor contacta directamente:\n' +
                       '- Emergencias: 123\n' +
@@ -802,6 +812,43 @@
         checkNotifications();
         setInterval(checkNotifications, 30000);
     </script>
+
+    <!-- Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('{% static "sw.js" %}')
+                .catch(err => console.log('SW registro fallido:', err));
+        }
+    </script>
+
+    <!-- Auto-registro por geolocalizacion -->
+    {% if user.rol != 'VISITANTE' %}
+    <script>
+        (function() {
+            const AUTO_REG_INTERVAL = 120000; // 2 minutos
+            function autoRegistroGeo() {
+                if (!navigator.geolocation) return;
+                navigator.geolocation.getCurrentPosition(function(pos) {
+                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+                    fetch('/api/acceso/registros/auto-registro/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({
+                            latitud: pos.coords.latitude,
+                            longitud: pos.coords.longitude
+                        })
+                    }).catch(() => {});
+                }, function() {}, { enableHighAccuracy: true, timeout: 10000 });
+            }
+            autoRegistroGeo();
+            setInterval(autoRegistroGeo, AUTO_REG_INTERVAL);
+        })();
+    </script>
+    {% endif %}
 
     <!-- Design System JavaScript -->
     <script src="{% static 'js/ui-feedback.js' %}"></script>

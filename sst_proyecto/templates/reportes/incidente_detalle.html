@@ -32,58 +32,143 @@
     </div>
 </div>
 
-<!-- Información Principal -->
 <div class="row g-4 mb-4">
-    <!-- Información Básica -->
+    <!-- Columna Principal -->
     <div class="col-lg-8">
-        <div class="card">
+        <!-- Descripcion -->
+        <div class="card mb-3">
             <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-info-circle me-2"></i>
-                    Información del Incidente
-                </h5>
+                <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Descripcion del Incidente</h5>
             </div>
             <div class="card-body">
-                <!-- Descripción -->
-                <div class="mb-4">
-                    <h6 class="text-muted mb-2">Descripción</h6>
-                    <p class="mb-0">{{ incidente.descripcion }}</p>
-                </div>
+                <p class="mb-0">{{ incidente.descripcion }}</p>
+            </div>
+        </div>
 
-                <!-- Ubicación -->
+        <!-- Version del Accidente -->
+        {% if incidente.version_accidente %}
+        <div class="card mb-3">
+            <div class="card-header bg-info bg-opacity-10">
+                <h5 class="mb-0"><i class="bi bi-chat-quote me-2"></i>Version del Accidente</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-0" style="white-space: pre-line;">{{ incidente.version_accidente }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Ubicacion y Lugar -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-geo-alt me-2"></i>Ubicacion del Incidente</h5>
+            </div>
+            <div class="card-body">
+                {% if incidente.area_incidente %}
+                <div class="mb-3">
+                    <small class="text-muted d-block mb-1">Area del Incidente</small>
+                    <span class="badge bg-primary fs-6">{{ incidente.get_area_incidente_display }}</span>
+                </div>
+                {% endif %}
+
                 {% if incidente.ubicacion %}
-                <div class="mb-4">
-                    <h6 class="text-muted mb-2">
-                        <i class="bi bi-geo-alt me-1"></i>
-                        Ubicación
-                    </h6>
+                <div class="mb-3">
+                    <small class="text-muted d-block mb-1">Ubicacion General</small>
                     <p class="mb-0">{{ incidente.ubicacion }}</p>
                 </div>
                 {% endif %}
 
-                <!-- Foto -->
-                {% if incidente.foto %}
-                <div class="mb-4">
-                    <h6 class="text-muted mb-2">
-                        <i class="bi bi-camera me-1"></i>
-                        Evidencia Fotográfica
-                    </h6>
-                    <img src="{{ incidente.foto.url }}" alt="Evidencia" class="img-fluid rounded" style="max-height: 400px;">
+                {% if incidente.lugar_exacto %}
+                <div class="mb-3">
+                    <small class="text-muted d-block mb-1">Lugar Exacto</small>
+                    <p class="mb-0">{{ incidente.lugar_exacto }}</p>
                 </div>
                 {% endif %}
 
-                <!-- Acciones Tomadas -->
-                {% if incidente.acciones_tomadas %}
+                {% if incidente.latitud and incidente.longitud %}
                 <div class="mb-0">
-                    <h6 class="text-muted mb-2">
-                        <i class="bi bi-clipboard-check me-1"></i>
-                        Acciones Tomadas
-                    </h6>
-                    <p class="mb-0">{{ incidente.acciones_tomadas }}</p>
+                    <small class="text-muted d-block mb-1">Ubicacion en el Mapa</small>
+                    <div id="mapaDetalle" style="height: 250px; border-radius: 8px;"></div>
                 </div>
                 {% endif %}
             </div>
         </div>
+
+        <!-- Riesgos Identificados -->
+        {% if incidente.riesgos_identificados %}
+        <div class="card mb-3">
+            <div class="card-header bg-warning bg-opacity-10">
+                <h5 class="mb-0"><i class="bi bi-exclamation-diamond me-2 text-warning"></i>Riesgos Identificados</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-0" style="white-space: pre-line;">{{ incidente.riesgos_identificados }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Persona Afectada -->
+        {% if incidente.persona_afectada %}
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-person-exclamation me-2"></i>Persona Afectada</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <small class="text-muted d-block mb-1">Nombre</small>
+                        <strong>{{ incidente.persona_afectada }}</strong>
+                    </div>
+                    {% if incidente.documento_afectado %}
+                    <div class="col-md-4">
+                        <small class="text-muted d-block mb-1">Documento</small>
+                        <strong>{{ incidente.documento_afectado }}</strong>
+                    </div>
+                    {% endif %}
+                    {% if incidente.rol_afectado %}
+                    <div class="col-md-4">
+                        <small class="text-muted d-block mb-1">Rol</small>
+                        <span class="badge bg-secondary">{{ incidente.rol_afectado }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Testigos -->
+        {% if incidente.testigos %}
+        <div class="card mb-3">
+            <div class="card-header" style="background: rgba(111, 66, 193, 0.1);">
+                <h5 class="mb-0"><i class="bi bi-people me-2" style="color: #6f42c1;"></i>Testigos del Incidente</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-0" style="white-space: pre-line;">{{ incidente.testigos }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Foto de Evidencia -->
+        {% if incidente.foto %}
+        <div class="card mb-3">
+            <div class="card-header bg-danger bg-opacity-10">
+                <h5 class="mb-0"><i class="bi bi-camera me-2 text-danger"></i>Evidencia Fotografica</h5>
+            </div>
+            <div class="card-body text-center">
+                <img src="{{ incidente.foto.url }}" alt="Evidencia" class="img-fluid rounded" style="max-height: 400px;">
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Acciones Tomadas -->
+        {% if incidente.acciones_tomadas %}
+        <div class="card mb-3">
+            <div class="card-header bg-success bg-opacity-10">
+                <h5 class="mb-0"><i class="bi bi-clipboard-check me-2 text-success"></i>Acciones Tomadas</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">{{ incidente.acciones_tomadas }}</p>
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Panel Lateral -->
@@ -110,10 +195,10 @@
                 </div>
 
                 <!-- Gravedad -->
-                <div class="mb-0">
+                <div class="mb-3">
                     <small class="text-muted d-block mb-1">Gravedad</small>
                     {% if incidente.gravedad == 'CRITICA' %}
-                    <span class="badge bg-danger">Crítica</span>
+                    <span class="badge bg-danger">Critica</span>
                     {% elif incidente.gravedad == 'ALTA' %}
                     <span class="badge bg-warning">Alta</span>
                     {% elif incidente.gravedad == 'MEDIA' %}
@@ -122,6 +207,14 @@
                     <span class="badge bg-secondary">Baja</span>
                     {% endif %}
                 </div>
+
+                <!-- Area -->
+                {% if incidente.area_incidente %}
+                <div class="mb-0">
+                    <small class="text-muted d-block mb-1">Area</small>
+                    <span class="badge bg-primary">{{ incidente.get_area_incidente_display }}</span>
+                </div>
+                {% endif %}
             </div>
         </div>
 
@@ -150,7 +243,7 @@
                 <div class="mb-0">
                     <small class="text-muted d-block mb-1">
                         <i class="bi bi-check-circle me-1"></i>
-                        Fecha de Resolución
+                        Fecha de Resolucion
                     </small>
                     <strong>{{ incidente.fecha_resolucion|date:"d/m/Y H:i" }}</strong>
                 </div>
@@ -197,3 +290,37 @@
     </div>
 </div>
 {% endblock %}
+
+{% if incidente.latitud and incidente.longitud %}
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const lat = {{ incidente.latitud }};
+    const lng = {{ incidente.longitud }};
+
+    const mapa = L.map('mapaDetalle').setView([lat, lng], 18);
+
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Esri', maxZoom: 19
+    }).addTo(mapa);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19, opacity: 0.7
+    }).addTo(mapa);
+
+    L.marker([lat, lng], {
+        icon: L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+        })
+    }).addTo(mapa).bindPopup('<strong>Lugar del incidente</strong><br>{{ incidente.ubicacion|default:"" }}').openPopup();
+});
+</script>
+{% endblock %}
+{% endif %}

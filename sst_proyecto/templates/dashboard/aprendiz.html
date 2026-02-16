@@ -44,9 +44,9 @@
         </div>
     </div>
 
-    {% include 'components/metric-card.html' with label="Personas en Centro" value=personas_en_centro|default:0 sublabel=porcentaje_ocupacion|default:0|add:"% ocupacion" sublabel_icon="bi bi-building" sublabel_color="primary" icon="bi-people-fill" icon_color="primary" border_color="primary" %}
+    {% include 'components/metric-card.html' with label="Mi Programa" value=user.programa_formacion|default:"Sin programa" sublabel="Programa de formacion" sublabel_icon="bi bi-mortarboard" sublabel_color="primary" icon="bi-mortarboard-fill" icon_color="primary" border_color="primary" %}
 
-    {% include 'components/metric-card.html' with label="Ingresos Hoy" value=ingresos_hoy|default:0 sublabel="Total del centro" sublabel_icon="bi bi-door-open" sublabel_color="info" icon="bi-door-open" icon_color="info" border_color="info" %}
+    {% include 'components/metric-card.html' with label="Dias Asistidos" value=dias_asistidos_mes|default:0 sublabel="Este mes" sublabel_icon="bi bi-calendar-check" sublabel_color="info" icon="bi-calendar-check-fill" icon_color="info" border_color="info" %}
 </div>
 
 <!-- Acciones Rapidas -->
@@ -71,9 +71,9 @@
                 <i class="bi bi-map text-success fs-5 me-2"></i>
                 <span class="small">Mapa y Evacuacion</span>
             </a>
-            <a href="{% url 'informacion_sst' %}" class="btn btn-light border py-2 px-3 d-flex align-items-center text-decoration-none">
-                <i class="bi bi-shield-check text-info fs-5 me-2"></i>
-                <span class="small">Informacion SST</span>
+            <a href="{% url 'mis_alertas' %}" class="btn btn-light border py-2 px-3 d-flex align-items-center text-decoration-none">
+                <i class="bi bi-bell-fill text-warning fs-5 me-2"></i>
+                <span class="small">Mis Alertas</span>
             </a>
         </div>
     </div>
