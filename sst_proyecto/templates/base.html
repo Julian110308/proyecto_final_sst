@@ -338,7 +338,7 @@
                 <ul class="nav flex-column">
                 <!-- Dashboard - Todos los roles -->
                 <li class="nav-item mb-2">
-                    <a class="nav-link active" href="{% url 'dashboard' %}" aria-current="page">
+                    <a class="nav-link" href="{% url 'dashboard' %}">
                         <i class="bi bi-speedometer2 me-2" aria-hidden="true"></i>Dashboard
                     </a>
                 </li>
@@ -601,6 +601,32 @@
         document.getElementById('sidebarToggle')?.addEventListener('click', function() {
             document.getElementById('sidebar').classList.toggle('show');
         });
+
+        // Marcar enlace activo en el sidebar según la URL actual
+        (function() {
+            const path = window.location.pathname;
+            const links = document.querySelectorAll('#sidebar .nav-link');
+            let matched = null;
+            let matchLen = 0;
+
+            links.forEach(function(link) {
+                const href = link.getAttribute('href');
+                if (!href) return;
+                // Coincidencia exacta para "/" (dashboard)
+                if (href === '/' && path === '/') {
+                    matched = link;
+                    matchLen = 999;
+                } else if (href !== '/' && path.startsWith(href) && href.length > matchLen) {
+                    matched = link;
+                    matchLen = href.length;
+                }
+            });
+
+            if (matched) {
+                matched.classList.add('active');
+                matched.setAttribute('aria-current', 'page');
+            }
+        })();
 
         // ============================================================
         // TIPOS DE EMERGENCIA - Cargar ANTES de usar en el botón

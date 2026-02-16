@@ -225,23 +225,6 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
                 mensaje=f'EMERGENCIA: {emergencia.tipo.nombre} en {emergencia.descripcion_ubicacion}'
             )
 
-    def _notificar_personal_clave(self, emergencia):
-
-        # Notificar a vigilancia y personal SST
-        from usuarios.models import Usuario
-
-        personal = Usuario.objects.filter(
-            Q(rol='VIGILANCIA') | Q(rol='BRIGADA'),
-            activo=True
-        )
-
-        for persona in personal:
-            NotificacionEmergencia.objects.create(
-                emergencia=emergencia,
-                destinatario=persona,
-                tipo_notificacion='APP',
-                mensaje=f'ALERTA: {emergencia.tipo.nombre} reportada por {emergencia.reportada_por.get_full_name()}'
-            )
 
 class BrigadaEmergenciaViewSet(viewsets.ModelViewSet):
 

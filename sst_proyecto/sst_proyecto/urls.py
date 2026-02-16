@@ -162,25 +162,33 @@ def dashboard_view(request):
         ).order_by('ficha', 'last_name', 'first_name')[:20]
         context['aprendices_con_estado'] = aprendices_con_estado
 
-        # Estadísticas de asistencia por ficha (top 5 fichas con más aprendices)
-        from django.db.models import Count
-        fichas_stats = Usuario.objects.filter(
-            rol='APRENDIZ', activo=True, ficha__isnull=False
-        ).exclude(ficha='').values('ficha').annotate(
-            total=Count('id')
-        ).order_by('-total')[:5]
-
-        for ficha in fichas_stats:
-            presentes = RegistroAcceso.objects.filter(
+        # Estadísticas de asistencia por ficha (top 5 fichas con más aprendices) - optimizado
+        # Presentes hoy por ficha en una sola query
+        presentes_por_ficha = dict(
+            RegistroAcceso.objects.filter(
                 tipo='INGRESO',
                 fecha_hora_ingreso__date=hoy,
-                usuario__ficha=ficha['ficha'],
-                usuario__rol='APRENDIZ'
-            ).values('usuario_id').distinct().count()
+                usuario__rol='APRENDIZ',
+                usuario__ficha__isnull=False,
+            ).exclude(usuario__ficha='').values('usuario__ficha').annotate(
+                presentes=Count('usuario_id', distinct=True)
+            ).values_list('usuario__ficha', 'presentes')
+        )
+
+        fichas_stats = list(
+            Usuario.objects.filter(
+                rol='APRENDIZ', activo=True, ficha__isnull=False
+            ).exclude(ficha='').values('ficha').annotate(
+                total=Count('id')
+            ).order_by('-total')[:5]
+        )
+
+        for ficha in fichas_stats:
+            presentes = presentes_por_ficha.get(ficha['ficha'], 0)
             ficha['presentes'] = presentes
             ficha['porcentaje'] = round((presentes / ficha['total']) * 100) if ficha['total'] > 0 else 0
 
-        context['fichas_stats'] = list(fichas_stats)
+        context['fichas_stats'] = fichas_stats
 
         # Incidentes del mes para el instructor
         from reportes.models import Incidente as IncidenteInstructor
@@ -213,22 +221,28 @@ def dashboard_view(request):
         context['mis_accesos'] = mis_accesos
         context['mis_ingresos_mes'] = mis_ingresos_mes
 
-        # Datos para gráfica de asistencia mensual (últimos 30 días)
+        # Datos para gráfica de asistencia mensual (últimos 30 días) - una sola query
+        fecha_inicio_30 = hoy - timedelta(days=29)
+        dias_con_asistencia = set(
+            RegistroAcceso.objects.filter(
+                usuario=usuario,
+                tipo='INGRESO',
+                fecha_hora_ingreso__date__gte=fecha_inicio_30,
+                fecha_hora_ingreso__date__lte=hoy
+            ).annotate(
+                dia=TruncDate('fecha_hora_ingreso')
+            ).values_list('dia', flat=True).distinct()
+        )
         asistencia_mensual = []
         for i in range(29, -1, -1):
             fecha = hoy - timedelta(days=i)
-            asistio = RegistroAcceso.objects.filter(
-                usuario=usuario,
-                tipo='INGRESO',
-                fecha_hora_ingreso__date=fecha
-            ).exists()
             asistencia_mensual.append({
                 'fecha': fecha.strftime('%d'),
                 'fecha_completa': fecha.strftime('%d/%m'),
-                'asistio': 1 if asistio else 0
+                'asistio': 1 if fecha in dias_con_asistencia else 0
             })
         context['asistencia_mensual'] = asistencia_mensual
-        context['dias_asistidos_mes'] = sum(1 for d in asistencia_mensual if d['asistio'])
+        context['dias_asistidos_mes'] = len(dias_con_asistencia)
 
         # Contactos de emergencia
         from emergencias.models import ContactoExterno
@@ -485,14 +499,21 @@ def mis_aprendices_view(request):
 @rol_requerido('ADMINISTRATIVO')
 def gestion_usuarios_view(request):
     """
-    Vista para gestión de usuarios (Administrativo)
+    Vista para gestión de usuarios (Administrativo) con paginación
     """
     from usuarios.models import Usuario
+    from django.core.paginator import Paginator
+
     # Excluir superusuarios para seguridad básica en la vista
     usuarios = Usuario.objects.all().exclude(is_superuser=True).order_by('-fecha_registro')
-    
+
+    # Paginación: 20 usuarios por página
+    paginator = Paginator(usuarios, 20)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
     context = {
-        'usuarios': usuarios,
+        'usuarios': page_obj,
+        'page_obj': page_obj,
         'total_usuarios': usuarios.count()
     }
     return render(request, 'dashboard/administrativo/gestion_usuarios.html', context)

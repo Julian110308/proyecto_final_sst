@@ -12,12 +12,8 @@ from .serializers import (
     RegistroAccesoSerializer,
     ConfiguracionAforoSerializer,
     RegistrarAccesoSerializer,
-    # EscanearQRSerializer  # Deshabilitado - solo registro físico
 )
 from .utils import (
-    # generar_qr_usuario,  # Deshabilitado - solo registro físico
-    # generar_qr_visitante,  # Deshabilitado - solo registro físico
-    # decodificar_qr,  # Deshabilitado - solo registro físico
     verificar_aforo_actual,
     obtener_estadisticas_hoy
 )
@@ -335,103 +331,6 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
             'tiempo_permanencia': str(tiempo_permanencia)
         })
 
-    # DESHABILITADO - Solo registro físico/manual
-    # @action(detail=False, methods=['post'])
-    # def escanear_qr(self, request):
-    #     """
-    #     Procesa el escaneo de un código QR y registra ingreso/egreso automáticamente
-    #     """
-    #     serializer = EscanearQRSerializer(data=request.data)
-    #
-    #     if not serializer.is_valid():
-    #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    #
-    #     codigo_qr = serializer.validated_data.get('codigo_qr')
-    #     latitud = serializer.validated_data.get('latitud')
-    #     longitud = serializer.validated_data.get('longitud')
-    #
-    #     # Decodificar el QR
-    #     tipo, id_persona = decodificar_qr(codigo_qr)
-    #
-    #     if not tipo or not id_persona:
-    #         return Response(
-    #             {'error': 'Código QR inválido'},
-    #             status=status.HTTP_400_BAD_REQUEST
-    #         )
-    #
-    #     if tipo == 'USUARIO':
-    #         try:
-    #             usuario = Usuario.objects.get(id=id_persona)
-    #         except Usuario.DoesNotExist:
-    #             return Response(
-    #                 {'error': 'Usuario no encontrado'},
-    #                 status=status.HTTP_404_NOT_FOUND
-    #             )
-    #
-    #         # Verificar si tiene un ingreso activo
-    #         acceso_abierto = RegistroAcceso.objects.filter(
-    #             usuario=usuario,
-    #             fecha_hora_egreso__isnull=True
-    #         ).first()
-    #
-    #         # Si tiene ingreso activo, registrar salida; si no, registrar ingreso
-    #         if acceso_abierto:
-    #             # Registrar salida
-    #             acceso_abierto.fecha_hora_egreso = timezone.now()
-    #             acceso_abierto.latitud_egreso = latitud
-    #             acceso_abierto.longitud_egreso = longitud
-    #             acceso_abierto.metodo_egreso = 'QR'
-    #             acceso_abierto.save()
-    #
-    #             tiempo_permanencia = acceso_abierto.fecha_hora_egreso - acceso_abierto.fecha_hora_ingreso
-    #
-    #             return Response({
-    #                 'success': True,
-    #                 'tipo': 'EGRESO',
-    #                 'mensaje': f'Salida registrada - {usuario.get_full_name()}',
-    #                 'usuario': {
-    #                     'nombre': usuario.get_full_name(),
-    #                     'documento': usuario.numero_documento,
-    #                     'rol': usuario.get_rol_display()
-    #                 },
-    #                 'tiempo_permanencia': str(tiempo_permanencia)
-    #             })
-    #         else:
-    #             # Verificar aforo
-    #             aforo_info = verificar_aforo_actual()
-    #             if aforo_info['alerta'] == 'CRITICO':
-    #                 return Response({
-    #                     'error': 'Aforo máximo alcanzado',
-    #                     'mensaje': aforo_info['mensaje']
-    #                 }, status=status.HTTP_400_BAD_REQUEST)
-    #
-    #             # Registrar ingreso
-    #             registro = RegistroAcceso.objects.create(
-    #                 usuario=usuario,
-    #                 tipo='INGRESO',
-    #                 latitud_ingreso=latitud,
-    #                 longitud_ingreso=longitud,
-    #                 metodo_ingreso='QR'
-    #             )
-    #
-    #             return Response({
-    #                 'success': True,
-    #                 'tipo': 'INGRESO',
-    #                 'mensaje': f'Ingreso registrado - {usuario.get_full_name()}',
-    #                 'usuario': {
-    #                     'nombre': usuario.get_full_name(),
-    #                     'documento': usuario.numero_documento,
-    #                     'rol': usuario.get_rol_display()
-    #                 },
-    #                 'aforo': aforo_info
-    #             }, status=status.HTTP_201_CREATED)
-    #
-    #     else:
-    #         return Response(
-    #             {'error': 'Tipo de código QR no soportado'},
-    #             status=status.HTTP_400_BAD_REQUEST
-    #         )
-
     @action(detail=False, methods=['get'])
     def estadisticas(self, request):
         """
@@ -446,7 +345,7 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
         Obtiene los registros más recientes
         """
         limite = int(request.query_params.get('limite', 20))
-        registros = RegistroAcceso.objects.all().order_by('-fecha_hora_ingreso')[:limite]
+        registros = RegistroAcceso.objects.select_related('usuario').all().order_by('-fecha_hora_ingreso')[:limite]
 
         data = []
         for registro in registros:
