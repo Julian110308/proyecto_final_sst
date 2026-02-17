@@ -187,18 +187,111 @@
             border-radius: var(--radius-md);
         }
         
+        /* Dropdown de notificaciones responsivo */
+        .notif-dropdown {
+            min-width: 340px;
+            max-height: 420px;
+            overflow-y: auto;
+        }
+
+        /* Dropdown de usuario responsivo */
+        .user-dropdown-menu {
+            min-width: 240px;
+        }
+
+        /* Backdrop del sidebar */
+        .sidebar-backdrop {
+            display: none;
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1019;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .sidebar-backdrop.show {
+            display: block;
+            opacity: 1;
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
-                display: none; /* Ocultar en móvil por defecto */
+                display: none;
             }
             .sidebar.show {
                 transform: translateX(0);
-                display: flex; /* Mostrar como flex al activar */
+                display: flex;
             }
             .main-content {
                 margin-left: 0;
                 padding: 1rem;
+            }
+            .navbar-main {
+                padding: 0 0.75rem;
+            }
+            /* Botón emergencia compacto en móvil */
+            .btn-emergencia {
+                padding: 0.75rem;
+                border-radius: 50%;
+                width: 56px;
+                height: 56px;
+                justify-content: center;
+                bottom: 1.5rem;
+                right: 1rem;
+            }
+            .btn-emergencia .emergencia-text {
+                display: none;
+            }
+        }
+
+        @media (max-width: 576px) {
+            /* Dropdowns adaptados a móvil */
+            .notif-dropdown {
+                min-width: auto;
+                width: calc(100vw - 2rem);
+                max-width: 340px;
+                position: fixed !important;
+                top: var(--header-height) !important;
+                right: 0.5rem !important;
+                left: auto !important;
+                transform: none !important;
+            }
+            .user-dropdown-menu {
+                min-width: auto;
+                width: calc(100vw - 2rem);
+                max-width: 280px;
+                position: fixed !important;
+                top: var(--header-height) !important;
+                right: 0.5rem !important;
+                left: auto !important;
+                transform: none !important;
+            }
+            .main-content {
+                padding: 0.75rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navbar-brand {
+                flex-shrink: 1;
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                margin-right: 0.5rem !important;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .navbar-brand img {
+                height: 30px;
+            }
+            .navbar-brand {
+                font-size: 0.85rem;
             }
         }
         
@@ -239,14 +332,15 @@
 <body>
     <!-- Navbar -->
     <nav class="navbar navbar-main navbar-expand-lg" role="navigation" aria-label="Navegación principal">
-        <div class="container-fluid">
+        <div class="container-fluid flex-nowrap">
             <button class="btn btn-link text-dark me-3 d-md-none" id="sidebarToggle" aria-label="Abrir menú lateral" aria-controls="sidebar">
                 <i class="bi bi-list fs-4" aria-hidden="true"></i>
             </button>
 
             <a class="navbar-brand text-dark fw-bold" href="{% url 'dashboard' %}" aria-label="Inicio - Sistema SST Centro Minero">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/8/83/Sena_Colombia_logo.svg" alt="Logo SENA" height="45" class="me-2">
-                SENA SST - Centro Minero
+                <span class="d-none d-sm-inline">SENA SST - Centro Minero</span>
+                <span class="d-inline d-sm-none">SST</span>
             </a>
             
             <!-- Notificaciones -->
@@ -257,7 +351,7 @@
                         <i class="bi bi-bell fs-5 text-dark"></i>
                         <span class="badge bg-danger rounded-pill position-absolute d-none" id="notificationCount" style="font-size: 0.6rem; top: 2px; right: -2px;">0</span>
                     </a>
-                    <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2" style="min-width: 340px; max-height: 420px; overflow-y: auto;" id="notificationDropdown">
+                    <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2 notif-dropdown" id="notificationDropdown">
                         <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom mb-1">
                             <h6 class="mb-0 fw-bold"><i class="bi bi-bell me-1"></i> Notificaciones</h6>
                             <span class="badge bg-primary rounded-pill" id="notifHeaderCount">0</span>
@@ -274,23 +368,23 @@
             {% endif %}
 
             <!-- Usuario -->
-            <div class="navbar-nav ms-3">
+            <div class="navbar-nav {% if user.rol == 'VISITANTE' %}ms-auto{% else %}ms-2{% endif %}">
                 <div class="dropdown">
                     <a href="#" class="d-flex align-items-center text-dark text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
                         {% if user.foto %}
-                            <img src="{{ user.foto.url }}" alt="Avatar" width="40" height="40" class="rounded-circle border border-2 border-white me-2" style="object-fit: cover;">
+                            <img src="{{ user.foto.url }}" alt="Avatar" width="36" height="36" class="rounded-circle border border-2 border-white" style="object-fit: cover;">
                         {% else %}
-                            <div class="rounded-circle bg-light text-success d-flex align-items-center justify-content-center me-2 border" style="width: 40px; height: 40px;">
-                                <span class="fw-bold fs-5">{{ user.username|slice:":1"|upper }}</span>
+                            <div class="rounded-circle bg-light text-success d-flex align-items-center justify-content-center border" style="width: 36px; height: 36px;">
+                                <span class="fw-bold">{{ user.username|slice:":1"|upper }}</span>
                             </div>
                         {% endif %}
-                        <div class="d-none d-sm-block text-start lh-1 me-1">
+                        <div class="d-none d-sm-block text-start lh-1 ms-2 me-1">
                             <span class="d-block fw-semibold" style="font-size: 0.9rem;">{{ user.first_name|default:user.username }}</span>
                             <span class="d-block opacity-75" style="font-size: 0.75rem;">{{ user.get_rol_display }}</span>
                         </div>
                     </a>
-                    
-                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 mt-3 p-2 user-dropdown-menu" aria-labelledby="dropdownUser1" style="min-width: 240px;">
+
+                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 mt-3 p-2 user-dropdown-menu" aria-labelledby="dropdownUser1">
                         <!-- Header móvil -->
                         <li class="d-block d-sm-none px-3 py-2 border-bottom mb-2">
                             <span class="d-block fw-bold text-dark">{{ user.get_full_name|default:user.username }}</span>
@@ -330,6 +424,9 @@
             </div>
         </div>
     </nav>
+
+    <!-- Backdrop del sidebar (móvil) -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
     <!-- Sidebar - Menú dinámico según el rol -->
     <nav class="sidebar" id="sidebar" role="navigation" aria-label="Menú lateral">
@@ -584,8 +681,8 @@
 
     <!-- Boton de Emergencia Flotante (Todos los roles) -->
     <button class="btn btn-emergencia text-white" id="botonEmergencia">
-        <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
-        EMERGENCIA
+        <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+        <span class="emergencia-text ms-2">EMERGENCIA</span>
     </button>
 
     <!-- CSRF Token global para peticiones AJAX -->
@@ -597,9 +694,30 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <script>
-        // Toggle sidebar
-        document.getElementById('sidebarToggle')?.addEventListener('click', function() {
-            document.getElementById('sidebar').classList.toggle('show');
+        // Toggle sidebar con backdrop
+        const sidebar = document.getElementById('sidebar');
+        const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('show');
+            sidebarBackdrop.classList.toggle('show');
+        }
+
+        function closeSidebar() {
+            sidebar.classList.remove('show');
+            sidebarBackdrop.classList.remove('show');
+        }
+
+        document.getElementById('sidebarToggle')?.addEventListener('click', toggleSidebar);
+        sidebarBackdrop?.addEventListener('click', closeSidebar);
+
+        // Cerrar sidebar al hacer click en un enlace (móvil)
+        document.querySelectorAll('#sidebar .nav-link').forEach(function(link) {
+            link.addEventListener('click', function() {
+                if (window.innerWidth <= 768) {
+                    closeSidebar();
+                }
+            });
         });
 
         // Marcar enlace activo en el sidebar según la URL actual
@@ -713,7 +831,7 @@
                       '- Vigilancia SENA: Ext. 100');
             } finally {
                 this.disabled = false;
-                this.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>EMERGENCIA';
+                this.innerHTML = '<i class="bi bi-exclamation-triangle-fill fs-5"></i><span class="emergencia-text ms-2">EMERGENCIA</span>';
             }
         });
 

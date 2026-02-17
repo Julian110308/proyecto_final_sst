@@ -432,19 +432,34 @@ html {
     border-width: 0;
 }
 
-/* === RESPONSIVE BREAKPOINTS === */
-/* Móvil pequeño */
-@media (max-width: 480px) {
-    .main-content {
-        padding: var(--space-4);
-    }
+/* === UTILIDADES RESPONSIVAS === */
 
-    .card-body {
-        padding: var(--space-4);
+/* Header responsivo: columna en móvil, fila en desktop */
+.page-header-responsive {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+/* Ocultar hover effects en dispositivos táctiles */
+@media (hover: none) and (pointer: coarse) {
+    .card:hover {
+        transform: none;
+        box-shadow: var(--shadow-sm);
+    }
+    .card-interactive:hover {
+        transform: none;
+        box-shadow: var(--shadow-md);
+    }
+    .btn-primary:hover {
+        transform: none;
     }
 }
 
-/* Tablet */
+/* === RESPONSIVE BREAKPOINTS === */
+
+/* Tablet y menor */
 @media (max-width: 768px) {
     :root {
         --font-size-4xl: 1.875rem;
@@ -468,6 +483,104 @@ html {
 
     .card-body {
         padding: var(--space-4);
+    }
+
+    /* Headers de página: apilar en columna */
+    .page-header-responsive {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .page-header-responsive .btn-group,
+    .page-header-responsive .d-flex {
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .page-header-responsive .btn-group .btn {
+        flex: 1;
+    }
+
+    /* Tablas: scroll horizontal */
+    .table-responsive-custom {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Métricas más compactas */
+    .metric-value {
+        font-size: 1.5rem;
+    }
+
+    .metric-icon {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+/* Móvil (576px) */
+@media (max-width: 576px) {
+    .main-content {
+        padding: 1rem 0.75rem;
+    }
+
+    .card-body {
+        padding: var(--space-3);
+    }
+
+    .card-header,
+    .card-header-modern {
+        padding: var(--space-3) var(--space-4);
+    }
+
+    /* Botones: full width en móvil pequeño */
+    .page-header-responsive .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Métricas aún más compactas */
+    .metric-value {
+        font-size: 1.25rem;
+    }
+
+    .metric-label {
+        font-size: 0.75rem;
+    }
+
+    .metric-icon {
+        width: 36px;
+        height: 36px;
+    }
+
+    /* Breadcrumb compacto */
+    .breadcrumb {
+        font-size: var(--font-size-sm);
+    }
+
+    h1 { font-size: var(--font-size-2xl); }
+    h2 { font-size: var(--font-size-xl); }
+    h3 { font-size: var(--font-size-lg); }
+}
+
+/* Móvil extra pequeño */
+@media (max-width: 380px) {
+    .main-content {
+        padding: 0.75rem 0.5rem;
+    }
+
+    .card-body {
+        padding: var(--space-2) var(--space-3);
+    }
+
+    .btn {
+        padding: var(--space-2) var(--space-3);
+        font-size: var(--font-size-sm);
+    }
+
+    .btn-sm {
+        padding: var(--space-1) var(--space-2);
+        font-size: var(--font-size-xs);
     }
 }
 

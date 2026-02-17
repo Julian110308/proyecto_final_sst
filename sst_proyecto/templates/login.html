@@ -1272,9 +1272,9 @@
                 button.setAttribute('aria-label', 'Mostrar contraseña');
             }
             
-            button.style.transform = 'scale(1.1)';
+            button.style.transform = 'translateY(-50%) scale(1.1)';
             setTimeout(() => {
-                button.style.transform = 'scale(1)';
+                button.style.transform = 'translateY(-50%) scale(1)';
             }, 200);
         }
 
@@ -1707,12 +1707,15 @@
 
         // Efecto de animación en inputs
         document.querySelectorAll('input, select').forEach(input => {
+            const hasToggle = input.parentElement && input.parentElement.querySelector('.toggle-password');
             input.addEventListener('focus', function() {
+                if (hasToggle) return;
                 this.parentElement.style.transform = 'translateY(-2px)';
                 this.parentElement.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.1)';
             });
-            
+
             input.addEventListener('blur', function() {
+                if (hasToggle) return;
                 this.parentElement.style.transform = 'translateY(0)';
                 this.parentElement.style.boxShadow = 'none';
             });

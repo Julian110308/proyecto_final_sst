@@ -21,6 +21,19 @@
     .leaflet-popup-content {
         font-family: var(--font-family-base);
     }
+
+    /* Leyenda colapsable en móvil */
+    @media (max-width: 768px) {
+        .leyenda-mapa {
+            position: static !important;
+            margin-top: 0.5rem;
+            max-width: 100% !important;
+            display: none;
+        }
+        .leyenda-mapa.show {
+            display: block;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -31,25 +44,25 @@
 
 {% block content %}
 <!-- Header del Mapa -->
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
     <div>
-        <h1 class="h3 fw-bold text-dark mb-1"><i class="bi bi-map me-2"></i>Mapa Interactivo - Centro Minero</h1>
-        <p class="text-muted">Visualización en tiempo real con geolocalización y datos dinámicos</p>
+        <h1 class="h3 fw-bold text-dark mb-1"><i class="bi bi-map me-2"></i>Mapa Interactivo</h1>
+        <p class="text-muted mb-0 d-none d-sm-block">Visualización en tiempo real con geolocalización y datos dinámicos</p>
     </div>
-    <div class="btn-group" role="group">
+    <div class="btn-group flex-shrink-0" role="group">
         <input type="radio" class="btn-check" name="mapaVista" id="vistaNormal" autocomplete="off" checked>
-        <label class="btn btn-outline-primary-custom" for="vistaNormal">
-            <i class="bi bi-map me-1"></i>Normal
+        <label class="btn btn-outline-primary-custom btn-sm" for="vistaNormal">
+            <i class="bi bi-map me-1"></i><span class="d-none d-sm-inline">Normal</span>
         </label>
-        
+
         <input type="radio" class="btn-check" name="mapaVista" id="vistaEmergencia" autocomplete="off">
-        <label class="btn btn-outline-warning" for="vistaEmergencia">
-            <i class="bi bi-exclamation-triangle me-1"></i>Emergencia
+        <label class="btn btn-outline-warning btn-sm" for="vistaEmergencia">
+            <i class="bi bi-exclamation-triangle me-1"></i><span class="d-none d-sm-inline">Emergencia</span>
         </label>
-        
+
         <input type="radio" class="btn-check" name="mapaVista" id="vistaEvacuacion" autocomplete="off">
-        <label class="btn btn-outline-danger" for="vistaEvacuacion">
-            <i class="bi bi-arrow-right-circle me-1"></i>Evacuación
+        <label class="btn btn-outline-danger btn-sm" for="vistaEvacuacion">
+            <i class="bi bi-arrow-right-circle me-1"></i><span class="d-none d-sm-inline">Evacuación</span>
         </label>
     </div>
 </div>
@@ -88,8 +101,12 @@
                     </div>
                 </div>
                 <!-- Mapa con leyenda -->
-                <div id="mapaPrincipal" style="height: 500px; border-radius: 0 0 12px 12px; position: relative;"></div>
+                <div id="mapaPrincipal" style="height: 55vh; min-height: 300px; max-height: 600px; border-radius: 0 0 12px 12px; position: relative;"></div>
                 
+                <!-- Botón toggle leyenda (solo móvil) -->
+                <button class="btn btn-sm btn-light border d-lg-none mt-2 ms-2" onclick="document.querySelector('.leyenda-mapa').classList.toggle('show')">
+                    <i class="bi bi-info-circle me-1"></i>Leyenda
+                </button>
                 <!-- Leyenda del Mapa -->
                 <div class="leyenda-mapa" style="position: absolute; bottom: 20px; right: 20px; z-index: 1000; background: white; padding: 12px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); max-width: 180px;">
                     <strong style="display: block; margin-bottom: 10px; font-size: 13px; border-bottom: 2px solid #39A900; padding-bottom: 5px;">
