@@ -149,10 +149,14 @@ def verificar_aforo_actual():
     Retorna: (personas_dentro, aforo_maximo, porcentaje, alerta)
     """
     from .models import RegistroAcceso, ConfiguracionAforo
+    from django.utils import timezone
 
-    # Contar personas actualmente en el centro
+    hoy = timezone.now().date()
+
+    # Contar personas actualmente en el centro (solo registros de hoy)
     personas_dentro = RegistroAcceso.objects.filter(
-        fecha_hora_egreso__isnull=True
+        fecha_hora_egreso__isnull=True,
+        fecha_hora_ingreso__date=hoy
     ).count()
 
     # Obtener configuración de aforo
@@ -208,9 +212,10 @@ def obtener_estadisticas_hoy():
         fecha_hora_ingreso__range=(inicio_dia, fin_dia)
     ).count()
 
-    # Personas actualmente en el centro
+    # Personas actualmente en el centro (solo registros de hoy)
     personas_dentro = RegistroAcceso.objects.filter(
-        fecha_hora_egreso__isnull=True
+        fecha_hora_egreso__isnull=True,
+        fecha_hora_ingreso__date=hoy
     ).count()
 
     # Visitantes activos

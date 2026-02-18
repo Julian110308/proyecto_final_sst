@@ -1,9 +1,8 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 
-# Create your views here.
 from rest_framework import viewsets
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import (
@@ -11,6 +10,8 @@ from .models import (
     PuntoEncuentro,
     EquipamientoSeguridad,
     RutaEvacuacion,
+    EstadoEdificio,
+    HistorialEstadoEdificio,
 )
 from .serializers import (
     EdificioBloqueSerializer,
@@ -19,9 +20,92 @@ from .serializers import (
     RutaEvacuacionSerializer,
 )
 from .services import encontrar_mas_cercano
-from usuarios.permissions import NoEsVisitante, EsAdministrativo, excluir_visitantes
-# Servicio centralizado de notificaciones
+from usuarios.permissions import NoEsVisitante, EsAdministrativo, EsBrigadaOAdministrativo, excluir_visitantes
 from usuarios.services import NotificacionService
+
+
+@login_required
+def campus_svg(request):
+    """Mapa SVG interactivo del campus con estados dinamicos y pathfinding"""
+    edificios = EdificioBloque.objects.filter(activo=True).select_related('estado_actual')
+    puntos = PuntoEncuentro.objects.filter(activo=True)
+
+    context = {
+        'edificios': edificios,
+        'puntos_encuentro': puntos,
+        'es_brigada': request.user.rol in ('BRIGADA', 'ADMINISTRATIVO'),
+    }
+    return render(request, 'mapas/campus_svg.html', context)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def estados_edificios(request):
+    """Retorna el estado actual de todos los edificios para el mapa SVG"""
+    edificios = EdificioBloque.objects.filter(activo=True).select_related('estado_actual')
+    data = []
+    for e in edificios:
+        estado = getattr(e, 'estado_actual', None)
+        try:
+            estado_obj = e.estado_actual
+        except EstadoEdificio.DoesNotExist:
+            estado_obj = None
+
+        data.append({
+            'id': e.id,
+            'nombre': e.nombre,
+            'tipo': e.tipo,
+            'svg_x': e.svg_x,
+            'svg_y': e.svg_y,
+            'svg_ancho': e.svg_ancho,
+            'svg_alto': e.svg_alto,
+            'estado': estado_obj.estado if estado_obj else 'NORMAL',
+            'color': estado_obj.color if estado_obj else '#4CAF50',
+            'motivo': estado_obj.motivo if estado_obj else '',
+            'actualizado_por': str(estado_obj.actualizado_por) if estado_obj and estado_obj.actualizado_por else '',
+            'fecha_actualizacion': estado_obj.fecha_actualizacion.isoformat() if estado_obj else None,
+        })
+    return Response(data)
+
+
+@api_view(['POST'])
+@permission_classes([EsBrigadaOAdministrativo])
+def cambiar_estado_edificio(request, pk):
+    """Cambiar estado operativo de un edificio - Solo BRIGADA y ADMINISTRATIVO"""
+    edificio = get_object_or_404(EdificioBloque, pk=pk)
+    nuevo_estado = request.data.get('estado')
+    motivo = request.data.get('motivo', '')
+
+    estados_validos = dict(EstadoEdificio.ESTADOS)
+    if nuevo_estado not in estados_validos:
+        return Response({'error': 'Estado no valido'}, status=400)
+
+    estado_obj, created = EstadoEdificio.objects.get_or_create(
+        edificio=edificio,
+        defaults={'estado': 'NORMAL'}
+    )
+    estado_anterior = estado_obj.estado
+
+    HistorialEstadoEdificio.objects.create(
+        edificio=edificio,
+        estado_anterior=estado_anterior,
+        estado_nuevo=nuevo_estado,
+        motivo=motivo,
+        cambiado_por=request.user,
+    )
+
+    estado_obj.estado = nuevo_estado
+    estado_obj.motivo = motivo
+    estado_obj.actualizado_por = request.user
+    estado_obj.save()
+
+    return Response({
+        'success': True,
+        'estado': nuevo_estado,
+        'color': estado_obj.color,
+        'edificio': edificio.nombre,
+    })
+
 
 @login_required
 @excluir_visitantes

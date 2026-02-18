@@ -20,7 +20,7 @@
 <!-- Tarjetas de Acceso Rápido -->
 <div class="row g-4">
     <!-- Incidentes -->
-    <div class="col-md-6">
+    <div class="{% if user.rol == 'APRENDIZ' %}col-md-12{% else %}col-md-6{% endif %}">
         <div class="card card-modern h-100">
             <div class="card-body text-center p-5">
                 <div class="mb-4">
@@ -44,6 +44,7 @@
         </div>
     </div>
 
+    {% if user.rol != 'APRENDIZ' %}
     <!-- Exportar Reportes -->
     <div class="col-md-6">
         <div class="card card-modern h-100">
@@ -62,8 +63,10 @@
             </div>
         </div>
     </div>
+    {% endif %}
 </div>
 
+{% if user.rol != 'APRENDIZ' %}
 <!-- Tipos de Reportes Disponibles -->
 <div class="card card-modern mt-4">
     <div class="card-header bg-light">
@@ -263,8 +266,10 @@
         <li><strong>JSON:</strong> Formato de datos estructurado para integración con sistemas</li>
     </ul>
 </div>
+{% endif %}
 {% endblock %}
 
+{% if user.rol != 'APRENDIZ' %}
 {% block extra_js %}
 <script>
     // Establecer fechas por defecto (último mes)
@@ -439,3 +444,4 @@
     }
 </script>
 {% endblock %}
+{% endif %}

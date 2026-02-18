@@ -9,8 +9,31 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import views as auth_views
 from django.views.generic import RedirectView
+from django.db import models
 from usuarios.permissions import rol_requerido, excluir_visitantes
 from usuarios.login_view import custom_login_view
+
+
+# Vistas para servir SW y manifest desde la raíz (requerido para PWA)
+import os
+from django.http import HttpResponse
+
+def _get_static_dir():
+    if hasattr(settings, 'STATICFILES_DIRS') and settings.STATICFILES_DIRS:
+        return settings.STATICFILES_DIRS[0]
+    return settings.STATIC_ROOT
+
+def sw_view(request):
+    filepath = os.path.join(_get_static_dir(), 'sw.js')
+    with open(filepath, 'r', encoding='utf-8') as f:
+        response = HttpResponse(f.read(), content_type='application/javascript')
+        response['Service-Worker-Allowed'] = '/'
+        return response
+
+def manifest_view(request):
+    filepath = os.path.join(_get_static_dir(), 'manifest.json')
+    with open(filepath, 'r', encoding='utf-8') as f:
+        return HttpResponse(f.read(), content_type='application/manifest+json')
 
 # Vista principal de dashboard que redirige según el rol
 @login_required
@@ -75,23 +98,32 @@ def dashboard_view(request):
     try:
         config_aforo = ConfiguracionAforo.objects.filter(activo=True).first()
         aforo_maximo = config_aforo.aforo_maximo if config_aforo else 2000
-    except:
+    except Exception:
         aforo_maximo = 2000
 
     # Porcentaje de ocupación
     porcentaje_ocupacion = round((personas_en_centro / aforo_maximo) * 100, 1) if aforo_maximo > 0 else 0
 
-    # Últimos 7 días de registros (para gráficas)
+    # Últimos 7 días de registros (para gráficas) - una sola query agrupada
+    from django.db.models.functions import TruncDate
+    fecha_inicio_7 = hoy - timedelta(days=6)
+    registros_por_dia = dict(
+        RegistroAcceso.objects.filter(
+            tipo='INGRESO',
+            fecha_hora_ingreso__date__gte=fecha_inicio_7,
+            fecha_hora_ingreso__date__lte=hoy
+        ).annotate(
+            dia=TruncDate('fecha_hora_ingreso')
+        ).values('dia').annotate(
+            cantidad=Count('id')
+        ).values_list('dia', 'cantidad')
+    )
     ultimos_7_dias = []
     for i in range(6, -1, -1):
         fecha = hoy - timedelta(days=i)
-        cantidad = RegistroAcceso.objects.filter(
-            tipo='INGRESO',
-            fecha_hora_ingreso__date=fecha
-        ).count()
         ultimos_7_dias.append({
             'fecha': fecha.strftime('%d/%m'),
-            'cantidad': cantidad
+            'cantidad': registros_por_dia.get(fecha, 0)
         })
 
     # Últimos 5 accesos
@@ -152,25 +184,39 @@ def dashboard_view(request):
         ).order_by('ficha', 'last_name', 'first_name')[:20]
         context['aprendices_con_estado'] = aprendices_con_estado
 
-        # Estadísticas de asistencia por ficha (top 5 fichas con más aprendices)
-        from django.db.models import Count
-        fichas_stats = Usuario.objects.filter(
-            rol='APRENDIZ', activo=True, ficha__isnull=False
-        ).exclude(ficha='').values('ficha').annotate(
-            total=Count('id')
-        ).order_by('-total')[:5]
-
-        for ficha in fichas_stats:
-            presentes = RegistroAcceso.objects.filter(
+        # Estadísticas de asistencia por ficha (top 5 fichas con más aprendices) - optimizado
+        # Presentes hoy por ficha en una sola query
+        presentes_por_ficha = dict(
+            RegistroAcceso.objects.filter(
                 tipo='INGRESO',
                 fecha_hora_ingreso__date=hoy,
-                usuario__ficha=ficha['ficha'],
-                usuario__rol='APRENDIZ'
-            ).values('usuario_id').distinct().count()
+                usuario__rol='APRENDIZ',
+                usuario__ficha__isnull=False,
+            ).exclude(usuario__ficha='').values('usuario__ficha').annotate(
+                presentes=Count('usuario_id', distinct=True)
+            ).values_list('usuario__ficha', 'presentes')
+        )
+
+        fichas_stats = list(
+            Usuario.objects.filter(
+                rol='APRENDIZ', activo=True, ficha__isnull=False
+            ).exclude(ficha='').values('ficha').annotate(
+                total=Count('id')
+            ).order_by('-total')[:5]
+        )
+
+        for ficha in fichas_stats:
+            presentes = presentes_por_ficha.get(ficha['ficha'], 0)
             ficha['presentes'] = presentes
             ficha['porcentaje'] = round((presentes / ficha['total']) * 100) if ficha['total'] > 0 else 0
 
-        context['fichas_stats'] = list(fichas_stats)
+        context['fichas_stats'] = fichas_stats
+
+        # Incidentes del mes para el instructor
+        from reportes.models import Incidente as IncidenteInstructor
+        context['incidentes_mes'] = IncidenteInstructor.objects.filter(
+            fecha_reporte__date__gte=inicio_mes
+        ).count()
 
     # Datos adicionales para BRIGADA
     if usuario.rol == 'BRIGADA':
@@ -197,22 +243,28 @@ def dashboard_view(request):
         context['mis_accesos'] = mis_accesos
         context['mis_ingresos_mes'] = mis_ingresos_mes
 
-        # Datos para gráfica de asistencia mensual (últimos 30 días)
+        # Datos para gráfica de asistencia mensual (últimos 30 días) - una sola query
+        fecha_inicio_30 = hoy - timedelta(days=29)
+        dias_con_asistencia = set(
+            RegistroAcceso.objects.filter(
+                usuario=usuario,
+                tipo='INGRESO',
+                fecha_hora_ingreso__date__gte=fecha_inicio_30,
+                fecha_hora_ingreso__date__lte=hoy
+            ).annotate(
+                dia=TruncDate('fecha_hora_ingreso')
+            ).values_list('dia', flat=True).distinct()
+        )
         asistencia_mensual = []
         for i in range(29, -1, -1):
             fecha = hoy - timedelta(days=i)
-            asistio = RegistroAcceso.objects.filter(
-                usuario=usuario,
-                tipo='INGRESO',
-                fecha_hora_ingreso__date=fecha
-            ).exists()
             asistencia_mensual.append({
                 'fecha': fecha.strftime('%d'),
                 'fecha_completa': fecha.strftime('%d/%m'),
-                'asistio': 1 if asistio else 0
+                'asistio': 1 if fecha in dias_con_asistencia else 0
             })
         context['asistencia_mensual'] = asistencia_mensual
-        context['dias_asistidos_mes'] = sum(1 for d in asistencia_mensual if d['asistio'])
+        context['dias_asistidos_mes'] = len(dias_con_asistencia)
 
         # Contactos de emergencia
         from emergencias.models import ContactoExterno
@@ -220,6 +272,71 @@ def dashboard_view(request):
         context['contactos_emergencia'] = contactos_emergencia
 
     return render(request, template, context)
+
+# ==============================================
+# VISTA DE PERFIL (Todos los roles)
+# ==============================================
+
+@login_required
+def mi_perfil_view(request):
+    """
+    Vista de perfil del usuario autenticado.
+    Permite ver y editar datos personales.
+    """
+    from django.contrib import messages as django_messages
+
+    usuario = request.user
+
+    if request.method == 'POST':
+        # Campos editables por el usuario
+        usuario.first_name = request.POST.get('first_name', usuario.first_name).strip()
+        usuario.last_name = request.POST.get('last_name', usuario.last_name).strip()
+        usuario.email = request.POST.get('email', usuario.email).strip()
+        usuario.telefono = request.POST.get('telefono', usuario.telefono).strip()
+        usuario.telefono_emergencia = request.POST.get('telefono_emergencia', usuario.telefono_emergencia).strip()
+        usuario.contacto_emergencia = request.POST.get('contacto_emergencia', usuario.contacto_emergencia).strip()
+
+        # Foto de perfil
+        if 'foto' in request.FILES:
+            foto = request.FILES['foto']
+            if foto.size > 5 * 1024 * 1024:
+                django_messages.error(request, 'La foto no puede superar 5 MB.')
+                return redirect('mi_perfil')
+            if not foto.content_type.startswith('image/'):
+                django_messages.error(request, 'El archivo debe ser una imagen.')
+                return redirect('mi_perfil')
+            usuario.foto = foto
+
+        usuario.save()
+        django_messages.success(request, 'Perfil actualizado correctamente.')
+        return redirect('mi_perfil')
+
+    # Contexto con información adicional según el rol
+    from control_acceso.models import RegistroAcceso
+    from django.utils import timezone
+
+    hoy = timezone.now().date()
+    inicio_mes = hoy.replace(day=1)
+
+    total_accesos_mes = RegistroAcceso.objects.filter(
+        usuario=usuario,
+        tipo='INGRESO',
+        fecha_hora_ingreso__date__gte=inicio_mes
+    ).count()
+
+    ultimo_acceso = RegistroAcceso.objects.filter(
+        usuario=usuario,
+        tipo='INGRESO'
+    ).order_by('-fecha_hora_ingreso').first()
+
+    context = {
+        'usuario': usuario,
+        'total_accesos_mes': total_accesos_mes,
+        'ultimo_acceso': ultimo_acceso,
+    }
+
+    return render(request, 'perfil.html', context)
+
 
 # ==============================================
 # VISTAS ESPECÍFICAS PARA APRENDIZ
@@ -311,11 +428,14 @@ def mis_aprendices_view(request):
     from control_acceso.models import RegistroAcceso
     from django.utils import timezone
 
-    PROGRAMAS = [
-        'Analisis y Desarrollo de Software',
-        'Maquinaria Pesada',
-        'Seguridad y Salud en el Trabajo',
-    ]
+    # Obtener programas dinámicamente de la BD
+    PROGRAMAS = list(
+        Usuario.objects.filter(
+            rol='APRENDIZ', activo=True, programa_formacion__isnull=False
+        ).exclude(programa_formacion='').values_list(
+            'programa_formacion', flat=True
+        ).distinct().order_by('programa_formacion')
+    )
 
     programa_seleccionado = request.GET.get('programa', '')
     ficha_seleccionada = request.GET.get('ficha', '')
@@ -330,43 +450,54 @@ def mis_aprendices_view(request):
         ).values_list('ficha', flat=True).distinct().order_by('ficha')
 
     if ficha_seleccionada:
-        aprendices = Usuario.objects.filter(
-            rol='APRENDIZ', activo=True, ficha=ficha_seleccionada, programa_formacion=programa_seleccionado
-        ).order_by('last_name', 'first_name')
-        total_aprendices = aprendices.count()
+        from django.db.models import OuterRef, Subquery, Exists
 
-        # Obtener fecha de hoy
         hoy = timezone.now().date()
 
-        # Para cada aprendiz, verificar si tiene registro de ingreso hoy
+        # Subquery para obtener el último registro de hoy por aprendiz
+        ultimo_registro_hoy = RegistroAcceso.objects.filter(
+            usuario=OuterRef('pk'),
+            fecha_hora_ingreso__date=hoy
+        ).order_by('-fecha_hora_ingreso')
+
+        aprendices = Usuario.objects.filter(
+            rol='APRENDIZ', activo=True, ficha=ficha_seleccionada, programa_formacion=programa_seleccionado
+        ).annotate(
+            tiene_registro_hoy=Exists(
+                RegistroAcceso.objects.filter(
+                    usuario=OuterRef('pk'),
+                    fecha_hora_ingreso__date=hoy
+                )
+            ),
+            _en_centro=Exists(
+                RegistroAcceso.objects.filter(
+                    usuario=OuterRef('pk'),
+                    fecha_hora_ingreso__date=hoy,
+                    fecha_hora_egreso__isnull=True
+                )
+            ),
+            _hora_ingreso=Subquery(ultimo_registro_hoy.values('fecha_hora_ingreso')[:1]),
+        ).order_by('last_name', 'first_name')
+
+        total_aprendices = aprendices.count()
+
         for aprendiz in aprendices:
-            # Verificar si tiene ingreso hoy (sin egreso = está presente)
-            registro_hoy = RegistroAcceso.objects.filter(
-                usuario=aprendiz,
-                fecha_hora_ingreso__date=hoy
-            ).order_by('-fecha_hora_ingreso').first()
+            # Para el conteo de asistencia: tiene registro hoy = asistio
+            asistio = aprendiz.tiene_registro_hoy
+            hora_ingreso = aprendiz._hora_ingreso
 
-            esta_presente = False
-            hora_ingreso = None
-
-            if registro_hoy:
-                if registro_hoy.fecha_hora_egreso is None:
-                    # Está dentro del centro (ingresó y no ha salido)
-                    esta_presente = True
-                    hora_ingreso = registro_hoy.fecha_hora_ingreso
-                else:
-                    # Ya salió pero tiene registro de hoy
-                    hora_ingreso = registro_hoy.fecha_hora_ingreso
-
-            if esta_presente:
+            if asistio:
                 presentes_hoy += 1
 
             aprendices_con_asistencia.append({
                 'usuario': aprendiz,
-                'presente': esta_presente,
+                'presente': aprendiz._en_centro,
                 'hora_ingreso': hora_ingreso,
-                'tiene_registro_hoy': registro_hoy is not None
+                'tiene_registro_hoy': asistio,
             })
+
+    ausentes = total_aprendices - presentes_hoy
+    porcentaje_asistencia = round((presentes_hoy / total_aprendices) * 100) if total_aprendices > 0 else 0
 
     context = {
         'programas': PROGRAMAS,
@@ -376,6 +507,8 @@ def mis_aprendices_view(request):
         'aprendices': aprendices_con_asistencia,
         'total_aprendices': total_aprendices,
         'presentes_hoy': presentes_hoy,
+        'ausentes': ausentes,
+        'porcentaje_asistencia': porcentaje_asistencia,
     }
     return render(request, 'dashboard/instructor/mis_aprendices.html', context)
 
@@ -388,14 +521,21 @@ def mis_aprendices_view(request):
 @rol_requerido('ADMINISTRATIVO')
 def gestion_usuarios_view(request):
     """
-    Vista para gestión de usuarios (Administrativo)
+    Vista para gestión de usuarios (Administrativo) con paginación
     """
     from usuarios.models import Usuario
+    from django.core.paginator import Paginator
+
     # Excluir superusuarios para seguridad básica en la vista
     usuarios = Usuario.objects.all().exclude(is_superuser=True).order_by('-fecha_registro')
-    
+
+    # Paginación: 20 usuarios por página
+    paginator = Paginator(usuarios, 20)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
     context = {
-        'usuarios': usuarios,
+        'usuarios': page_obj,
+        'page_obj': page_obj,
         'total_usuarios': usuarios.count()
     }
     return render(request, 'dashboard/administrativo/gestion_usuarios.html', context)
@@ -535,7 +675,7 @@ def control_acceso_view(request):
     return render(request, 'control_acceso.html')
 
 # Importar la vista completa de mapas
-from mapas.views import mapa_interactivo
+from mapas.views import mapa_interactivo, campus_svg as campus_svg_view
 
 # Decorador aplicado directamente en la vista mapa_interactivo en mapas/views.py
 
@@ -556,6 +696,10 @@ def reportes_view(request):
     return render(request, 'reportes.html')
 
 urlpatterns = [
+    # PWA: Service Worker y Manifest servidos desde la raíz
+    path('sw.js', sw_view, name='sw'),
+    path('manifest.json', manifest_view, name='manifest'),
+
     path('admin/', admin.site.urls),
 
     # Autenticación - Rutas principales (con debugging temporal)
@@ -599,8 +743,10 @@ urlpatterns = [
     # Vistas principales del sistema (HTML templates)
     path('', dashboard_view, name='dashboard'),
     path('dashboard/', RedirectView.as_view(url='/', permanent=False)),
+    path('perfil/', mi_perfil_view, name='mi_perfil'),
     path('acceso/', control_acceso_view, name='control_acceso'),
     path('mapas/', mapa_interactivo, name='mapas'),
+    path('mapas/campus/', campus_svg_view, name='campus_svg'),
     path('emergencias/', emergencias_view, name='emergencias'),
 
     # ==============================================

@@ -75,7 +75,6 @@ class RegistroAcceso(models.Model):
     METODO_DETECCION = [
         ('AUTOMATICO', 'Deteccion automática'),
         ('MANUAL', 'Detección manual'),
-        ('QR', 'Código QR'),
     ]
 
     usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='accesos', db_index=True)

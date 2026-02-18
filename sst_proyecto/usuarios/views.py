@@ -6,8 +6,6 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import login, logout
 from .models import Usuario, Visitante
 from .serializers import UsuarioSerializer, LoginSerializer, VisitanteSerializer
-# DESHABILITADO - Solo registro físico/manual
-# from control_acceso.utils import generar_qr_usuario, generar_qr_visitante
 from .permissions import PuedeGestionarUsuarios, EsAdministrativoOInstructor
 
 class UsuarioViewSet(viewsets.ModelViewSet):
@@ -36,37 +34,53 @@ class UsuarioViewSet(viewsets.ModelViewSet):
 
         return [IsAuthenticated()]
     
+    # Roles que se pueden auto-registrar (sin ser ADMINISTRATIVO)
+    ROLES_AUTO_REGISTRO = ['APRENDIZ', 'INSTRUCTOR', 'VIGILANCIA', 'VISITANTE']
+
     def create(self, request, *args, **kwargs):
         """Registro de nuevos usuarios - Simplificado"""
         try:
             # Validar contraseñas coincidan
             password = request.data.get('password')
             password2 = request.data.get('password2')
-            
+
             if not password or not password2:
                 return Response(
                     {'error': 'Debes proporcionar ambas contraseñas'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            
+
             if password != password2:
                 return Response(
                     {'error': 'Las contraseñas no coinciden'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            
+
             if len(password) < 8:
                 return Response(
                     {'error': 'La contraseña debe tener al menos 8 caracteres'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            
+
             # Validar campos requeridos
             username = request.data.get('username')
             email = request.data.get('email')
             numero_documento = request.data.get('numero_documento')
             tipo_documento = request.data.get('tipo_documento')
             rol = request.data.get('rol')
+
+            # Restringir roles privilegiados: solo un ADMINISTRATIVO puede crear ADMINISTRATIVO o BRIGADA
+            if rol and rol not in self.ROLES_AUTO_REGISTRO:
+                es_admin = (
+                    request.user
+                    and request.user.is_authenticated
+                    and request.user.rol == 'ADMINISTRATIVO'
+                )
+                if not es_admin:
+                    return Response(
+                        {'error': f'No tienes permiso para registrar usuarios con rol {rol}. Contacta al administrador.'},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
             
             if not all([username, email, numero_documento, tipo_documento, rol]):
                 return Response(
@@ -166,7 +180,7 @@ class UsuarioViewSet(viewsets.ModelViewSet):
     def logout(self, request):
         try:
             request.user.auth_token.delete()
-        except:
+        except Exception:
             pass
         logout(request)
         return Response({'mensaje': 'Logout exitoso.'})
@@ -176,38 +190,7 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
-    # DESHABILITADO - Solo registro físico/manual
-    # @action(detail=True, methods=['get'])
-    # def generar_qr(self, request, pk=None):
-    #     """
-    #     Genera el código QR para un usuario
-    #     """
-    #     usuario = self.get_object()
-    #     qr_base64 = generar_qr_usuario(usuario)
-    #
-    #     return Response({
-    #         'usuario_id': usuario.id,
-    #         'nombre': usuario.get_full_name(),
-    #         'documento': usuario.numero_documento,
-    #         'rol': usuario.get_rol_display(),
-    #         'qr_image': qr_base64
-    #     })
-    #
-    # @action(detail=False, methods=['get'])
-    # def mi_qr(self, request):
-    #     """
-    #     Genera el código QR del usuario autenticado
-    #     """
-    #     qr_base64 = generar_qr_usuario(request.user)
-    #
-    #     return Response({
-    #         'usuario_id': request.user.id,
-    #         'nombre': request.user.get_full_name(),
-    #         'documento': request.user.numero_documento,
-    #         'rol': request.user.get_rol_display(),
-    #         'qr_image': qr_base64
-    #     })
-    
+
 class VisitanteViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gestionar visitantes
@@ -222,23 +205,6 @@ class VisitanteViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(registrado_por=self.request.user)
-
-    # DESHABILITADO - Solo registro físico/manual
-    # @action(detail=True, methods=['get'])
-    # def generar_qr(self, request, pk=None):
-    #     """
-    #     Genera el código QR para un visitante
-    #     """
-    #     visitante = self.get_object()
-    #     qr_base64 = generar_qr_visitante(visitante)
-    #
-    #     return Response({
-    #         'visitante_id': visitante.id,
-    #         'nombre': visitante.nombre_completo,
-    #         'documento': visitante.numero_documento,
-    #         'entidad': visitante.entidad,
-    #         'qr_image': qr_base64
-    #     })
 
 
 class NotificacionViewSet(viewsets.ModelViewSet):

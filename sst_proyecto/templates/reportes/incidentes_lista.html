@@ -10,48 +10,48 @@
 
 {% block content %}
 <div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
         <div>
             <h2 class="fw-bold text-dark mb-0">
                 <i class="bi bi-exclamation-triangle-fill me-2"></i>Reporte de Incidentes
             </h2>
-            <p class="text-muted">Seguimiento y gestión de eventos de seguridad.</p>
+            <p class="text-muted mb-0">Seguimiento y gestión de eventos de seguridad.</p>
         </div>
-        <a href="{% url 'crear_incidente' %}" class="btn btn-danger">
+        <a href="{% url 'crear_incidente' %}" class="btn btn-danger flex-shrink-0">
             <i class="bi bi-plus-lg me-2"></i>Reportar Nuevo
         </a>
     </div>
 
     <!-- Tarjetas de Estado -->
-    <div class="row mb-4">
-        <div class="col-md-3">
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
             <div class="card bg-primary text-white h-100">
-                <div class="card-body text-center">
-                    <h1>{{ total }}</h1>
+                <div class="card-body text-center p-3">
+                    <h2 class="mb-0">{{ total }}</h2>
                     <small>Total Incidentes</small>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-6 col-md-3">
             <div class="card bg-danger text-white h-100">
-                <div class="card-body text-center">
-                    <h1>{{ reportados }}</h1>
+                <div class="card-body text-center p-3">
+                    <h2 class="mb-0">{{ reportados }}</h2>
                     <small>Pendientes</small>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-6 col-md-3">
             <div class="card bg-warning text-dark h-100">
-                <div class="card-body text-center">
-                    <h1>{{ en_proceso }}</h1>
+                <div class="card-body text-center p-3">
+                    <h2 class="mb-0">{{ en_proceso }}</h2>
                     <small>En Proceso</small>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-6 col-md-3">
             <div class="card bg-success text-white h-100">
-                <div class="card-body text-center">
-                    <h1>{{ resueltos }}</h1>
+                <div class="card-body text-center p-3">
+                    <h2 class="mb-0">{{ resueltos }}</h2>
                     <small>Resueltos</small>
                 </div>
             </div>
@@ -66,9 +66,12 @@
                     <thead class="bg-light">
                         <tr>
                             <th class="ps-4">ID</th>
-                            <th>Título / Descripción</th>
+                            <th>Titulo / Descripcion</th>
+                            <th>Tipo</th>
+                            <th>Area</th>
                             <th>Gravedad</th>
                             <th>Estado</th>
+                            <th>Persona Afectada</th>
                             <th>Fecha Reporte</th>
                             <th>Reportado Por</th>
                             <th class="text-end pe-4">Acciones</th>
@@ -80,14 +83,37 @@
                             <td class="ps-4 fw-bold">#{{ incidente.id }}</td>
                             <td>
                                 <div class="fw-bold">{{ incidente.titulo }}</div>
-                                <small class="text-muted text-truncate d-block" style="max-width: 250px;">{{ incidente.descripcion }}</small>
+                                <small class="text-muted text-truncate d-block" style="max-width: 200px;">{{ incidente.descripcion }}</small>
+                            </td>
+                            <td><span class="badge bg-secondary">{{ incidente.get_tipo_display }}</span></td>
+                            <td>
+                                {% if incidente.area_incidente %}
+                                <span class="badge bg-primary-subtle text-primary">{{ incidente.get_area_incidente_display }}</span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
                             </td>
                             <td>
-                                <span class="badge {% if incidente.gravedad == 'CRITICA' %}bg-danger{% elif incidente.gravedad == 'ALTA' %}bg-warning text-dark{% else %}bg-info{% endif %}">
-                                    {{ incidente.gravedad }}
+                                <span class="badge {% if incidente.gravedad == 'CRITICA' %}bg-danger{% elif incidente.gravedad == 'ALTA' %}bg-warning text-dark{% elif incidente.gravedad == 'MEDIA' %}bg-info{% else %}bg-secondary{% endif %}">
+                                    {{ incidente.get_gravedad_display }}
                                 </span>
                             </td>
-                            <td><span class="badge bg-secondary">{{ incidente.estado }}</span></td>
+                            <td>
+                                {% if incidente.estado == 'REPORTADO' %}
+                                <span class="badge bg-warning text-dark">{{ incidente.get_estado_display }}</span>
+                                {% elif incidente.estado == 'EN_REVISION' or incidente.estado == 'EN_PROCESO' %}
+                                <span class="badge bg-info">{{ incidente.get_estado_display }}</span>
+                                {% else %}
+                                <span class="badge bg-success">{{ incidente.get_estado_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if incidente.persona_afectada %}
+                                <small>{{ incidente.persona_afectada }}</small>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
                             <td>{{ incidente.fecha_reporte|date:"d/m/Y H:i" }}</td>
                             <td>{{ incidente.reportado_por.get_full_name }}</td>
                             <td class="text-end pe-4">
@@ -96,13 +122,14 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="7" class="text-center py-5 text-muted">No hay incidentes registrados.</td>
+                            <td colspan="10" class="text-center py-5 text-muted">No hay incidentes registrados.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
+        {% include 'includes/paginacion.html' %}
     </div>
 </div>
 {% endblock %}

@@ -2,6 +2,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.paginator import Paginator
 from .models import Incidente
 from .forms import IncidenteForm
 # Servicio centralizado de notificaciones
@@ -17,19 +18,24 @@ def listar_incidentes(request):
     """
     # Si es admin o brigada, ve todos los incidentes
     if request.user.rol in ['ADMINISTRATIVO', 'BRIGADA']:
-        incidentes = Incidente.objects.all()
+        incidentes = Incidente.objects.select_related('reportado_por').all()
     else:
         # Los demás solo ven los que reportaron
-        incidentes = Incidente.objects.filter(reportado_por=request.user)
+        incidentes = Incidente.objects.select_related('reportado_por').filter(reportado_por=request.user)
 
-    # Contar por estado
+    # Contar por estado (sobre el queryset completo, antes de paginar)
     total = incidentes.count()
     reportados = incidentes.filter(estado='REPORTADO').count()
     en_proceso = incidentes.filter(estado__in=['EN_REVISION', 'EN_PROCESO']).count()
     resueltos = incidentes.filter(estado__in=['RESUELTO', 'CERRADO']).count()
 
+    # Paginación: 15 incidentes por página
+    paginator = Paginator(incidentes, 15)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
     context = {
-        'incidentes': incidentes,
+        'incidentes': page_obj,
+        'page_obj': page_obj,
         'total': total,
         'reportados': reportados,
         'en_proceso': en_proceso,
@@ -66,10 +72,14 @@ def crear_incidente(request):
             # Guardar
             incidente.save()
 
-            # Notificar a administrativos (y a instructores si es crítico)
+            # Notificar a administrativos (y a instructores si es critico)
             NotificacionService.notificar_incidente_creado(incidente)
 
-            messages.success(request, f'Incidente "{incidente.titulo}" reportado exitosamente.')
+            # Generar alarma para brigada si gravedad es ALTA o CRITICA
+            if incidente.gravedad in ['ALTA', 'CRITICA']:
+                NotificacionService.notificar_alarma_incidente(incidente)
+
+            messages.success(request, f'Incidente "{incidente.titulo}" reportado exitosamente. Se ha generado una alerta al personal correspondiente.')
             return redirect('listar_incidentes')
     else:
         form = IncidenteForm()
@@ -89,8 +99,8 @@ def detalle_incidente(request, pk):
     """
     incidente = get_object_or_404(Incidente, pk=pk)
 
-    # Verificar permisos: solo el que reportó o admin pueden ver
-    if request.user.rol != 'ADMINISTRATIVO' and incidente.reportado_por != request.user:
+    # Verificar permisos: solo el que reportó, admin o brigada pueden ver
+    if request.user.rol not in ['ADMINISTRATIVO', 'BRIGADA'] and incidente.reportado_por != request.user:
         messages.error(request, 'No tienes permiso para ver este incidente.')
         return redirect('listar_incidentes')
 

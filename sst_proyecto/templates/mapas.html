@@ -21,6 +21,19 @@
     .leaflet-popup-content {
         font-family: var(--font-family-base);
     }
+
+    /* Leyenda colapsable en móvil */
+    @media (max-width: 768px) {
+        .leyenda-mapa {
+            position: static !important;
+            margin-top: 0.5rem;
+            max-width: 100% !important;
+            display: none;
+        }
+        .leyenda-mapa.show {
+            display: block;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -31,25 +44,25 @@
 
 {% block content %}
 <!-- Header del Mapa -->
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
     <div>
-        <h1 class="h3 fw-bold text-dark mb-1"><i class="bi bi-map me-2"></i>Mapa Interactivo - Centro Minero</h1>
-        <p class="text-muted">Visualización en tiempo real con geolocalización y datos dinámicos</p>
+        <h1 class="h3 fw-bold text-dark mb-1"><i class="bi bi-map me-2"></i>Mapa Interactivo</h1>
+        <p class="text-muted mb-0 d-none d-sm-block">Visualización en tiempo real con geolocalización y datos dinámicos</p>
     </div>
-    <div class="btn-group btn-group-mapa-vista" role="group">
+    <div class="btn-group flex-shrink-0" role="group">
         <input type="radio" class="btn-check" name="mapaVista" id="vistaNormal" autocomplete="off" checked>
-        <label class="btn btn-outline-primary-custom" for="vistaNormal" title="Vista Normal">
-            <i class="bi bi-map"></i><span class="btn-text-desktop ms-1">Normal</span>
+        <label class="btn btn-outline-primary-custom btn-sm" for="vistaNormal">
+            <i class="bi bi-map me-1"></i><span class="d-none d-sm-inline">Normal</span>
         </label>
 
         <input type="radio" class="btn-check" name="mapaVista" id="vistaEmergencia" autocomplete="off">
-        <label class="btn btn-outline-warning" for="vistaEmergencia" title="Vista de Emergencia">
-            <i class="bi bi-exclamation-triangle"></i><span class="btn-text-desktop ms-1">Emergencia</span>
+        <label class="btn btn-outline-warning btn-sm" for="vistaEmergencia">
+            <i class="bi bi-exclamation-triangle me-1"></i><span class="d-none d-sm-inline">Emergencia</span>
         </label>
 
         <input type="radio" class="btn-check" name="mapaVista" id="vistaEvacuacion" autocomplete="off">
-        <label class="btn btn-outline-danger" for="vistaEvacuacion" title="Vista de Evacuación">
-            <i class="bi bi-arrow-right-circle"></i><span class="btn-text-desktop ms-1">Evacuación</span>
+        <label class="btn btn-outline-danger btn-sm" for="vistaEvacuacion">
+            <i class="bi bi-arrow-right-circle me-1"></i><span class="d-none d-sm-inline">Evacuación</span>
         </label>
     </div>
 </div>
@@ -59,13 +72,13 @@
     <div class="col-lg-8">
         <div class="card card-modern">
             <div class="card-header-modern">
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="d-flex justify-content-between align-items-center">
                     <h6 class="mb-0">Centro Minero SENA - Boyacá</h6>
                     <div class="d-flex gap-2">
-                        <button id="btnMiUbicacion" class="btn btn-sm btn-outline-secondary" title="Mi ubicación">
-                            <i class="bi bi-crosshair2"></i> <span class="btn-text-desktop">Mi ubicación</span>
+                        <button id="btnMiUbicacion" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-crosshair2"></i> Mi ubicación
                         </button>
-                        <button id="btnPantallaCompleta" class="btn btn-sm btn-outline-secondary" title="Pantalla completa">
+                        <button id="btnPantallaCompleta" class="btn btn-sm btn-outline-secondary">
                             <i class="bi bi-arrows-fullscreen"></i>
                         </button>
                     </div>
@@ -73,46 +86,57 @@
             </div>
             <div class="card-body p-0">
                 <!-- Información de mi ubicación -->
-                <div class="px-3 py-2 bg-light border-bottom info-ubicacion-container">
-                    <div class="row g-2">
-                        <div class="col-12 col-md-8">
-                            <small id="infoUbicacion" class="text-muted d-block">
+                <div class="px-3 py-2 bg-light border-bottom">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <small id="infoUbicacion" class="text-muted">
                                 <i class="bi bi-geo-alt-fill me-1"></i> Cargando ubicación...
                             </small>
                         </div>
-                        <div class="col-12 col-md-4 text-md-end">
-                            <small id="estadoGeocerca" class="text-muted d-block">
+                        <div class="col-md-4 text-end">
+                            <small id="estadoGeocerca" class="text-muted">
                                 <i class="bi bi-shield-check me-1"></i> Verificando...
                             </small>
                         </div>
                     </div>
                 </div>
                 <!-- Mapa con leyenda -->
-                <div id="mapaPrincipal" class="mapa-container" style="border-radius: 0 0 12px 12px; position: relative;"></div>
-
+                <div id="mapaPrincipal" style="height: 55vh; min-height: 300px; max-height: 600px; border-radius: 0 0 12px 12px; position: relative;"></div>
+                
+                <!-- Botón toggle leyenda (solo móvil) -->
+                <button class="btn btn-sm btn-light border d-lg-none mt-2 ms-2" onclick="document.querySelector('.leyenda-mapa').classList.toggle('show')">
+                    <i class="bi bi-info-circle me-1"></i>Leyenda
+                </button>
                 <!-- Leyenda del Mapa -->
-                <div class="leyenda-mapa">
-                    <button class="leyenda-toggle d-md-none" id="btnToggleLeyenda" aria-label="Mostrar/Ocultar leyenda">
-                        <i class="bi bi-list-ul"></i>
-                    </button>
-                    <div class="leyenda-content">
-                        <strong class="leyenda-titulo">Leyenda:</strong>
-                        <div class="leyenda-item">
-                            <div class="leyenda-color" style="background: #4CAF50;"></div>
-                            <span class="leyenda-text">Punto de Encuentro</span>
+                <div class="leyenda-mapa" style="position: absolute; bottom: 20px; right: 20px; z-index: 1000; background: white; padding: 12px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); max-width: 180px;">
+                    <strong style="display: block; margin-bottom: 10px; font-size: 13px; border-bottom: 2px solid #39A900; padding-bottom: 5px;">
+                        <i class="bi bi-geo-alt-fill" style="color: #39A900;"></i> Centro Minero SENA
+                    </strong>
+
+                    <div style="margin-bottom: 8px;">
+                        <small style="font-weight: bold; color: #666; display: block; margin-bottom: 6px;">Seguridad SST:</small>
+                        <div class="leyenda-item" style="display: flex; align-items: center; margin-bottom: 5px; font-size: 11px;">
+                            <div style="width: 16px; height: 16px; border-radius: 50%; margin-right: 8px; background: #4CAF50; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>
+                            <span>Punto de Encuentro</span>
                         </div>
-                        <div class="leyenda-item">
-                            <div class="leyenda-color" style="background: #f44336;"></div>
-                            <span class="leyenda-text">Extintor</span>
+                        <div class="leyenda-item" style="display: flex; align-items: center; margin-bottom: 5px; font-size: 11px;">
+                            <div style="width: 16px; height: 16px; border-radius: 50%; margin-right: 8px; background: #f44336; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>
+                            <span>Extintor</span>
                         </div>
-                        <div class="leyenda-item">
-                            <div class="leyenda-color" style="background: #2196F3;"></div>
-                            <span class="leyenda-text">Botiquín</span>
+                        <div class="leyenda-item" style="display: flex; align-items: center; margin-bottom: 5px; font-size: 11px;">
+                            <div style="width: 16px; height: 16px; border-radius: 50%; margin-right: 8px; background: #2196F3; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>
+                            <span>Botiquín</span>
                         </div>
-                        <div class="leyenda-item">
-                            <div class="leyenda-color" style="background: #FF9800;"></div>
-                            <span class="leyenda-text">Tu ubicación</span>
+                        <div class="leyenda-item" style="display: flex; align-items: center; font-size: 11px;">
+                            <div style="width: 16px; height: 16px; border-radius: 50%; margin-right: 8px; background: #FF9800; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>
+                            <span>Tu ubicación</span>
                         </div>
+                    </div>
+
+                    <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #E0E0E0;">
+                        <small style="font-size: 10px; color: #999; display: block; text-align: center;">
+                            Vista satelital en tiempo real
+                        </small>
                     </div>
                 </div>
             </div>
@@ -154,7 +178,7 @@
                         <i class="bi bi-arrow-right-circle me-2"></i>Rutas de Evacuacion
                     </label>
                 </div>
-                {% if user.rol == 'VIGILANCIA' or user.rol == 'ADMINISTRATIVO' %}
+                {% if user.rol == 'VIGILANCIA' or user.rol == 'ADMINISTRATIVO' or user.rol == 'INSTRUCTOR' or user.rol == 'BRIGADA' %}
                 <hr class="my-2">
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" id="capaPersonas" checked>
@@ -167,7 +191,7 @@
             </div>
         </div>
 
-        {% if user.rol == 'VIGILANCIA' or user.rol == 'ADMINISTRATIVO' %}
+        {% if user.rol == 'VIGILANCIA' or user.rol == 'ADMINISTRATIVO' or user.rol == 'INSTRUCTOR' or user.rol == 'BRIGADA' %}
         <!-- Panel de Personas en el Centro -->
         <div class="card card-modern mb-4" id="panelPersonas">
             <div class="card-header-modern bg-primary text-white">
@@ -235,10 +259,9 @@
                 </h6>
             </div>
             <div class="card-body">
-                <button id="btnRutaEvacuacion" class="btn btn-warning w-100 mb-3" title="Ruta de Evacuación Más Cercana">
+                <button id="btnRutaEvacuacion" class="btn btn-warning w-100 mb-3">
                     <i class="bi bi-arrow-right-circle me-2"></i>
-                    <span class="d-none d-sm-inline">Ruta de Evacuación Más Cercana</span>
-                    <span class="d-inline d-sm-none">Ruta de Evacuación</span>
+                    Ruta de Evacuación Más Cercana
                 </button>
                 <button id="btnZoomCentro" class="btn btn-outline-primary w-100 mb-2">
                     <i class="bi bi-geo-alt me-2"></i>
@@ -248,7 +271,7 @@
                     <i class="bi bi-trash me-2"></i>
                     Limpiar Rutas
                 </button>
-                <div class="text-center text-muted mt-3 d-none d-md-block">
+                <div class="text-center text-muted mt-3">
                     <small>
                         <i class="bi bi-info-circle me-1"></i>
                         Calcula la ruta más segura hacia el punto de encuentro
@@ -412,221 +435,188 @@ function inicializarInfraestructura() {
     }).addTo(capaVias);
     viaServicio.bindPopup('<strong>Vía de Servicio</strong><br>Acceso secundario');
 
-    // 2. EDIFICIOS COMO POLÍGONOS - Dentro de la geocerca
-    const edificios = {
-        // Edificio Principal (Noroeste)
-        administrativo: {
-            coords: [
-                [5.73055, -72.89450],
-                [5.73055, -72.89430],
-                [5.73040, -72.89430],
-                [5.73040, -72.89450]
-            ],
-            nombre: 'Edificio Administrativo Principal',
-            color: '#8E24AA',
-            icon: 'bi-briefcase'
-        },
+    // 2. EDIFICACIONES DEL CENTRO - 26 puntos reales con coordenadas GPS
+    const edificacionesCentro = [
+        { id: 1,  lat: 5.7308266, lng: -72.8944621, nombre: 'Edificacion 1',  color: '#5C6BC0', icon: 'bi-building' },
+        { id: 2,  lat: 5.7306089, lng: -72.8944388, nombre: 'Edificacion 2',  color: '#5C6BC0', icon: 'bi-building' },
+        { id: 3,  lat: 5.7307180, lng: -72.8943197, nombre: 'Edificacion 3',  color: '#5C6BC0', icon: 'bi-building' },
+        { id: 4,  lat: 5.7305964, lng: -72.8943091, nombre: 'Edificacion 4',  color: '#5C6BC0', icon: 'bi-building' },
+        { id: 5,  lat: 5.7307631, lng: -72.8941685, nombre: 'Edificacion 5',  color: '#00897B', icon: 'bi-building' },
+        { id: 6,  lat: 5.7306055, lng: -72.8941807, nombre: 'Edificacion 6',  color: '#00897B', icon: 'bi-building' },
+        { id: 7,  lat: 5.7308157, lng: -72.8947557, nombre: 'Edificacion 7',  color: '#8E24AA', icon: 'bi-building' },
+        { id: 8,  lat: 5.7304729, lng: -72.8946135, nombre: 'Edificacion 8',  color: '#8E24AA', icon: 'bi-building' },
+        { id: 9,  lat: 5.7306724, lng: -72.8948627, nombre: 'Edificacion 9',  color: '#8E24AA', icon: 'bi-building' },
+        { id: 10, lat: 5.7306460, lng: -72.8947499, nombre: 'Edificacion 10', color: '#8E24AA', icon: 'bi-building' },
+        { id: 11, lat: 5.7303035, lng: -72.8948299, nombre: 'Edificacion 11', color: '#FF9800', icon: 'bi-building' },
+        { id: 12, lat: 5.7303504, lng: -72.8944825, nombre: 'Edificacion 12', color: '#FF9800', icon: 'bi-building' },
+        { id: 13, lat: 5.7302012, lng: -72.8944738, nombre: 'Edificacion 13', color: '#FF9800', icon: 'bi-building' },
+        { id: 14, lat: 5.7300200, lng: -72.8947224, nombre: 'Edificacion 14', color: '#D84315', icon: 'bi-building' },
+        { id: 15, lat: 5.7296547, lng: -72.8947003, nombre: 'Edificacion 15', color: '#D84315', icon: 'bi-building' },
+        { id: 16, lat: 5.7304283, lng: -72.8938899, nombre: 'Edificacion 16', color: '#1976D2', icon: 'bi-building' },
+        { id: 17, lat: 5.7303758, lng: -72.8936851, nombre: 'Edificacion 17', color: '#1976D2', icon: 'bi-building' },
+        { id: 18, lat: 5.7300397, lng: -72.8942211, nombre: 'Edificacion 18', color: '#546E7A', icon: 'bi-building' },
+        { id: 19, lat: 5.7299135, lng: -72.8937115, nombre: 'Edificacion 19', color: '#795548', icon: 'bi-building' },
+        { id: 20, lat: 5.7301815, lng: -72.8933961, nombre: 'Edificacion 20', color: '#795548', icon: 'bi-building' },
+        { id: 21, lat: 5.7298857, lng: -72.8933810, nombre: 'Edificacion 21', color: '#795548', icon: 'bi-building' },
+        { id: 22, lat: 5.7297219, lng: -72.8935096, nombre: 'Edificacion 22', color: '#424242', icon: 'bi-building' },
+        { id: 23, lat: 5.7296522, lng: -72.8937856, nombre: 'Edificacion 23', color: '#424242', icon: 'bi-building' },
+        { id: 24, lat: 5.7297075, lng: -72.8932150, nombre: 'Edificacion 24', color: '#2E7D32', icon: 'bi-building' },
+        { id: 25, lat: 5.7296381, lng: -72.8930312, nombre: 'Edificacion 25', color: '#2E7D32', icon: 'bi-building' },
+    ];
 
-        // Galpón de Talleres 1 (Centro-Sur)
-        taller1: {
-            coords: [
-                [5.73025, -72.89445],
-                [5.73025, -72.89420],
-                [5.73005, -72.89420],
-                [5.73005, -72.89445]
-            ],
-            nombre: 'Taller de Maquinaria Pesada',
-            color: '#FF9800',
-            icon: 'bi-tools'
-        },
-
-        // Galpón de Talleres 2 (Sur)
-        taller2: {
-            coords: [
-                [5.73000, -72.89445],
-                [5.73000, -72.89420],
-                [5.72980, -72.89420],
-                [5.72980, -72.89445]
-            ],
-            nombre: 'Taller de Soldadura y Mecánica',
-            color: '#FF9800',
-            icon: 'bi-tools'
-        },
-
-        // Bloque de Aulas (Norte)
-        aulas: {
-            coords: [
-                [5.73070, -72.89435],
-                [5.73070, -72.89415],
-                [5.73055, -72.89415],
-                [5.73055, -72.89435]
-            ],
-            nombre: 'Bloque de Aulas Teóricas',
-            color: '#5C6BC0',
-            icon: 'bi-book'
-        },
-
-        // Laboratorios (Este)
-        laboratorios: {
-            coords: [
-                [5.73050, -72.89400],
-                [5.73050, -72.89385],
-                [5.73038, -72.89385],
-                [5.73038, -72.89400]
-            ],
-            nombre: 'Laboratorios de Geología',
-            color: '#00897B',
-            icon: 'bi-clipboard-data'
-        },
-
-        // Cafetería y Bienestar (Este)
-        cafeteria: {
-            coords: [
-                [5.73038, -72.89400],
-                [5.73038, -72.89388],
-                [5.73028, -72.89388],
-                [5.73028, -72.89400]
-            ],
-            nombre: 'Cafetería y Bienestar',
-            color: '#D84315',
-            icon: 'bi-cup-hot'
-        },
-
-        // Entrada a Mina Didáctica (Suroeste)
-        mina: {
-            coords: [
-                [5.72985, -72.89470],
-                [5.72985, -72.89458],
-                [5.72975, -72.89458],
-                [5.72975, -72.89470]
-            ],
-            nombre: 'Entrada Mina Didáctica Subterránea',
-            color: '#424242',
-            icon: 'bi-minecart'
-        },
-
-        // Biblioteca/Centro de Recursos (Noreste)
-        biblioteca: {
-            coords: [
-                [5.73065, -72.89405],
-                [5.73065, -72.89393],
-                [5.73053, -72.89393],
-                [5.73053, -72.89405]
-            ],
-            nombre: 'Biblioteca y Centro de Recursos',
-            color: '#1976D2',
-            icon: 'bi-book-half'
-        },
-
-        // Almacén y Bodegas (Oeste)
-        almacen: {
-            coords: [
-                [5.73015, -72.89485],
-                [5.73015, -72.89473],
-                [5.73003, -72.89473],
-                [5.73003, -72.89485]
-            ],
-            nombre: 'Almacén de Equipos y Materiales',
-            color: '#546E7A',
-            icon: 'bi-box-seam'
-        }
-    };
-
-    Object.keys(edificios).forEach(key => {
-        const edif = edificios[key];
-        const polygon = L.polygon(edif.coords, {
-            color: edif.color,
+    edificacionesCentro.forEach(edif => {
+        const marker = L.circleMarker([edif.lat, edif.lng], {
+            radius: 12,
             fillColor: edif.color,
-            fillOpacity: 0.6,
-            weight: 2
+            color: '#ffffff',
+            weight: 2,
+            fillOpacity: 0.85
         }).addTo(capaEdificios);
 
-        polygon.bindPopup(`
-            <div style="min-width: 200px;">
-                <h6 style="color: ${edif.color};">
+        marker.bindPopup(`
+            <div style="min-width: 180px;">
+                <h6 style="color: ${edif.color}; margin-bottom: 4px;">
                     <i class="bi ${edif.icon}"></i> ${edif.nombre}
                 </h6>
-                <p class="mb-0 small">Haga clic para más detalles</p>
+                <p class="mb-1 small text-muted">
+                    <i class="bi bi-geo-alt"></i> ${edif.lat.toFixed(6)}, ${edif.lng.toFixed(6)}
+                </p>
+                <span class="badge" style="background-color: ${edif.color};">Punto #${edif.id}</span>
+            </div>
+        `);
+
+        // Etiqueta con numero del punto
+        const label = L.divIcon({
+            className: 'edificacion-label',
+            html: `<div style="
+                background: ${edif.color};
+                color: white;
+                border-radius: 50%;
+                width: 22px;
+                height: 22px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 10px;
+                font-weight: bold;
+                border: 2px solid white;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+            ">${edif.id}</div>`,
+            iconSize: [22, 22],
+            iconAnchor: [11, 11]
+        });
+        L.marker([edif.lat, edif.lng], { icon: label }).addTo(capaEdificios);
+    });
+
+    // 3. RUTAS DE EVACUACION PREDEFINIDAS
+    // Red de caminos del campus con waypoints reales
+    const rutasEvacuacionPredefinidas = [
+        {
+            nombre: 'Ruta Norte - Zona Aulas hacia Punto de Encuentro',
+            color: '#4CAF50',
+            waypoints: [
+                [5.7308266, -72.8944621],
+                [5.7307180, -72.8943197],
+                [5.7306089, -72.8944388],
+                [5.7305964, -72.8943091],
+                [5.7304729, -72.8946135],
+                [5.7303035, -72.8948299]
+            ]
+        },
+        {
+            nombre: 'Ruta Centro - Edificios Centrales hacia Cancha',
+            color: '#2196F3',
+            waypoints: [
+                [5.7303504, -72.8944825],
+                [5.7304729, -72.8946135],
+                [5.7306460, -72.8947499],
+                [5.7308157, -72.8947557]
+            ]
+        },
+        {
+            nombre: 'Ruta Sur - Talleres hacia Zona Segura',
+            color: '#FF9800',
+            waypoints: [
+                [5.7296547, -72.8947003],
+                [5.7300200, -72.8947224],
+                [5.7303035, -72.8948299],
+                [5.7304729, -72.8946135]
+            ]
+        },
+        {
+            nombre: 'Ruta Este - Laboratorios hacia Punto de Encuentro',
+            color: '#9C27B0',
+            waypoints: [
+                [5.7304283, -72.8938899],
+                [5.7303758, -72.8936851],
+                [5.7300397, -72.8942211],
+                [5.7302012, -72.8944738],
+                [5.7303504, -72.8944825]
+            ]
+        },
+        {
+            nombre: 'Ruta Sureste - Mina y Zona Baja',
+            color: '#F44336',
+            waypoints: [
+                [5.7296381, -72.8930312],
+                [5.7297075, -72.8932150],
+                [5.7298857, -72.8933810],
+                [5.7301815, -72.8933961],
+                [5.7303758, -72.8936851],
+                [5.7304283, -72.8938899]
+            ]
+        },
+        {
+            nombre: 'Ruta Suroeste - Zona Mina Didactica',
+            color: '#E91E63',
+            waypoints: [
+                [5.7297219, -72.8935096],
+                [5.7296522, -72.8937856],
+                [5.7299135, -72.8937115],
+                [5.7300397, -72.8942211],
+                [5.7302012, -72.8944738]
+            ]
+        }
+    ];
+
+    // Almacenar rutas para uso global
+    window.rutasEvacuacionData = rutasEvacuacionPredefinidas;
+
+    // Dibujar rutas en la capa (inicialmente ocultas, se muestran con el checkbox)
+    rutasEvacuacionPredefinidas.forEach(ruta => {
+        const polyline = L.polyline(ruta.waypoints, {
+            color: ruta.color,
+            weight: 4,
+            opacity: 0.8,
+            dashArray: '12, 8',
+            lineCap: 'round',
+            lineJoin: 'round'
+        }).addTo(capaRutas);
+
+        // Flecha al final de la ruta
+        const ultimoPunto = ruta.waypoints[ruta.waypoints.length - 1];
+        const flechaIcon = L.divIcon({
+            className: 'ruta-flecha',
+            html: `<div style="
+                color: ${ruta.color};
+                font-size: 18px;
+                text-shadow: 0 0 3px white;
+            "><i class="bi bi-geo-alt-fill"></i></div>`,
+            iconSize: [18, 18],
+            iconAnchor: [9, 18]
+        });
+        L.marker(ultimoPunto, { icon: flechaIcon }).addTo(capaRutas);
+
+        polyline.bindPopup(`
+            <div style="min-width: 200px;">
+                <h6 style="color: ${ruta.color};">
+                    <i class="bi bi-signpost-2"></i> ${ruta.nombre}
+                </h6>
+                <p class="mb-1 small"><strong>Puntos de paso:</strong> ${ruta.waypoints.length}</p>
+                <p class="mb-0 small text-muted">Siga esta ruta en caso de evacuacion</p>
             </div>
         `);
     });
-
-    // 3. ÁREAS ESPECIALES - Dentro de la geocerca
-
-    // CANCHA DEPORTIVA
-    const cancha = L.rectangle([
-        [5.73078, -72.89425],
-        [5.73055, -72.89400]
-    ], {
-        color: '#2E7D32',
-        fillColor: '#66BB6A',
-        fillOpacity: 0.7,
-        weight: 2
-    }).addTo(capaAreas);
-    cancha.bindPopup('<strong>Cancha Deportiva</strong><br>Fútbol y actividades recreativas<br>También sirve como punto de encuentro principal');
-
-    // Parqueadero Principal (Noroeste)
-    const parqueadero1 = L.rectangle([
-        [5.73060, -72.89465],
-        [5.73045, -72.89450]
-    ], {
-        color: '#607D8B',
-        fillColor: '#CFD8DC',
-        fillOpacity: 0.6,
-        weight: 2,
-        dashArray: '5, 5'
-    }).addTo(capaAreas);
-    parqueadero1.bindPopup('<strong>Parqueadero Norte</strong><br>Acceso principal<br>Capacidad: 50 vehículos');
-
-    // Parqueadero Este
-    const parqueadero2 = L.rectangle([
-        [5.73045, -72.89385],
-        [5.73030, -72.89370]
-    ], {
-        color: '#607D8B',
-        fillColor: '#CFD8DC',
-        fillOpacity: 0.6,
-        weight: 2,
-        dashArray: '5, 5'
-    }).addTo(capaAreas);
-    parqueadero2.bindPopup('<strong>Parqueadero Este</strong><br>Capacidad: 40 vehículos');
-
-    // Patio de Maquinaria Pesada (Suroeste)
-    const patioMaquinaria = L.rectangle([
-        [5.72990, -72.89480],
-        [5.72970, -72.89455]
-    ], {
-        color: '#795548',
-        fillColor: '#BCAAA4',
-        fillOpacity: 0.7,
-        weight: 2
-    }).addTo(capaAreas);
-    patioMaquinaria.bindPopup('<strong>Patio de Maquinaria</strong><br>Excavadoras, volquetas y equipos pesados<br>Zona de práctica con maquinaria real');
-
-    // Zonas Verdes
-    const zonaVerde1 = L.circle([5.73080, -72.89450], {
-        color: '#2E7D32',
-        fillColor: '#81C784',
-        fillOpacity: 0.5,
-        radius: 12
-    }).addTo(capaAreas);
-    zonaVerde1.bindPopup('<strong>Zona Verde Norte</strong><br>Área arbolada');
-
-    const zonaVerde2 = L.circle([5.72995, -72.89410], {
-        color: '#2E7D32',
-        fillColor: '#81C784',
-        fillOpacity: 0.5,
-        radius: 10
-    }).addTo(capaAreas);
-    zonaVerde2.bindPopup('<strong>Zona Verde Sur</strong><br>Área de descanso');
-
-    const zonaVerde3 = L.circle([5.73030, -72.89455], {
-        color: '#2E7D32',
-        fillColor: '#81C784',
-        fillOpacity: 0.5,
-        radius: 8
-    }).addTo(capaAreas);
-    zonaVerde3.bindPopup('<strong>Jardines</strong>');
 
     // 4. INFRAESTRUCTURA
     const cerramientoPerimetral = L.polygon([
@@ -1074,45 +1064,13 @@ function inicializarDatosDinamicos() {
 // ====================================================================
 
 function inicializarControles() {
-    // Toggle de leyenda en mobile
-    const btnToggleLeyenda = document.getElementById('btnToggleLeyenda');
-    const leyendaContent = document.querySelector('.leyenda-content');
-
-    if (btnToggleLeyenda) {
-        btnToggleLeyenda.addEventListener('click', function(e) {
-            e.stopPropagation();
-            leyendaContent.classList.toggle('show');
-
-            // Cambiar icono
-            const icon = this.querySelector('i');
-            if (leyendaContent.classList.contains('show')) {
-                icon.className = 'bi bi-x-lg';
-                this.setAttribute('aria-label', 'Ocultar leyenda');
-            } else {
-                icon.className = 'bi bi-list-ul';
-                this.setAttribute('aria-label', 'Mostrar leyenda');
-            }
-        });
-
-        // Cerrar leyenda al hacer clic fuera de ella
-        document.addEventListener('click', function(e) {
-            const leyendaMapa = document.querySelector('.leyenda-mapa');
-            if (leyendaMapa && !leyendaMapa.contains(e.target) && leyendaContent.classList.contains('show')) {
-                leyendaContent.classList.remove('show');
-                const icon = btnToggleLeyenda.querySelector('i');
-                icon.className = 'bi bi-list-ul';
-                btnToggleLeyenda.setAttribute('aria-label', 'Mostrar leyenda');
-            }
-        });
-    }
-
     // Botón "Mi ubicación"
     document.getElementById('btnMiUbicacion').addEventListener('click', function() {
         if (miMarcador) {
             mapa.setView(miMarcador.getLatLng(), 18);
             miMarcador.openPopup();
         } else {
-            showToast('Aún no se ha detectado tu ubicación. Verifica los permisos del navegador.', 'warning', 3000);
+            alert('📍 Aún no se ha detectado tu ubicación. Por favor espera un momento o verifica los permisos del navegador.');
         }
     });
 
@@ -1164,7 +1122,7 @@ function inicializarControles() {
     // MONITOREO EN TIEMPO REAL - Personas en el Centro
     // Solo para VIGILANCIA y ADMINISTRATIVO
     // ============================================================
-    if (userRol === 'VIGILANCIA' || userRol === 'ADMINISTRATIVO') {
+    if (userRol === 'VIGILANCIA' || userRol === 'ADMINISTRATIVO' || userRol === 'INSTRUCTOR' || userRol === 'BRIGADA') {
 
         const coloresRol = {
             'APRENDIZ': '#4CAF50',
@@ -1429,29 +1387,30 @@ function centrarEnResultado(indice, esPunto) {
 
 function mostrarRutaEvacuacionCercana() {
     if (!miMarcador) {
-        showToast('Necesitamos tu ubicación actual para calcular la ruta más segura', 'warning', 3000);
+        alert('Necesitamos tu ubicacion actual para calcular la ruta mas segura.');
         return;
     }
 
-    if (puntosEncuentroData.length === 0) {
-        showToast('No hay puntos de encuentro registrados en el sistema', 'warning', 3000);
+    const miPos = miMarcador.getLatLng();
+    const rutas = window.rutasEvacuacionData || [];
+
+    if (rutas.length === 0 && puntosEncuentroData.length === 0) {
+        alert('No hay rutas de evacuacion ni puntos de encuentro registrados.');
         return;
     }
 
-    // Encontrar el punto de encuentro más cercano
-    let puntoMasCercano = null;
-    let distanciaMinima = Infinity;
-    
-    puntosEncuentroData.forEach(punto => {
-        const distancia = mapa.distance(
-            miMarcador.getLatLng(),
-            [punto.latitud, punto.longitud]
-        );
-        
-        if (distancia < distanciaMinima) {
-            distanciaMinima = distancia;
-            puntoMasCercano = punto;
-        }
+    // Buscar la ruta predefinida cuyo waypoint este mas cerca del usuario
+    let mejorRuta = null;
+    let distanciaMinRuta = Infinity;
+
+    rutas.forEach(ruta => {
+        ruta.waypoints.forEach((wp, idx) => {
+            const dist = mapa.distance(miPos, wp);
+            if (dist < distanciaMinRuta) {
+                distanciaMinRuta = dist;
+                mejorRuta = { ...ruta, indiceInicio: idx };
+            }
+        });
     });
 
     // Limpiar ruta anterior
@@ -1459,99 +1418,179 @@ function mostrarRutaEvacuacionCercana() {
         mapa.removeLayer(rutaActiva);
     }
 
-    // Dibujar nueva ruta
-    rutaActiva = L.polyline([
-        miMarcador.getLatLng(),
-        [puntoMasCercano.latitud, puntoMasCercano.longitud]
-    ], {
-        color: '#FF5722',
-        weight: 5,
-        opacity: 0.8,
-        dashArray: '10, 10',
-        lineCap: 'round'
-    }).addTo(mapa);
+    if (mejorRuta) {
+        // Construir ruta: desde mi posicion, pasando por waypoints desde el mas cercano
+        const waypointsRuta = [
+            [miPos.lat, miPos.lng],
+            ...mejorRuta.waypoints.slice(mejorRuta.indiceInicio)
+        ];
 
-    // Activar checkbox de rutas
-    document.getElementById('capaRutas').checked = true;
+        rutaActiva = L.polyline(waypointsRuta, {
+            color: '#FF5722',
+            weight: 6,
+            opacity: 0.9,
+            dashArray: '10, 8',
+            lineCap: 'round',
+            lineJoin: 'round'
+        }).addTo(mapa);
 
-    // Calcular tiempo estimado (a pie, 5 km/h promedio)
-    const tiempoMinutos = (distanciaMinima / 5000) * 60;
-    
-    // Mostrar información
-    const infoDiv = document.getElementById('infoSeleccionada');
-    infoDiv.innerHTML = `
-        <div class="alert alert-warning">
-            <h6 class="alert-heading">
-                <i class="bi bi-arrow-right-circle-fill"></i> Ruta de Evacuación
-            </h6>
-            <p class="mb-1"><strong>Destino:</strong> ${puntoMasCercano.nombre}</p>
-            <p class="mb-1"><strong>Distancia:</strong> ${distanciaMinima.toFixed(0)} metros</p>
-            <p class="mb-1"><strong>Tiempo estimado:</strong> ${tiempoMinutos.toFixed(0)} minutos (a pie)</p>
-            <p class="mb-0"><strong>Capacidad:</strong> ${puntoMasCercano.capacidad} personas</p>
-            <hr>
-            <p class="mb-0 small">
-                <i class="bi bi-info-circle"></i>
-                Sigue la línea naranja en el mapa para llegar al punto de encuentro más cercano.
-            </p>
-        </div>
-    `;
+        // Calcular distancia total por waypoints
+        let distanciaTotal = 0;
+        for (let i = 0; i < waypointsRuta.length - 1; i++) {
+            distanciaTotal += mapa.distance(waypointsRuta[i], waypointsRuta[i + 1]);
+        }
+        const tiempoMinutos = (distanciaTotal / 5000) * 60;
 
-    // Centrar mapa para ver toda la ruta
-    const bounds = L.latLngBounds([
-        miMarcador.getLatLng(),
-        [puntoMasCercano.latitud, puntoMasCercano.longitud]
-    ]);
-    mapa.fitBounds(bounds, { padding: [100, 100] });
+        document.getElementById('capaRutas').checked = true;
+        capaRutas.addTo(mapa);
+
+        document.getElementById('infoSeleccionada').innerHTML = `
+            <div class="alert alert-warning">
+                <h6 class="alert-heading">
+                    <i class="bi bi-arrow-right-circle-fill"></i> Ruta de Evacuacion
+                </h6>
+                <p class="mb-1"><strong>Ruta:</strong> ${mejorRuta.nombre}</p>
+                <p class="mb-1"><strong>Distancia:</strong> ${distanciaTotal.toFixed(0)} metros</p>
+                <p class="mb-1"><strong>Tiempo estimado:</strong> ${tiempoMinutos.toFixed(0)} min (a pie)</p>
+                <p class="mb-1"><strong>Puntos de paso:</strong> ${waypointsRuta.length - 1}</p>
+                <hr>
+                <p class="mb-0 small">
+                    <i class="bi bi-info-circle"></i>
+                    Siga la linea naranja. La ruta sigue los caminos del centro.
+                </p>
+            </div>
+        `;
+
+        mapa.fitBounds(L.latLngBounds(waypointsRuta), { padding: [80, 80] });
+    } else {
+        // Fallback: linea recta al punto mas cercano
+        let puntoMasCercano = null;
+        let distanciaMinima = Infinity;
+
+        puntosEncuentroData.forEach(punto => {
+            const dist = mapa.distance(miPos, [punto.latitud, punto.longitud]);
+            if (dist < distanciaMinima) {
+                distanciaMinima = dist;
+                puntoMasCercano = punto;
+            }
+        });
+
+        if (puntoMasCercano) {
+            rutaActiva = L.polyline([
+                miPos,
+                [puntoMasCercano.latitud, puntoMasCercano.longitud]
+            ], {
+                color: '#FF5722', weight: 5, opacity: 0.8,
+                dashArray: '10, 10', lineCap: 'round'
+            }).addTo(mapa);
+
+            const tiempoMinutos = (distanciaMinima / 5000) * 60;
+            document.getElementById('capaRutas').checked = true;
+
+            document.getElementById('infoSeleccionada').innerHTML = `
+                <div class="alert alert-warning">
+                    <h6 class="alert-heading">
+                        <i class="bi bi-arrow-right-circle-fill"></i> Ruta de Evacuacion
+                    </h6>
+                    <p class="mb-1"><strong>Destino:</strong> ${puntoMasCercano.nombre}</p>
+                    <p class="mb-1"><strong>Distancia:</strong> ${distanciaMinima.toFixed(0)} metros</p>
+                    <p class="mb-1"><strong>Tiempo:</strong> ${tiempoMinutos.toFixed(0)} min (a pie)</p>
+                </div>
+            `;
+
+            mapa.fitBounds(L.latLngBounds([
+                miPos, [puntoMasCercano.latitud, puntoMasCercano.longitud]
+            ]), { padding: [100, 100] });
+        }
+    }
 }
 
 function calcularRutaHaciaPunto(puntoId) {
     if (!miMarcador) {
-        showToast('Primero necesitamos conocer tu ubicación actual', 'info', 2500);
+        alert('Primero necesitamos conocer tu ubicacion actual.');
         return;
     }
 
     const punto = puntosEncuentroData.find(p => p.id === puntoId);
     if (!punto) {
-        showToast('No se encontró el punto de encuentro seleccionado', 'danger', 2500);
+        alert('No se encontro el punto de encuentro seleccionado.');
         return;
     }
-    
+
+    const miPos = miMarcador.getLatLng();
+    const rutas = window.rutasEvacuacionData || [];
+
     // Limpiar ruta anterior
     if (rutaActiva) {
         mapa.removeLayer(rutaActiva);
     }
-    
-    // Dibujar nueva ruta
-    rutaActiva = L.polyline([
-        miMarcador.getLatLng(),
-        [punto.latitud, punto.longitud]
-    ], {
+
+    // Buscar ruta predefinida que pase cerca del destino
+    let mejorRuta = null;
+    let distMinDestino = Infinity;
+
+    rutas.forEach(ruta => {
+        const ultimoWp = ruta.waypoints[ruta.waypoints.length - 1];
+        const distDestino = mapa.distance(ultimoWp, [punto.latitud, punto.longitud]);
+        if (distDestino < distMinDestino) {
+            distMinDestino = distDestino;
+            mejorRuta = ruta;
+        }
+    });
+
+    let waypointsRuta;
+    if (mejorRuta && distMinDestino < 200) {
+        // Usar ruta predefinida + destino final
+        let indiceInicio = 0;
+        let distMin = Infinity;
+        mejorRuta.waypoints.forEach((wp, idx) => {
+            const d = mapa.distance(miPos, wp);
+            if (d < distMin) { distMin = d; indiceInicio = idx; }
+        });
+        waypointsRuta = [
+            [miPos.lat, miPos.lng],
+            ...mejorRuta.waypoints.slice(indiceInicio),
+            [punto.latitud, punto.longitud]
+        ];
+    } else {
+        // Linea recta
+        waypointsRuta = [
+            [miPos.lat, miPos.lng],
+            [punto.latitud, punto.longitud]
+        ];
+    }
+
+    rutaActiva = L.polyline(waypointsRuta, {
         color: '#4CAF50',
-        weight: 4,
-        opacity: 0.7,
-        dashArray: '15, 10'
+        weight: 5,
+        opacity: 0.8,
+        dashArray: '12, 8',
+        lineCap: 'round',
+        lineJoin: 'round'
     }).addTo(mapa);
-    
-    // Calcular distancia
-    const distancia = mapa.distance(
-        miMarcador.getLatLng(),
-        [punto.latitud, punto.longitud]
-    );
-    
-    // Activar checkbox de rutas
+
+    // Calcular distancia total
+    let distanciaTotal = 0;
+    for (let i = 0; i < waypointsRuta.length - 1; i++) {
+        distanciaTotal += mapa.distance(waypointsRuta[i], waypointsRuta[i + 1]);
+    }
+    const tiempoMinutos = (distanciaTotal / 5000) * 60;
+
     document.getElementById('capaRutas').checked = true;
-    
-    // Mostrar información
+
     document.getElementById('infoSeleccionada').innerHTML = `
         <div class="alert alert-success">
             <h6 class="alert-heading">
                 <i class="bi bi-signpost"></i> Ruta calculada
             </h6>
             <p class="mb-1"><strong>Destino:</strong> ${punto.nombre}</p>
-            <p class="mb-1"><strong>Distancia:</strong> ${distancia.toFixed(0)} metros</p>
+            <p class="mb-1"><strong>Distancia:</strong> ${distanciaTotal.toFixed(0)} metros</p>
+            <p class="mb-1"><strong>Tiempo:</strong> ${tiempoMinutos.toFixed(0)} min (a pie)</p>
             <p class="mb-0"><strong>Capacidad:</strong> ${punto.capacidad} personas</p>
         </div>
     `;
+
+    mapa.fitBounds(L.latLngBounds(waypointsRuta), { padding: [80, 80] });
 }
 
 function mostrarDetallesPunto(puntoId) {
@@ -1666,76 +1705,11 @@ document.addEventListener('fullscreenchange', function() {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
 }
 
-/* Contenedor del mapa con altura responsive */
-.mapa-container {
-    height: 500px;
-    min-height: 400px;
-}
-
 /* Leyenda mejorada */
 .leyenda-mapa {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    z-index: 1000;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    padding: 12px;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-    transition: all 0.3s ease;
-}
-
-.leyenda-titulo {
-    display: block;
-    margin-bottom: 8px;
-    font-size: 14px;
-    font-weight: 600;
-}
-
-.leyenda-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 5px;
-    font-size: 12px;
-}
-
-.leyenda-item:last-child {
-    margin-bottom: 0;
-}
-
-.leyenda-color {
-    width: 15px;
-    height: 15px;
-    border-radius: 50%;
-    margin-right: 8px;
-    border: 2px solid white;
-    flex-shrink: 0;
-}
-
-.leyenda-toggle {
-    display: none;
-    position: absolute;
-    top: -35px;
-    right: 0;
-    width: 35px;
-    height: 35px;
-    background: white;
-    border: none;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    font-size: 18px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.leyenda-toggle:hover {
-    background: #f5f5f5;
-}
-
-.leyenda-toggle:active {
-    transform: scale(0.95);
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95) !important;
 }
 
 /* Scroll personalizado para resultados de búsqueda */
@@ -1757,243 +1731,18 @@ document.addEventListener('fullscreenchange', function() {
     background: #555;
 }
 
-/* ========================================
-   RESPONSIVE DESIGN - TABLET
-   ======================================== */
-@media (max-width: 991px) {
-    .mapa-container {
-        height: 450px;
-    }
-
-    .leyenda-mapa {
-        bottom: 15px;
-        right: 15px;
-        padding: 10px;
-    }
-
-    .leyenda-titulo {
-        font-size: 13px;
-    }
-
-    .leyenda-item {
-        font-size: 11px;
-    }
-}
-
-/* ========================================
-   RESPONSIVE DESIGN - MOBILE
-   ======================================== */
+/* Responsive */
 @media (max-width: 768px) {
-    /* Altura del mapa adaptativa para mobile */
-    .mapa-container {
-        height: 400px;
-        min-height: 350px;
-    }
-
-    /* Botones compactos en header */
-    .btn-group-mapa-vista .btn {
-        padding: 0.375rem 0.5rem;
-        font-size: 0.875rem;
-    }
-
-    /* Ocultar texto en botones pequeños, solo mostrar iconos */
-    .btn-text-desktop {
-        display: none;
-    }
-
-    /* Info de ubicación más compacta */
-    .info-ubicacion-container {
-        padding: 0.5rem !important;
-    }
-
-    .info-ubicacion-container small {
-        font-size: 0.75rem;
-    }
-
-    /* Leyenda colapsable en mobile */
     .leyenda-mapa {
-        bottom: 10px;
-        right: 10px;
-        padding: 8px;
-        max-width: calc(100vw - 40px);
+        bottom: 10px !important;
+        right: 10px !important;
+        padding: 8px !important;
+        font-size: 11px !important;
     }
-
-    .leyenda-toggle {
-        display: block;
-    }
-
-    .leyenda-content {
-        display: none;
-        margin-top: 40px;
-    }
-
-    .leyenda-content.show {
-        display: block;
-    }
-
-    .leyenda-titulo {
-        font-size: 12px;
-        margin-bottom: 6px;
-    }
-
-    .leyenda-item {
-        font-size: 10px;
-        margin-bottom: 4px;
-    }
-
+    
     .leyenda-color {
-        width: 12px;
-        height: 12px;
-        margin-right: 6px;
-    }
-
-    /* Controles de zoom del mapa más grandes para touch */
-    .leaflet-control-zoom a {
-        width: 35px !important;
-        height: 35px !important;
-        line-height: 35px !important;
-        font-size: 20px !important;
-    }
-
-    .leaflet-control-container .leaflet-top {
-        top: 10px;
-    }
-
-    /* Popups más estrechos en mobile */
-    .leaflet-popup-content-wrapper {
-        max-width: 250px;
-    }
-
-    /* Cards de panel lateral con mejor espaciado */
-    .col-lg-4 .card {
-        margin-bottom: 1rem;
-    }
-
-    /* Resultados de búsqueda más grandes para touch */
-    .list-group-item {
-        padding: 0.75rem !important;
-        font-size: 0.9rem;
-    }
-}
-
-/* ========================================
-   RESPONSIVE DESIGN - MOBILE PEQUEÑO
-   ======================================== */
-@media (max-width: 576px) {
-    /* Mapa más compacto en móviles pequeños */
-    .mapa-container {
-        height: 350px;
-        min-height: 300px;
-    }
-
-    /* Header más compacto */
-    .h3 {
-        font-size: 1.25rem;
-    }
-
-    /* Botones de grupo más pequeños */
-    .btn-group-mapa-vista .btn {
-        padding: 0.25rem 0.4rem;
-        font-size: 0.8rem;
-    }
-
-    .btn-group-mapa-vista i {
-        font-size: 1rem;
-    }
-
-    /* Cards sin padding excesivo */
-    .card-body {
-        padding: 0.75rem;
-    }
-
-    .card-header-modern {
-        padding: 0.75rem;
-    }
-
-    /* Botones de acciones rápidas más compactos */
-    #btnRutaEvacuacion,
-    #btnZoomCentro,
-    #btnLimpiarRutas {
-        padding: 0.5rem;
-        font-size: 0.875rem;
-    }
-
-    /* Leyenda ultra compacta */
-    .leyenda-mapa {
-        bottom: 5px;
-        right: 5px;
-        padding: 6px;
-    }
-
-    .leyenda-toggle {
-        width: 32px;
-        height: 32px;
-        font-size: 16px;
-        top: -37px;
-    }
-
-    .leyenda-item {
-        font-size: 9px;
-    }
-
-    .leyenda-color {
-        width: 10px;
-        height: 10px;
-        margin-right: 5px;
-    }
-
-    /* Form controls más grandes para touch */
-    .form-control,
-    .form-select {
-        font-size: 16px; /* Previene zoom en iOS */
-    }
-
-    /* Switches más grandes */
-    .form-check-input {
-        width: 2.5em;
-        height: 1.25em;
-    }
-}
-
-/* ========================================
-   LANDSCAPE ORIENTATION EN MOBILE
-   ======================================== */
-@media (max-width: 768px) and (orientation: landscape) {
-    .mapa-container {
-        height: 300px;
-        min-height: 250px;
-    }
-
-    .leyenda-mapa {
-        bottom: 5px;
-        right: 5px;
-        padding: 5px;
-    }
-
-    .leyenda-content {
-        max-height: 200px;
-        overflow-y: auto;
-    }
-}
-
-/* ========================================
-   MEJORAS DE TOUCH
-   ======================================== */
-@media (hover: none) and (pointer: coarse) {
-    /* Mejor área de toque para botones */
-    button,
-    .btn {
-        min-height: 44px; /* Tamaño mínimo recomendado por WCAG */
-    }
-
-    /* Switches más fáciles de tocar */
-    .form-check {
-        padding: 0.5rem 0;
-    }
-
-    /* Enlaces en resultados más fáciles de tocar */
-    .list-group-item-action {
-        min-height: 50px;
+        width: 12px !important;
+        height: 12px !important;
     }
 }
 </style>

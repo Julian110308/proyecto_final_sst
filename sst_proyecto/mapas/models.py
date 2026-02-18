@@ -31,8 +31,13 @@ class EdificioBloque(UbicacionBase):
             ('TALLER', 'Taller'),
             ('LABORATORIO', 'Laboratorio'),
             ('ADMINISTRATIVO', 'Oficinas administrativas'),
-            ('Cafeteria', 'Cafeteria'),
+            ('CAFETERIA', 'Cafeteria'),
             ('PARQUEADERO', 'Parqueadero'),
+            ('CANCHA', 'Cancha deportiva'),
+            ('ZONA_VERDE', 'Zona verde'),
+            ('MINA', 'Mina didactica'),
+            ('BIBLIOTECA', 'Biblioteca'),
+            ('BODEGA', 'Almacen/Bodega'),
             ('OTRO', 'Otro'),
         ]
     )
@@ -45,9 +50,15 @@ class EdificioBloque(UbicacionBase):
         verbose_name_plural = 'Edificios/Bloques'
         ordering = ['nombre']
 
+    # Campos para representacion SVG del campus
+    svg_x = models.FloatField(null=True, blank=True, help_text='Coordenada X en SVG (calculada desde GPS)')
+    svg_y = models.FloatField(null=True, blank=True, help_text='Coordenada Y en SVG (calculada desde GPS)')
+    svg_ancho = models.FloatField(default=40, help_text='Ancho del edificio en SVG')
+    svg_alto = models.FloatField(default=25, help_text='Alto del edificio en SVG')
+
     def __str__(self):
         return f'{self.nombre} - {self.get_tipo_display()}'
-    
+
 
 class PuntoEncuentro(UbicacionBase):
 
@@ -162,6 +173,12 @@ class RutaEvacuacion(models.Model):
     distancia_metros = models.FloatField(help_text='Distancia en metros')
     tiempo_estimado_minutos = models.FloatField(help_text='Tiempo estimado en minutos')
 
+    waypoints = models.JSONField(
+        default=list,
+        blank=True,
+        help_text='Lista de coordenadas intermedias: [[lat1,lng1],[lat2,lng2],...]'
+    )
+
     bloques_atraviesa = models.ManyToManyField(
         EdificioBloque,
         related_name='rutas_evacuacion',
@@ -178,3 +195,72 @@ class RutaEvacuacion(models.Model):
     
     def __str__(self):
         return f'{self.nombre} -> {self.punto_fin.nombre}'
+
+
+class EstadoEdificio(models.Model):
+    ESTADOS = [
+        ('NORMAL', 'Normal'),
+        ('DANADO', 'Danado'),
+        ('EVACUANDO', 'Evacuando'),
+        ('CERRADO', 'Cerrado'),
+        ('EN_EMERGENCIA', 'En emergencia'),
+    ]
+
+    COLOR_MAP = {
+        'NORMAL': '#4CAF50',
+        'DANADO': '#F44336',
+        'EVACUANDO': '#FF9800',
+        'CERRADO': '#9E9E9E',
+        'EN_EMERGENCIA': '#D32F2F',
+    }
+
+    edificio = models.OneToOneField(
+        EdificioBloque,
+        on_delete=models.CASCADE,
+        related_name='estado_actual'
+    )
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='NORMAL')
+    motivo = models.TextField(blank=True)
+    actualizado_por = models.ForeignKey(
+        Usuario,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    @property
+    def color(self):
+        return self.COLOR_MAP.get(self.estado, '#4CAF50')
+
+    class Meta:
+        verbose_name = 'Estado de edificio'
+        verbose_name_plural = 'Estados de edificios'
+
+    def __str__(self):
+        return f'{self.edificio.nombre} - {self.get_estado_display()}'
+
+
+class HistorialEstadoEdificio(models.Model):
+    edificio = models.ForeignKey(
+        EdificioBloque,
+        on_delete=models.CASCADE,
+        related_name='historial_estados'
+    )
+    estado_anterior = models.CharField(max_length=20)
+    estado_nuevo = models.CharField(max_length=20)
+    motivo = models.TextField(blank=True)
+    cambiado_por = models.ForeignKey(
+        Usuario,
+        on_delete=models.SET_NULL,
+        null=True
+    )
+    fecha = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Historial de estado'
+        verbose_name_plural = 'Historial de estados'
+        ordering = ['-fecha']
+
+    def __str__(self):
+        return f'{self.edificio.nombre}: {self.estado_anterior} -> {self.estado_nuevo}'

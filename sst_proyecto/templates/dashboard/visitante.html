@@ -67,7 +67,7 @@
                         </a>
                     </div>
                     <div class="col-md-4">
-                        <a href="{% url 'informacion_sst' %}" class="btn btn-outline-success w-100 py-3 text-decoration-none">
+                        <a href="#collapseNormas" class="btn btn-outline-success w-100 py-3 text-decoration-none" onclick="document.getElementById('collapseNormas').classList.add('show'); document.getElementById('seccionNormas').scrollIntoView({behavior:'smooth'});">
                             <i class="bi bi-shield-check fs-4 d-block mb-1"></i>
                             <span class="fw-bold small">Normas SST</span>
                         </a>
@@ -84,26 +84,54 @@
     </div>
 </div>
 
-<!-- Mapa del Centro -->
+<!-- Mapa del Centro con Generador de Rutas -->
 <div class="row g-4 mb-4">
     <div class="col-md-10 mx-auto">
         <div class="card card-modern">
             <div class="card-header-modern d-flex justify-content-between align-items-center">
                 <h6 class="mb-0">
                     <i class="bi bi-geo-alt-fill me-2"></i>
-                    Mapa del Centro
+                    Mapa del Centro - Generar Ruta
                 </h6>
                 <a href="/mapas/" class="btn btn-sm btn-outline-primary">Ver Completo</a>
             </div>
-            <div class="card-body p-0">
-                <div id="visitanteMap" style="height: 400px;"></div>
+            <div class="card-body">
+                <!-- Selector de destino y boton de ruta -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">
+                            <i class="bi bi-signpost-2 me-1"></i>Seleccione su destino
+                        </label>
+                        <select id="selectDestino" class="form-select">
+                            <option value="">-- Seleccione una zona --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">&nbsp;</label>
+                        <button id="btnGenerarRuta" class="btn btn-success w-100" disabled>
+                            <i class="bi bi-arrow-right-circle me-1"></i>Generar Ruta
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">&nbsp;</label>
+                        <button id="btnLimpiarRutaVisitante" class="btn btn-outline-secondary w-100">
+                            <i class="bi bi-trash me-1"></i>Limpiar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Info de la ruta -->
+                <div id="infoRutaVisitante" class="d-none mb-3"></div>
+
+                <!-- Mapa -->
+                <div id="visitanteMap" style="height: 400px; border-radius: 8px;"></div>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Normas de Seguridad (colapsable) -->
-<div class="row g-4 mb-4">
+<div class="row g-4 mb-4" id="seccionNormas">
     <div class="col-md-10 mx-auto">
         <div class="card card-modern">
             <div class="card-header-modern d-flex justify-content-between align-items-center" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#collapseNormas">
@@ -214,8 +242,11 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-// Mapa del Centro - coordenadas reales del SENA Sogamoso
-const map = L.map('visitanteMap').setView([5.7303596, -72.8943613], 17);
+// Coordenadas del Centro Minero
+const centroMineroV = { lat: 5.7303596, lng: -72.8943613 };
+
+// Mapa del Centro
+const map = L.map('visitanteMap').setView([centroMineroV.lat, centroMineroV.lng], 17);
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     attribution: 'Esri'
 }).addTo(map);
@@ -223,21 +254,200 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.
     pane: 'overlayPane'
 }).addTo(map);
 
-// Cargar puntos de encuentro desde la API
+// Variables para ruta
+let rutaVisitante = null;
+let marcadorDestino = null;
+let miMarcadorVisitante = null;
+let edificiosVisitante = [];
+
+// Iconos
 const peIcon = L.divIcon({
     className: 'custom-div-icon',
     html: '<div style="background:#4CAF50;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,.3);font-size:11px;">PE</div>',
     iconSize: [30, 30]
 });
 
+const destIcon = L.divIcon({
+    className: 'custom-div-icon',
+    html: '<div style="background:#FF6600;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4);font-size:14px;"><i class="bi bi-flag-fill"></i></div>',
+    iconSize: [36, 36], iconAnchor: [18, 36]
+});
+
+// Cargar puntos de encuentro
 fetch('/api/mapas/api/puntos-encuentro/')
     .then(r => r.json())
     .then(data => {
         (data.results || data).forEach(p => {
             L.marker([p.latitud, p.longitud], {icon: peIcon}).addTo(map)
-                .bindPopup(`<b>${p.nombre}</b><br>${p.descripcion || ''}<br>Capacidad: ${p.capacidad || '-'}`);
+                .bindPopup('<b>' + p.nombre + '</b><br>' + (p.descripcion || '') + '<br>Capacidad: ' + (p.capacidad || '-'));
         });
     }).catch(() => {});
+
+// Cargar edificios para el selector de destino
+fetch('/api/mapas/api/edificios/')
+    .then(r => r.json())
+    .then(data => {
+        edificiosVisitante = data.results || data;
+        const select = document.getElementById('selectDestino');
+
+        // Agregar edificios de la BD
+        if (edificiosVisitante.length > 0) {
+            edificiosVisitante.forEach(e => {
+                const opt = document.createElement('option');
+                opt.value = e.id;
+                opt.textContent = e.nombre + (e.tipo ? ' (' + e.tipo + ')' : '');
+                opt.dataset.lat = e.latitud;
+                opt.dataset.lng = e.longitud;
+                select.appendChild(opt);
+            });
+        } else {
+            // Datos de ejemplo si no hay en BD
+            const ejemplos = [
+                { nombre: 'Edificio Administrativo', lat: 5.73047, lng: -72.89440 },
+                { nombre: 'Bloque de Aulas', lat: 5.73062, lng: -72.89425 },
+                { nombre: 'Talleres de Mineria', lat: 5.73012, lng: -72.89432 },
+                { nombre: 'Laboratorios de Geologia', lat: 5.73044, lng: -72.89392 },
+                { nombre: 'Cafeteria y Bienestar', lat: 5.73033, lng: -72.89394 },
+                { nombre: 'Biblioteca', lat: 5.73059, lng: -72.89399 },
+                { nombre: 'Mina Didactica', lat: 5.72980, lng: -72.89464 },
+            ];
+            ejemplos.forEach((e, i) => {
+                const opt = document.createElement('option');
+                opt.value = 'ej_' + i;
+                opt.textContent = e.nombre;
+                opt.dataset.lat = e.lat;
+                opt.dataset.lng = e.lng;
+                select.appendChild(opt);
+            });
+            edificiosVisitante = ejemplos.map((e, i) => ({id: 'ej_' + i, nombre: e.nombre, latitud: e.lat, longitud: e.lng}));
+        }
+    }).catch(() => {
+        // Fallback con datos de ejemplo
+        const select = document.getElementById('selectDestino');
+        const ejemplos = [
+            { nombre: 'Edificio Administrativo', lat: 5.73047, lng: -72.89440 },
+            { nombre: 'Bloque de Aulas', lat: 5.73062, lng: -72.89425 },
+            { nombre: 'Talleres de Mineria', lat: 5.73012, lng: -72.89432 },
+            { nombre: 'Cafeteria y Bienestar', lat: 5.73033, lng: -72.89394 },
+            { nombre: 'Mina Didactica', lat: 5.72980, lng: -72.89464 },
+        ];
+        ejemplos.forEach((e, i) => {
+            const opt = document.createElement('option');
+            opt.value = 'ej_' + i;
+            opt.textContent = e.nombre;
+            opt.dataset.lat = e.lat;
+            opt.dataset.lng = e.lng;
+            select.appendChild(opt);
+        });
+        edificiosVisitante = ejemplos.map((e, i) => ({id: 'ej_' + i, nombre: e.nombre, latitud: e.lat, longitud: e.lng}));
+    });
+
+// Habilitar boton cuando se selecciona destino
+document.getElementById('selectDestino').addEventListener('change', function() {
+    document.getElementById('btnGenerarRuta').disabled = !this.value;
+});
+
+// Obtener ubicacion del visitante
+if (navigator.geolocation) {
+    navigator.geolocation.watchPosition(function(pos) {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+
+        if (miMarcadorVisitante) {
+            miMarcadorVisitante.setLatLng([lat, lng]);
+        } else {
+            miMarcadorVisitante = L.marker([lat, lng], {
+                icon: L.icon({
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+                    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+                }),
+                title: 'Mi ubicacion'
+            }).addTo(map).bindPopup('<strong>Mi ubicacion actual</strong>');
+        }
+    }, function() {}, { enableHighAccuracy: true, timeout: 10000 });
+}
+
+// Generar ruta
+document.getElementById('btnGenerarRuta').addEventListener('click', function() {
+    const select = document.getElementById('selectDestino');
+    const selectedOpt = select.options[select.selectedIndex];
+
+    if (!selectedOpt || !selectedOpt.dataset.lat) return;
+
+    const destLat = parseFloat(selectedOpt.dataset.lat);
+    const destLng = parseFloat(selectedOpt.dataset.lng);
+    const destNombre = selectedOpt.textContent;
+
+    // Punto de origen: ubicacion del visitante o centro del mapa
+    let origenLat, origenLng;
+    if (miMarcadorVisitante) {
+        const ll = miMarcadorVisitante.getLatLng();
+        origenLat = ll.lat;
+        origenLng = ll.lng;
+    } else {
+        origenLat = centroMineroV.lat;
+        origenLng = centroMineroV.lng;
+    }
+
+    // Limpiar ruta anterior
+    if (rutaVisitante) map.removeLayer(rutaVisitante);
+    if (marcadorDestino) map.removeLayer(marcadorDestino);
+
+    // Dibujar ruta
+    rutaVisitante = L.polyline([
+        [origenLat, origenLng],
+        [destLat, destLng]
+    ], {
+        color: '#FF6600',
+        weight: 5,
+        opacity: 0.85,
+        dashArray: '12, 8',
+        lineCap: 'round'
+    }).addTo(map);
+
+    // Marcador de destino
+    marcadorDestino = L.marker([destLat, destLng], { icon: destIcon })
+        .addTo(map)
+        .bindPopup('<strong>Destino: ' + destNombre + '</strong>')
+        .openPopup();
+
+    // Calcular distancia
+    const distancia = map.distance([origenLat, origenLng], [destLat, destLng]);
+    const tiempoMin = (distancia / 5000) * 60; // 5 km/h a pie
+
+    // Mostrar info de ruta
+    const infoDiv = document.getElementById('infoRutaVisitante');
+    infoDiv.classList.remove('d-none');
+    infoDiv.innerHTML = `
+        <div class="alert alert-success mb-0">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-arrow-right-circle-fill fs-3 me-3 text-success"></i>
+                <div>
+                    <h6 class="mb-1">Ruta hacia: ${destNombre}</h6>
+                    <span class="me-3"><i class="bi bi-rulers me-1"></i><strong>${distancia.toFixed(0)}</strong> metros</span>
+                    <span><i class="bi bi-clock me-1"></i><strong>${tiempoMin < 1 ? '< 1' : tiempoMin.toFixed(0)}</strong> min a pie</span>
+                </div>
+            </div>
+            <small class="text-muted d-block mt-2">
+                <i class="bi bi-info-circle me-1"></i>Siga la linea naranja en el mapa para llegar a su destino.
+            </small>
+        </div>`;
+
+    // Ajustar vista
+    const bounds = L.latLngBounds([[origenLat, origenLng], [destLat, destLng]]);
+    map.fitBounds(bounds, { padding: [80, 80] });
+});
+
+// Limpiar ruta
+document.getElementById('btnLimpiarRutaVisitante').addEventListener('click', function() {
+    if (rutaVisitante) { map.removeLayer(rutaVisitante); rutaVisitante = null; }
+    if (marcadorDestino) { map.removeLayer(marcadorDestino); marcadorDestino = null; }
+    document.getElementById('infoRutaVisitante').classList.add('d-none');
+    document.getElementById('selectDestino').value = '';
+    document.getElementById('btnGenerarRuta').disabled = true;
+    map.setView([centroMineroV.lat, centroMineroV.lng], 17);
+});
 
 // Cargar info de visita del usuario
 document.addEventListener('DOMContentLoaded', async function() {
@@ -314,7 +524,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 function reportarEmergencia() {
     if (confirm('Desea reportar una emergencia? Se notificara al personal de seguridad.')) {
-        window.location.href = '/dashboard/';
+        window.location.href = '/emergencias/';
     }
 }
 </script>

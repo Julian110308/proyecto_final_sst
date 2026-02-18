@@ -7,8 +7,16 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="https://upload.wikimedia.org/wikipedia/commons/8/83/Sena_Colombia_logo.svg">
 
-    <!-- Design System CSS -->
+    <!-- PWA Meta Tags -->
     {% load static %}
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="{% static 'icons/icon-192.png' %}">
+    <meta name="theme-color" content="#39A900">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SST SENA">
+
+    <!-- Design System CSS -->
     <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
@@ -802,6 +810,7 @@
             border-color: #4CAF50;
             background: rgba(76, 175, 80, 0.05);
         }
+
     </style>
 </head>
 <body>
@@ -899,7 +908,7 @@
                     </button>
 
                     <div class="switch-text">
-                        ¿No tienes cuenta? 
+                        ¿No tienes cuenta?
                         <button type="button" class="switch-btn" onclick="switchToRegister()">Regístrate aquí</button>
                     </div>
                 </form>
@@ -1234,6 +1243,7 @@
                             <span>Reportes en Tiempo Real</span>
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>
@@ -1272,9 +1282,9 @@
                 button.setAttribute('aria-label', 'Mostrar contraseña');
             }
             
-            button.style.transform = 'scale(1.1)';
+            button.style.transform = 'translateY(-50%) scale(1.1)';
             setTimeout(() => {
-                button.style.transform = 'scale(1)';
+                button.style.transform = 'translateY(-50%) scale(1)';
             }, 200);
         }
 
@@ -1707,12 +1717,15 @@
 
         // Efecto de animación en inputs
         document.querySelectorAll('input, select').forEach(input => {
+            const hasToggle = input.parentElement && input.parentElement.querySelector('.toggle-password');
             input.addEventListener('focus', function() {
+                if (hasToggle) return;
                 this.parentElement.style.transform = 'translateY(-2px)';
                 this.parentElement.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.1)';
             });
-            
+
             input.addEventListener('blur', function() {
+                if (hasToggle) return;
                 this.parentElement.style.transform = 'translateY(0)';
                 this.parentElement.style.boxShadow = 'none';
             });
@@ -1729,6 +1742,13 @@
                 el.setAttribute('aria-label', 'Campo obligatorio');
             });
         });
+
+        // ===== Registro del Service Worker =====
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .catch(function(err) { console.log('SW registro fallido:', err); });
+        }
     </script>
+
 </body>
 </html>

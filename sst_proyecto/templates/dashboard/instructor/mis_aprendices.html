@@ -9,12 +9,12 @@
 
 {% block content %}
 <div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold text-dark">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+        <h2 class="fw-bold text-dark mb-0">
             <i class="bi bi-people-fill me-2"></i>Mis Aprendices
         </h2>
         {% if ficha_seleccionada %}
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 flex-wrap">
             <span class="badge bg-success fs-6">
                 Ficha {{ ficha_seleccionada }} - {{ total_aprendices }} aprendiz{{ total_aprendices|pluralize:"es" }}
             </span>
@@ -120,7 +120,7 @@
         <div class="col-md-3">
             <div class="card card-modern h-100 border-start border-danger border-4">
                 <div class="card-body text-center">
-                    <div class="fs-2 text-danger fw-bold">{{ total_aprendices|add:presentes_hoy|add:"-"|add:total_aprendices|default:0 }}</div>
+                    <div class="fs-2 text-danger fw-bold">{{ ausentes }}</div>
                     <div class="text-muted small">Ausentes</div>
                 </div>
             </div>
@@ -128,8 +128,7 @@
         <div class="col-md-3">
             <div class="card card-modern h-100 border-start border-info border-4">
                 <div class="card-body text-center">
-                    {% widthratio presentes_hoy total_aprendices 100 as porcentaje %}
-                    <div class="fs-2 text-info fw-bold">{{ porcentaje|default:0 }}%</div>
+                    <div class="fs-2 text-info fw-bold">{{ porcentaje_asistencia }}%</div>
                     <div class="text-muted small">Asistencia</div>
                 </div>
             </div>
@@ -309,9 +308,9 @@ function registrarAsistencia(aprendizId, nombreAprendiz) {
 }
 
 function confirmarAsistencia() {
-    const aprendizId = document.getElementById('aprendizId').value;
+    const aprendizId = parseInt(document.getElementById('aprendizId').value);
 
-    fetch('/api/acceso/registrar_asistencia_manual/', {
+    fetch('/api/acceso/registros/registrar_asistencia_manual/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -323,8 +322,10 @@ function confirmarAsistencia() {
     })
     .then(response => response.json())
     .then(data => {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('modalAsistencia'));
+        if (modal) modal.hide();
+
         if (data.success) {
-            alert('Asistencia registrada correctamente');
             location.reload();
         } else {
             alert('Error: ' + (data.error || 'No se pudo registrar la asistencia'));
@@ -350,7 +351,7 @@ function registrarAsistenciaMasiva() {
         if (btn) {
             const aprendizId = fila.dataset.aprendizId;
             if (aprendizId) {
-                aprendicesSinRegistro.push(aprendizId);
+                aprendicesSinRegistro.push(parseInt(aprendizId));
             }
         }
     });
@@ -360,7 +361,7 @@ function registrarAsistenciaMasiva() {
         return;
     }
 
-    fetch('/api/acceso/registrar_asistencia_masiva/', {
+    fetch('/api/acceso/registros/registrar_asistencia_masiva/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

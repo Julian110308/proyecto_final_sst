@@ -12,12 +12,8 @@ from .serializers import (
     RegistroAccesoSerializer,
     ConfiguracionAforoSerializer,
     RegistrarAccesoSerializer,
-    # EscanearQRSerializer  # Deshabilitado - solo registro físico
 )
 from .utils import (
-    # generar_qr_usuario,  # Deshabilitado - solo registro físico
-    # generar_qr_visitante,  # Deshabilitado - solo registro físico
-    # decodificar_qr,  # Deshabilitado - solo registro físico
     verificar_aforo_actual,
     obtener_estadisticas_hoy
 )
@@ -82,6 +78,97 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
     queryset = RegistroAcceso.objects.all()
     serializer_class = RegistroAccesoSerializer
     permission_classes = [EsVigilanciaOAdministrativo]
+
+    def get_permissions(self):
+        """
+        Instructor puede acceder a acciones de asistencia y estadísticas/registros recientes.
+        Las demás acciones requieren VIGILANCIA o ADMINISTRATIVO.
+        """
+        if self.action in [
+            'registrar_asistencia_manual',
+            'registrar_asistencia_masiva',
+            'estadisticas',
+            'registros_recientes',
+            'auto_registro',
+        ]:
+            return [IsAuthenticated()]
+        return super().get_permissions()
+
+    @action(detail=False, methods=['post'], url_path='auto-registro')
+    def auto_registro(self, request):
+        """
+        Endpoint llamado periodicamente por el frontend con la ubicacion GPS.
+        Detecta automaticamente si el usuario cruza la geocerca y registra
+        ingreso/egreso segun corresponda.
+        """
+        latitud = request.data.get('latitud')
+        longitud = request.data.get('longitud')
+
+        if latitud is None or longitud is None:
+            return Response({
+                'error': 'Se requieren latitud y longitud'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            lat = float(latitud)
+            lng = float(longitud)
+        except (ValueError, TypeError):
+            return Response({
+                'error': 'Coordenadas invalidas'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        usuario = request.user
+        hoy = timezone.now().date()
+
+        # Verificar si esta dentro de la geocerca
+        geocerca = Geocerca.verificar_ubicacion_usuario(lat, lng)
+        esta_dentro = geocerca is not None
+
+        # Buscar registro abierto de hoy (ingreso sin egreso)
+        registro_abierto = RegistroAcceso.objects.filter(
+            usuario=usuario,
+            tipo='INGRESO',
+            fecha_hora_egreso__isnull=True,
+            fecha_hora_ingreso__date=hoy
+        ).order_by('-fecha_hora_ingreso').first()
+
+        accion = None
+
+        if esta_dentro and not registro_abierto:
+            # Usuario entro al centro: registrar INGRESO
+            # Verificar aforo
+            aforo = verificar_aforo_actual()
+            if aforo['alerta'] == 'CRITICO':
+                return Response({
+                    'estado': 'FUERA',
+                    'accion': None,
+                    'mensaje': 'Aforo maximo alcanzado, no se puede registrar ingreso'
+                })
+
+            RegistroAcceso.objects.create(
+                usuario=usuario,
+                tipo='INGRESO',
+                latitud_ingreso=lat,
+                longitud_ingreso=lng,
+                metodo_ingreso='AUTOMATICO'
+            )
+            accion = 'INGRESO'
+
+        elif not esta_dentro and registro_abierto:
+            # Usuario salio del centro: registrar EGRESO
+            registro_abierto.fecha_hora_egreso = timezone.now()
+            registro_abierto.latitud_egreso = lat
+            registro_abierto.longitud_egreso = lng
+            registro_abierto.metodo_egreso = 'AUTOMATICO'
+            registro_abierto.save()
+            accion = 'EGRESO'
+
+        return Response({
+            'estado': 'DENTRO' if esta_dentro else 'FUERA',
+            'accion': accion,
+            'dentro_geocerca': esta_dentro,
+            'registro_abierto': registro_abierto is not None if accion != 'EGRESO' else False,
+        })
 
     def get_queryset(self):
         """
@@ -244,103 +331,6 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
             'tiempo_permanencia': str(tiempo_permanencia)
         })
 
-    # DESHABILITADO - Solo registro físico/manual
-    # @action(detail=False, methods=['post'])
-    # def escanear_qr(self, request):
-    #     """
-    #     Procesa el escaneo de un código QR y registra ingreso/egreso automáticamente
-    #     """
-    #     serializer = EscanearQRSerializer(data=request.data)
-    #
-    #     if not serializer.is_valid():
-    #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    #
-    #     codigo_qr = serializer.validated_data.get('codigo_qr')
-    #     latitud = serializer.validated_data.get('latitud')
-    #     longitud = serializer.validated_data.get('longitud')
-    #
-    #     # Decodificar el QR
-    #     tipo, id_persona = decodificar_qr(codigo_qr)
-    #
-    #     if not tipo or not id_persona:
-    #         return Response(
-    #             {'error': 'Código QR inválido'},
-    #             status=status.HTTP_400_BAD_REQUEST
-    #         )
-    #
-    #     if tipo == 'USUARIO':
-    #         try:
-    #             usuario = Usuario.objects.get(id=id_persona)
-    #         except Usuario.DoesNotExist:
-    #             return Response(
-    #                 {'error': 'Usuario no encontrado'},
-    #                 status=status.HTTP_404_NOT_FOUND
-    #             )
-    #
-    #         # Verificar si tiene un ingreso activo
-    #         acceso_abierto = RegistroAcceso.objects.filter(
-    #             usuario=usuario,
-    #             fecha_hora_egreso__isnull=True
-    #         ).first()
-    #
-    #         # Si tiene ingreso activo, registrar salida; si no, registrar ingreso
-    #         if acceso_abierto:
-    #             # Registrar salida
-    #             acceso_abierto.fecha_hora_egreso = timezone.now()
-    #             acceso_abierto.latitud_egreso = latitud
-    #             acceso_abierto.longitud_egreso = longitud
-    #             acceso_abierto.metodo_egreso = 'QR'
-    #             acceso_abierto.save()
-    #
-    #             tiempo_permanencia = acceso_abierto.fecha_hora_egreso - acceso_abierto.fecha_hora_ingreso
-    #
-    #             return Response({
-    #                 'success': True,
-    #                 'tipo': 'EGRESO',
-    #                 'mensaje': f'Salida registrada - {usuario.get_full_name()}',
-    #                 'usuario': {
-    #                     'nombre': usuario.get_full_name(),
-    #                     'documento': usuario.numero_documento,
-    #                     'rol': usuario.get_rol_display()
-    #                 },
-    #                 'tiempo_permanencia': str(tiempo_permanencia)
-    #             })
-    #         else:
-    #             # Verificar aforo
-    #             aforo_info = verificar_aforo_actual()
-    #             if aforo_info['alerta'] == 'CRITICO':
-    #                 return Response({
-    #                     'error': 'Aforo máximo alcanzado',
-    #                     'mensaje': aforo_info['mensaje']
-    #                 }, status=status.HTTP_400_BAD_REQUEST)
-    #
-    #             # Registrar ingreso
-    #             registro = RegistroAcceso.objects.create(
-    #                 usuario=usuario,
-    #                 tipo='INGRESO',
-    #                 latitud_ingreso=latitud,
-    #                 longitud_ingreso=longitud,
-    #                 metodo_ingreso='QR'
-    #             )
-    #
-    #             return Response({
-    #                 'success': True,
-    #                 'tipo': 'INGRESO',
-    #                 'mensaje': f'Ingreso registrado - {usuario.get_full_name()}',
-    #                 'usuario': {
-    #                     'nombre': usuario.get_full_name(),
-    #                     'documento': usuario.numero_documento,
-    #                     'rol': usuario.get_rol_display()
-    #                 },
-    #                 'aforo': aforo_info
-    #             }, status=status.HTTP_201_CREATED)
-    #
-    #     else:
-    #         return Response(
-    #             {'error': 'Tipo de código QR no soportado'},
-    #             status=status.HTTP_400_BAD_REQUEST
-    #         )
-
     @action(detail=False, methods=['get'])
     def estadisticas(self, request):
         """
@@ -355,7 +345,7 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
         Obtiene los registros más recientes
         """
         limite = int(request.query_params.get('limite', 20))
-        registros = RegistroAcceso.objects.all().order_by('-fecha_hora_ingreso')[:limite]
+        registros = RegistroAcceso.objects.select_related('usuario').all().order_by('-fecha_hora_ingreso')[:limite]
 
         data = []
         for registro in registros:
@@ -498,37 +488,44 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
         lng_default = geocerca.centro_longitud if geocerca else -72.8943613
 
         hoy = timezone.now().date()
-        registrados = 0
         errores = []
 
-        for usuario_id in usuarios_ids:
-            try:
-                usuario = Usuario.objects.get(id=usuario_id)
+        # Obtener todos los usuarios de una sola query
+        usuarios = Usuario.objects.filter(id__in=usuarios_ids)
+        usuarios_dict = {u.id: u for u in usuarios}
 
-                # Verificar que no tenga ya un registro de hoy
-                registro_existente = RegistroAcceso.objects.filter(
-                    usuario=usuario,
-                    fecha_hora_ingreso__date=hoy
-                ).exists()
+        # IDs no encontrados
+        ids_no_encontrados = set(usuarios_ids) - set(usuarios_dict.keys())
+        for uid in ids_no_encontrados:
+            errores.append(f'Usuario ID {uid} no encontrado')
 
-                if registro_existente:
-                    errores.append(f'{usuario.get_full_name()} ya tiene registro')
-                    continue
+        # Obtener IDs que ya tienen registro hoy (una sola query)
+        ids_con_registro = set(
+            RegistroAcceso.objects.filter(
+                usuario_id__in=usuarios_dict.keys(),
+                fecha_hora_ingreso__date=hoy
+            ).values_list('usuario_id', flat=True)
+        )
 
-                # Crear registro
-                RegistroAcceso.objects.create(
+        for uid in ids_con_registro:
+            errores.append(f'{usuarios_dict[uid].get_full_name()} ya tiene registro')
+
+        # Crear registros en bulk para los que sí proceden
+        registros_nuevos = []
+        for uid, usuario in usuarios_dict.items():
+            if uid not in ids_con_registro:
+                registros_nuevos.append(RegistroAcceso(
                     usuario=usuario,
                     tipo='INGRESO',
                     latitud_ingreso=lat_default,
                     longitud_ingreso=lng_default,
                     metodo_ingreso='MANUAL'
-                )
-                registrados += 1
+                ))
 
-            except Usuario.DoesNotExist:
-                errores.append(f'Usuario ID {usuario_id} no encontrado')
-            except Exception as e:
-                errores.append(f'Error con usuario {usuario_id}: {str(e)}')
+        if registros_nuevos:
+            RegistroAcceso.objects.bulk_create(registros_nuevos)
+
+        registrados = len(registros_nuevos)
 
         return Response({
             'success': True,

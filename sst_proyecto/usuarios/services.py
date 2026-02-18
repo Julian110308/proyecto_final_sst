@@ -257,8 +257,8 @@ class NotificacionService:
     @staticmethod
     def notificar_incidente_creado(incidente):
         """
-        Notifica cuando se crea cualquier incidente (no solo críticos).
-        Notifica a Administrativos siempre.
+        Notifica cuando se crea cualquier incidente (no solo criticos).
+        Notifica a Administrativos siempre. Incluye ubicacion y area.
 
         Args:
             incidente: Instancia del modelo Incidente
@@ -268,21 +268,34 @@ class NotificacionService:
 
         titulo = f"Nuevo incidente: {incidente.titulo if hasattr(incidente, 'titulo') else 'Reportado'}"
         descripcion_texto = str(incidente.descripcion) if incidente.descripcion else ''
+
+        # Construir informacion de ubicacion
+        ubicacion_info = incidente.ubicacion or 'No especificada'
+        area_info = ''
+        if hasattr(incidente, 'get_area_incidente_display') and incidente.area_incidente:
+            area_info = f"\nArea: {incidente.get_area_incidente_display()}"
+        lugar_info = ''
+        if hasattr(incidente, 'lugar_exacto') and incidente.lugar_exacto:
+            lugar_info = f"\nLugar exacto: {incidente.lugar_exacto}"
+        persona_info = ''
+        if hasattr(incidente, 'persona_afectada') and incidente.persona_afectada:
+            persona_info = f"\nPersona afectada: {incidente.persona_afectada}"
+
         mensaje = (
             f"Se ha reportado un nuevo incidente.\n"
             f"Tipo: {incidente.get_tipo_display() if hasattr(incidente, 'get_tipo_display') else incidente.tipo}\n"
             f"Gravedad: {gravedad}\n"
-            f"Descripción: {descripcion_texto[:80]}{'...' if len(descripcion_texto) > 80 else ''}\n"
-            f"Reportado por: {incidente.reportado_por.get_full_name() if incidente.reportado_por else 'Anónimo'}"
+            f"Ubicacion: {ubicacion_info}{area_info}{lugar_info}{persona_info}\n"
+            f"Descripcion: {descripcion_texto[:80]}{'...' if len(descripcion_texto) > 80 else ''}\n"
+            f"Reportado por: {incidente.reportado_por.get_full_name() if incidente.reportado_por else 'Anonimo'}"
         )
 
         url = "/reportes/incidentes/"
 
-        # Si es crítico o alto, notificar a Admin e Instructores
+        # Si es critico o alto, notificar a Admin e Instructores
         if gravedad in ['ALTA', 'CRITICA']:
             roles = ['ADMINISTRATIVO', 'INSTRUCTOR']
         else:
-            # Solo a administrativos para incidentes menores
             roles = ['ADMINISTRATIVO']
 
         notificaciones = []
@@ -295,6 +308,54 @@ class NotificacionService:
                 mensaje=mensaje,
                 tipo='INCIDENTE',
                 prioridad=prioridad_notif,
+                url_relacionada=url
+            ))
+
+        if notificaciones:
+            Notificacion.objects.bulk_create(notificaciones)
+
+        return len(notificaciones)
+
+    @staticmethod
+    def notificar_alarma_incidente(incidente):
+        """
+        Genera una alarma/alerta de alta prioridad para Brigada e Instructores
+        cuando se reporta un incidente de gravedad ALTA o CRITICA.
+
+        Args:
+            incidente: Instancia del modelo Incidente
+        """
+        gravedad = getattr(incidente, 'gravedad', 'MEDIA')
+
+        ubicacion_info = incidente.ubicacion or 'No especificada'
+        area_info = ''
+        if hasattr(incidente, 'get_area_incidente_display') and incidente.area_incidente:
+            area_info = f" - {incidente.get_area_incidente_display()}"
+
+        titulo = f"ALARMA - Incidente {gravedad}: {incidente.titulo}"
+        mensaje = (
+            f"ATENCION: Se ha reportado un incidente de gravedad {gravedad}.\n"
+            f"Tipo: {incidente.get_tipo_display() if hasattr(incidente, 'get_tipo_display') else incidente.tipo}\n"
+            f"Ubicacion: {ubicacion_info}{area_info}\n"
+            f"Reportado por: {incidente.reportado_por.get_full_name() if incidente.reportado_por else 'Anonimo'}\n"
+            f"Se requiere atencion inmediata."
+        )
+
+        url = "/reportes/incidentes/"
+
+        notificaciones = []
+        usuarios = Usuario.objects.filter(
+            rol__in=['BRIGADA', 'INSTRUCTOR'],
+            activo=True
+        )
+
+        for usuario in usuarios:
+            notificaciones.append(Notificacion(
+                destinatario=usuario,
+                titulo=titulo,
+                mensaje=mensaje,
+                tipo='INCIDENTE',
+                prioridad='ALTA',
                 url_relacionada=url
             ))
 

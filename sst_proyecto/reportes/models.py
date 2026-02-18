@@ -102,8 +102,30 @@ class Incidente(models.Model):
     gravedad = models.CharField(max_length=20, choices=GRAVEDAD_CHOICES, default='MEDIA')
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='REPORTADO')
 
-    # Ubicación
+    # Área del incidente
+    AREA_CHOICES = [
+        ('TALLER', 'Taller'),
+        ('LABORATORIO', 'Laboratorio'),
+        ('AULAS', 'Aulas'),
+        ('ADMINISTRATIVO', 'Área Administrativa'),
+        ('CAFETERIA', 'Cafetería'),
+        ('PARQUEADERO', 'Parqueadero'),
+        ('MINA_DIDACTICA', 'Mina Didáctica'),
+        ('ZONA_VERDE', 'Zona Verde'),
+        ('CANCHA', 'Cancha Deportiva'),
+        ('PASILLO', 'Pasillo / Corredor'),
+        ('OTRO', 'Otro'),
+    ]
+
+    # Ubicación y área
     ubicacion = models.CharField(max_length=200, blank=True, help_text='Dónde ocurrió')
+    lugar_exacto = models.CharField(max_length=300, blank=True, help_text='Lugar preciso dentro del centro')
+    area_incidente = models.CharField(max_length=50, choices=AREA_CHOICES, default='OTRO', help_text='Área donde ocurrió el incidente')
+    latitud = models.FloatField(null=True, blank=True, help_text='Latitud de la ubicación del incidente')
+    longitud = models.FloatField(null=True, blank=True, help_text='Longitud de la ubicación del incidente')
+
+    # Riesgos identificados en el área
+    riesgos_identificados = models.TextField(blank=True, help_text='Riesgos potenciales identificados en el área del incidente')
 
     # Fechas
     fecha_incidente = models.DateTimeField(default=timezone.now, help_text='Cuándo ocurrió')
@@ -127,7 +149,23 @@ class Incidente(models.Model):
         help_text='Quién está a cargo de resolverlo'
     )
 
-    # Foto opcional (evidencia)
+    # Persona afectada
+    usuario_afectado = models.ForeignKey(
+        Usuario, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='incidentes_como_afectado',
+        help_text='Usuario del sistema que fue afectado (si aplica)'
+    )
+    persona_afectada = models.CharField(max_length=200, blank=True, help_text='Nombre de la persona afectada')
+    documento_afectado = models.CharField(max_length=20, blank=True, help_text='Documento de la persona afectada')
+    rol_afectado = models.CharField(max_length=50, blank=True, help_text='Rol de la persona afectada')
+
+    # Versión del accidente
+    version_accidente = models.TextField(blank=True, help_text='Relato detallado del accidente según testigos o involucrados')
+
+    # Testigos
+    testigos = models.TextField(blank=True, help_text='Nombres y datos de contacto de los testigos')
+
+    # Foto de evidencia (obligatoria en formulario)
     foto = models.ImageField(upload_to='incidentes/fotos/', null=True, blank=True)
 
     # Acciones tomadas
