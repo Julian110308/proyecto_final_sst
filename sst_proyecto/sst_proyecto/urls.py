@@ -13,6 +13,28 @@ from django.db import models
 from usuarios.permissions import rol_requerido, excluir_visitantes
 from usuarios.login_view import custom_login_view
 
+
+# Vistas para servir SW y manifest desde la raíz (requerido para PWA)
+import os
+from django.http import HttpResponse
+
+def _get_static_dir():
+    if hasattr(settings, 'STATICFILES_DIRS') and settings.STATICFILES_DIRS:
+        return settings.STATICFILES_DIRS[0]
+    return settings.STATIC_ROOT
+
+def sw_view(request):
+    filepath = os.path.join(_get_static_dir(), 'sw.js')
+    with open(filepath, 'r', encoding='utf-8') as f:
+        response = HttpResponse(f.read(), content_type='application/javascript')
+        response['Service-Worker-Allowed'] = '/'
+        return response
+
+def manifest_view(request):
+    filepath = os.path.join(_get_static_dir(), 'manifest.json')
+    with open(filepath, 'r', encoding='utf-8') as f:
+        return HttpResponse(f.read(), content_type='application/manifest+json')
+
 # Vista principal de dashboard que redirige según el rol
 @login_required
 def dashboard_view(request):
@@ -673,6 +695,10 @@ def reportes_view(request):
     return render(request, 'reportes.html')
 
 urlpatterns = [
+    # PWA: Service Worker y Manifest servidos desde la raíz
+    path('sw.js', sw_view, name='sw'),
+    path('manifest.json', manifest_view, name='manifest'),
+
     path('admin/', admin.site.urls),
 
     # Autenticación - Rutas principales (con debugging temporal)

@@ -15,7 +15,7 @@
 
     <!-- PWA -->
     {% load static %}
-    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="{% static 'icons/icon-192.png' %}">
     <meta name="theme-color" content="#39A900">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -960,7 +960,7 @@
     <!-- Service Worker -->
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('{% static "sw.js" %}')
+            navigator.serviceWorker.register('/sw.js')
                 .catch(err => console.log('SW registro fallido:', err));
         }
     </script>
