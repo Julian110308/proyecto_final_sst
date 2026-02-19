@@ -374,10 +374,6 @@ def mapa_interactivo(request):
         
     except Exception as e:
         # Manejo de errores con datos de ejemplo
-        import traceback
-        print(f"❌ Error cargando datos del mapa: {e}")
-        print(traceback.format_exc())
-
         context = {
             'edificios': [
                 {

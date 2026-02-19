@@ -3,8 +3,6 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
-from django.db.models import Q
-from datetime import datetime, timedelta
 
 from .models import Geocerca, RegistroAcceso, ConfiguracionAforo
 from .serializers import (
