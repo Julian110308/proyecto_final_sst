@@ -324,7 +324,17 @@
             background-color: #fee2e2;
             color: #dc2626 !important;
         }
-        
+
+        /* Mapas Leaflet responsive en movil */
+        @media (max-width: 576px) {
+            .leaflet-container { height: 260px !important; }
+        }
+
+        /* Espacio inferior cuando el banner PWA esta visible */
+        body.pwa-banner-visible .main-content {
+            padding-bottom: 80px;
+        }
+
     </style>
     
     {% block extra_css %}{% endblock %}
@@ -957,12 +967,58 @@
         setInterval(checkNotifications, 30000);
     </script>
 
-    <!-- Service Worker -->
+    <!-- Service Worker + Web Push -->
     <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js')
-                .catch(err => console.log('SW registro fallido:', err));
-        }
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+            .then(async function(reg) {
+                // Suscribir a notificaciones push para roles que reciben alertas de emergencia
+                {% if user.is_authenticated and user.rol in 'BRIGADA ADMINISTRATIVO VIGILANCIA INSTRUCTOR' %}
+                if ('PushManager' in window) {
+                    try {
+                        const existing = await reg.pushManager.getSubscription();
+                        if (existing) return; // Ya estaba suscrito
+
+                        const perm = await Notification.requestPermission();
+                        if (perm !== 'granted') return;
+
+                        // Obtener clave publica VAPID del servidor
+                        const resp = await fetch('/api/auth/push/vapid-key/', {credentials: 'same-origin'});
+                        const {public_key} = await resp.json();
+                        if (!public_key) return;
+
+                        // Convertir clave VAPID de base64url a Uint8Array
+                        const b64 = public_key.replace(/-/g, '+').replace(/_/g, '/');
+                        const raw = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+
+                        const sub = await reg.pushManager.subscribe({
+                            userVisibleOnly: true,
+                            applicationServerKey: raw,
+                        });
+
+                        // Guardar suscripcion en el backend
+                        const keys = sub.toJSON().keys || {};
+                        await fetch('/api/auth/push/suscribir/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+                            },
+                            credentials: 'same-origin',
+                            body: JSON.stringify({
+                                endpoint: sub.endpoint,
+                                p256dh: keys.p256dh,
+                                auth: keys.auth,
+                            }),
+                        });
+                    } catch(e) {
+                        console.log('Push no disponible:', e.message);
+                    }
+                }
+                {% endif %}
+            })
+            .catch(err => console.log('SW registro fallido:', err));
+    }
     </script>
 
     <!-- Auto-registro por geolocalizacion -->
@@ -999,5 +1055,89 @@
     <script src="{% static 'js/form-validation.js' %}"></script>
 
     {% block extra_js %}{% endblock %}
+
+    <!-- ============================================================ -->
+    <!-- BANNER DE INSTALACION PWA (movil y PC)                      -->
+    <!-- ============================================================ -->
+    <div id="pwaInstallBanner" class="d-none position-fixed bottom-0 start-0 end-0 p-3"
+         style="z-index:9999;background:linear-gradient(135deg,#39A900,#2d8000);box-shadow:0 -4px 20px rgba(0,0,0,0.25);">
+        <div class="container-fluid d-flex align-items-center gap-3">
+            <img src="{% static 'icons/icon-192.png' %}" style="width:40px;height:40px;border-radius:8px;flex-shrink:0;" alt="SST">
+            <div class="flex-grow-1 text-white">
+                <div class="fw-bold small">SST Centro Minero SENA</div>
+                <div class="small opacity-75 d-none d-sm-block">Instala la app para acceso rapido y notificaciones de emergencia</div>
+            </div>
+            <button id="pwaInstallBtn" class="btn btn-light btn-sm fw-bold px-3 flex-shrink-0">
+                <i class="bi bi-download me-1"></i>Instalar
+            </button>
+            <button id="pwaInstallDismiss" class="btn btn-link text-white p-1 flex-shrink-0" title="Cerrar">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+    </div>
+    <script>
+    (function() {
+        var deferredPrompt = null;
+        var DISMISS_KEY = 'pwa_install_dismissed';
+        var DISMISS_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias
+
+        function mostrarBanner() {
+            try {
+                // No mostrar si ya esta instalada (modo standalone)
+                if (window.matchMedia('(display-mode: standalone)').matches) return;
+                // No mostrar si fue descartada recientemente
+                var ts = localStorage.getItem(DISMISS_KEY);
+                if (ts && Date.now() < parseInt(ts)) return;
+                var banner = document.getElementById('pwaInstallBanner');
+                if (banner) {
+                    banner.classList.remove('d-none');
+                    document.body.classList.add('pwa-banner-visible');
+                }
+            } catch(e) {}
+        }
+
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            deferredPrompt = e;
+            mostrarBanner();
+        });
+
+        var installBtn = document.getElementById('pwaInstallBtn');
+        if (installBtn) {
+            installBtn.addEventListener('click', async function() {
+                if (!deferredPrompt) return;
+                deferredPrompt.prompt();
+                var result = await deferredPrompt.userChoice;
+                deferredPrompt = null;
+                var banner = document.getElementById('pwaInstallBanner');
+                if (banner) {
+                    banner.classList.add('d-none');
+                    document.body.classList.remove('pwa-banner-visible');
+                }
+            });
+        }
+
+        var dismissBtn = document.getElementById('pwaInstallDismiss');
+        if (dismissBtn) {
+            dismissBtn.addEventListener('click', function() {
+                try { localStorage.setItem(DISMISS_KEY, Date.now() + DISMISS_MS); } catch(e) {}
+                var banner = document.getElementById('pwaInstallBanner');
+                if (banner) {
+                    banner.classList.add('d-none');
+                    document.body.classList.remove('pwa-banner-visible');
+                }
+            });
+        }
+
+        window.addEventListener('appinstalled', function() {
+            var banner = document.getElementById('pwaInstallBanner');
+            if (banner) {
+                banner.classList.add('d-none');
+                document.body.classList.remove('pwa-banner-visible');
+            }
+            deferredPrompt = null;
+        });
+    })();
+    </script>
 </body>
 </html>

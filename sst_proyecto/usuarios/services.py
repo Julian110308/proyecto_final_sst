@@ -4,8 +4,69 @@ Servicio centralizado de notificaciones para el sistema SST.
 Este módulo contiene funciones para enviar notificaciones automáticas
 cuando ocurren eventos importantes en el sistema.
 """
+import json
+import logging
 from django.db import transaction
-from .models import Notificacion, Usuario
+from django.conf import settings
+from .models import Notificacion, Usuario, PushSubscripcion
+
+logger = logging.getLogger(__name__)
+
+
+class WebPushService:
+    """
+    Servicio para enviar notificaciones Web Push a dispositivos móviles.
+    Utiliza VAPID para autenticación con los servidores push.
+    """
+
+    @staticmethod
+    def enviar_a_usuario(usuario, titulo, cuerpo, url='/emergencias/', icono='/static/icons/icon-192.png'):
+        """
+        Envía una notificación push a todas las suscripciones activas de un usuario.
+        Si falla una suscripción caducada, la desactiva automáticamente.
+        """
+        if not settings.VAPID_PUBLIC_KEY or not settings.VAPID_PRIVATE_KEY:
+            return
+
+        try:
+            from pywebpush import webpush, WebPushException
+        except ImportError:
+            logger.warning('pywebpush no instalado. Notificaciones push desactivadas.')
+            return
+
+        subscripciones = PushSubscripcion.objects.filter(usuario=usuario, activo=True)
+        payload = json.dumps({
+            'title': titulo,
+            'body': cuerpo,
+            'icon': icono,
+            'url': url,
+            'badge': '/static/icons/icon-192.png',
+        })
+        vapid_claims = {'sub': f'mailto:{settings.VAPID_ADMIN_EMAIL}'}
+
+        for sub in subscripciones:
+            try:
+                webpush(
+                    subscription_info={
+                        'endpoint': sub.endpoint,
+                        'keys': {'p256dh': sub.p256dh, 'auth': sub.auth},
+                    },
+                    data=payload,
+                    vapid_private_key=settings.VAPID_PRIVATE_KEY,
+                    vapid_claims=vapid_claims,
+                )
+            except Exception as e:
+                logger.warning(f'Push fallido para {usuario.username}: {e}')
+                # Suscripción caducada o inválida → desactivar
+                sub.activo = False
+                sub.save(update_fields=['activo'])
+
+    @staticmethod
+    def enviar_a_roles(roles, titulo, cuerpo, url='/emergencias/', icono='/static/icons/icon-192.png'):
+        """Envía notificación push a todos los usuarios activos de los roles indicados."""
+        usuarios = Usuario.objects.filter(rol__in=roles, activo=True)
+        for usuario in usuarios:
+            WebPushService.enviar_a_usuario(usuario, titulo, cuerpo, url, icono)
 
 
 class NotificacionService:
@@ -35,10 +96,10 @@ class NotificacionService:
 
         url = f"/emergencias/"
 
-        # Notificar a Brigada y Administrativos
+        # Notificar a Brigada, Administrativos y Vigilancia
         notificaciones = []
         usuarios = Usuario.objects.filter(
-            rol__in=['BRIGADA', 'ADMINISTRATIVO'],
+            rol__in=['BRIGADA', 'ADMINISTRATIVO', 'VIGILANCIA'],
             activo=True
         )
 
@@ -54,6 +115,15 @@ class NotificacionService:
 
         if notificaciones:
             Notificacion.objects.bulk_create(notificaciones)
+
+        # Enviar también Web Push a los dispositivos móviles
+        tipo_nombre = emergencia.tipo.nombre if emergencia.tipo else 'Emergencia'
+        WebPushService.enviar_a_roles(
+            roles=['BRIGADA', 'ADMINISTRATIVO', 'VIGILANCIA'],
+            titulo=f'EMERGENCIA: {tipo_nombre}',
+            cuerpo=f'{emergencia.descripcion[:80]} — Reportado por {emergencia.reportada_por.get_full_name() if emergencia.reportada_por else "Anonimo"}',
+            url='/emergencias/',
+        )
 
         return len(notificaciones)
 

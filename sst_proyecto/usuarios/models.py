@@ -457,6 +457,30 @@ class Notificacion(models.Model):
             fecha_vencimiento=vencimiento
         )
 
+
+class PushSubscripcion(models.Model):
+    """
+    Suscripciones Web Push para notificaciones nativas en dispositivos móviles.
+    Cada dispositivo/navegador genera una suscripción única al aceptar notificaciones.
+    """
+    usuario = models.ForeignKey(
+        'Usuario',
+        on_delete=models.CASCADE,
+        related_name='push_subscripciones'
+    )
+    endpoint = models.TextField(unique=True)
+    p256dh = models.TextField()
+    auth = models.TextField()
+    activo = models.BooleanField(default=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Suscripcion Push'
+        verbose_name_plural = 'Suscripciones Push'
+
+    def __str__(self):
+        return f'Push: {self.usuario.username} ({self.endpoint[:40]}...)'
+
     @classmethod
     def notificar_usuarios_por_rol(cls, rol, titulo, mensaje, tipo='INFO', prioridad='MEDIA'):
         """Crea notificaciones masivas para todos los usuarios de un rol"""

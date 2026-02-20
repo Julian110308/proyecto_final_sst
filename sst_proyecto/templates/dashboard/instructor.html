@@ -142,7 +142,8 @@
         </div>
     </div>
     <div class="collapse show" id="collapseAprendices">
-        <div class="card-body p-0" style="max-height: 400px; overflow-y: auto;">
+        <div class="card-body p-0" style="max-height: 60vh; overflow-y: auto;">
+            <div class="table-responsive">
             <table class="table table-hover table-sm align-middle mb-0">
                 <thead class="bg-light sticky-top">
                     <tr>
@@ -189,6 +190,7 @@
                     {% endfor %}
                 </tbody>
             </table>
+            </div>
         </div>
         <div class="card-footer bg-transparent text-center">
             <a href="{% url 'mis_aprendices' %}" class="btn btn-sm btn-outline-primary">

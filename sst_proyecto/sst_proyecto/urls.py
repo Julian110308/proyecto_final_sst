@@ -675,7 +675,7 @@ def control_acceso_view(request):
     return render(request, 'control_acceso.html')
 
 # Importar la vista completa de mapas
-from mapas.views import mapa_interactivo, campus_svg as campus_svg_view
+from mapas.views import mapa_interactivo, campus_svg as campus_svg_view, plano_centro as plano_centro_view
 
 # Decorador aplicado directamente en la vista mapa_interactivo en mapas/views.py
 
@@ -746,6 +746,7 @@ urlpatterns = [
     path('perfil/', mi_perfil_view, name='mi_perfil'),
     path('acceso/', control_acceso_view, name='control_acceso'),
     path('mapas/', mapa_interactivo, name='mapas'),
+    path('mapas/plano/', plano_centro_view, name='plano_centro'),
     path('mapas/campus/', campus_svg_view, name='campus_svg'),
     path('emergencias/', emergencias_view, name='emergencias'),
 

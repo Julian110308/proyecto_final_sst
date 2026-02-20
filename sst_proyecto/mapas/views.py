@@ -25,6 +25,13 @@ from usuarios.services import NotificacionService
 
 
 @login_required
+@excluir_visitantes
+def plano_centro(request):
+    """Plano estático del Centro Minero SENA con edificaciones y rutas de evacuación"""
+    return render(request, 'mapas/plano_centro.html')
+
+
+@login_required
 def campus_svg(request):
     """Mapa SVG interactivo del campus con estados dinamicos y pathfinding"""
     edificios = EdificioBloque.objects.filter(activo=True).select_related('estado_actual')

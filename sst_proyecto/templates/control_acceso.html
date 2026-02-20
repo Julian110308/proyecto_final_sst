@@ -32,13 +32,13 @@
 <div class="card mb-4">
     <div class="card-body">
         <div class="row g-3">
-            <div class="col-md-5">
+            <div class="col-md-4">
                 <div class="input-group">
                     <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-search"></i></span>
                     <input type="text" class="form-control bg-light border-start-0 ps-0" placeholder="Buscar por nombre o documento..." id="searchInput">
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <select class="form-select bg-light border-0" id="filterRol">
                     <option value="">Todos los Roles</option>
                     <option value="APRENDIZ">Aprendiz</option>
@@ -48,12 +48,18 @@
                     <option value="BRIGADA">Brigada</option>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <select class="form-select bg-light border-0" id="filterEstado">
                     <option value="">Todos los Estados</option>
                     <option value="dentro">En el Centro</option>
                     <option value="fuera">Salida Registrada</option>
                 </select>
+            </div>
+            <div class="col-md-2">
+                <input type="text" class="form-control bg-light border-0" placeholder="Ficha (ej: 2847531)" id="filterFicha">
+            </div>
+            <div class="col-md-2">
+                <input type="text" class="form-control bg-light border-0" placeholder="Programa de formacion" id="filterPrograma">
             </div>
         </div>
     </div>
@@ -71,6 +77,7 @@
                     <tr>
                         <th class="ps-4 py-3 text-muted small fw-bold text-uppercase">Usuario</th>
                         <th class="py-3 text-muted small fw-bold text-uppercase">Rol</th>
+                        <th class="py-3 text-muted small fw-bold text-uppercase">Ficha / Programa</th>
                         <th class="py-3 text-muted small fw-bold text-uppercase">Hora Ingreso</th>
                         <th class="py-3 text-muted small fw-bold text-uppercase">Hora Salida</th>
                         <th class="py-3 text-muted small fw-bold text-uppercase">Estado</th>
@@ -142,10 +149,21 @@ document.addEventListener('DOMContentLoaded', function() {
         debounce = setTimeout(() => buscarUsuario(this.value), 400);
     });
 
-    // Filtros
+    // Filtros locales
     document.getElementById('searchInput').addEventListener('input', filtrarTabla);
     document.getElementById('filterRol').addEventListener('change', filtrarTabla);
     document.getElementById('filterEstado').addEventListener('change', filtrarTabla);
+
+    // Filtros por ficha/programa: recargan desde el servidor
+    let debounceServer;
+    document.getElementById('filterFicha').addEventListener('input', function() {
+        clearTimeout(debounceServer);
+        debounceServer = setTimeout(cargarRegistros, 500);
+    });
+    document.getElementById('filterPrograma').addEventListener('input', function() {
+        clearTimeout(debounceServer);
+        debounceServer = setTimeout(cargarRegistros, 500);
+    });
 });
 
 async function cargarAforo() {
@@ -159,20 +177,25 @@ async function cargarAforo() {
 
 async function cargarRegistros() {
     try {
-        const r = await fetch('/api/acceso/registros/registros_recientes/?limite=50');
+        const ficha = document.getElementById('filterFicha')?.value.trim() || '';
+        const programa = document.getElementById('filterPrograma')?.value.trim() || '';
+        let url = '/api/acceso/registros/registros_recientes/?limite=50';
+        if (ficha) url += `&ficha=${encodeURIComponent(ficha)}`;
+        if (programa) url += `&programa=${encodeURIComponent(programa)}`;
+        const r = await fetch(url);
         todosRegistros = await r.json();
         renderTabla(todosRegistros);
         cargarAforo();
     } catch (error) {
         console.error('Error:', error);
-        document.getElementById('tablaRegistros').innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">Error al cargar datos</td></tr>';
+        document.getElementById('tablaRegistros').innerHTML = '<tr><td colspan="7" class="text-center text-danger py-4">Error al cargar datos</td></tr>';
     }
 }
 
 function renderTabla(registros) {
     const tbody = document.getElementById('tablaRegistros');
     if (!registros.length) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No hay registros</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No hay registros</td></tr>';
         return;
     }
     tbody.innerHTML = registros.map(reg => `
@@ -189,6 +212,13 @@ function renderTabla(registros) {
                 </div>
             </td>
             <td><span class="badge bg-light text-dark border fw-normal">${reg.usuario.rol}</span></td>
+            <td>
+                ${reg.usuario.ficha
+                    ? `<div class="fw-semibold small text-dark">${reg.usuario.ficha}</div>` : ''}
+                ${reg.usuario.programa_formacion
+                    ? `<div class="small text-muted">${reg.usuario.programa_formacion}</div>`
+                    : (!reg.usuario.ficha ? '<span class="text-muted small">-</span>' : '')}
+            </td>
             <td class="text-dark fw-medium">${new Date(reg.fecha_hora_ingreso).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})}</td>
             <td class="text-muted">${reg.fecha_hora_egreso ? new Date(reg.fecha_hora_egreso).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'}) : '--:--'}</td>
             <td>
@@ -211,7 +241,11 @@ function filtrarTabla() {
     const estado = document.getElementById('filterEstado').value;
 
     const filtrados = todosRegistros.filter(reg => {
-        const matchBusqueda = !busqueda || reg.usuario.nombre.toLowerCase().includes(busqueda) || reg.usuario.documento.includes(busqueda);
+        const matchBusqueda = !busqueda ||
+            reg.usuario.nombre.toLowerCase().includes(busqueda) ||
+            reg.usuario.documento.includes(busqueda) ||
+            (reg.usuario.ficha || '').toLowerCase().includes(busqueda) ||
+            (reg.usuario.programa_formacion || '').toLowerCase().includes(busqueda);
         const matchRol = !rol || reg.usuario.rol.toUpperCase().includes(rol);
         const matchEstado = !estado || (estado === 'dentro' && !reg.fecha_hora_egreso) || (estado === 'fuera' && reg.fecha_hora_egreso);
         return matchBusqueda && matchRol && matchEstado;

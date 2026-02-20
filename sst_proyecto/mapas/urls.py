@@ -4,7 +4,7 @@ from . import views
 from .views import (
     EdificioBloqueViewSet, PuntoEncuentroViewSet,
     EquipamientoSeguridadViewSet, RutaEvacuacionViewSet,
-    mapa_interactivo, campus_svg,
+    mapa_interactivo, campus_svg, plano_centro,
     estados_edificios, cambiar_estado_edificio,
 )
 

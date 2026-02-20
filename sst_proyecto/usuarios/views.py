@@ -722,3 +722,50 @@ class EstadisticasViewSet(viewsets.ViewSet):
             'porcentaje': round((presentes / total) * 100, 1) if total > 0 else 0,
             'aprendices': resultado
         })
+
+
+class PushSubscripcionViewSet(viewsets.ViewSet):
+    """
+    Endpoint para gestionar suscripciones Web Push.
+    POST /api/auth/push/suscribir/   → guarda la suscripción del dispositivo
+    DELETE /api/auth/push/cancelar/  → desactiva la suscripción
+    GET /api/auth/push/vapid-key/    → retorna la clave pública VAPID (para el SW)
+    """
+    permission_classes = [IsAuthenticated]
+
+    @action(detail=False, methods=['get'], url_path='vapid-key', permission_classes=[AllowAny])
+    def vapid_key(self, request):
+        """Retorna la clave pública VAPID para que el frontend pueda suscribirse."""
+        from django.conf import settings
+        return Response({'public_key': settings.VAPID_PUBLIC_KEY})
+
+    @action(detail=False, methods=['post'], url_path='suscribir')
+    def suscribir(self, request):
+        """Guarda o actualiza la suscripción push del dispositivo actual."""
+        from .models import PushSubscripcion
+        endpoint = request.data.get('endpoint')
+        p256dh = request.data.get('p256dh')
+        auth = request.data.get('auth')
+
+        if not all([endpoint, p256dh, auth]):
+            return Response({'error': 'Faltan campos: endpoint, p256dh, auth'}, status=status.HTTP_400_BAD_REQUEST)
+
+        PushSubscripcion.objects.update_or_create(
+            endpoint=endpoint,
+            defaults={
+                'usuario': request.user,
+                'p256dh': p256dh,
+                'auth': auth,
+                'activo': True,
+            }
+        )
+        return Response({'ok': True, 'mensaje': 'Suscripcion push registrada.'})
+
+    @action(detail=False, methods=['post'], url_path='cancelar')
+    def cancelar(self, request):
+        """Desactiva la suscripción push del dispositivo actual."""
+        from .models import PushSubscripcion
+        endpoint = request.data.get('endpoint')
+        if endpoint:
+            PushSubscripcion.objects.filter(endpoint=endpoint).update(activo=False)
+        return Response({'ok': True})

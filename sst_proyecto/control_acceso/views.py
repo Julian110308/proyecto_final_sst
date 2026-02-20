@@ -340,10 +340,21 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def registros_recientes(self, request):
         """
-        Obtiene los registros más recientes
+        Obtiene los registros más recientes.
+        Soporta filtros: ?limite=, ?ficha=, ?programa=, ?rol=, ?estado=dentro|fuera
         """
         limite = int(request.query_params.get('limite', 20))
-        registros = RegistroAcceso.objects.select_related('usuario').all().order_by('-fecha_hora_ingreso')[:limite]
+        ficha = request.query_params.get('ficha', '').strip()
+        programa = request.query_params.get('programa', '').strip()
+
+        qs = RegistroAcceso.objects.select_related('usuario').all().order_by('-fecha_hora_ingreso')
+
+        if ficha:
+            qs = qs.filter(usuario__ficha__icontains=ficha)
+        if programa:
+            qs = qs.filter(usuario__programa_formacion__icontains=programa)
+
+        registros = qs[:limite]
 
         data = []
         for registro in registros:
@@ -353,7 +364,9 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
                     'id': registro.usuario.id,
                     'nombre': registro.usuario.get_full_name(),
                     'documento': registro.usuario.numero_documento,
-                    'rol': registro.usuario.get_rol_display()
+                    'rol': registro.usuario.get_rol_display(),
+                    'ficha': registro.usuario.ficha or '',
+                    'programa_formacion': registro.usuario.programa_formacion or '',
                 },
                 'fecha_hora_ingreso': registro.fecha_hora_ingreso,
                 'fecha_hora_egreso': registro.fecha_hora_egreso,
@@ -370,13 +383,22 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
         Retorna las personas actualmente dentro del centro con sus coordenadas.
         Usado para el monitoreo en tiempo real en el mapa.
         Accesible por VIGILANCIA y ADMINISTRATIVO.
+        Soporta filtros: ?ficha=, ?programa=
         """
         hoy = timezone.now().date()
+        ficha = request.query_params.get('ficha', '').strip()
+        programa = request.query_params.get('programa', '').strip()
+
         registros_activos = RegistroAcceso.objects.filter(
             tipo='INGRESO',
             fecha_hora_egreso__isnull=True,
             fecha_hora_ingreso__date=hoy
         ).select_related('usuario')
+
+        if ficha:
+            registros_activos = registros_activos.filter(usuario__ficha__icontains=ficha)
+        if programa:
+            registros_activos = registros_activos.filter(usuario__programa_formacion__icontains=programa)
 
         personas = []
         for registro in registros_activos:
@@ -385,6 +407,8 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
                 'nombre': registro.usuario.get_full_name() or registro.usuario.username,
                 'rol': registro.usuario.get_rol_display(),
                 'rol_code': registro.usuario.rol,
+                'ficha': registro.usuario.ficha or '',
+                'programa_formacion': registro.usuario.programa_formacion or '',
                 'latitud': registro.latitud_ingreso,
                 'longitud': registro.longitud_ingreso,
                 'hora_ingreso': registro.fecha_hora_ingreso.strftime('%H:%M'),

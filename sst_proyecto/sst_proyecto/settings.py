@@ -232,6 +232,13 @@ else:
 
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='SST Centro Minero <noreply@centrominerosst.com>')
 
+# ====================================================================
+# CONFIGURACIÓN WEB PUSH (VAPID)
+# ====================================================================
+VAPID_PUBLIC_KEY = config('VAPID_PUBLIC_KEY', default='')
+VAPID_PRIVATE_KEY = config('VAPID_PRIVATE_KEY', default='')
+VAPID_ADMIN_EMAIL = config('VAPID_ADMIN_EMAIL', default='admin@centrominerosena.edu.co')
+
 # Configuración para recuperación de contraseña
 PASSWORD_RESET_TIMEOUT = 3600  # 1 hora (en segundos)
 
