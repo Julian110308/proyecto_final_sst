@@ -1193,7 +1193,7 @@ function inicializarDatosDinamicos() {
 
 async function cargarEstadosEdificios() {
     try {
-        const resp = await fetch('/mapas/api/edificios/estados/', { credentials: 'same-origin' });
+        const resp = await fetch('/api/mapas/api/edificios/estados/', { credentials: 'same-origin' });
         if (!resp.ok) return;
         const estados = await resp.json();
 
