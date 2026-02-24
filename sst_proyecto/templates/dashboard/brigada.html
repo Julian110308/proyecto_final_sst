@@ -498,7 +498,7 @@ const emergenciaIcon = L.divIcon({
 });
 
 // Cargar puntos de encuentro
-fetch('/api/mapas/puntos-encuentro/')
+fetch('/api/mapas/api/puntos-encuentro/')
     .then(r => r.json())
     .then(data => {
         (data.results || data).forEach(p => {

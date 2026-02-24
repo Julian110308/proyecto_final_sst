@@ -556,6 +556,29 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
             'errores': errores if errores else None
         }, status=status.HTTP_201_CREATED)
 
+    @action(detail=False, methods=['get'], url_path='buscar_usuario')
+    def buscar_usuario(self, request):
+        """
+        Busca un usuario por número de documento.
+        GET /api/acceso/registros/buscar_usuario/?documento=<numero>
+        Accesible por VIGILANCIA, ADMINISTRATIVO e INSTRUCTOR.
+        """
+        documento = request.query_params.get('documento', '').strip()
+        if not documento:
+            return Response({'error': 'Se requiere el parámetro documento'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            usuario = Usuario.objects.get(numero_documento=documento, activo=True)
+        except Usuario.DoesNotExist:
+            return Response({'error': 'No se encontró un usuario con ese documento'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({
+            'id': usuario.id,
+            'nombre': usuario.get_full_name() or usuario.username,
+            'rol': usuario.get_rol_display(),
+            'rol_code': usuario.rol,
+            'ficha': usuario.ficha or '',
+            'programa': usuario.programa_formacion or '',
+        })
+
 
 class ConfiguracionAforoViewSet(viewsets.ModelViewSet):
     """

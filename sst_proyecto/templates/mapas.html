@@ -22,6 +22,12 @@
         font-family: var(--font-family-base);
     }
 
+    @keyframes pulse {
+        0%   { box-shadow: 0 0 0 0 rgba(220,38,38,0.5); }
+        70%  { box-shadow: 0 0 0 8px rgba(220,38,38,0); }
+        100% { box-shadow: 0 0 0 0 rgba(220,38,38,0); }
+    }
+
     /* Leyenda colapsable en móvil */
     @media (max-width: 768px) {
         .leyenda-mapa {
@@ -127,9 +133,13 @@
                             <div style="width: 16px; height: 16px; border-radius: 50%; margin-right: 8px; background: #2196F3; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>
                             <span>Botiquín</span>
                         </div>
-                        <div class="leyenda-item" style="display: flex; align-items: center; font-size: 11px;">
+                        <div class="leyenda-item" style="display: flex; align-items: center; margin-bottom: 5px; font-size: 11px;">
                             <div style="width: 16px; height: 16px; border-radius: 50%; margin-right: 8px; background: #FF9800; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>
                             <span>Tu ubicación</span>
+                        </div>
+                        <div class="leyenda-item" style="display: flex; align-items: center; font-size: 11px;">
+                            <div style="width: 16px; height: 16px; border-radius: 50%; margin-right: 8px; background: #DC2626; border: 2px solid white; box-shadow: 0 1px 3px rgba(220,38,38,0.5); animation: pulse 1.5s infinite;"></div>
+                            <span>Emergencia Activa</span>
                         </div>
                     </div>
 
@@ -176,6 +186,13 @@
                     <input class="form-check-input" type="checkbox" id="capaRutas">
                     <label class="form-check-label" for="capaRutas">
                         <i class="bi bi-arrow-right-circle me-2"></i>Rutas de Evacuacion
+                    </label>
+                </div>
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="capaEmergenciasCheck">
+                    <label class="form-check-label" for="capaEmergenciasCheck">
+                        <i class="bi bi-exclamation-triangle-fill me-2 text-danger"></i>Emergencias Activas
+                        <span id="contadorEmergencias" class="badge bg-danger ms-2">0</span>
                     </label>
                 </div>
                 {% if user.rol == 'VIGILANCIA' or user.rol == 'ADMINISTRATIVO' or user.rol == 'INSTRUCTOR' or user.rol == 'BRIGADA' %}
@@ -343,6 +360,7 @@ let capaPuntosEncuentro = L.layerGroup();
 let capaEquipamiento = L.layerGroup();
 let capaInfraestructura = L.layerGroup();
 let capaPersonas = L.layerGroup();
+let capaEmergencias = L.layerGroup();
 
 // Rol del usuario actual (para funcionalidades condicionales)
 const userRol = '{{ user.rol }}';
@@ -1109,6 +1127,30 @@ function inicializarControles() {
         }
     });
 
+    // Checkbox emergencias
+    document.getElementById('capaEmergenciasCheck').addEventListener('change', function() {
+        if (this.checked) {
+            mapa.addLayer(capaEmergencias);
+            cargarEmergenciasActivas();
+        } else {
+            mapa.removeLayer(capaEmergencias);
+        }
+    });
+
+    // Radio buttons de vista del mapa
+    document.querySelectorAll('input[name="mapaVista"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.id === 'vistaEmergencia') {
+                capaEmergencias.addTo(mapa);
+                document.getElementById('capaEmergenciasCheck').checked = true;
+                cargarEmergenciasActivas();
+            } else if (this.id === 'vistaNormal') {
+                mapa.removeLayer(capaEmergencias);
+                document.getElementById('capaEmergenciasCheck').checked = false;
+            }
+        });
+    });
+
     // Checkbox rutas
     document.getElementById('capaRutas').addEventListener('click', function() {
         if (this.checked && rutaActiva) {
@@ -1273,6 +1315,66 @@ function inicializarControles() {
             document.getElementById('capaRutas').checked = false;
         }
     });
+}
+
+// ====================================================================
+// CAPA DE EMERGENCIAS ACTIVAS
+// ====================================================================
+
+async function cargarEmergenciasActivas() {
+    capaEmergencias.clearLayers();
+    try {
+        const resp = await fetch('/api/emergencias/emergencias/', { credentials: 'same-origin' });
+        const data = await resp.json();
+        const emergencias = (data.results || data).filter(e =>
+            ['REPORTADA', 'EN_ATENCION'].includes(e.estado) && e.latitud && e.longitud
+        );
+
+        document.getElementById('contadorEmergencias').textContent = emergencias.length;
+
+        const iconoEmergencia = L.divIcon({
+            html: `<div style="
+                width:22px; height:22px; border-radius:50%;
+                background:#DC2626; border:3px solid white;
+                box-shadow:0 0 0 3px rgba(220,38,38,0.4);
+                animation:pulse 1.5s infinite;
+                display:flex; align-items:center; justify-content:center;
+            "><span style="color:white;font-size:10px;font-weight:bold;">!</span></div>`,
+            className: '',
+            iconSize: [22, 22],
+            iconAnchor: [11, 11]
+        });
+
+        emergencias.forEach(e => {
+            const nombreReportante = e.reportada_por_detalle
+                ? `${e.reportada_por_detalle.first_name || ''} ${e.reportada_por_detalle.last_name || ''}`.trim()
+                : 'Usuario';
+            const hora = new Date(e.fecha_hora_reporte).toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit'});
+            const estadoColor = e.estado === 'REPORTADA' ? '#DC2626' : '#D97706';
+            const marker = L.marker([e.latitud, e.longitud], { icon: iconoEmergencia });
+            marker.bindPopup(`
+                <div style="min-width:180px;">
+                    <div style="font-weight:700;color:${estadoColor};margin-bottom:4px;">
+                        🚨 ${e.tipo_detalle?.nombre || 'Emergencia'}
+                    </div>
+                    <div style="font-size:12px;margin-bottom:2px;">${e.descripcion || ''}</div>
+                    <div style="font-size:11px;color:#666;">
+                        Reportado por: ${nombreReportante}<br>
+                        Hora: ${hora}<br>
+                        Estado: <strong>${e.estado_display || e.estado}</strong>
+                    </div>
+                    ${e.descripcion_ubicacion ? `<div style="font-size:11px;margin-top:4px;color:#888;">📍 ${e.descripcion_ubicacion}</div>` : ''}
+                </div>
+            `);
+            marker.addTo(capaEmergencias);
+        });
+
+        if (emergencias.length > 0 && mapa.hasLayer(capaEmergencias)) {
+            mapa.fitBounds(capaEmergencias.getBounds().pad(0.3));
+        }
+    } catch (err) {
+        console.error('Error cargando emergencias en mapa:', err);
+    }
 }
 
 // ====================================================================

@@ -37,8 +37,8 @@
                         </label>
                         <select class="form-select" id="selectPrograma" name="programa" onchange="this.form.submit()">
                             <option value="">-- Seleccione un programa --</option>
-                            {% for programa in programas %}
-                                <option value="{{ programa }}" {% if programa_seleccionado == programa %}selected{% endif %}>{{ programa }}</option>
+                            {% for valor, nombre in programas %}
+                                <option value="{{ valor }}" {% if programa_seleccionado == valor %}selected{% endif %}>{{ nombre }}</option>
                             {% endfor %}
                         </select>
                     </div>

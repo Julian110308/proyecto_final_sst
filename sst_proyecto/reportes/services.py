@@ -333,7 +333,8 @@ class ReporteSeguridadService:
         Genera reporte de seguridad enfocado en vigilancia.
         Incluye datos de accesos, visitantes y aforo.
         """
-        from control_acceso.models import RegistroAcceso, ConfiguracionAforo, Visitante
+        from control_acceso.models import RegistroAcceso, ConfiguracionAforo
+        from usuarios.models import Visitante
         from mapas.models import EquipamientoSeguridad
         from django.db.models.functions import TruncDate
 
@@ -356,13 +357,13 @@ class ReporteSeguridadService:
             total=Count('id')
         ).order_by('fecha')
 
-        # Visitantes en el período
+        # Visitantes en el período (fecha_visita y hora_salida son los campos correctos)
         try:
             visitantes = Visitante.objects.filter(
-                fecha_ingreso__range=[periodo_inicio, periodo_fin]
+                fecha_visita__range=[periodo_inicio, periodo_fin]
             )
             total_visitantes = visitantes.count()
-            visitantes_activos = visitantes.filter(fecha_egreso__isnull=True).count()
+            visitantes_activos = visitantes.filter(hora_salida__isnull=True).count()
         except Exception:
             total_visitantes = 0
             visitantes_activos = 0

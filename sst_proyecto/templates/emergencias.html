@@ -1,19 +1,21 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block title %}Emergencias - Sistema SST{% endblock %}
+
 {% block breadcrumb %}
 <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
 <li class="breadcrumb-item active">Emergencias</li>
 {% endblock %}
 
 {% block content %}
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-5">
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
     <div>
         <h1 class="h3 fw-bold text-dark mb-1"><i class="bi bi-exclamation-triangle-fill me-2"></i>Gestion de Emergencias</h1>
         <p class="text-muted mb-0">Sistema de respuesta y alertas tempranas</p>
     </div>
     <div class="d-flex gap-2 flex-shrink-0 flex-wrap">
-        <button class="btn btn-outline-secondary" onclick="cargarEmergencias()">
+        <button class="btn btn-outline-secondary btn-sm" onclick="cargarTodo()">
             <i class="bi bi-arrow-clockwise me-1"></i> Actualizar
         </button>
         <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modalEmergencia">
@@ -23,12 +25,80 @@
     </div>
 </div>
 
-<div class="row">
+<!-- Métricas -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0 border-start border-4 border-danger">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Activas Ahora</h6>
+                        <h3 class="fw-bold text-dark mb-0" id="metricaActivas">--</h3>
+                        <small class="text-danger"><i class="bi bi-exclamation-circle"></i> Requieren atención</small>
+                    </div>
+                    <div class="bg-light-danger rounded-3 p-3">
+                        <i class="bi bi-fire fs-2 text-danger"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0 border-start border-4 border-warning">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">En Atención</h6>
+                        <h3 class="fw-bold text-dark mb-0" id="metricaAtencion">--</h3>
+                        <small class="text-warning"><i class="bi bi-hand-index"></i> Siendo atendidas</small>
+                    </div>
+                    <div class="bg-light-warning rounded-3 p-3">
+                        <i class="bi bi-person-raised-hand fs-2 text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0 border-start border-4 border-success">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Resueltas Hoy</h6>
+                        <h3 class="fw-bold text-dark mb-0" id="metricaResueltas">--</h3>
+                        <small class="text-success"><i class="bi bi-check-circle"></i> Cerradas hoy</small>
+                    </div>
+                    <div class="bg-light-success rounded-3 p-3">
+                        <i class="bi bi-check-circle-fill fs-2 text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0 border-start border-4 border-primary">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Total del Mes</h6>
+                        <h3 class="fw-bold text-dark mb-0" id="metricaMes">--</h3>
+                        <small class="text-muted"><i class="bi bi-calendar"></i> Este mes</small>
+                    </div>
+                    <div class="bg-light-primary rounded-3 p-3">
+                        <i class="bi bi-clipboard-data fs-2 text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
     <!-- Panel de Control Emergencias -->
     <div class="col-lg-4">
         <div class="card card-modern mb-4">
-            <div class="card-header bg-warning text-white py-3">
-                <h6 class="m-0 fw-bold">
+            <div class="card-header-modern bg-warning text-white py-3" style="background:var(--bs-warning)!important;">
+                <h6 class="m-0 fw-bold text-dark">
                     <i class="bi bi-megaphone me-2"></i>
                     Acciones Rapidas
                 </h6>
@@ -53,8 +123,8 @@
 
         <!-- Brigada Disponible -->
         <div class="card card-modern mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 fw-bold text-primary">
+            <div class="card-header-modern">
+                <h6 class="m-0 fw-bold">
                     <i class="bi bi-people-fill me-2"></i>Brigada de Emergencia
                 </h6>
             </div>
@@ -68,8 +138,8 @@
 
         <!-- Contactos de Emergencia -->
         <div class="card card-modern" id="contactosSection">
-            <div class="card-header py-3">
-                <h6 class="m-0 fw-bold text-primary">
+            <div class="card-header-modern">
+                <h6 class="m-0 fw-bold">
                     <i class="bi bi-telephone-fill me-2"></i>Contactos de Emergencia
                 </h6>
             </div>
@@ -86,11 +156,11 @@
     <div class="col-lg-8">
         <!-- Emergencias Activas -->
         <div class="card card-modern mb-4">
-            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <div class="card-header-modern d-flex justify-content-between align-items-center">
                 <h6 class="m-0 fw-bold text-danger">
                     <i class="bi bi-exclamation-circle me-2"></i>Emergencias Activas
                 </h6>
-                <span class="badge bg-warning" id="badgeActivas">0 activas</span>
+                <span class="badge bg-warning text-dark" id="badgeActivas">0 activas</span>
             </div>
             <div class="card-body" id="emergenciasActivas">
                 <div class="text-center text-muted py-4">
@@ -102,22 +172,22 @@
 
         <!-- Falsas Alarmas - Reincidentes -->
         <div class="card card-modern mb-4" id="seccionFalsasAlarmas" style="display:none;">
-            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <div class="card-header-modern d-flex justify-content-between align-items-center">
                 <h6 class="m-0 fw-bold text-danger">
                     <i class="bi bi-shield-exclamation me-2"></i>Falsas Alarmas - Usuarios Identificados
                 </h6>
                 <span class="badge bg-danger" id="badgeFalsas">0</span>
             </div>
-            <div class="card-body">
+            <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead class="table-light">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
                             <tr>
-                                <th>Usuario</th>
+                                <th class="ps-3">Usuario</th>
                                 <th>Documento</th>
                                 <th>Rol</th>
-                                <th>Total Falsas Alarmas</th>
-                                <th>Nivel</th>
+                                <th class="text-center">Total Falsas</th>
+                                <th class="text-center">Nivel</th>
                             </tr>
                         </thead>
                         <tbody id="tablaReincidentes"></tbody>
@@ -128,22 +198,22 @@
 
         <!-- Historial de Emergencias -->
         <div class="card card-modern">
-            <div class="card-header py-3">
-                <h6 class="m-0 fw-bold text-primary">
+            <div class="card-header-modern">
+                <h6 class="m-0 fw-bold">
                     <i class="bi bi-clock-history me-2"></i>Historial de Emergencias
                 </h6>
             </div>
-            <div class="card-body">
+            <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead class="table-light">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
                             <tr>
-                                <th>Tipo</th>
+                                <th class="ps-3">Tipo</th>
                                 <th>Descripcion</th>
                                 <th>Reportado por</th>
                                 <th>Estado</th>
                                 <th>Fecha</th>
-                                <th>Acciones</th>
+                                <th class="pe-3">Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="tablaEmergencias">
@@ -173,15 +243,16 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
+                <div id="alertaEmergencia" class="alert d-none mb-3"></div>
                 <form id="formEmergencia">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Tipo de Emergencia</label>
+                        <label class="form-label fw-semibold">Tipo de Emergencia <span class="text-danger">*</span></label>
                         <select class="form-select" id="tipoEmergencia" required>
                             <option value="">Cargando tipos...</option>
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Descripcion</label>
+                        <label class="form-label fw-semibold">Descripcion <span class="text-danger">*</span></label>
                         <textarea class="form-control" id="descripcionEmergencia" rows="3" placeholder="Describe la emergencia..." required></textarea>
                     </div>
                     <div class="mb-3">
@@ -193,8 +264,8 @@
                             <label class="form-label fw-semibold">Personas Afectadas</label>
                             <input type="number" class="form-control" id="personasAfectadas" value="0" min="0">
                         </div>
-                        <div class="col-6 mb-3">
-                            <div class="form-check mt-4">
+                        <div class="col-6 mb-3 d-flex align-items-end">
+                            <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="requiereEvacuacion">
                                 <label class="form-check-label" for="requiereEvacuacion">
                                     Requiere evacuacion
@@ -208,6 +279,35 @@
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-danger" id="btnReportarEmergencia">
                     <i class="bi bi-exclamation-triangle me-1"></i> Reportar Emergencia
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Resolver Emergencia -->
+<div class="modal fade" id="modalResolver" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-check-circle me-2"></i>
+                    Resolver Emergencia
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="resolverEmergenciaId">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Acciones Tomadas <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="accionesResolver" rows="4"
+                        placeholder="Describe las acciones tomadas para resolver la emergencia..." required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="btnConfirmarResolver">
+                    <i class="bi bi-check-lg me-1"></i> Confirmar Resolucion
                 </button>
             </div>
         </div>
@@ -248,7 +348,14 @@
 </div>
 
 <script>
-const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+function getCookie(name) {
+    let v = null;
+    document.cookie.split(';').forEach(c => {
+        c = c.trim();
+        if (c.startsWith(name + '=')) v = decodeURIComponent(c.substring(name.length + 1));
+    });
+    return v;
+}
 
 const estadoColores = {
     'REPORTADA': 'danger',
@@ -259,7 +366,29 @@ const estadoColores = {
 };
 
 // ============================================================
-// CARGAR DATOS AL INICIAR
+// MÉTRICAS
+// ============================================================
+
+function actualizarMetricas(emergencias) {
+    const hoy = new Date().toDateString();
+    const iniMes = new Date(); iniMes.setDate(1); iniMes.setHours(0,0,0,0);
+
+    const activas = emergencias.filter(e => ['REPORTADA', 'EN_ATENCION'].includes(e.estado)).length;
+    const enAtencion = emergencias.filter(e => e.estado === 'EN_ATENCION').length;
+    const resueltasHoy = emergencias.filter(e =>
+        e.estado === 'RESUELTA' && new Date(e.fecha_hora_reporte).toDateString() === hoy
+    ).length;
+    const totalMes = emergencias.filter(e => new Date(e.fecha_hora_reporte) >= iniMes).length;
+
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    set('metricaActivas', activas);
+    set('metricaAtencion', enAtencion);
+    set('metricaResueltas', resueltasHoy);
+    set('metricaMes', totalMes);
+}
+
+// ============================================================
+// CARGAR DATOS
 // ============================================================
 
 async function cargarEmergencias() {
@@ -268,11 +397,12 @@ async function cargarEmergencias() {
         const data = await resp.json();
         const emergencias = data.results || data;
 
+        actualizarMetricas(emergencias);
+
         // Separar activas vs historial
         const activas = emergencias.filter(e => ['REPORTADA', 'EN_ATENCION'].includes(e.estado));
-        const todas = emergencias;
 
-        // Actualizar badge
+        // Badge activas
         document.getElementById('badgeActivas').textContent = `${activas.length} activa${activas.length !== 1 ? 's' : ''}`;
         document.getElementById('badgeActivas').className = `badge ${activas.length > 0 ? 'bg-danger' : 'bg-success'}`;
 
@@ -292,21 +422,22 @@ async function cargarEmergencias() {
                         <div class="fw-bold">${e.tipo_detalle?.nombre || 'Emergencia'}</div>
                         <div class="small">${e.descripcion || ''}</div>
                         <div class="small text-muted mt-1">
-                            ${e.reportada_por_detalle?.first_name || 'Usuario'} -
+                            ${e.reportada_por_detalle?.first_name || 'Usuario'} ${e.reportada_por_detalle?.last_name || ''} &mdash;
                             ${new Date(e.fecha_hora_reporte).toLocaleString('es-CO')}
+                            ${e.descripcion_ubicacion ? ' &mdash; ' + e.descripcion_ubicacion : ''}
                         </div>
                     </div>
-                    <div class="ms-2">
+                    <div class="ms-2 d-flex flex-column gap-1">
                         ${e.estado === 'REPORTADA' ? `
-                            <button class="btn btn-sm btn-warning me-1" onclick="atenderEmergencia(${e.id})">
+                            <button class="btn btn-sm btn-warning" onclick="atenderEmergencia(${e.id})">
                                 <i class="bi bi-hand-index me-1"></i>Atender
                             </button>` : ''}
                         ${e.estado === 'EN_ATENCION' ? `
-                            <button class="btn btn-sm btn-success me-1" onclick="resolverEmergencia(${e.id})">
+                            <button class="btn btn-sm btn-success" onclick="abrirModalResolver(${e.id})">
                                 <i class="bi bi-check-lg me-1"></i>Resolver
                             </button>` : ''}
                         ${['REPORTADA', 'EN_ATENCION'].includes(e.estado) ? `
-                            <button class="btn btn-sm btn-outline-secondary mt-1" onclick="marcarFalsaAlarma(${e.id})">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="marcarFalsaAlarma(${e.id})">
                                 <i class="bi bi-x-circle me-1"></i>Falsa Alarma
                             </button>` : ''}
                     </div>
@@ -316,24 +447,24 @@ async function cargarEmergencias() {
 
         // Tabla historial
         const tbody = document.getElementById('tablaEmergencias');
-        if (todas.length === 0) {
+        if (emergencias.length === 0) {
             tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">
                 <i class="bi bi-inbox fs-1 mb-2 d-block"></i>No hay emergencias registradas</td></tr>`;
         } else {
-            tbody.innerHTML = todas.map(e => {
+            tbody.innerHTML = emergencias.map(e => {
                 const nombreReportante = e.reportada_por_detalle
                     ? `${e.reportada_por_detalle.first_name || ''} ${e.reportada_por_detalle.last_name || ''}`.trim()
                     : '-';
                 return `
-                <tr class="${e.estado === 'FALSA_ALARMA' ? 'table-danger bg-opacity-10' : ''}">
-                    <td><span class="fw-semibold">${e.tipo_detalle?.nombre || '-'}</span></td>
-                    <td class="text-truncate" style="max-width:200px;">${e.descripcion || '-'}</td>
+                <tr>
+                    <td class="ps-3"><span class="fw-semibold">${e.tipo_detalle?.nombre || '-'}</span></td>
+                    <td class="text-truncate" style="max-width:180px;">${e.descripcion || '-'}</td>
                     <td>${nombreReportante}</td>
                     <td><span class="badge bg-${estadoColores[e.estado] || 'secondary'}">${e.estado_display || e.estado}</span></td>
                     <td><small>${new Date(e.fecha_hora_reporte).toLocaleString('es-CO', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</small></td>
-                    <td>
+                    <td class="pe-3">
                         ${e.estado === 'REPORTADA' ? `<button class="btn btn-sm btn-outline-warning me-1" onclick="atenderEmergencia(${e.id})">Atender</button>` : ''}
-                        ${e.estado === 'EN_ATENCION' ? `<button class="btn btn-sm btn-outline-success me-1" onclick="resolverEmergencia(${e.id})">Resolver</button>` : ''}
+                        ${e.estado === 'EN_ATENCION' ? `<button class="btn btn-sm btn-outline-success me-1" onclick="abrirModalResolver(${e.id})">Resolver</button>` : ''}
                         ${['REPORTADA', 'EN_ATENCION'].includes(e.estado) ? `<button class="btn btn-sm btn-outline-danger" onclick="marcarFalsaAlarma(${e.id})">Falsa Alarma</button>` : ''}
                     </td>
                 </tr>`;
@@ -352,24 +483,24 @@ async function cargarBrigada() {
 
         const div = document.getElementById('brigadaList');
         if (brigada.length === 0) {
-            div.innerHTML = '<div class="text-center text-muted py-3"><small>No hay miembros de brigada registrados</small></div>';
+            div.innerHTML = '<div class="text-center text-muted py-3 px-3"><small>No hay miembros de brigada disponibles</small></div>';
             return;
         }
 
         div.innerHTML = brigada.map(b => `
             <div class="d-flex align-items-center p-3 border-bottom">
-                <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width:36px;height:36px;">
-                    <i class="bi bi-person-fill text-white"></i>
+                <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center me-3 fw-bold" style="width:36px;height:36px;min-width:36px;">
+                    <i class="bi bi-person-fill"></i>
                 </div>
                 <div class="flex-grow-1">
-                    <div class="fw-semibold">${b.usuario_detalle?.first_name || ''} ${b.usuario_detalle?.last_name || ''}</div>
+                    <div class="fw-semibold small">${b.usuario_detalle?.first_name || ''} ${b.usuario_detalle?.last_name || ''}</div>
                     <small class="text-muted">${b.especializacion_display || b.especializacion}</small>
                 </div>
                 <span class="badge ${b.disponible ? 'bg-success' : 'bg-secondary'}">${b.disponible ? 'Disponible' : 'No disponible'}</span>
             </div>
         `).join('');
     } catch (e) {
-        document.getElementById('brigadaList').innerHTML = '<div class="text-center text-muted py-3"><small>Error al cargar brigada</small></div>';
+        document.getElementById('brigadaList').innerHTML = '<div class="text-center text-muted py-3 px-3"><small>Error al cargar brigada</small></div>';
     }
 }
 
@@ -383,12 +514,12 @@ async function cargarContactos() {
         if (contactos.length === 0) {
             div.innerHTML = `
                 <div class="p-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 border-bottom">
-                        <div><h6 class="mb-0">Emergencias</h6><small class="text-muted">Linea Nacional</small></div>
+                    <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
+                        <div><div class="fw-semibold small">Emergencias</div><small class="text-muted">Linea Nacional</small></div>
                         <div class="fw-bold text-primary fs-5">123</div>
                     </div>
                     <div class="d-flex justify-content-between align-items-center p-2">
-                        <div><h6 class="mb-0">Bomberos</h6><small class="text-muted">Sogamoso</small></div>
+                        <div><div class="fw-semibold small">Bomberos</div><small class="text-muted">Sogamoso</small></div>
                         <div class="fw-bold text-primary fs-5">119</div>
                     </div>
                 </div>`;
@@ -398,16 +529,14 @@ async function cargarContactos() {
         div.innerHTML = contactos.map(c => `
             <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
                 <div>
-                    <div class="fw-semibold">${c.nombre}</div>
+                    <div class="fw-semibold small">${c.nombre}</div>
                     <small class="text-muted">${c.entidad} - ${c.tipo_display || c.tipo}</small>
                 </div>
-                <div class="text-end">
-                    <div class="fw-bold text-primary">${c.telefono_principal}</div>
-                </div>
+                <a href="tel:${c.telefono_principal}" class="fw-bold text-primary text-decoration-none">${c.telefono_principal}</a>
             </div>
         `).join('');
     } catch (e) {
-        document.getElementById('contactosList').innerHTML = '<div class="text-center text-muted py-3"><small>Error al cargar contactos</small></div>';
+        document.getElementById('contactosList').innerHTML = '<div class="text-center text-muted py-3 px-3"><small>Error al cargar contactos</small></div>';
     }
 }
 
@@ -427,152 +556,6 @@ async function cargarTiposEmergencia() {
     }
 }
 
-// ============================================================
-// ACCIONES
-// ============================================================
-
-document.getElementById('btnReportarEmergencia').addEventListener('click', async function() {
-    const tipo = document.getElementById('tipoEmergencia').value;
-    const descripcion = document.getElementById('descripcionEmergencia').value;
-    const ubicacion = document.getElementById('ubicacionEmergencia').value;
-    const personas = document.getElementById('personasAfectadas').value;
-    const evacuacion = document.getElementById('requiereEvacuacion').checked;
-
-    if (!tipo || !descripcion) {
-        alert('Debes seleccionar un tipo y escribir una descripcion.');
-        return;
-    }
-
-    try {
-        // Intentar obtener ubicacion GPS
-        let latitud = null, longitud = null;
-        try {
-            const pos = await new Promise((resolve, reject) => {
-                navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
-            });
-            latitud = pos.coords.latitude;
-            longitud = pos.coords.longitude;
-        } catch (e) {}
-
-        const body = {
-            tipo: parseInt(tipo),
-            descripcion: descripcion,
-            descripcion_ubicacion: ubicacion || 'No especificada',
-            personas_afectadas: parseInt(personas) || 0,
-            requiere_evacuacion: evacuacion
-        };
-        if (latitud) body.latitud = latitud;
-        if (longitud) body.longitud = longitud;
-
-        const resp = await fetch('/api/emergencias/emergencias/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
-            },
-            credentials: 'same-origin',
-            body: JSON.stringify(body)
-        });
-
-        if (resp.ok) {
-            bootstrap.Modal.getInstance(document.getElementById('modalEmergencia')).hide();
-            document.getElementById('formEmergencia').reset();
-            alert('Emergencia reportada exitosamente. Se ha notificado a la brigada.');
-            cargarEmergencias();
-        } else {
-            const err = await resp.json();
-            alert('Error: ' + (err.detail || JSON.stringify(err)));
-        }
-    } catch (e) {
-        alert('Error al reportar la emergencia: ' + e.message);
-    }
-});
-
-async function atenderEmergencia(id) {
-    if (!confirm('Vas a marcar esta emergencia como EN ATENCION. Continuar?')) return;
-    try {
-        const resp = await fetch(`/api/emergencias/emergencias/${id}/atender/`, {
-            method: 'POST',
-            headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/json' },
-            credentials: 'same-origin'
-        });
-        if (resp.ok) {
-            cargarEmergencias();
-        } else {
-            const err = await resp.json();
-            alert(err.error || 'Error al atender emergencia');
-        }
-    } catch (e) {
-        alert('Error: ' + e.message);
-    }
-}
-
-async function resolverEmergencia(id) {
-    const acciones = prompt('Describe las acciones tomadas para resolver la emergencia:');
-    if (acciones === null) return;
-    try {
-        const resp = await fetch(`/api/emergencias/emergencias/${id}/resolver/`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-            credentials: 'same-origin',
-            body: JSON.stringify({ acciones_tomadas: acciones })
-        });
-        if (resp.ok) {
-            alert('Emergencia resuelta exitosamente.');
-            cargarEmergencias();
-        } else {
-            const err = await resp.json();
-            alert(err.error || 'Error al resolver emergencia');
-        }
-    } catch (e) {
-        alert('Error: ' + e.message);
-    }
-}
-
-function marcarFalsaAlarma(id) {
-    document.getElementById('falsaAlarmaEmergenciaId').value = id;
-    document.getElementById('motivoFalsaAlarma').value = '';
-    new bootstrap.Modal(document.getElementById('modalFalsaAlarma')).show();
-}
-
-document.getElementById('btnConfirmarFalsaAlarma').addEventListener('click', async function() {
-    const id = document.getElementById('falsaAlarmaEmergenciaId').value;
-    const motivo = document.getElementById('motivoFalsaAlarma').value.trim();
-
-    if (!motivo) {
-        alert('Debes escribir un motivo para marcar como falsa alarma.');
-        return;
-    }
-
-    try {
-        const resp = await fetch(`/api/emergencias/emergencias/${id}/marcar-falsa-alarma/`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-            credentials: 'same-origin',
-            body: JSON.stringify({ motivo: motivo })
-        });
-
-        if (resp.ok) {
-            const data = await resp.json();
-            bootstrap.Modal.getInstance(document.getElementById('modalFalsaAlarma')).hide();
-
-            let mensaje = `Emergencia marcada como falsa alarma.\nReportada por: ${data.reportada_por}`;
-            if (data.total_falsas_alarmas_usuario > 1) {
-                mensaje += `\n\nATENCION: Este usuario tiene ${data.total_falsas_alarmas_usuario} falsas alarmas registradas.`;
-            }
-            alert(mensaje);
-
-            cargarEmergencias();
-            cargarFalsasAlarmas();
-        } else {
-            const err = await resp.json();
-            alert(err.error || 'Error al marcar como falsa alarma');
-        }
-    } catch (e) {
-        alert('Error: ' + e.message);
-    }
-});
-
 async function cargarFalsasAlarmas() {
     try {
         const resp = await fetch('/api/emergencias/emergencias/falsas-alarmas/', { credentials: 'same-origin' });
@@ -588,24 +571,16 @@ async function cargarFalsasAlarmas() {
 
             tbody.innerHTML = data.reincidentes.map(r => {
                 const nombre = `${r.reportada_por__first_name || ''} ${r.reportada_por__last_name || ''}`.trim();
-                let nivel = 'Leve';
-                let nivelClass = 'bg-warning text-dark';
-                if (r.total_falsas >= 3) {
-                    nivel = 'Critico';
-                    nivelClass = 'bg-danger';
-                } else if (r.total_falsas >= 2) {
-                    nivel = 'Moderado';
-                    nivelClass = 'bg-orange text-white';
-                }
+                let nivel = 'Leve', nivelClass = 'bg-warning text-dark';
+                if (r.total_falsas >= 3) { nivel = 'Critico'; nivelClass = 'bg-danger'; }
+                else if (r.total_falsas >= 2) { nivel = 'Moderado'; nivelClass = 'bg-orange text-white'; }
                 return `
-                    <tr class="${r.total_falsas >= 3 ? 'table-danger' : r.total_falsas >= 2 ? 'table-warning' : ''}">
-                        <td class="fw-semibold">${nombre || 'Desconocido'}</td>
+                    <tr>
+                        <td class="ps-3 fw-semibold">${nombre || 'Desconocido'}</td>
                         <td>${r.reportada_por__numero_documento || 'N/A'}</td>
                         <td>${r.reportada_por__rol || '-'}</td>
-                        <td>
-                            <span class="badge bg-danger rounded-pill fs-6">${r.total_falsas}</span>
-                        </td>
-                        <td><span class="badge ${nivelClass}">${nivel}</span></td>
+                        <td class="text-center"><span class="badge bg-danger rounded-pill">${r.total_falsas}</span></td>
+                        <td class="text-center"><span class="badge ${nivelClass}">${nivel}</span></td>
                     </tr>`;
             }).join('');
         } else {
@@ -616,22 +591,199 @@ async function cargarFalsasAlarmas() {
     }
 }
 
+function cargarTodo() {
+    cargarEmergencias();
+    cargarFalsasAlarmas();
+    cargarBrigada();
+    cargarContactos();
+}
+
+// ============================================================
+// ACCIONES
+// ============================================================
+
+document.getElementById('btnReportarEmergencia').addEventListener('click', async function() {
+    const tipo = document.getElementById('tipoEmergencia').value;
+    const descripcion = document.getElementById('descripcionEmergencia').value.trim();
+    const ubicacion = document.getElementById('ubicacionEmergencia').value.trim();
+    const personas = document.getElementById('personasAfectadas').value;
+    const evacuacion = document.getElementById('requiereEvacuacion').checked;
+    const alerta = document.getElementById('alertaEmergencia');
+
+    if (!tipo || !descripcion) {
+        alerta.className = 'alert alert-warning mb-3';
+        alerta.textContent = 'Debes seleccionar un tipo y escribir una descripcion.';
+        alerta.classList.remove('d-none');
+        return;
+    }
+    alerta.classList.add('d-none');
+
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Reportando...';
+
+    try {
+        let latitud = null, longitud = null;
+        try {
+            const pos = await new Promise((res, rej) =>
+                navigator.geolocation.getCurrentPosition(res, rej, { timeout: 5000 })
+            );
+            latitud = pos.coords.latitude;
+            longitud = pos.coords.longitude;
+        } catch (e) {}
+
+        const body = {
+            tipo: parseInt(tipo),
+            descripcion,
+            descripcion_ubicacion: ubicacion || 'No especificada',
+            personas_afectadas: parseInt(personas) || 0,
+            requiere_evacuacion: evacuacion
+        };
+        if (latitud) body.latitud = latitud;
+        if (longitud) body.longitud = longitud;
+
+        const resp = await fetch('/api/emergencias/emergencias/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+            credentials: 'same-origin',
+            body: JSON.stringify(body)
+        });
+
+        if (resp.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('modalEmergencia')).hide();
+            document.getElementById('formEmergencia').reset();
+            mostrarToast('Emergencia reportada. Se notificó a la brigada.', 'success');
+            cargarTodo();
+        } else {
+            const err = await resp.json();
+            alerta.className = 'alert alert-danger mb-3';
+            alerta.textContent = 'Error: ' + (err.detail || JSON.stringify(err));
+            alerta.classList.remove('d-none');
+        }
+    } catch (e) {
+        alerta.className = 'alert alert-danger mb-3';
+        alerta.textContent = 'Error al reportar la emergencia: ' + e.message;
+        alerta.classList.remove('d-none');
+    } finally {
+        this.disabled = false;
+        this.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i> Reportar Emergencia';
+    }
+});
+
+async function atenderEmergencia(id) {
+    if (!confirm('Vas a marcar esta emergencia como EN ATENCION. Continuar?')) return;
+    try {
+        const resp = await fetch(`/api/emergencias/emergencias/${id}/atender/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json' },
+            credentials: 'same-origin'
+        });
+        if (resp.ok) {
+            mostrarToast('Emergencia marcada como en atención.', 'success');
+            cargarTodo();
+        } else {
+            const err = await resp.json();
+            mostrarToast(err.error || 'Error al atender emergencia', 'danger');
+        }
+    } catch (e) {
+        mostrarToast('Error de conexión', 'danger');
+    }
+}
+
+function abrirModalResolver(id) {
+    document.getElementById('resolverEmergenciaId').value = id;
+    document.getElementById('accionesResolver').value = '';
+    new bootstrap.Modal(document.getElementById('modalResolver')).show();
+}
+
+document.getElementById('btnConfirmarResolver').addEventListener('click', async function() {
+    const id = document.getElementById('resolverEmergenciaId').value;
+    const acciones = document.getElementById('accionesResolver').value.trim();
+
+    if (!acciones) {
+        mostrarToast('Debes describir las acciones tomadas.', 'warning');
+        return;
+    }
+
+    this.disabled = true;
+    try {
+        const resp = await fetch(`/api/emergencias/emergencias/${id}/resolver/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+            credentials: 'same-origin',
+            body: JSON.stringify({ acciones_tomadas: acciones })
+        });
+        if (resp.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('modalResolver')).hide();
+            mostrarToast('Emergencia resuelta exitosamente.', 'success');
+            cargarTodo();
+        } else {
+            const err = await resp.json();
+            mostrarToast(err.error || 'Error al resolver emergencia', 'danger');
+        }
+    } catch (e) {
+        mostrarToast('Error de conexión', 'danger');
+    } finally {
+        this.disabled = false;
+    }
+});
+
+function marcarFalsaAlarma(id) {
+    document.getElementById('falsaAlarmaEmergenciaId').value = id;
+    document.getElementById('motivoFalsaAlarma').value = '';
+    new bootstrap.Modal(document.getElementById('modalFalsaAlarma')).show();
+}
+
+document.getElementById('btnConfirmarFalsaAlarma').addEventListener('click', async function() {
+    const id = document.getElementById('falsaAlarmaEmergenciaId').value;
+    const motivo = document.getElementById('motivoFalsaAlarma').value.trim();
+
+    if (!motivo) {
+        mostrarToast('Debes escribir un motivo para marcar como falsa alarma.', 'warning');
+        return;
+    }
+
+    this.disabled = true;
+    try {
+        const resp = await fetch(`/api/emergencias/emergencias/${id}/marcar-falsa-alarma/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+            credentials: 'same-origin',
+            body: JSON.stringify({ motivo })
+        });
+
+        if (resp.ok) {
+            const data = await resp.json();
+            bootstrap.Modal.getInstance(document.getElementById('modalFalsaAlarma')).hide();
+            let msg = `Emergencia marcada como falsa alarma.`;
+            if (data.total_falsas_alarmas_usuario > 1) {
+                msg += ` Este usuario acumula ${data.total_falsas_alarmas_usuario} falsas alarmas.`;
+            }
+            mostrarToast(msg, 'warning');
+            cargarTodo();
+        } else {
+            const err = await resp.json();
+            mostrarToast(err.error || 'Error al marcar como falsa alarma', 'danger');
+        }
+    } catch (e) {
+        mostrarToast('Error de conexión', 'danger');
+    } finally {
+        this.disabled = false;
+    }
+});
+
 async function notificarBrigada() {
     if (!confirm('Se enviara notificacion a todos los miembros de la brigada. Continuar?')) return;
-    alert('Notificacion enviada a la brigada de emergencia.');
+    mostrarToast('Notificacion enviada a la brigada de emergencia.', 'info');
 }
 
 // ============================================================
 // INICIALIZACION
 // ============================================================
 
-cargarTiposEmergencia();
-cargarEmergencias();
-cargarBrigada();
-cargarContactos();
-cargarFalsasAlarmas();
-
-// Actualizar cada 30 segundos
-setInterval(cargarEmergencias, 30000);
+document.addEventListener('DOMContentLoaded', function() {
+    cargarTiposEmergencia();
+    cargarTodo();
+    setInterval(cargarTodo, 30000);
+});
 </script>
 {% endblock %}

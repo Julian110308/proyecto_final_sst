@@ -169,21 +169,6 @@ def dashboard_view(request):
         context['aprendices_presentes'] = aprendices_presentes
         context['ultimos_accesos_aprendices'] = ultimos_accesos_aprendices
 
-        # Lista de todos los aprendices con estado presente/ausente
-        from django.db.models import Exists, OuterRef
-        aprendices_con_estado = Usuario.objects.filter(
-            rol='APRENDIZ', activo=True
-        ).annotate(
-            presente_hoy=Exists(
-                RegistroAcceso.objects.filter(
-                    usuario=OuterRef('pk'),
-                    tipo='INGRESO',
-                    fecha_hora_ingreso__date=hoy
-                )
-            )
-        ).order_by('ficha', 'last_name', 'first_name')[:20]
-        context['aprendices_con_estado'] = aprendices_con_estado
-
         # Estadísticas de asistencia por ficha (top 5 fichas con más aprendices) - optimizado
         # Presentes hoy por ficha en una sola query
         presentes_por_ficha = dict(
@@ -424,18 +409,11 @@ def mis_aprendices_view(request):
     Vista para que el instructor filtre por programa -> ficha -> aprendices
     Incluye información de asistencia del día actual
     """
-    from usuarios.models import Usuario
+    from usuarios.models import Usuario, PROGRAMAS_FORMACION
     from control_acceso.models import RegistroAcceso
     from django.utils import timezone
 
-    # Obtener programas dinámicamente de la BD
-    PROGRAMAS = list(
-        Usuario.objects.filter(
-            rol='APRENDIZ', activo=True, programa_formacion__isnull=False
-        ).exclude(programa_formacion='').values_list(
-            'programa_formacion', flat=True
-        ).distinct().order_by('programa_formacion')
-    )
+    PROGRAMAS = PROGRAMAS_FORMACION  # lista fija: [(valor, nombre_display), ...]
 
     programa_seleccionado = request.GET.get('programa', '')
     ficha_seleccionada = request.GET.get('ficha', '')
@@ -547,10 +525,45 @@ def configuracion_view(request):
     Vista de configuración del sistema
     """
     from control_acceso.models import ConfiguracionAforo
+    from django.contrib import messages as django_messages
+
     config_aforo = ConfiguracionAforo.objects.filter(activo=True).first()
-    
+
+    if request.method == 'POST':
+        try:
+            aforo_maximo = int(request.POST.get('aforo_maximo', 2000))
+            umbral_alerta = int(request.POST.get('umbral_alerta', 90))
+            mensaje_alerta = request.POST.get('mensaje_alerta', '').strip()
+            aforo_activo = request.POST.get('aforo_activo') == 'on'
+            aforo_minimo = round(aforo_maximo * umbral_alerta / 100)
+
+            if config_aforo:
+                config_aforo.aforo_maximo = aforo_maximo
+                config_aforo.aforo_minimo = aforo_minimo
+                config_aforo.mensaje_alerta = mensaje_alerta
+                config_aforo.activo = aforo_activo
+                config_aforo.save()
+            else:
+                ConfiguracionAforo.objects.create(
+                    aforo_maximo=aforo_maximo,
+                    aforo_minimo=aforo_minimo,
+                    mensaje_alerta=mensaje_alerta,
+                    activo=aforo_activo,
+                )
+
+            django_messages.success(request, 'Configuración guardada correctamente.')
+        except (ValueError, TypeError) as e:
+            django_messages.error(request, f'Error al guardar: verifique los valores ingresados.')
+        return redirect('configuracion_sistema')
+
+    # Calcular umbral como porcentaje para el slider
+    umbral_alerta = 90
+    if config_aforo and config_aforo.aforo_maximo:
+        umbral_alerta = round(config_aforo.aforo_minimo / config_aforo.aforo_maximo * 100)
+
     context = {
-        'config_aforo': config_aforo
+        'config_aforo': config_aforo,
+        'umbral_alerta': umbral_alerta,
     }
     return render(request, 'dashboard/administrativo/configuracion.html', context)
 
@@ -559,18 +572,20 @@ def configuracion_view(request):
 # ==============================================
 
 @login_required
-@rol_requerido('VIGILANCIA')
+@rol_requerido('VIGILANCIA', 'ADMINISTRATIVO')
 def gestion_visitantes_view(request):
     """
-    Vista para gestión de visitantes (Vigilancia)
+    Vista para gestión de visitantes
+    PERMISOS: VIGILANCIA y ADMINISTRATIVO
     """
     from usuarios.models import Visitante
     from django.utils import timezone
-    
+
     hoy = timezone.now().date()
-    # Visitantes registrados hoy
-    visitantes_hoy = Visitante.objects.filter(fecha_visita=hoy).order_by('-hora_ingreso')
-    
+    visitantes_hoy = Visitante.objects.select_related('persona_a_visitar').filter(
+        fecha_visita=hoy
+    ).order_by('-hora_ingreso')
+
     context = {
         'visitantes': visitantes_hoy,
         'total_hoy': visitantes_hoy.count(),
@@ -679,11 +694,11 @@ from mapas.views import mapa_interactivo, campus_svg as campus_svg_view, plano_c
 
 # Decorador aplicado directamente en la vista mapa_interactivo en mapas/views.py
 
-@excluir_visitantes
+@rol_requerido('ADMINISTRATIVO', 'BRIGADA', 'VIGILANCIA')
 def emergencias_view(request):
     """
     Vista de Emergencias
-    PERMISOS: Todos excepto VISITANTE
+    PERMISOS: Solo ADMINISTRATIVO, BRIGADA y VIGILANCIA
     """
     return render(request, 'emergencias.html')
 
@@ -693,7 +708,7 @@ def reportes_view(request):
     Vista de Reportes
     PERMISOS: Todos excepto VISITANTE
     """
-    return render(request, 'reportes.html')
+    return render(request, 'reportes/index.html')
 
 urlpatterns = [
     # PWA: Service Worker y Manifest servidos desde la raíz

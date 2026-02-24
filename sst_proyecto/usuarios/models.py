@@ -2,6 +2,13 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+# Programas de formación disponibles — fuente de verdad única para registro y filtros
+PROGRAMAS_FORMACION = [
+    ('Analisis y Desarrollo de Software', 'Análisis y Desarrollo de Software'),
+    ('Maquinaria Pesada', 'Maquinaria Pesada'),
+    ('Seguridad y Salud en el Trabajo', 'Seguridad y Salud en el Trabajo'),
+]
+
 class RolePermissions:
     """
     Clase para gestión centralizada de permisos por rol - VERSIÓN CORREGIDA

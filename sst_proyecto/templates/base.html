@@ -148,14 +148,6 @@
         /* --- COMPONENTES ESPECÍFICOS DEL LAYOUT --- */
         /* Los estilos de .card están en design-system.css */
 
-        /* Ajuste para que las tarjetas se adapten al contenido en Emergencias (Instructor) */
-        {% if user.rol == 'INSTRUCTOR' and '/emergencias/' in request.path %}
-        .card {
-            height: auto !important;
-            min-height: 0;
-        }
-        {% endif %}
-
         /* Espaciado automático para botones en tarjetas */
         .card .btn + .btn {
             margin-left: 0.75rem;
@@ -484,6 +476,11 @@
                         </a>
                     </li>
                     <li class="nav-item mb-2">
+                        <a class="nav-link" href="{% url 'gestion_visitantes' %}">
+                            <i class="bi bi-person-badge me-2"></i>Visitantes
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
                         <a class="nav-link" href="{% url 'gestion_usuarios' %}">
                             <i class="bi bi-people me-2"></i>Gestión Usuarios
                         </a>
@@ -506,15 +503,9 @@
                             <i class="bi bi-map me-2"></i>Mapa del Centro
                         </a>
                     </li>
-
                     <li class="nav-item mb-2">
                         <a class="nav-link" href="{% url 'campus_svg' %}">
                             <i class="bi bi-grid-3x3-gap me-2"></i>Mapa Campus
-                        </a>
-                    </li>
-                    <li class="nav-item mb-2">
-                        <a class="nav-link" href="/emergencias/">
-                            <i class="bi bi-exclamation-octagon me-2"></i>Emergencias
                         </a>
                     </li>
                     <li class="nav-item mb-2">
@@ -632,6 +623,11 @@
                     <li class="nav-item mb-2">
                         <a class="nav-link" href="/reportes/incidentes/">
                             <i class="bi bi-exclamation-triangle me-2"></i>Mis Incidentes
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="{% url 'informacion_sst' %}">
+                            <i class="bi bi-shield-check me-2"></i>Información SST
                         </a>
                     </li>
 

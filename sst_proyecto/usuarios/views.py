@@ -194,14 +194,14 @@ class UsuarioViewSet(viewsets.ModelViewSet):
 class VisitanteViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gestionar visitantes
-    PERMISOS: VIGILANCIA, ADMINISTRATIVO e INSTRUCTOR
+    PERMISOS: VIGILANCIA y ADMINISTRATIVO
     """
     queryset = Visitante.objects.all()
     serializer_class = VisitanteSerializer
 
     def get_permissions(self):
-        # Solo VIGILANCIA, ADMINISTRATIVO e INSTRUCTOR pueden gestionar visitantes
-        return [EsAdministrativoOInstructor()]
+        from .permissions import EsVigilanciaOAdministrativo
+        return [EsVigilanciaOAdministrativo()]
 
     def perform_create(self, serializer):
         serializer.save(registrado_por=self.request.user)
