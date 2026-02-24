@@ -368,19 +368,30 @@ def mapa_interactivo(request):
                 }
             ]
         
-        # 5. PREPARAR CONTEXTO
+        # 5. GEOCERCA DESDE LA BASE DE DATOS
+        # Importamos aquí para evitar import circular (control_acceso.models → mapas.services)
+        from control_acceso.models import Geocerca as GeocercaConfig
+        geocerca_obj = GeocercaConfig.objects.filter(activo=True).first()
+        geocerca_config = {
+            'lat': geocerca_obj.centro_latitud if geocerca_obj else 5.7303596,
+            'lng': geocerca_obj.centro_longitud if geocerca_obj else -72.8943613,
+            'radio': geocerca_obj.radio_metros if geocerca_obj else 400,
+        }
+
+        # 6. PREPARAR CONTEXTO
 
         context = {
             'edificios': edificios_data,
             'puntos_encuentro': puntos_data,
             'equipamiento': equipamientos_data,
             'centro_minero': {
-                'lat': 5.7303596,
-                'lng': -72.8943613,
+                'lat': geocerca_config['lat'],
+                'lng': geocerca_config['lng'],
                 'nombre': 'Centro Nacional Minero SENA - Sogamoso, Vereda Morcá'
-            }
+            },
+            'geocerca': geocerca_config,
         }
-        
+
     except Exception as e:
         # Manejo de errores con datos de ejemplo
         context = {
@@ -458,9 +469,14 @@ def mapa_interactivo(request):
                 'lat': 5.7303596,
                 'lng': -72.8943613,
                 'nombre': 'Centro Nacional Minero SENA - Sogamoso, Vereda Morcá'
-            }
+            },
+            'geocerca': {
+                'lat': 5.7303596,
+                'lng': -72.8943613,
+                'radio': 400,
+            },
         }
-    
+
     return render(request, 'mapas.html', context)
 class EdificioBloqueViewSet(viewsets.ModelViewSet):
     """

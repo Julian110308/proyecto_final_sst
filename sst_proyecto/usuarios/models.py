@@ -208,6 +208,13 @@ class Usuario(AbstractUser):
     # Para aprendices
     ficha = models.CharField(max_length=20, blank=True, null=True)
     programa_formacion = models.CharField(max_length=200, blank=True, null=True)
+
+    # Para instructores: fichas asignadas (varias, separadas por coma)
+    fichas_asignadas = models.TextField(
+        blank=True, default='',
+        verbose_name='Fichas asignadas',
+        help_text='Números de ficha separados por coma (solo instructores)'
+    )
     
     # Control
     activo = models.BooleanField(default=True)
@@ -218,6 +225,12 @@ class Usuario(AbstractUser):
         verbose_name = 'Usuario'
         verbose_name_plural = 'Usuarios'
         ordering = ['-fecha_registro']
+
+    def get_fichas_list(self):
+        """Retorna la lista de fichas asignadas del instructor (vacía si no tiene)."""
+        if self.fichas_asignadas:
+            return [f.strip() for f in self.fichas_asignadas.split(',') if f.strip()]
+        return []
 
     def save(self, *args, **kwargs):
         # Mantener sincronizados activo e is_active

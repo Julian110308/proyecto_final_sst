@@ -25,14 +25,30 @@
     </div>
 </div>
 
+<!-- Alertas de configuracion -->
+{% if not ficha_instructor and not programa_instructor %}
+<div class="alert alert-warning d-flex align-items-center gap-2 mb-3 py-2" role="alert">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    <span class="small">
+        No tienes <strong>ficha ni programa</strong> asignados. Las metricas muestran datos globales del SENA.
+        <a href="{% url 'mi_perfil' %}" class="alert-link ms-1">Configurar perfil &rarr;</a>
+    </span>
+</div>
+{% elif not ficha_instructor and programa_instructor %}
+<div class="alert alert-info d-flex align-items-center gap-2 mb-3 py-2" role="alert">
+    <i class="bi bi-info-circle-fill"></i>
+    <span class="small">
+        Filtrando por programa <strong>{{ programa_instructor }}</strong>. Asigna tu <strong>ficha</strong> en el perfil para datos mas precisos.
+        <a href="{% url 'mi_perfil' %}" class="alert-link ms-1">Configurar &rarr;</a>
+    </span>
+</div>
+{% endif %}
+
 <!-- Metricas Principales -->
 <div class="row g-3 mb-4">
-    {% include 'components/metric-card.html' with label="Aprendices Activos" value=total_aprendices|default:0 sublabel="Asignados a mis fichas" sublabel_icon="bi bi-people" sublabel_color="muted" icon="bi-people-fill" icon_color="success" border_color="success" %}
-
-    {% include 'components/metric-card.html' with label="Presentes Hoy" value=aprendices_presentes|default:0 sublabel="En el centro ahora" sublabel_icon="bi bi-check-circle" sublabel_color="success" icon="bi-person-check-fill" icon_color="primary" border_color="primary" %}
-
+    {% include 'components/metric-card.html' with label="Aprendices Activos" value=total_aprendices|default:0 sublabel=sublabel_aprendices sublabel_icon="bi bi-people" sublabel_color="muted" icon="bi-people-fill" icon_color="success" border_color="success" %}
+    {% include 'components/metric-card.html' with label="Presentes Hoy" value=aprendices_presentes|default:0 sublabel=sublabel_presentes sublabel_icon="bi bi-check-circle" sublabel_color="success" icon="bi-person-check-fill" icon_color="primary" border_color="primary" %}
     {% include 'components/metric-card.html' with label="Ingresos Hoy" value=ingresos_hoy|default:0 sublabel="Registros de entrada" sublabel_color="muted" icon="bi-door-open" icon_color="info" border_color="info" %}
-
     {% include 'components/metric-card.html' with label="Incidentes del Mes" value=incidentes_mes|default:0 sublabel="Reportados este mes" sublabel_icon="bi bi-exclamation-triangle" sublabel_color="warning" icon="bi-exclamation-triangle-fill" icon_color="warning" border_color="warning" %}
 </div>
 

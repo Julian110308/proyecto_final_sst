@@ -151,53 +151,93 @@ def dashboard_view(request):
 
     # Datos adicionales para INSTRUCTOR
     if usuario.rol == 'INSTRUCTOR':
-        total_aprendices = Usuario.objects.filter(rol='APRENDIZ', activo=True).count()
-        # Aprendices que ingresaron hoy
-        aprendices_ids_hoy = RegistroAcceso.objects.filter(
-            tipo='INGRESO',
-            fecha_hora_ingreso__date=hoy,
-            usuario__rol='APRENDIZ'
-        ).values_list('usuario_id', flat=True).distinct()
-        aprendices_presentes = aprendices_ids_hoy.count()
-        # Últimos 5 accesos de aprendices hoy
+        ficha_instructor = usuario.ficha or ''
+        programa_instructor = usuario.programa_formacion or ''
+
+        filtro_aprendices = {'rol': 'APRENDIZ', 'activo': True}
+        filtro_acceso = {'tipo': 'INGRESO', 'fecha_hora_ingreso__date': hoy, 'usuario__rol': 'APRENDIZ'}
+
+        if ficha_instructor:
+            filtro_aprendices['ficha'] = ficha_instructor
+            filtro_acceso['usuario__ficha'] = ficha_instructor
+        elif programa_instructor:
+            filtro_aprendices['programa_formacion'] = programa_instructor
+            filtro_acceso['usuario__programa_formacion'] = programa_instructor
+
+        total_aprendices = Usuario.objects.filter(**filtro_aprendices).count()
+        aprendices_presentes = RegistroAcceso.objects.filter(
+            **filtro_acceso
+        ).values('usuario_id').distinct().count()
         ultimos_accesos_aprendices = RegistroAcceso.objects.select_related('usuario').filter(
-            tipo='INGRESO',
-            fecha_hora_ingreso__date=hoy,
-            usuario__rol='APRENDIZ'
+            **filtro_acceso
         ).order_by('-fecha_hora_ingreso')[:5]
+
+        if ficha_instructor:
+            sublabel_aprendices = f'Ficha {ficha_instructor}'
+            sublabel_presentes = f'Ficha {ficha_instructor} en el centro'
+        elif programa_instructor:
+            sublabel_aprendices = programa_instructor
+            sublabel_presentes = 'De mi programa en el centro'
+        else:
+            sublabel_aprendices = 'Todos los aprendices SENA'
+            sublabel_presentes = 'Sin filtro asignado'
+
         context['total_aprendices'] = total_aprendices
         context['aprendices_presentes'] = aprendices_presentes
         context['ultimos_accesos_aprendices'] = ultimos_accesos_aprendices
+        context['programa_instructor'] = programa_instructor
+        context['ficha_instructor'] = ficha_instructor
+        context['sublabel_aprendices'] = sublabel_aprendices
+        context['sublabel_presentes'] = sublabel_presentes
 
-        # Estadísticas de asistencia por ficha (top 5 fichas con más aprendices) - optimizado
-        # Presentes hoy por ficha en una sola query
+        # Estadísticas por ficha (la del instructor o su programa)
+        filtro_ficha_base = {'rol': 'APRENDIZ', 'activo': True, 'ficha__isnull': False}
+        filtro_acceso_ficha = {
+            'tipo': 'INGRESO', 'fecha_hora_ingreso__date': hoy,
+            'usuario__rol': 'APRENDIZ', 'usuario__ficha__isnull': False,
+        }
+        if ficha_instructor:
+            filtro_ficha_base['ficha'] = ficha_instructor
+            filtro_acceso_ficha['usuario__ficha'] = ficha_instructor
+        elif programa_instructor:
+            filtro_ficha_base['programa_formacion'] = programa_instructor
+            filtro_acceso_ficha['usuario__programa_formacion'] = programa_instructor
+
         presentes_por_ficha = dict(
-            RegistroAcceso.objects.filter(
-                tipo='INGRESO',
-                fecha_hora_ingreso__date=hoy,
-                usuario__rol='APRENDIZ',
-                usuario__ficha__isnull=False,
-            ).exclude(usuario__ficha='').values('usuario__ficha').annotate(
-                presentes=Count('usuario_id', distinct=True)
-            ).values_list('usuario__ficha', 'presentes')
+            RegistroAcceso.objects.filter(**filtro_acceso_ficha).exclude(usuario__ficha='').values(
+                'usuario__ficha'
+            ).annotate(presentes=Count('usuario_id', distinct=True)).values_list('usuario__ficha', 'presentes')
         )
-
         fichas_stats = list(
-            Usuario.objects.filter(
-                rol='APRENDIZ', activo=True, ficha__isnull=False
-            ).exclude(ficha='').values('ficha').annotate(
+            Usuario.objects.filter(**filtro_ficha_base).exclude(ficha='').values('ficha').annotate(
                 total=Count('id')
             ).order_by('-total')[:5]
         )
-
         for ficha in fichas_stats:
             presentes = presentes_por_ficha.get(ficha['ficha'], 0)
             ficha['presentes'] = presentes
             ficha['porcentaje'] = round((presentes / ficha['total']) * 100) if ficha['total'] > 0 else 0
-
         context['fichas_stats'] = fichas_stats
 
-        # Incidentes del mes para el instructor
+        # Gráfica 7 días filtrada
+        filtro_7dias = {'tipo': 'INGRESO', 'fecha_hora_ingreso__date__gte': fecha_inicio_7,
+                        'fecha_hora_ingreso__date__lte': hoy, 'usuario__rol': 'APRENDIZ'}
+        if ficha_instructor:
+            filtro_7dias['usuario__ficha'] = ficha_instructor
+        elif programa_instructor:
+            filtro_7dias['usuario__programa_formacion'] = programa_instructor
+        registros_instructor_por_dia = dict(
+            RegistroAcceso.objects.filter(**filtro_7dias).annotate(
+                dia=TruncDate('fecha_hora_ingreso')
+            ).values('dia').annotate(cantidad=Count('id')).values_list('dia', 'cantidad')
+        )
+        ultimos_7_dias_instructor = []
+        for i in range(6, -1, -1):
+            fecha = hoy - timedelta(days=i)
+            ultimos_7_dias_instructor.append({'fecha': fecha.strftime('%d/%m'),
+                                              'cantidad': registros_instructor_por_dia.get(fecha, 0)})
+        context['ultimos_7_dias'] = ultimos_7_dias_instructor
+
         from reportes.models import Incidente as IncidenteInstructor
         context['incidentes_mes'] = IncidenteInstructor.objects.filter(
             fecha_reporte__date__gte=inicio_mes
@@ -307,6 +347,13 @@ def mi_perfil_view(request):
         usuario.telefono_emergencia = request.POST.get('telefono_emergencia', usuario.telefono_emergencia).strip()
         usuario.contacto_emergencia = request.POST.get('contacto_emergencia', usuario.contacto_emergencia).strip()
 
+        # Programa y ficha — editables para instructores
+        if usuario.rol == 'INSTRUCTOR':
+            if 'programa_formacion' in request.POST:
+                usuario.programa_formacion = request.POST.get('programa_formacion', '').strip() or None
+            if 'ficha' in request.POST:
+                usuario.ficha = request.POST.get('ficha', '').strip() or None
+
         # Foto de perfil
         if 'foto' in request.FILES:
             foto = request.FILES['foto']
@@ -345,6 +392,22 @@ def mi_perfil_view(request):
         'total_accesos_mes': total_accesos_mes,
         'ultimo_acceso': ultimo_acceso,
     }
+
+    # Para instructores: cargar fichas disponibles por programa para el selector dinámico
+    if usuario.rol == 'INSTRUCTOR':
+        from usuarios.models import Usuario as Usr
+        import json
+        fichas_qs = Usr.objects.filter(
+            rol='APRENDIZ', activo=True, ficha__isnull=False
+        ).exclude(ficha='').values('programa_formacion', 'ficha').distinct().order_by('programa_formacion', 'ficha')
+        fichas_por_programa = {}
+        for item in fichas_qs:
+            prog = item['programa_formacion'] or ''
+            ficha = item['ficha']
+            fichas_por_programa.setdefault(prog, [])
+            if ficha not in fichas_por_programa[prog]:
+                fichas_por_programa[prog].append(ficha)
+        context['fichas_por_programa_json'] = json.dumps(fichas_por_programa)
 
     return render(request, 'perfil.html', context)
 
@@ -432,40 +495,34 @@ def mis_alertas_view(request):
 @rol_requerido('INSTRUCTOR')
 def mis_aprendices_view(request):
     """
-    Vista para que el instructor filtre por programa -> ficha -> aprendices
-    Incluye información de asistencia del día actual
+    Vista para que el instructor vea los aprendices de SUS fichas asignadas.
+    Si no tiene fichas asignadas, muestra un aviso para configurar el perfil.
     """
-    from usuarios.models import Usuario, PROGRAMAS_FORMACION
+    from usuarios.models import Usuario
     from control_acceso.models import RegistroAcceso
+    from django.db.models import OuterRef, Subquery, Exists
     from django.utils import timezone
 
-    PROGRAMAS = PROGRAMAS_FORMACION  # lista fija: [(valor, nombre_display), ...]
+    instructor = request.user
+    ficha_instructor = instructor.ficha or ''    # única ficha asignada
+    programa_instructor = instructor.programa_formacion or ''
 
-    programa_seleccionado = request.GET.get('programa', '')
-    ficha_seleccionada = request.GET.get('ficha', '')
-    fichas = []
+    hoy = timezone.now().date()
+
     aprendices_con_asistencia = []
     total_aprendices = 0
     presentes_hoy = 0
 
-    if programa_seleccionado:
-        fichas = Usuario.objects.filter(
-            rol='APRENDIZ', activo=True, programa_formacion=programa_seleccionado
-        ).values_list('ficha', flat=True).distinct().order_by('ficha')
+    ficha_seleccionada = ficha_instructor  # solo puede ver su propia ficha
 
-    if ficha_seleccionada:
-        from django.db.models import OuterRef, Subquery, Exists
-
-        hoy = timezone.now().date()
-
-        # Subquery para obtener el último registro de hoy por aprendiz
+    if ficha_instructor:
         ultimo_registro_hoy = RegistroAcceso.objects.filter(
             usuario=OuterRef('pk'),
             fecha_hora_ingreso__date=hoy
         ).order_by('-fecha_hora_ingreso')
 
         aprendices = Usuario.objects.filter(
-            rol='APRENDIZ', activo=True, ficha=ficha_seleccionada, programa_formacion=programa_seleccionado
+            rol='APRENDIZ', activo=True, ficha=ficha_seleccionada
         ).annotate(
             tiene_registro_hoy=Exists(
                 RegistroAcceso.objects.filter(
@@ -486,17 +543,13 @@ def mis_aprendices_view(request):
         total_aprendices = aprendices.count()
 
         for aprendiz in aprendices:
-            # Para el conteo de asistencia: tiene registro hoy = asistio
             asistio = aprendiz.tiene_registro_hoy
-            hora_ingreso = aprendiz._hora_ingreso
-
             if asistio:
                 presentes_hoy += 1
-
             aprendices_con_asistencia.append({
                 'usuario': aprendiz,
                 'presente': aprendiz._en_centro,
-                'hora_ingreso': hora_ingreso,
+                'hora_ingreso': aprendiz._hora_ingreso,
                 'tiene_registro_hoy': asistio,
             })
 
@@ -504,9 +557,8 @@ def mis_aprendices_view(request):
     porcentaje_asistencia = round((presentes_hoy / total_aprendices) * 100) if total_aprendices > 0 else 0
 
     context = {
-        'programas': PROGRAMAS,
-        'programa_seleccionado': programa_seleccionado,
-        'fichas': fichas,
+        'ficha_instructor': ficha_instructor,
+        'programa_instructor': programa_instructor,
         'ficha_seleccionada': ficha_seleccionada,
         'aprendices': aprendices_con_asistencia,
         'total_aprendices': total_aprendices,

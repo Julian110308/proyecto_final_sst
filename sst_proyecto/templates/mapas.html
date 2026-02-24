@@ -333,17 +333,16 @@
 // CONFIGURACIÓN Y VARIABLES GLOBALES
 // ====================================================================
 
-// Coordenadas exactas del Centro Nacional Minero SENA - Vereda Morcá, Sogamoso, Boyacá
-// Coordenadas tomadas desde Google Earth del punto central del área de edificios
+// Coordenadas del Centro Nacional Minero SENA - Vereda Morcá, Sogamoso, Boyacá
+// Valores configurados desde la base de datos (modelo Geocerca)
 const centroMinero = {
-    latitud: 5.7303596,
-    longitud: -72.8943613,
+    latitud: {{ geocerca.lat }},
+    longitud: {{ geocerca.lng }},
     nombre: 'Centro Nacional Minero SENA - Sogamoso, Vereda Morcá'
 };
 
-// Geocerca circular - Radio en metros alrededor del centro del Centro Minero
-// Centro: 5.7303596, -72.8943613
-const GEOCERCA_RADIO_METROS = 160;
+// Radio de la geocerca en metros - configurado desde la base de datos
+const GEOCERCA_RADIO_METROS = {{ geocerca.radio }};
 
 // Variables globales
 let mapa;
