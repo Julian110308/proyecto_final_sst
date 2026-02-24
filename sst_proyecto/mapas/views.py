@@ -184,10 +184,11 @@ def mapa_interactivo(request):
             'longitud',
             'descripcion',  # Este campo viene del modelo base UbicacionBase
             'ultima_revision',
+            'proxima_revision',
             'estado',
             'edificio__nombre',  # Relación con edificio
         )
-        
+
         # Convertir a lista con formato correcto
         equipamientos_data = []
         for equipo in equipamientos:
@@ -196,12 +197,12 @@ def mapa_interactivo(request):
             if equipo['ultima_revision']:
                 from django.utils.dateformat import format
                 ultima_revision_str = format(equipo['ultima_revision'], 'Y-m-d')
-            
+
             # Crear descripción más detallada
             descripcion_completa = equipo['descripcion'] or ""
             if equipo['edificio__nombre']:
                 descripcion_completa += f" | Ubicado en: {equipo['edificio__nombre']}"
-            
+
             equipamientos_data.append({
                 'id': equipo['id'],
                 'tipo': equipo['tipo'],
@@ -209,6 +210,7 @@ def mapa_interactivo(request):
                 'latitud': float(equipo['latitud']),
                 'longitud': float(equipo['longitud']),
                 'ultima_revision': ultima_revision_str,
+                'proxima_revision': equipo['proxima_revision'].isoformat() if equipo['proxima_revision'] else None,
                 'descripcion': descripcion_completa or f"Equipo {equipo['tipo']} - {equipo['codigo']}",
             })
         

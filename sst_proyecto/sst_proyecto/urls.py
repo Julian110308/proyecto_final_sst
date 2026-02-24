@@ -206,12 +206,38 @@ def dashboard_view(request):
     # Datos adicionales para BRIGADA
     if usuario.rol == 'BRIGADA':
         from reportes.models import Incidente
+        from django.utils import timezone as tz
         incidentes_recientes = Incidente.objects.select_related('reportado_por').order_by('-fecha_reporte')[:10]
         incidentes_pendientes = Incidente.objects.exclude(estado__in=['RESUELTO', 'CERRADO']).count()
         incidentes_total_mes = Incidente.objects.filter(fecha_reporte__date__gte=inicio_mes).count()
+        incidentes_criticos_sla = Incidente.objects.exclude(estado__in=['RESUELTO', 'CERRADO']).filter(
+            fecha_reporte__lte=tz.now() - timedelta(hours=72)
+        ).count()
         context['incidentes_recientes'] = incidentes_recientes
         context['incidentes_pendientes'] = incidentes_pendientes
         context['incidentes_total_mes'] = incidentes_total_mes
+        context['incidentes_criticos_sla'] = incidentes_criticos_sla
+
+    # Datos adicionales para ADMINISTRATIVO
+    if usuario.rol == 'ADMINISTRATIVO':
+        from reportes.models import Incidente
+        from django.utils import timezone as tz
+        from django.db.models import Count
+        incidentes_pendientes = Incidente.objects.exclude(estado__in=['RESUELTO', 'CERRADO']).count()
+        incidentes_total_mes = Incidente.objects.filter(fecha_reporte__date__gte=inicio_mes).count()
+        incidentes_criticos = Incidente.objects.filter(gravedad='CRITICA', estado='REPORTADO').count()
+        incidentes_criticos_sla = Incidente.objects.exclude(estado__in=['RESUELTO', 'CERRADO']).filter(
+            fecha_reporte__lte=tz.now() - timedelta(hours=72)
+        ).count()
+        # Por gravedad para gráfica de dona
+        incidentes_por_gravedad = list(
+            Incidente.objects.values('gravedad').annotate(total=Count('id')).order_by('gravedad')
+        )
+        context['incidentes_pendientes'] = incidentes_pendientes
+        context['incidentes_total_mes'] = incidentes_total_mes
+        context['incidentes_criticos'] = incidentes_criticos
+        context['incidentes_criticos_sla'] = incidentes_criticos_sla
+        context['incidentes_por_gravedad'] = incidentes_por_gravedad
 
     # Datos adicionales para APRENDIZ
     if usuario.rol == 'APRENDIZ':
@@ -710,6 +736,188 @@ def reportes_view(request):
     """
     return render(request, 'reportes/index.html')
 
+
+# ==============================================
+# EXPORTAR ACCESOS A EXCEL
+# ==============================================
+
+@login_required
+@rol_requerido('ADMINISTRATIVO', 'VIGILANCIA', 'INSTRUCTOR')
+def exportar_accesos_excel(request):
+    """
+    Exporta los registros de acceso del día (o rango indicado) a Excel.
+    Parámetros GET: fecha_desde, fecha_hasta, rol
+    """
+    from control_acceso.models import RegistroAcceso
+    from django.utils import timezone
+    from datetime import datetime
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
+    hoy = timezone.now().date()
+
+    fecha_desde_str = request.GET.get('fecha_desde', hoy.isoformat())
+    fecha_hasta_str = request.GET.get('fecha_hasta', hoy.isoformat())
+    rol_filtro = request.GET.get('rol', '')
+
+    try:
+        fecha_desde = datetime.strptime(fecha_desde_str, '%Y-%m-%d').date()
+    except (ValueError, TypeError):
+        fecha_desde = hoy
+    try:
+        fecha_hasta = datetime.strptime(fecha_hasta_str, '%Y-%m-%d').date()
+    except (ValueError, TypeError):
+        fecha_hasta = hoy
+
+    registros = RegistroAcceso.objects.select_related('usuario').filter(
+        tipo='INGRESO',
+        fecha_hora_ingreso__date__gte=fecha_desde,
+        fecha_hora_ingreso__date__lte=fecha_hasta,
+    ).order_by('-fecha_hora_ingreso')
+
+    if rol_filtro:
+        registros = registros.filter(usuario__rol=rol_filtro)
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Registros de Acceso'
+
+    verde = PatternFill('solid', fgColor='39A900')
+    verde_oscuro = PatternFill('solid', fgColor='2E7D32')
+    borde = Border(
+        left=Side(style='thin', color='DDDDDD'),
+        right=Side(style='thin', color='DDDDDD'),
+        top=Side(style='thin', color='DDDDDD'),
+        bottom=Side(style='thin', color='DDDDDD'),
+    )
+
+    # Título
+    ws.merge_cells('A1:I1')
+    c = ws['A1']
+    c.value = f'Registros de Acceso — Centro Minero SENA — {fecha_desde.strftime("%d/%m/%Y")} al {fecha_hasta.strftime("%d/%m/%Y")}'
+    c.font = Font(bold=True, size=12, color='FFFFFF')
+    c.fill = verde
+    c.alignment = Alignment(horizontal='center', vertical='center')
+    ws.row_dimensions[1].height = 20
+
+    # Encabezados
+    headers = ['Nombre Completo', 'Documento', 'Rol', 'Ficha / Programa',
+               'Hora Ingreso', 'Hora Egreso', 'Permanencia (min)', 'Método', 'Estado']
+    ws.append(headers)
+    for cell in ws[2]:
+        cell.font = Font(bold=True, color='FFFFFF')
+        cell.fill = verde_oscuro
+        cell.alignment = Alignment(horizontal='center')
+        cell.border = borde
+    ws.row_dimensions[2].height = 15
+
+    # Datos
+    for i, reg in enumerate(registros, 3):
+        if reg.fecha_hora_egreso:
+            permanencia = int((reg.fecha_hora_egreso - reg.fecha_hora_ingreso).total_seconds() / 60)
+            estado = 'Salió'
+        else:
+            permanencia = '—'
+            estado = 'En centro'
+
+        row = [
+            reg.usuario.get_full_name() or reg.usuario.username,
+            reg.usuario.numero_documento or '',
+            reg.usuario.get_rol_display(),
+            f"{reg.usuario.ficha or ''} {reg.usuario.programa_formacion or ''}".strip() or '—',
+            reg.fecha_hora_ingreso.strftime('%d/%m/%Y %H:%M'),
+            reg.fecha_hora_egreso.strftime('%d/%m/%Y %H:%M') if reg.fecha_hora_egreso else '—',
+            permanencia,
+            reg.get_metodo_ingreso_display(),
+            estado,
+        ]
+        ws.append(row)
+        fill = PatternFill('solid', fgColor='F9FBF9') if i % 2 == 0 else PatternFill('solid', fgColor='FFFFFF')
+        for cell in ws[i]:
+            cell.fill = fill
+            cell.border = borde
+            cell.alignment = Alignment(vertical='center')
+
+    # Anchos de columna
+    for col, ancho in zip('ABCDEFGHI', [28, 15, 16, 30, 18, 18, 16, 12, 12]):
+        ws.column_dimensions[col].width = ancho
+
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    fecha_str = f"{fecha_desde.strftime('%Y%m%d')}_{fecha_hasta.strftime('%Y%m%d')}"
+    response['Content-Disposition'] = f'attachment; filename="accesos_{fecha_str}.xlsx"'
+    wb.save(response)
+    return response
+
+
+# ==============================================
+# HISTORIAL DE ACCESOS (vista HTML)
+# ==============================================
+
+@login_required
+@rol_requerido('ADMINISTRATIVO', 'VIGILANCIA', 'INSTRUCTOR')
+def historial_accesos_view(request):
+    """
+    Vista HTML con historial de accesos filtrable + exportación Excel.
+    """
+    from control_acceso.models import RegistroAcceso
+    from usuarios.models import Usuario
+    from django.core.paginator import Paginator
+    from django.utils import timezone
+    from datetime import datetime, timedelta
+
+    hoy = timezone.now().date()
+    fecha_desde_str = request.GET.get('fecha_desde', hoy.isoformat())
+    fecha_hasta_str = request.GET.get('fecha_hasta', hoy.isoformat())
+    rol_filtro = request.GET.get('rol', '')
+    q = request.GET.get('q', '').strip()
+
+    try:
+        fecha_desde = datetime.strptime(fecha_desde_str, '%Y-%m-%d').date()
+    except (ValueError, TypeError):
+        fecha_desde = hoy
+    try:
+        fecha_hasta = datetime.strptime(fecha_hasta_str, '%Y-%m-%d').date()
+    except (ValueError, TypeError):
+        fecha_hasta = hoy
+
+    registros = RegistroAcceso.objects.select_related('usuario').filter(
+        tipo='INGRESO',
+        fecha_hora_ingreso__date__gte=fecha_desde,
+        fecha_hora_ingreso__date__lte=fecha_hasta,
+    ).order_by('-fecha_hora_ingreso')
+
+    if rol_filtro:
+        registros = registros.filter(usuario__rol=rol_filtro)
+    if q:
+        from django.db.models import Q
+        registros = registros.filter(
+            Q(usuario__first_name__icontains=q) |
+            Q(usuario__last_name__icontains=q) |
+            Q(usuario__numero_documento__icontains=q)
+        )
+
+    total = registros.count()
+    paginator = Paginator(registros, 25)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    from usuarios.models import Usuario as Usr
+    roles_disponibles = Usr.objects.values_list('rol', flat=True).distinct().order_by('rol')
+
+    context = {
+        'registros': page_obj,
+        'page_obj': page_obj,
+        'total': total,
+        'fecha_desde': fecha_desde_str,
+        'fecha_hasta': fecha_hasta_str,
+        'rol_filtro': rol_filtro,
+        'q': q,
+        'roles_disponibles': roles_disponibles,
+        'hoy': hoy.isoformat(),
+    }
+    return render(request, 'dashboard/vigilancia/historial_accesos.html', context)
+
 urlpatterns = [
     # PWA: Service Worker y Manifest servidos desde la raíz
     path('sw.js', sw_view, name='sw'),
@@ -782,6 +990,8 @@ urlpatterns = [
 
     # URLs PARA VIGILANCIA
     path('vigilancia/visitantes/', gestion_visitantes_view, name='gestion_visitantes'),
+    path('acceso/historial/', historial_accesos_view, name='historial_accesos'),
+    path('acceso/exportar/excel/', exportar_accesos_excel, name='exportar_accesos_excel'),
 
     # URLs PARA BRIGADA
     path('brigada/equipos/', equipos_brigada_view, name='equipos_brigada'),

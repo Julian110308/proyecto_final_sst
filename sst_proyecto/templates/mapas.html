@@ -28,16 +28,13 @@
         100% { box-shadow: 0 0 0 0 rgba(220,38,38,0); }
     }
 
-    /* Leyenda colapsable en móvil */
+    /* Leyenda: más pequeña en móvil */
     @media (max-width: 768px) {
-        .leyenda-mapa {
-            position: static !important;
-            margin-top: 0.5rem;
-            max-width: 100% !important;
-            display: none;
-        }
-        .leyenda-mapa.show {
-            display: block;
+        #leyendaToggleBtn {
+            bottom: 10px !important;
+            right: 6px !important;
+            min-width: 120px !important;
+            font-size: 10px;
         }
     }
 </style>
@@ -93,7 +90,7 @@
             <div class="card-body p-0">
                 <!-- Información de mi ubicación -->
                 <div class="px-3 py-2 bg-light border-bottom">
-                    <div class="row">
+                    <div class="row g-1">
                         <div class="col-md-8">
                             <small id="infoUbicacion" class="text-muted">
                                 <i class="bi bi-geo-alt-fill me-1"></i> Cargando ubicación...
@@ -104,49 +101,50 @@
                                 <i class="bi bi-shield-check me-1"></i> Verificando...
                             </small>
                         </div>
+                        <div class="col-12">
+                            <small id="infoPuntoMasCercano" class="text-muted"></small>
+                        </div>
                     </div>
                 </div>
                 <!-- Mapa con leyenda -->
-                <div id="mapaPrincipal" style="height: 55vh; min-height: 300px; max-height: 600px; border-radius: 0 0 12px 12px; position: relative;"></div>
-                
-                <!-- Botón toggle leyenda (solo móvil) -->
-                <button class="btn btn-sm btn-light border d-lg-none mt-2 ms-2" onclick="document.querySelector('.leyenda-mapa').classList.toggle('show')">
-                    <i class="bi bi-info-circle me-1"></i>Leyenda
-                </button>
-                <!-- Leyenda del Mapa -->
-                <div class="leyenda-mapa" style="position: absolute; bottom: 20px; right: 20px; z-index: 1000; background: white; padding: 12px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); max-width: 180px;">
-                    <strong style="display: block; margin-bottom: 10px; font-size: 13px; border-bottom: 2px solid #39A900; padding-bottom: 5px;">
-                        <i class="bi bi-geo-alt-fill" style="color: #39A900;"></i> Centro Minero SENA
-                    </strong>
-
-                    <div style="margin-bottom: 8px;">
-                        <small style="font-weight: bold; color: #666; display: block; margin-bottom: 6px;">Seguridad SST:</small>
-                        <div class="leyenda-item" style="display: flex; align-items: center; margin-bottom: 5px; font-size: 11px;">
-                            <div style="width: 16px; height: 16px; border-radius: 50%; margin-right: 8px; background: #4CAF50; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>
-                            <span>Punto de Encuentro</span>
+                <div style="position: relative;">
+                    <div id="mapaPrincipal" style="height: 72vh; min-height: 420px; border-radius: 0 0 12px 12px;"></div>
+                    <!-- Leyenda del Mapa -->
+                    <!-- Leyenda colapsable -->
+                    <div id="leyendaToggleBtn" onclick="document.getElementById('leyendaContenido').classList.toggle('d-none');this.querySelector('i').classList.toggle('bi-chevron-down');this.querySelector('i').classList.toggle('bi-chevron-up');"
+                         style="position:absolute;bottom:20px;right:10px;z-index:1000;background:rgba(255,255,255,0.95);backdrop-filter:blur(6px);border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.25);cursor:pointer;min-width:140px;">
+                        <!-- Cabecera siempre visible -->
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-bottom:2px solid #39A900;border-radius:8px 8px 0 0;">
+                            <span style="font-size:12px;font-weight:700;color:#2E7D32;">
+                                <i class="bi bi-geo-alt-fill me-1" style="color:#39A900;"></i>Leyenda
+                            </span>
+                            <i class="bi bi-chevron-up" style="font-size:11px;color:#666;"></i>
                         </div>
-                        <div class="leyenda-item" style="display: flex; align-items: center; margin-bottom: 5px; font-size: 11px;">
-                            <div style="width: 16px; height: 16px; border-radius: 50%; margin-right: 8px; background: #f44336; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>
-                            <span>Extintor</span>
+                        <!-- Contenido colapsable -->
+                        <div id="leyendaContenido" style="padding:8px 10px;">
+                            <!-- Seguridad SST -->
+                            <div style="font-size:10px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">SST</div>
+                            <div style="display:grid;grid-template-columns:auto 1fr;align-items:center;gap:3px 6px;font-size:11px;margin-bottom:8px;">
+                                <div style="width:12px;height:12px;border-radius:50%;background:#4CAF50;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div><span>Punto Encuentro</span>
+                                <div style="width:12px;height:12px;border-radius:50%;background:#f44336;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div><span>Extintor</span>
+                                <div style="width:12px;height:12px;border-radius:50%;background:#2196F3;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div><span>Botiquín</span>
+                                <div style="width:12px;height:12px;border-radius:50%;background:#FF9800;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div><span>Alarma</span>
+                                <div style="width:12px;height:12px;border-radius:50%;background:#1565C0;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div><span>Hidrante</span>
+                                <div style="width:12px;height:12px;border-radius:50%;background:#2E7D32;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div><span>Salida Emerg.</span>
+                                <div style="width:12px;height:12px;border-radius:50%;background:#546E7A;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div><span>Camilla</span>
+                                <div style="width:12px;height:12px;border-radius:50%;background:#C62828;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div><span>DEA</span>
+                                <div style="width:12px;height:12px;border-radius:50%;background:#FF9800;border:2px solid white;animation:pulse 1.5s infinite;"></div><span>Mi ubicación</span>
+                                <div style="width:12px;height:12px;border-radius:50%;background:#DC2626;border:2px solid white;animation:pulse 1.5s infinite;"></div><span>Emergencia</span>
+                            </div>
+                            <!-- Estado Edificios -->
+                            <div style="font-size:10px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;border-top:1px solid #eee;padding-top:6px;">Edificios</div>
+                            <div style="display:grid;grid-template-columns:auto 1fr;align-items:center;gap:3px 6px;font-size:11px;">
+                                <div style="width:12px;height:12px;border-radius:2px;background:#4CAF50;"></div><span>Normal</span>
+                                <div style="width:12px;height:12px;border-radius:2px;background:#FF9800;"></div><span>Evacuando</span>
+                                <div style="width:12px;height:12px;border-radius:2px;background:#D32F2F;"></div><span>Emergencia</span>
+                                <div style="width:12px;height:12px;border-radius:2px;background:#9E9E9E;"></div><span>Cerrado</span>
+                            </div>
                         </div>
-                        <div class="leyenda-item" style="display: flex; align-items: center; margin-bottom: 5px; font-size: 11px;">
-                            <div style="width: 16px; height: 16px; border-radius: 50%; margin-right: 8px; background: #2196F3; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>
-                            <span>Botiquín</span>
-                        </div>
-                        <div class="leyenda-item" style="display: flex; align-items: center; margin-bottom: 5px; font-size: 11px;">
-                            <div style="width: 16px; height: 16px; border-radius: 50%; margin-right: 8px; background: #FF9800; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>
-                            <span>Tu ubicación</span>
-                        </div>
-                        <div class="leyenda-item" style="display: flex; align-items: center; font-size: 11px;">
-                            <div style="width: 16px; height: 16px; border-radius: 50%; margin-right: 8px; background: #DC2626; border: 2px solid white; box-shadow: 0 1px 3px rgba(220,38,38,0.5); animation: pulse 1.5s infinite;"></div>
-                            <span>Emergencia Activa</span>
-                        </div>
-                    </div>
-
-                    <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #E0E0E0;">
-                        <small style="font-size: 10px; color: #999; display: block; text-align: center;">
-                            Vista satelital en tiempo real
-                        </small>
                     </div>
                 </div>
             </div>
@@ -169,6 +167,13 @@
                     Vista satelital del Centro Nacional Minero SENA
                 </div>
                 <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="capaEdificiosCheck" checked>
+                    <label class="form-check-label" for="capaEdificiosCheck">
+                        <i class="bi bi-building me-2"></i>Edificios
+                        <span id="contadorEdificios" class="badge bg-secondary ms-2">0</span>
+                    </label>
+                </div>
+                <div class="form-check form-switch mb-3">
                     <input class="form-check-input" type="checkbox" id="capaPuntos" checked>
                     <label class="form-check-label" for="capaPuntos">
                         <i class="bi bi-signpost me-2"></i>Puntos de Encuentro
@@ -180,11 +185,12 @@
                     <label class="form-check-label" for="capaEquipos">
                         <i class="bi bi-fire-extinguisher me-2"></i>Equipamientos
                         <span id="contadorEquipos" class="badge bg-danger ms-2">0</span>
+                        <span id="alertaEquipos" class="badge bg-warning text-dark ms-1 d-none"><i class="bi bi-exclamation-triangle-fill"></i></span>
                     </label>
                 </div>
                 <div class="form-check form-switch mb-3">
-                    <input class="form-check-input" type="checkbox" id="capaRutas">
-                    <label class="form-check-label" for="capaRutas">
+                    <input class="form-check-input" type="checkbox" id="capaRutasCheck">
+                    <label class="form-check-label" for="capaRutasCheck">
                         <i class="bi bi-arrow-right-circle me-2"></i>Rutas de Evacuacion
                     </label>
                 </div>
@@ -205,6 +211,19 @@
                     </label>
                 </div>
                 {% endif %}
+            </div>
+        </div>
+
+        <!-- Panel Estado de Edificios -->
+        <div class="card card-modern mb-4" id="panelEstadosEdificios">
+            <div class="card-header-modern">
+                <h6 class="mb-0"><i class="bi bi-building me-2"></i>Estado de Edificios <small class="text-muted ms-1" style="font-size:11px;">(actualiza cada 15s)</small></h6>
+            </div>
+            <div class="card-body p-2" id="resumenEstadosEdificios">
+                <div class="text-center text-muted py-2">
+                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                    <p class="small mb-0 mt-1">Cargando...</p>
+                </div>
             </div>
         </div>
 
@@ -322,30 +341,9 @@ const centroMinero = {
     nombre: 'Centro Nacional Minero SENA - Sogamoso, Vereda Morcá'
 };
 
-// Polígono de geocerca - Contorno ajustado del área de edificios y salones del Centro Minero
-// Basado en imagen satelital de Google Earth (19/12/2025)
+// Geocerca circular - Radio en metros alrededor del centro del Centro Minero
 // Centro: 5.7303596, -72.8943613
-// Radio aproximado: 100-120 metros (ajustado al contorno real)
-const geocercaCentro = [
-    [5.73125, -72.89515],  // 1. Noroeste superior
-    [5.73135, -72.89470],  // 2. Norte 1
-    [5.73130, -72.89420],  // 3. Norte 2 (zona edificios norte)
-    [5.73120, -72.89370],  // 4. Noreste 1
-    [5.73100, -72.89340],  // 5. Noreste 2
-    [5.73070, -72.89320],  // 6. Este superior (límite este)
-    [5.73040, -72.89310],  // 7. Este 1
-    [5.73000, -72.89315],  // 8. Este 2
-    [5.72965, -72.89330],  // 9. Sureste 1 (esquina sureste)
-    [5.72940, -72.89360],  // 10. Sur 1
-    [5.72930, -72.89400],  // 11. Sur 2 (límite sur edificios)
-    [5.72935, -72.89450],  // 12. Suroeste 1
-    [5.72950, -72.89500],  // 13. Suroeste 2 (esquina suroeste)
-    [5.72975, -72.89535],  // 14. Oeste 1
-    [5.73010, -72.89550],  // 15. Oeste 2 (límite oeste)
-    [5.73050, -72.89545],  // 16. Noroeste 1
-    [5.73090, -72.89535],  // 17. Noroeste 2
-    [5.73125, -72.89515]   // 18. Cierre (vuelve al inicio)
-];
+const GEOCERCA_RADIO_METROS = 160;
 
 // Variables globales
 let mapa;
@@ -361,6 +359,12 @@ let capaEquipamiento = L.layerGroup();
 let capaInfraestructura = L.layerGroup();
 let capaPersonas = L.layerGroup();
 let capaEmergencias = L.layerGroup();
+let capaRutasPredefinidas = L.layerGroup();
+
+// Mapa de marcadores de edificios para actualización de estado
+let edificioMarkersMap = {};
+// Intervalo de auto-refresh emergencias
+let intervalEmergencias = null;
 
 // Rol del usuario actual (para funcionalidades condicionales)
 const userRol = '{{ user.rol }}';
@@ -745,25 +749,30 @@ function inicializarMapa() {
         </div>
     `);
 
-    // Dibujar geocerca - Contorno del Centro Minero
-    poligonoGeocerca = L.polygon(geocercaCentro, {
-        color: '#E53935',        // Rojo
-        fillColor: '#E53935',    // Rojo
-        fillOpacity: 0.08,       // Muy transparente
-        weight: 4,               // Grosor del borde
-        opacity: 0.9             // Opacidad del borde
-    }).addTo(mapa);
+    // Dibujar geocerca - Circunferencia alrededor del Centro Minero
+    poligonoGeocerca = L.circle(
+        [centroMinero.latitud, centroMinero.longitud],
+        {
+            radius: GEOCERCA_RADIO_METROS,
+            color: '#E53935',
+            fillColor: '#E53935',
+            fillOpacity: 0.06,
+            weight: 3,
+            opacity: 0.85,
+            dashArray: '8, 6'
+        }
+    ).addTo(mapa);
 
     poligonoGeocerca.bindPopup(`
         <div style="min-width: 200px;">
             <h6 style="margin: 0 0 8px 0; color: #2196F3;">
                 <i class="bi bi-shield-check"></i> Geocerca del Centro
             </h6>
-            <p style="margin: 0; font-size: 13px;">
+            <p style="margin: 0 0 4px 0; font-size: 13px;">
                 Perímetro de seguridad del Centro Nacional Minero SENA
             </p>
-            <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">
-                <i class="bi bi-info-circle"></i> La geocerca sigue el contorno real del centro
+            <p style="margin: 0; font-size: 12px; color: #666;">
+                <i class="bi bi-info-circle"></i> Radio: ${GEOCERCA_RADIO_METROS} m
             </p>
         </div>
     `);
@@ -896,16 +905,12 @@ function cuandoHayError(error) {
 function verificarDentroGeocerca(latitud, longitud) {
     const estadoElemento = document.getElementById('estadoGeocerca');
 
-    // Verificar si el punto está dentro del polígono de geocerca
-    const puntoUsuario = L.latLng(latitud, longitud);
-    const dentroDeLaGeocerca = poligonoGeocerca.getBounds().contains(puntoUsuario) &&
-                                estaPuntoDentroPoligono(latitud, longitud, geocercaCentro);
-
-    // Calcular distancia al centro como referencia
+    // Verificar si el punto está dentro de la circunferencia de geocerca
     const distanciaAlCentro = mapa.distance(
         [latitud, longitud],
         [centroMinero.latitud, centroMinero.longitud]
     );
+    const dentroDeLaGeocerca = distanciaAlCentro <= GEOCERCA_RADIO_METROS;
 
     if (dentroDeLaGeocerca) {
         estadoElemento.innerHTML = `
@@ -948,27 +953,26 @@ function verificarDentroGeocerca(latitud, longitud) {
             `);
         }
     }
-}
 
-// Función auxiliar: Algoritmo de Ray Casting para verificar si un punto está dentro de un polígono
-function estaPuntoDentroPoligono(lat, lng, poligonoCoords) {
-    let dentro = false;
-    const x = lat;
-    const y = lng;
-
-    for (let i = 0, j = poligonoCoords.length - 1; i < poligonoCoords.length; j = i++) {
-        const xi = poligonoCoords[i][0];
-        const yi = poligonoCoords[i][1];
-        const xj = poligonoCoords[j][0];
-        const yj = poligonoCoords[j][1];
-
-        const intersect = ((yi > y) !== (yj > y)) &&
-                         (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-        if (intersect) dentro = !dentro;
+    // Mostrar punto de encuentro más cercano
+    if (puntosEncuentroData.length > 0) {
+        let minDist = Infinity;
+        let puntoCercano = null;
+        puntosEncuentroData.forEach(p => {
+            const d = mapa.distance([latitud, longitud], [p.latitud, p.longitud]);
+            if (d < minDist) { minDist = d; puntoCercano = p; }
+        });
+        if (puntoCercano) {
+            const infoPunto = document.getElementById('infoPuntoMasCercano');
+            if (infoPunto) {
+                infoPunto.innerHTML = `<i class="bi bi-signpost-fill text-success me-1"></i>
+                    Punto cercano: <strong>${puntoCercano.nombre}</strong> (${minDist.toFixed(0)} m)
+                    &nbsp;<a href="#" class="text-success fw-semibold" onclick="event.preventDefault();calcularRutaHaciaPunto(${puntoCercano.id});">→ Ruta</a>`;
+            }
+        }
     }
-
-    return dentro;
 }
+
 
 // ====================================================================
 // DATOS DINÁMICOS - PUNTOS DE ENCUENTRO Y EQUIPAMIENTO
@@ -978,45 +982,114 @@ function inicializarDatosDinamicos() {
     // Actualizar contadores
     document.getElementById('contadorPuntos').textContent = puntosEncuentroData.length;
     document.getElementById('contadorEquipos').textContent = equipamientoData.length;
+    document.getElementById('contadorEdificios').textContent = edificiosData.length;
 
-    // Crear iconos personalizados
-    const iconos = {
-        edificio: L.divIcon({
+    // ----------------------------------------------------------------
+    // ICONOS - Puntos de encuentro
+    // ----------------------------------------------------------------
+    const iconoPuntoEncuentro = L.divIcon({
+        className: 'custom-div-icon',
+        html: '<div style="background:#4CAF50;width:35px;height:35px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;border:3px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3);"><i class="bi bi-people-fill"></i></div>',
+        iconSize: [35, 35],
+        iconAnchor: [17, 35]
+    });
+
+    // ----------------------------------------------------------------
+    // ICONOS - Equipamiento (todos los tipos)
+    // ----------------------------------------------------------------
+    function crearIconoEquipo(tipo, alerta) {
+        const cfg = {
+            EXTINTOR:         { bg: '#f44336', icon: 'bi-fire-extinguisher' },
+            BOTIQUIN:         { bg: '#2196F3', icon: 'bi-heart-pulse' },
+            ALARMA:           { bg: '#FF9800', icon: 'bi-bell-fill' },
+            HIDRANTE:         { bg: '#0277BD', icon: 'bi-droplet-fill' },
+            SALIDA_EMERGENCIA:{ bg: '#2E7D32', icon: 'bi-door-open-fill' },
+            CAMILLA:          { bg: '#546E7A', icon: 'bi-hospital' },
+            DEA:              { bg: '#C62828', icon: 'bi-heart-pulse-fill' },
+        };
+        const { bg, icon } = cfg[tipo] || { bg: '#607D8B', icon: 'bi-shield-check' };
+        const border = alerta === 'vencido'
+            ? '3px solid #ff1744; animation: pulseAlerta 1.2s infinite;'
+            : alerta === 'proximo'
+                ? '3px solid #FFD600;'
+                : '2px solid white;';
+        return L.divIcon({
             className: 'custom-div-icon',
-            html: '<div style="background:#FF6600;width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;border:3px solid white;box-shadow:0 3px 8px rgba(0,0,0,0.4);"><i class="bi bi-building"></i></div>',
-            iconSize: [40, 40],
-            iconAnchor: [20, 40]
-        }),
-        puntoEncuentro: L.divIcon({
-            className: 'custom-div-icon',
-            html: '<div style="background:#4CAF50;width:35px;height:35px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;border:3px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3);"><i class="bi bi-people-fill"></i></div>',
-            iconSize: [35, 35],
-            iconAnchor: [17, 35]
-        }),
-        extintor: L.divIcon({
-            className: 'custom-div-icon',
-            html: '<div style="background:#f44336;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3);"><i class="bi bi-fire-extinguisher"></i></div>',
+            html: `<div style="background:${bg};width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;border:${border}box-shadow:0 2px 5px rgba(0,0,0,0.3);"><i class="bi ${icon}" style="font-size:13px;"></i></div>`,
             iconSize: [30, 30],
-            iconAnchor: [15, 30]
-        }),
-        botiquin: L.divIcon({
-            className: 'custom-div-icon',
-            html: '<div style="background:#2196F3;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3);"><i class="bi bi-heart-pulse"></i></div>',
-            iconSize: [30, 30],
-            iconAnchor: [15, 30]
-        })
+            iconAnchor: [15, 15]
+        });
+    }
+
+    // ----------------------------------------------------------------
+    // EDIFICIOS desde BD - círculos con colores por tipo
+    // ----------------------------------------------------------------
+    const coloresTipoEdificio = {
+        AULAS:          '#1976D2',
+        LABORATORIO:    '#1976D2',
+        TALLER:         '#E65100',
+        ADMINISTRATIVO: '#6A1B9A',
+        CAFETERIA:      '#2E7D32',
+        MINA:           '#4E342E',
+        BIBLIOTECA:     '#37474F',
+        BODEGA:         '#5D4037',
+        PARQUEADERO:    '#546E7A',
+        CANCHA:         '#00695C',
+        ZONA_VERDE:     '#388E3C',
+        OTRO:           '#546E7A',
     };
 
-    // Agregar puntos de encuentro
+    edificiosData.forEach(edif => {
+        const color = coloresTipoEdificio[edif.tipo] || '#546E7A';
+        const marker = L.circleMarker([edif.latitud, edif.longitud], {
+            radius: 14,
+            fillColor: color,
+            color: '#ffffff',
+            weight: 2,
+            fillOpacity: 0.85
+        });
+
+        // Etiqueta con número/inicial
+        const label = L.divIcon({
+            className: '',
+            html: `<div style="background:${color};color:white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:bold;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.4);">${edif.id}</div>`,
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+        });
+        const labelMarker = L.marker([edif.latitud, edif.longitud], { icon: label });
+
+        marker.bindPopup(`
+            <div style="min-width:200px;">
+                <h6 style="margin:0 0 6px 0;color:${color};">
+                    <i class="bi bi-building"></i> ${edif.nombre}
+                </h6>
+                <p style="margin:0 0 3px 0;font-size:13px;">
+                    <strong>Tipo:</strong> ${edif.tipo}
+                </p>
+                <p style="margin:0 0 3px 0;font-size:13px;">
+                    <strong>Pisos:</strong> ${edif.pisos || 1} &nbsp; <strong>Capacidad:</strong> ${edif.capacidad || 'N/D'}
+                </p>
+                <p style="margin:0 0 6px 0;font-size:12px;color:#666;">${edif.descripcion || ''}</p>
+                <span id="estadoBadge-${edif.id}" class="badge" style="background:#4CAF50;">NORMAL</span>
+            </div>
+        `);
+
+        marker.addTo(capaEdificios);
+        labelMarker.addTo(capaEdificios);
+
+        // Guardar referencia para actualización de estado
+        edificioMarkersMap[edif.id] = marker;
+    });
+
+    // ----------------------------------------------------------------
+    // PUNTOS DE ENCUENTRO
+    // ----------------------------------------------------------------
     puntosEncuentroData.forEach(punto => {
         const marker = L.marker(
             [punto.latitud, punto.longitud],
-            { 
-                icon: iconos.puntoEncuentro,
-                title: punto.nombre
-            }
+            { icon: iconoPuntoEncuentro, title: punto.nombre }
         ).addTo(capaPuntosEncuentro);
-        
+
         marker.bindPopup(`
             <div style="min-width: 220px;">
                 <h6 style="margin: 0 0 8px 0; color: #2E7D32;">
@@ -1040,41 +1113,156 @@ function inicializarDatosDinamicos() {
         `);
     });
 
-    // Agregar equipamiento
+    // ----------------------------------------------------------------
+    // EQUIPAMIENTO con alertas de vencimiento
+    // ----------------------------------------------------------------
+    const hoy = new Date();
+    let equiposConAlerta = 0;
+
     equipamientoData.forEach(equipo => {
-        const icono = equipo.tipo === 'EXTINTOR' ? iconos.extintor : iconos.botiquin;
+        // Calcular estado de revisión
+        const proxRevision = equipo.proxima_revision ? new Date(equipo.proxima_revision) : null;
+        const diasRestantes = proxRevision ? Math.floor((proxRevision - hoy) / 86400000) : null;
+        const estadoRevision = diasRestantes === null ? 'sin_fecha'
+            : diasRestantes < 0 ? 'vencido'
+            : diasRestantes <= 30 ? 'proximo'
+            : 'ok';
+
+        if (estadoRevision === 'vencido' || estadoRevision === 'proximo') equiposConAlerta++;
+
+        const icono = crearIconoEquipo(equipo.tipo, estadoRevision);
         const marker = L.marker(
             [equipo.latitud, equipo.longitud],
-            { 
-                icon: icono,
-                title: equipo.tipo
-            }
+            { icon: icono, title: equipo.tipo }
         ).addTo(capaEquipamiento);
-        
-        const color = equipo.tipo === 'EXTINTOR' ? '#D32F2F' : '#1976D2';
-        const iconoClase = equipo.tipo === 'EXTINTOR' ? 'bi-fire-extinguisher' : 'bi-heart-pulse';
-        
+
+        const cfg = {
+            EXTINTOR:         { color: '#D32F2F', icon: 'bi-fire-extinguisher', label: 'Extintor' },
+            BOTIQUIN:         { color: '#1976D2', icon: 'bi-heart-pulse',        label: 'Botiquín' },
+            ALARMA:           { color: '#E65100', icon: 'bi-bell-fill',          label: 'Alarma' },
+            HIDRANTE:         { color: '#0277BD', icon: 'bi-droplet-fill',       label: 'Hidrante' },
+            SALIDA_EMERGENCIA:{ color: '#2E7D32', icon: 'bi-door-open-fill',     label: 'Salida Emergencia' },
+            CAMILLA:          { color: '#546E7A', icon: 'bi-hospital',           label: 'Camilla' },
+            DEA:              { color: '#C62828', icon: 'bi-heart-pulse-fill',   label: 'DEA' },
+        };
+        const info = cfg[equipo.tipo] || { color: '#607D8B', icon: 'bi-shield-check', label: equipo.tipo };
+
+        const alertaHTML = estadoRevision === 'vencido'
+            ? `<div class="alert alert-danger py-1 px-2 mb-1" style="font-size:11px;"><i class="bi bi-exclamation-triangle-fill me-1"></i>Revisión VENCIDA</div>`
+            : estadoRevision === 'proximo'
+                ? `<div class="alert alert-warning py-1 px-2 mb-1" style="font-size:11px;"><i class="bi bi-clock-fill me-1"></i>Revisión en ${diasRestantes} días</div>`
+                : '';
+
         marker.bindPopup(`
             <div style="min-width: 200px;">
-                <h6 style="margin: 0 0 8px 0; color: ${color};">
-                    <i class="bi ${iconoClase}"></i> ${equipo.tipo}
+                <h6 style="margin: 0 0 6px 0; color: ${info.color};">
+                    <i class="bi ${info.icon}"></i> ${info.label}
+                    <small style="font-weight:normal;color:#888;"> #${equipo.codigo || equipo.id}</small>
                 </h6>
-                <p style="margin: 0 0 5px 0; font-size: 14px;">
-                    <strong><i class="bi bi-calendar-check"></i> Última revisión:</strong><br>
-                    ${equipo.ultima_revision || 'No registrada'}
+                ${alertaHTML}
+                <p style="margin: 0 0 3px 0; font-size: 13px;">
+                    <strong>Última revisión:</strong> ${equipo.ultima_revision || 'No registrada'}
                 </p>
-                ${equipo.descripcion ? `
-                <p style="margin: 0 0 10px 0; font-size: 13px; color: #666;">
-                    <i class="bi bi-card-text"></i> ${equipo.descripcion}
-                </p>` : ''}
+                ${equipo.proxima_revision ? `<p style="margin: 0 0 3px 0; font-size: 13px;"><strong>Próxima revisión:</strong> ${equipo.proxima_revision}</p>` : ''}
+                ${equipo.descripcion ? `<p style="margin: 4px 0 6px 0; font-size: 12px; color: #666;">${equipo.descripcion}</p>` : ''}
                 <span class="badge bg-success">OPERATIVO</span>
             </div>
         `);
     });
 
-    // Agregar capas al mapa inicialmente (solo puntos de encuentro y equipamiento)
+    // Mostrar alerta en el panel si hay equipos por vencer
+    if (equiposConAlerta > 0) {
+        const alertaBadge = document.getElementById('alertaEquipos');
+        if (alertaBadge) {
+            alertaBadge.textContent = equiposConAlerta;
+            alertaBadge.classList.remove('d-none');
+        }
+    }
+
+    // ----------------------------------------------------------------
+    // Agregar capas al mapa
+    // ----------------------------------------------------------------
+    capaEdificios.addTo(mapa);
     capaPuntosEncuentro.addTo(mapa);
     capaEquipamiento.addTo(mapa);
+}
+
+// ====================================================================
+// ESTADO DE EDIFICIOS - Polling desde la API
+// ====================================================================
+
+async function cargarEstadosEdificios() {
+    try {
+        const resp = await fetch('/mapas/api/edificios/estados/', { credentials: 'same-origin' });
+        if (!resp.ok) return;
+        const estados = await resp.json();
+
+        estados.forEach(e => {
+            const marker = edificioMarkersMap[e.id];
+            if (!marker) return;
+
+            // Actualizar color del círculo según estado
+            const borderColor = e.estado === 'NORMAL' ? '#ffffff' : e.color;
+            const weight = e.estado === 'NORMAL' ? 2 : 3;
+            marker.setStyle({ fillColor: e.color, color: borderColor, weight: weight });
+
+            // Actualizar el badge de estado dentro del popup (si está abierto)
+            const badge = document.getElementById(`estadoBadge-${e.id}`);
+            if (badge) {
+                badge.style.background = e.color;
+                badge.textContent = e.estado.replace('_', ' ');
+            }
+        });
+
+        actualizarResumenEstados(estados);
+    } catch (err) {
+        console.warn('Error cargando estados de edificios:', err);
+    }
+}
+
+function actualizarResumenEstados(estados) {
+    const conteo = { NORMAL: 0, EVACUANDO: 0, EN_EMERGENCIA: 0, DANADO: 0, CERRADO: 0 };
+    estados.forEach(e => { if (conteo[e.estado] !== undefined) conteo[e.estado]++; });
+
+    const colores = {
+        NORMAL:       { bg: '#4CAF50', label: 'Normal' },
+        EVACUANDO:    { bg: '#FF9800', label: 'Evacuando' },
+        EN_EMERGENCIA:{ bg: '#D32F2F', label: 'Emergencia' },
+        DANADO:       { bg: '#F44336', label: 'Dañado' },
+        CERRADO:      { bg: '#9E9E9E', label: 'Cerrado' },
+    };
+
+    const panel = document.getElementById('resumenEstadosEdificios');
+    if (!panel) return;
+
+    const total = estados.length;
+    if (total === 0) {
+        panel.innerHTML = '<p class="text-muted small text-center mb-0 py-2">Sin edificios registrados</p>';
+        return;
+    }
+
+    let html = '<div class="d-flex flex-wrap gap-1 p-1">';
+    Object.entries(conteo).forEach(([estado, n]) => {
+        if (n === 0) return;
+        const { bg, label } = colores[estado];
+        html += `<span class="badge rounded-pill" style="background:${bg};font-size:11px;">${label}: ${n}</span>`;
+    });
+    html += '</div>';
+
+    // Barra de progreso de estado general
+    const porcentajeNormal = total > 0 ? Math.round((conteo.NORMAL / total) * 100) : 100;
+    const colorBarra = porcentajeNormal === 100 ? '#4CAF50' : porcentajeNormal >= 70 ? '#FF9800' : '#D32F2F';
+    html += `
+        <div class="px-2 pb-2">
+            <div class="d-flex justify-content-between" style="font-size:10px;color:#666;">
+                <span>${conteo.NORMAL} de ${total} en operación normal</span>
+                <span>${porcentajeNormal}%</span>
+            </div>
+            <div class="progress" style="height:6px;border-radius:3px;">
+                <div class="progress-bar" style="width:${porcentajeNormal}%;background:${colorBarra};border-radius:3px;"></div>
+            </div>
+        </div>`;
+    panel.innerHTML = html;
 }
 
 // ====================================================================
@@ -1109,31 +1297,40 @@ function inicializarControles() {
         }
     });
 
+    // Checkbox edificios
+    document.getElementById('capaEdificiosCheck').addEventListener('change', function() {
+        if (this.checked) { mapa.addLayer(capaEdificios); }
+        else { mapa.removeLayer(capaEdificios); }
+    });
+
     // Checkbox puntos de encuentro
     document.getElementById('capaPuntos').addEventListener('change', function() {
-        if (this.checked) {
-            mapa.addLayer(capaPuntosEncuentro);
-        } else {
-            mapa.removeLayer(capaPuntosEncuentro);
-        }
+        if (this.checked) { mapa.addLayer(capaPuntosEncuentro); }
+        else { mapa.removeLayer(capaPuntosEncuentro); }
     });
 
     // Checkbox equipamiento
     document.getElementById('capaEquipos').addEventListener('change', function() {
-        if (this.checked) {
-            mapa.addLayer(capaEquipamiento);
-        } else {
-            mapa.removeLayer(capaEquipamiento);
-        }
+        if (this.checked) { mapa.addLayer(capaEquipamiento); }
+        else { mapa.removeLayer(capaEquipamiento); }
     });
 
-    // Checkbox emergencias
+    // Checkbox rutas predefinidas (separado de la ruta calculada)
+    document.getElementById('capaRutasCheck').addEventListener('change', function() {
+        if (this.checked) { mapa.addLayer(capaRutasPredefinidas); }
+        else { mapa.removeLayer(capaRutasPredefinidas); }
+    });
+
+    // Checkbox emergencias + auto-refresh
     document.getElementById('capaEmergenciasCheck').addEventListener('change', function() {
         if (this.checked) {
             mapa.addLayer(capaEmergencias);
             cargarEmergenciasActivas();
+            intervalEmergencias = setInterval(cargarEmergenciasActivas, 30000);
         } else {
             mapa.removeLayer(capaEmergencias);
+            clearInterval(intervalEmergencias);
+            intervalEmergencias = null;
         }
     });
 
@@ -1144,20 +1341,20 @@ function inicializarControles() {
                 capaEmergencias.addTo(mapa);
                 document.getElementById('capaEmergenciasCheck').checked = true;
                 cargarEmergenciasActivas();
+                if (!intervalEmergencias) {
+                    intervalEmergencias = setInterval(cargarEmergenciasActivas, 30000);
+                }
             } else if (this.id === 'vistaNormal') {
                 mapa.removeLayer(capaEmergencias);
                 document.getElementById('capaEmergenciasCheck').checked = false;
+                clearInterval(intervalEmergencias);
+                intervalEmergencias = null;
+            } else if (this.id === 'vistaEvacuacion') {
+                // Mostrar rutas predefinidas al cambiar a vista evacuación
+                capaRutasPredefinidas.addTo(mapa);
+                document.getElementById('capaRutasCheck').checked = true;
             }
         });
-    });
-
-    // Checkbox rutas
-    document.getElementById('capaRutas').addEventListener('click', function() {
-        if (this.checked && rutaActiva) {
-            mapa.addLayer(rutaActiva);
-        } else if (rutaActiva) {
-            mapa.removeLayer(rutaActiva);
-        }
     });
 
     // ============================================================
@@ -1312,7 +1509,7 @@ function inicializarControles() {
         if (rutaActiva) {
             mapa.removeLayer(rutaActiva);
             rutaActiva = null;
-            document.getElementById('capaRutas').checked = false;
+            document.getElementById('capaRutasCheck').checked = false;
         }
     });
 }
@@ -1381,105 +1578,127 @@ async function cargarEmergenciasActivas() {
 // BÚSQUEDA Y FILTRADO
 // ====================================================================
 
+// Resultados de búsqueda guardados para centrar en ellos
+let _resultadosBusqueda = [];
+
 function realizarBusqueda() {
     const termino = document.getElementById('inputBusqueda').value.toLowerCase().trim();
     const resultadosDiv = document.getElementById('resultadosBusqueda');
-    
+
     if (!termino) {
         resultadosDiv.style.display = 'none';
         return;
     }
 
+    // Buscar en edificios
+    const edificiosEncontrados = edificiosData.filter(e =>
+        e.nombre.toLowerCase().includes(termino) ||
+        e.tipo.toLowerCase().includes(termino) ||
+        (e.descripcion && e.descripcion.toLowerCase().includes(termino))
+    ).map(e => ({ ...e, _tipo: 'edificio' }));
+
     // Buscar en puntos de encuentro
-    const puntosEncontrados = puntosEncuentroData.filter(punto =>
-        punto.nombre.toLowerCase().includes(termino) ||
-        (punto.descripcion && punto.descripcion.toLowerCase().includes(termino))
-    );
+    const puntosEncontrados = puntosEncuentroData.filter(p =>
+        p.nombre.toLowerCase().includes(termino) ||
+        (p.descripcion && p.descripcion.toLowerCase().includes(termino))
+    ).map(p => ({ ...p, _tipo: 'punto' }));
 
     // Buscar en equipamiento
-    const equiposEncontrados = equipamientoData.filter(equipo =>
-        equipo.tipo.toLowerCase().includes(termino) ||
-        (equipo.descripcion && equipo.descripcion.toLowerCase().includes(termino))
-    );
+    const equiposEncontrados = equipamientoData.filter(e =>
+        e.tipo.toLowerCase().includes(termino) ||
+        (e.descripcion && e.descripcion.toLowerCase().includes(termino)) ||
+        (e.codigo && e.codigo.toLowerCase().includes(termino))
+    ).map(e => ({ ...e, _tipo: 'equipo' }));
 
-    const todosResultados = [...puntosEncontrados, ...equiposEncontrados];
-    
-    if (todosResultados.length === 0) {
+    _resultadosBusqueda = [...edificiosEncontrados, ...puntosEncontrados, ...equiposEncontrados];
+
+    if (_resultadosBusqueda.length === 0) {
         resultadosDiv.innerHTML = `
             <div class="alert alert-warning py-2 mb-0">
                 <i class="bi bi-search me-2"></i>
                 No se encontraron resultados para: "${termino}"
-            </div>
-        `;
+            </div>`;
         resultadosDiv.style.display = 'block';
         return;
     }
 
-    // Mostrar resultados
-    let htmlResultados = '<div class="list-group list-group-flush">';
-    
-    todosResultados.forEach((item, index) => {
-        const esPunto = item.capacidad !== undefined;
-        const icono = esPunto ? 'bi-signpost' : 
-                     item.tipo === 'EXTINTOR' ? 'bi-fire-extinguisher' : 'bi-heart-pulse';
-        const color = esPunto ? 'success' : 
-                     item.tipo === 'EXTINTOR' ? 'danger' : 'primary';
-        
-        htmlResultados += `
-            <a href="#" class="list-group-item list-group-item-action py-2" 
-               onclick="centrarEnResultado(${index}, ${esPunto})">
+    const iconosPorTipo = {
+        edificio: 'bi-building',
+        punto:    'bi-signpost',
+        equipo:   'bi-fire-extinguisher',
+    };
+    const coloresPorTipo = {
+        edificio: 'secondary',
+        punto:    'success',
+        equipo:   'danger',
+    };
+
+    let html = '<div class="list-group list-group-flush">';
+    _resultadosBusqueda.forEach((item, idx) => {
+        const icono = iconosPorTipo[item._tipo];
+        const color = coloresPorTipo[item._tipo];
+        const titulo = item._tipo === 'equipo' ? item.tipo : item.nombre;
+        const subtitulo = item._tipo === 'edificio' ? `Tipo: ${item.tipo}`
+            : item._tipo === 'punto' ? `Cap: ${item.capacidad} personas`
+            : `Rev: ${item.ultima_revision || 'No registrada'}`;
+        html += `
+            <a href="#" class="list-group-item list-group-item-action py-2"
+               onclick="event.preventDefault();centrarEnResultado(${idx});">
                 <div class="d-flex align-items-center">
                     <i class="bi ${icono} text-${color} me-2"></i>
                     <div class="flex-grow-1">
-                        <strong>${esPunto ? item.nombre : item.tipo}</strong>
-                        <div class="text-muted small">
-                            ${esPunto ? `Capacidad: ${item.capacidad} personas` : 
-                            `Última revisión: ${item.ultima_revision || 'No registrada'}`}
-                        </div>
+                        <strong>${titulo}</strong>
+                        <div class="text-muted small">${subtitulo}</div>
                     </div>
                     <i class="bi bi-chevron-right text-muted"></i>
                 </div>
-            </a>
-        `;
+            </a>`;
     });
-    
-    htmlResultados += '</div>';
-    resultadosDiv.innerHTML = htmlResultados;
+    html += '</div>';
+    resultadosDiv.innerHTML = html;
     resultadosDiv.style.display = 'block';
 }
 
-function centrarEnResultado(indice, esPunto) {
-    const resultados = esPunto ? puntosEncuentroData : equipamientoData;
-    const item = resultados[indice];
-    
-    if (item) {
-        mapa.setView([item.latitud, item.longitud], 18);
-        document.getElementById('resultadosBusqueda').style.display = 'none';
-        
-        // Mostrar información en el panel
-        const infoDiv = document.getElementById('infoSeleccionada');
-        if (esPunto) {
-            infoDiv.innerHTML = `
-                <h6 class="text-success">
-                    <i class="bi bi-signpost"></i> ${item.nombre}
-                </h6>
-                <p class="mb-1"><strong>Capacidad:</strong> ${item.capacidad} personas</p>
-                <p class="mb-1"><strong>Descripción:</strong> ${item.descripcion || 'Sin descripción'}</p>
-                <button class="btn btn-sm btn-success mt-2" onclick="calcularRutaHaciaPunto(${item.id})">
-                    <i class="bi bi-arrow-right-circle"></i> Calcular ruta
-                </button>
-            `;
-        } else {
-            infoDiv.innerHTML = `
-                <h6 class="${item.tipo === 'EXTINTOR' ? 'text-danger' : 'text-primary'}">
-                    <i class="bi ${item.tipo === 'EXTINTOR' ? 'bi-fire-extinguisher' : 'bi-heart-pulse'}"></i>
-                    ${item.tipo}
-                </h6>
-                <p class="mb-1"><strong>Última revisión:</strong> ${item.ultima_revision || 'No registrada'}</p>
-                ${item.descripcion ? `<p class="mb-1"><strong>Descripción:</strong> ${item.descripcion}</p>` : ''}
-                <span class="badge bg-success">OPERATIVO</span>
-            `;
-        }
+function centrarEnResultado(indice) {
+    const item = _resultadosBusqueda[indice];
+    if (!item) return;
+
+    mapa.setView([item.latitud, item.longitud], 19);
+    document.getElementById('resultadosBusqueda').style.display = 'none';
+
+    const infoDiv = document.getElementById('infoSeleccionada');
+
+    if (item._tipo === 'edificio') {
+        infoDiv.innerHTML = `
+            <h6 class="text-secondary">
+                <i class="bi bi-building"></i> ${item.nombre}
+            </h6>
+            <p class="mb-1"><strong>Tipo:</strong> ${item.tipo}</p>
+            <p class="mb-1"><strong>Pisos:</strong> ${item.pisos || 1} &nbsp; <strong>Capacidad:</strong> ${item.capacidad || 'N/D'}</p>
+            <p class="mb-0 small text-muted">${item.descripcion || ''}</p>
+        `;
+    } else if (item._tipo === 'punto') {
+        infoDiv.innerHTML = `
+            <h6 class="text-success">
+                <i class="bi bi-signpost"></i> ${item.nombre}
+            </h6>
+            <p class="mb-1"><strong>Capacidad:</strong> ${item.capacidad} personas</p>
+            <p class="mb-1 small text-muted">${item.descripcion || ''}</p>
+            <button class="btn btn-sm btn-success mt-1" onclick="calcularRutaHaciaPunto(${item.id})">
+                <i class="bi bi-arrow-right-circle"></i> Calcular ruta
+            </button>
+        `;
+    } else {
+        infoDiv.innerHTML = `
+            <h6 class="text-danger">
+                <i class="bi bi-fire-extinguisher"></i> ${item.tipo}
+                <small class="text-muted fw-normal">#${item.codigo || item.id}</small>
+            </h6>
+            <p class="mb-1"><strong>Última revisión:</strong> ${item.ultima_revision || 'No registrada'}</p>
+            ${item.proxima_revision ? `<p class="mb-1"><strong>Próxima revisión:</strong> ${item.proxima_revision}</p>` : ''}
+            ${item.descripcion ? `<p class="mb-0 small text-muted">${item.descripcion}</p>` : ''}
+            <span class="badge bg-success mt-1">OPERATIVO</span>
+        `;
     }
 }
 
@@ -1543,9 +1762,6 @@ function mostrarRutaEvacuacionCercana() {
         }
         const tiempoMinutos = (distanciaTotal / 5000) * 60;
 
-        document.getElementById('capaRutas').checked = true;
-        capaRutas.addTo(mapa);
-
         document.getElementById('infoSeleccionada').innerHTML = `
             <div class="alert alert-warning">
                 <h6 class="alert-heading">
@@ -1587,7 +1803,6 @@ function mostrarRutaEvacuacionCercana() {
             }).addTo(mapa);
 
             const tiempoMinutos = (distanciaMinima / 5000) * 60;
-            document.getElementById('capaRutas').checked = true;
 
             document.getElementById('infoSeleccionada').innerHTML = `
                 <div class="alert alert-warning">
@@ -1678,8 +1893,6 @@ function calcularRutaHaciaPunto(puntoId) {
     }
     const tiempoMinutos = (distanciaTotal / 5000) * 60;
 
-    document.getElementById('capaRutas').checked = true;
-
     document.getElementById('infoSeleccionada').innerHTML = `
         <div class="alert alert-success">
             <h6 class="alert-heading">
@@ -1759,7 +1972,12 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
     });
     
+    // 6. Cargar estados de edificios y activar polling
+    cargarEstadosEdificios();
+    setInterval(cargarEstadosEdificios, 15000);
+
     console.log('✅ Mapa interactivo inicializado correctamente');
+    console.log(`📊 Edificios: ${edificiosData.length}`);
     console.log(`📊 Puntos de encuentro: ${puntosEncuentroData.length}`);
     console.log(`📊 Equipamiento: ${equipamientoData.length}`);
 });
@@ -1786,6 +2004,12 @@ document.addEventListener('fullscreenchange', function() {
     0% { transform: scale(1); opacity: 1; }
     50% { transform: scale(1.05); opacity: 0.8; }
     100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes pulseAlerta {
+    0%   { box-shadow: 0 0 0 0 rgba(255,23,68,0.6); }
+    70%  { box-shadow: 0 0 0 6px rgba(255,23,68,0); }
+    100% { box-shadow: 0 0 0 0 rgba(255,23,68,0); }
 }
 
 .pulse-animation {
