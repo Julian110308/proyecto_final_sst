@@ -195,11 +195,74 @@
 
                         <div class="d-flex justify-content-end gap-2">
                             <a href="{% url 'listar_incidentes' %}" class="btn btn-secondary">Cancelar</a>
-                            <button type="submit" class="btn btn-danger btn-lg">
+                            <button type="button" class="btn btn-danger btn-lg" data-bs-toggle="modal" data-bs-target="#modalConfirmarReporte">
                                 <i class="bi bi-send me-2"></i>Enviar Reporte de Incidente
                             </button>
                         </div>
                     </form>
+
+<!-- Modal de confirmación antes de enviar el reporte -->
+<div class="modal fade" id="modalConfirmarReporte" tabindex="-1" aria-labelledby="modalConfirmarReporteLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+
+            <!-- Cabecera -->
+            <div class="modal-header bg-warning text-dark border-0 rounded-top">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+                    <h5 class="modal-title fw-bold mb-0" id="modalConfirmarReporteLabel">
+                        Confirmar Reporte de Incidente
+                    </h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+
+            <!-- Cuerpo -->
+            <div class="modal-body px-4 py-3">
+                <p class="mb-3">
+                    Estás a punto de enviar un <strong>reporte oficial de incidente</strong> al sistema de Seguridad y Salud en el Trabajo del Centro Nacional Minero SENA.
+                </p>
+
+                <!-- Aviso de consecuencias -->
+                <div class="alert alert-danger d-flex gap-3 align-items-start mb-3" role="alert">
+                    <i class="bi bi-shield-exclamation fs-5 flex-shrink-0 mt-1"></i>
+                    <div>
+                        <strong>Advertencia — Reporte falso o malicioso</strong>
+                        <p class="mb-1 mt-1 small">
+                            El reporte de incidentes falsos o malintencionados está
+                            <strong>estrictamente prohibido</strong> y puede traer las siguientes consecuencias:
+                        </p>
+                        <ul class="mb-0 small ps-3">
+                            <li>Proceso disciplinario ante el SENA.</li>
+                            <li>Suspensión temporal o definitiva del contrato de aprendizaje.</li>
+                            <li>Inhabilitación para el uso del sistema SST.</li>
+                            <li>Notificación a instructores y coordinadores.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Checkbox de confirmación -->
+                <div class="form-check mb-1">
+                    <input class="form-check-input" type="checkbox" id="checkConfirmacion">
+                    <label class="form-check-label fw-semibold" for="checkConfirmacion">
+                        Confirmo que la información reportada es <u>verídica</u> y corresponde a un hecho real ocurrido en el centro.
+                    </label>
+                </div>
+            </div>
+
+            <!-- Pie del modal -->
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="button" id="btnConfirmarEnvio" class="btn btn-danger" disabled>
+                    <i class="bi bi-send-check me-1"></i>Sí, enviar reporte
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
                 </div>
             </div>
         </div>
@@ -296,6 +359,27 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 vistaPrevia.classList.add('d-none');
             }
+        });
+    }
+
+    // Modal de confirmación: habilitar botón solo cuando el checkbox esté marcado
+    const checkConfirmacion = document.getElementById('checkConfirmacion');
+    const btnConfirmarEnvio = document.getElementById('btnConfirmarEnvio');
+
+    if (checkConfirmacion && btnConfirmarEnvio) {
+        checkConfirmacion.addEventListener('change', function() {
+            btnConfirmarEnvio.disabled = !this.checked;
+        });
+
+        // Al confirmar, enviar el formulario real
+        btnConfirmarEnvio.addEventListener('click', function() {
+            document.querySelector('form').submit();
+        });
+
+        // Resetear checkbox cada vez que se abre el modal
+        document.getElementById('modalConfirmarReporte').addEventListener('show.bs.modal', function() {
+            checkConfirmacion.checked = false;
+            btnConfirmarEnvio.disabled = true;
         });
     }
 });
