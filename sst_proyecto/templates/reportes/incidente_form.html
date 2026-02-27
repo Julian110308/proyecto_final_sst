@@ -208,14 +208,14 @@
 
 <!-- Modal FUERA del card para evitar clipping por overflow:hidden -->
 <div class="modal fade" id="modalConfirmarReporte" tabindex="-1" aria-labelledby="modalConfirmarReporteLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
 
             <!-- Cabecera -->
-            <div class="modal-header bg-warning text-dark border-0 rounded-top">
+            <div class="modal-header border-0" style="background: #fef3c7; padding: 1rem 1.25rem 0.85rem;">
                 <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-exclamation-triangle-fill fs-4"></i>
-                    <h5 class="modal-title fw-bold mb-0" id="modalConfirmarReporteLabel">
+                    <i class="bi bi-exclamation-triangle-fill" style="color: #d97706; font-size: 1.2rem;"></i>
+                    <h5 class="modal-title fw-bold mb-0" id="modalConfirmarReporteLabel" style="font-size: 1rem; color: #1a1a1a;">
                         Confirmar Reporte de Incidente
                     </h5>
                 </div>
@@ -223,45 +223,47 @@
             </div>
 
             <!-- Cuerpo -->
-            <div class="modal-body px-4 py-3">
-                <p class="mb-3">
-                    Estás a punto de enviar un <strong>reporte oficial de incidente</strong> al sistema de Seguridad y Salud en el Trabajo del Centro Nacional Minero SENA.
+            <div class="modal-body px-4 pt-3 pb-2">
+
+                <p class="mb-3" style="font-size: 0.92rem; color: #374151;">
+                    Estás a punto de enviar un <strong>reporte oficial de incidente</strong> al
+                    sistema de Seguridad y Salud en el Trabajo del Centro Nacional Minero SENA.
                 </p>
 
-                <!-- Aviso de consecuencias -->
-                <div class="alert alert-danger d-flex gap-3 align-items-start mb-3" role="alert">
-                    <i class="bi bi-shield-exclamation fs-5 flex-shrink-0 mt-1"></i>
-                    <div>
-                        <strong>Advertencia — Reporte falso o malicioso</strong>
-                        <p class="mb-1 mt-1 small">
-                            El reporte de incidentes falsos o malintencionados está
-                            <strong>estrictamente prohibido</strong> y puede traer las siguientes consecuencias:
-                        </p>
-                        <ul class="mb-0 small ps-3">
-                            <li>Proceso disciplinario ante el SENA.</li>
-                            <li>Suspensión temporal o definitiva del contrato de aprendizaje.</li>
-                            <li>Inhabilitación para el uso del sistema SST.</li>
-                            <li>Notificación a instructores y coordinadores.</li>
-                        </ul>
+                <!-- Caja de advertencia legal con borde izquierdo -->
+                <div class="mb-3" style="background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 4px; padding: 12px 14px;">
+                    <div class="d-flex align-items-center gap-1 mb-1">
+                        <span style="font-size: 0.95rem;">⚠️</span>
+                        <span style="font-size: 0.95rem;">⚖️</span>
+                        <strong style="font-size: 0.88rem; color: #1a1a1a;">Advertencia Legal</strong>
+                    </div>
+                    <p class="mb-0" style="font-size: 0.85rem; color: #78350f; line-height: 1.5;">
+                        Reportar un incidente falso constituye una falta grave y puede acarrear
+                        <strong>sanciones disciplinarias y consecuencias legales</strong>
+                        conforme a la normativa vigente del SENA y la legislación colombiana.
+                    </p>
+                </div>
+
+                <!-- Checkbox en caja bordeada -->
+                <div style="border: 1px solid #d1d5db; border-radius: 8px; padding: 12px 14px;">
+                    <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox" id="checkConfirmacion" style="margin-top: 0.2rem;">
+                        <label class="form-check-label fw-semibold" for="checkConfirmacion" style="font-size: 0.88rem; color: #1a1a1a; cursor: pointer;">
+                            Confirmo que la información reportada es <u>verídica</u> y
+                            corresponde a un hecho real ocurrido en el centro.
+                        </label>
                     </div>
                 </div>
 
-                <!-- Checkbox de confirmación -->
-                <div class="form-check mb-1">
-                    <input class="form-check-input" type="checkbox" id="checkConfirmacion">
-                    <label class="form-check-label fw-semibold" for="checkConfirmacion">
-                        Confirmo que la información reportada es <u>verídica</u> y corresponde a un hecho real ocurrido en el centro.
-                    </label>
-                </div>
             </div>
 
             <!-- Pie del modal -->
-            <div class="modal-footer border-0 pt-0">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <div class="modal-footer border-0 pt-2 pb-3 px-4">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="font-size: 0.88rem;">
                     <i class="bi bi-x-circle me-1"></i>Cancelar
                 </button>
-                <button type="button" id="btnConfirmarEnvio" class="btn btn-danger" disabled>
-                    <i class="bi bi-send-check me-1"></i>Sí, enviar reporte
+                <button type="button" id="btnConfirmarEnvio" class="btn btn-danger" disabled style="font-size: 0.88rem;">
+                    <i class="bi bi-check-circle me-1"></i>Sí, enviar reporte
                 </button>
             </div>
 
