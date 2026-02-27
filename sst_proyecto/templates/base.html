@@ -596,11 +596,6 @@
                             <i class="bi bi-exclamation-triangle me-2"></i>Mis Incidentes
                         </a>
                     </li>
-                    <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'informacion_sst' %}">
-                            <i class="bi bi-shield-check me-2"></i>Información SST
-                        </a>
-                    </li>
 
                 <!-- OPCIONES PARA VISITANTE -->
                 {% elif user.rol == 'VISITANTE' %}
@@ -610,9 +605,10 @@
                         </a>
                     </li>
                 {% endif %}
+
             </ul>
         </div>
-        
+
     </nav>
 
     <!-- Contenido Principal -->
