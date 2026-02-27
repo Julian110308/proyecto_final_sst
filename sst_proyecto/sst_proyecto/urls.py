@@ -294,6 +294,16 @@ def dashboard_view(request):
         context['mis_accesos'] = mis_accesos
         context['mis_ingresos_mes'] = mis_ingresos_mes
 
+        # Estado actual: ¿está el aprendiz en el centro ahora mismo?
+        registro_activo = RegistroAcceso.objects.filter(
+            usuario=usuario,
+            tipo='INGRESO',
+            fecha_hora_egreso__isnull=True,
+            fecha_hora_ingreso__date=hoy
+        ).order_by('-fecha_hora_ingreso').first()
+        context['en_centro'] = registro_activo is not None
+        context['registro_activo'] = registro_activo
+
         # Datos para gráfica de asistencia mensual (últimos 30 días) - una sola query
         fecha_inicio_30 = hoy - timedelta(days=29)
         dias_con_asistencia = set(
@@ -767,10 +777,8 @@ def control_acceso_view(request):
     """
     return render(request, 'control_acceso.html')
 
-# Importar la vista completa de mapas
-from mapas.views import mapa_interactivo, campus_svg as campus_svg_view, plano_centro as plano_centro_view
-
-# Decorador aplicado directamente en la vista mapa_interactivo en mapas/views.py
+# Importar las vistas de mapas
+from mapas.views import mapa_interactivo, plano_centro as plano_centro_view
 
 @rol_requerido('ADMINISTRATIVO', 'BRIGADA', 'VIGILANCIA')
 def emergencias_view(request):
@@ -1022,7 +1030,6 @@ urlpatterns = [
     path('acceso/', control_acceso_view, name='control_acceso'),
     path('mapas/', mapa_interactivo, name='mapas'),
     path('mapas/plano/', plano_centro_view, name='plano_centro'),
-    path('mapas/campus/', campus_svg_view, name='campus_svg'),
     path('emergencias/', emergencias_view, name='emergencias'),
 
     # ==============================================

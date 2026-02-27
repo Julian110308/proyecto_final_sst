@@ -449,11 +449,6 @@ class ReporteSeguridadService:
                 'personas_afectadas': em.personas_afectadas or 0
             })
 
-        # Estado de equipamiento
-        equipamiento_total = EquipamientoSeguridad.objects.count()
-        equipamiento_operativo = EquipamientoSeguridad.objects.filter(estado='OPERATIVO').count()
-
-        # Tendencias mensuales
         tendencias = emergencias.annotate(
             mes=TruncMonth('fecha_hora_reporte')
         ).values('mes').annotate(
@@ -475,12 +470,13 @@ class ReporteSeguridadService:
             'tiempo_promedio_resolucion': round(tiempo_promedio_resolucion, 2),
             'emergencias': emergencias_lista,
             'emergencias_por_tipo': emergencias_por_tipo_lista,
-            'equipamiento_total': equipamiento_total,
-            'equipamiento_operativo': equipamiento_operativo,
+            'equipamiento_total': EquipamientoSeguridad.objects.count(),
+            'equipamiento_operativo': EquipamientoSeguridad.objects.filter(estado='OPERATIVO').count(),
             'equipamiento_mantenimiento': EquipamientoSeguridad.objects.filter(estado='MANTENIMIENTO').count(),
             'equipamiento_fuera_servicio': EquipamientoSeguridad.objects.filter(estado='FUERA_SERVICIO').count(),
-            'porcentaje_operativo': round((equipamiento_operativo / equipamiento_total * 100)
-                if equipamiento_total > 0 else 0, 2),
+            'porcentaje_operativo': round((EquipamientoSeguridad.objects.filter(estado='OPERATIVO').count() /
+                EquipamientoSeguridad.objects.count() * 100)
+                if EquipamientoSeguridad.objects.count() > 0 else 0, 2),
             'equipamiento_por_tipo': list(EquipamientoSeguridad.objects.values('tipo').annotate(
                 total=Count('id'),
                 operativo=Count('id', filter=Q(estado='OPERATIVO')),

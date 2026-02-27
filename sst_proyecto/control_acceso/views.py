@@ -88,6 +88,7 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
             'estadisticas',
             'registros_recientes',
             'auto_registro',
+            'mi_estado',
         ]:
             return [IsAuthenticated()]
         return super().get_permissions()
@@ -118,7 +119,18 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
         usuario = request.user
         hoy = timezone.now().date()
 
-        # Verificar si esta dentro de la geocerca
+        # Calcular distancia a cada geocerca activa y verificar si está dentro
+        from mapas.services import calcular_distancia as _calc_dist
+        geocerca_activa = Geocerca.objects.filter(activo=True).first()
+        distancia_metros = None
+        radio_geocerca = None
+
+        if geocerca_activa:
+            distancia_metros = round(_calc_dist(
+                geocerca_activa.centro_latitud, geocerca_activa.centro_longitud, lat, lng
+            ))
+            radio_geocerca = geocerca_activa.radio_metros
+
         geocerca = Geocerca.verificar_ubicacion_usuario(lat, lng)
         esta_dentro = geocerca is not None
 
@@ -131,26 +143,22 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
         ).order_by('-fecha_hora_ingreso').first()
 
         accion = None
+        mensaje = None
 
         if esta_dentro and not registro_abierto:
             # Usuario entro al centro: registrar INGRESO
-            # Verificar aforo
             aforo = verificar_aforo_actual()
             if aforo['alerta'] == 'CRITICO':
-                return Response({
-                    'estado': 'FUERA',
-                    'accion': None,
-                    'mensaje': 'Aforo maximo alcanzado, no se puede registrar ingreso'
-                })
-
-            RegistroAcceso.objects.create(
-                usuario=usuario,
-                tipo='INGRESO',
-                latitud_ingreso=lat,
-                longitud_ingreso=lng,
-                metodo_ingreso='AUTOMATICO'
-            )
-            accion = 'INGRESO'
+                mensaje = 'Aforo máximo alcanzado'
+            else:
+                RegistroAcceso.objects.create(
+                    usuario=usuario,
+                    tipo='INGRESO',
+                    latitud_ingreso=lat,
+                    longitud_ingreso=lng,
+                    metodo_ingreso='AUTOMATICO'
+                )
+                accion = 'INGRESO'
 
         elif not esta_dentro and registro_abierto:
             # Usuario salio del centro: registrar EGRESO
@@ -161,12 +169,17 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
             registro_abierto.save()
             accion = 'EGRESO'
 
-        return Response({
+        response_data = {
             'estado': 'DENTRO' if esta_dentro else 'FUERA',
             'accion': accion,
             'dentro_geocerca': esta_dentro,
             'registro_abierto': registro_abierto is not None if accion != 'EGRESO' else False,
-        })
+            'distancia_metros': distancia_metros,
+            'radio_geocerca': radio_geocerca,
+        }
+        if mensaje:
+            response_data['mensaje'] = mensaje
+        return Response(response_data)
 
     def get_queryset(self):
         """
@@ -555,6 +568,26 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
             'registrados': registrados,
             'errores': errores if errores else None
         }, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['get'], url_path='mi-estado')
+    def mi_estado(self, request):
+        """
+        Retorna el estado de acceso actual del usuario autenticado.
+        No requiere GPS — consulta directamente la BD.
+        GET /api/acceso/registros/mi-estado/
+        """
+        hoy = timezone.now().date()
+        registro = RegistroAcceso.objects.filter(
+            usuario=request.user,
+            tipo='INGRESO',
+            fecha_hora_egreso__isnull=True,
+            fecha_hora_ingreso__date=hoy
+        ).order_by('-fecha_hora_ingreso').first()
+
+        return Response({
+            'en_centro': registro is not None,
+            'hora_ingreso': registro.fecha_hora_ingreso.strftime('%H:%M') if registro else None,
+        })
 
     @action(detail=False, methods=['get'], url_path='buscar_usuario')
     def buscar_usuario(self, request):

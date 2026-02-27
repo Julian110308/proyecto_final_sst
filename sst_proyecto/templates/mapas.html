@@ -323,7 +323,7 @@
 {{ puntos_encuentro|json_script:"puntos-encuentro-data" }}
 {{ equipamiento|json_script:"equipamiento-data" }}
 
-<!-- Leaflet JS - DEBE cargarse ANTES del código que lo usa -->
+<!-- Leaflet JS: cargado ANTES del inline script para disponibilidad inmediata -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
      crossorigin=""></script>
@@ -350,15 +350,15 @@ let miMarcador = null;
 let circuloPrecision = null;
 let poligonoGeocerca = null;
 let rutaActiva = null;
-let capaEdificios = L.layerGroup();
-let capaVias = L.layerGroup();
-let capaAreas = L.layerGroup();
-let capaPuntosEncuentro = L.layerGroup();
-let capaEquipamiento = L.layerGroup();
-let capaInfraestructura = L.layerGroup();
-let capaPersonas = L.layerGroup();
-let capaEmergencias = L.layerGroup();
-let capaRutasPredefinidas = L.layerGroup();
+let capaEdificios;
+let capaVias;
+let capaAreas;
+let capaPuntosEncuentro;
+let capaEquipamiento;
+let capaInfraestructura;
+let capaPersonas;
+let capaEmergencias;
+let capaRutasPredefinidas;
 
 // Mapa de marcadores de edificios para actualización de estado
 let edificioMarkersMap = {};
@@ -1941,6 +1941,17 @@ function centrarMapaEnPunto(puntoId) {
 // ====================================================================
 
 document.addEventListener('DOMContentLoaded', function() {
+    // 0. Inicializar capas (L ya disponible desde base.html)
+    capaEdificios = L.layerGroup();
+    capaVias = L.layerGroup();
+    capaAreas = L.layerGroup();
+    capaPuntosEncuentro = L.layerGroup();
+    capaEquipamiento = L.layerGroup();
+    capaInfraestructura = L.layerGroup();
+    capaPersonas = L.layerGroup();
+    capaEmergencias = L.layerGroup();
+    capaRutasPredefinidas = L.layerGroup();
+
     // 1. Inicializar mapa
     mapa = inicializarMapa();
 

@@ -147,13 +147,13 @@ class Emergencia(models.Model):
             diff = self.fecha_hora_resolucion - self.fecha_hora_reporte
             return diff.total_seconds() / 60
         return None
-    
+
     def esta_cerca_de_edificio(self, radio_metros=100):
 
         # Verifica si la emergencia está cerca de algún edificio
         if not self.latitud or not self.longitud:
             return False
-        
+
         from mapas.services import calcular_distancia
 
         edificios_cercanos = EdificioBloque.objects.filter(activo=True)
@@ -165,7 +165,7 @@ class Emergencia(models.Model):
             if distancia <= radio_metros:
                 return True
         return False
-    
+
 class BrigadaEmergencia(models.Model):
 
     # Miembros de la brigada de emergencia

@@ -173,7 +173,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Configuración de Leaflet (Mapas)
 LEAFLET_CONFIG = {
-    'DEFAULT_CENTER': (5.7303596, -72.8943613), # Coordenadas Centro Minero SENA - Vereda Morcá, Sogamoso
+    'DEFAULT_CENTER': (5.7303596, -72.8943613),
     'DEFAULT_ZOOM': 16,
     'MIN_ZOOM': 14,
     'MAX_ZOOM': 19,
