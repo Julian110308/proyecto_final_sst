@@ -640,8 +640,8 @@ def configuracion_view(request):
                 )
 
             django_messages.success(request, 'Configuración guardada correctamente.')
-        except (ValueError, TypeError) as e:
-            django_messages.error(request, f'Error al guardar: verifique los valores ingresados.')
+        except (ValueError, TypeError):
+            django_messages.error(request, 'Error al guardar: verifique los valores ingresados.')
         return redirect('configuracion_sistema')
 
     # Calcular umbral como porcentaje para el slider
