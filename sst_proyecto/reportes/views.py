@@ -2,6 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.db.models import Q, Count
 from django.http import HttpResponse
@@ -424,3 +425,17 @@ def dashboard_estadisticas(request):
         })
 
     return Response(respuesta)
+
+
+@login_required
+def generar_pdf_aforo(request):
+    """Genera y descarga un PDF con el reporte de aforo del último mes."""
+    fecha_fin = timezone.now().date()
+    fecha_inicio = fecha_fin - timedelta(days=30)
+
+    datos = ReporteAforoService.generar_reporte(fecha_inicio, fecha_fin)
+    pdf_buffer = PDFReporteGenerator.generar_reporte_aforo(datos)
+
+    response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="reporte_aforo_{fecha_fin}.pdf"'
+    return response

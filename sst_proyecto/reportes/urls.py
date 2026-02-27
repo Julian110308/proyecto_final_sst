@@ -2,7 +2,7 @@ from django.urls import path, include
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from rest_framework.routers import DefaultRouter
-from .views import ReporteViewSet, dashboard_estadisticas
+from .views import ReporteViewSet, dashboard_estadisticas, generar_pdf_aforo
 from .views_incidentes import (
     listar_incidentes,
     crear_incidente,
@@ -27,6 +27,9 @@ urlpatterns = [
     # URLs de la API (existentes)
     path('dashboard/', dashboard_estadisticas, name='api-reportes-dashboard'),
     path('', include(router.urls)),
+
+    # PDF de Aforo y Acceso
+    path('aforo/pdf/', generar_pdf_aforo, name='generar_pdf_aforo'),
 
     # URLs NUEVAS para Incidentes (HTML)
     path('incidentes/', listar_incidentes, name='listar_incidentes'),
