@@ -35,7 +35,7 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         return [IsAuthenticated()]
     
     # Roles que se pueden auto-registrar (sin ser ADMINISTRATIVO)
-    ROLES_AUTO_REGISTRO = ['APRENDIZ', 'INSTRUCTOR', 'VIGILANCIA', 'VISITANTE']
+    ROLES_AUTO_REGISTRO = ['APRENDIZ', 'INSTRUCTOR', 'BRIGADA', 'VIGILANCIA', 'VISITANTE']
 
     def create(self, request, *args, **kwargs):
         """Registro de nuevos usuarios - Simplificado"""

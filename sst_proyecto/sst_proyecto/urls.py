@@ -547,8 +547,30 @@ def configuracion_view(request):
     Vista de configuración del sistema
     """
     from control_acceso.models import ConfiguracionAforo
+    from django.contrib import messages
+
     config_aforo = ConfiguracionAforo.objects.filter(activo=True).first()
-    
+
+    if request.method == 'POST':
+        aforo_maximo = request.POST.get('aforo_maximo')
+        mensaje_alerta = request.POST.get('mensaje_alerta', '')
+        activo = request.POST.get('switchAforo') == 'on'
+
+        if config_aforo:
+            if aforo_maximo:
+                config_aforo.aforo_maximo = int(aforo_maximo)
+            config_aforo.mensaje_alerta = mensaje_alerta
+            config_aforo.activo = activo
+            config_aforo.save()
+        else:
+            ConfiguracionAforo.objects.create(
+                aforo_maximo=int(aforo_maximo) if aforo_maximo else 2000,
+                mensaje_alerta=mensaje_alerta,
+                activo=activo
+            )
+        messages.success(request, 'Configuración guardada correctamente.')
+        config_aforo = ConfiguracionAforo.objects.filter(activo=True).first()
+
     context = {
         'config_aforo': config_aforo
     }
