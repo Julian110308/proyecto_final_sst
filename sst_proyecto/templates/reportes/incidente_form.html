@@ -33,7 +33,7 @@
                     </div>
                     {% endif %}
 
-                    <form method="POST" enctype="multipart/form-data">
+                    <form id="formIncidente" method="POST" enctype="multipart/form-data">
                         {% csrf_token %}
 
                         <!-- SECCION 1: Informacion del Incidente -->
@@ -195,13 +195,78 @@
 
                         <div class="d-flex justify-content-end gap-2">
                             <a href="{% url 'listar_incidentes' %}" class="btn btn-secondary">Cancelar</a>
-                            <button type="submit" class="btn btn-danger btn-lg">
+                            <button type="button" class="btn btn-danger btn-lg" data-bs-toggle="modal" data-bs-target="#modalConfirmarReporte">
                                 <i class="bi bi-send me-2"></i>Enviar Reporte de Incidente
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal FUERA del card para evitar clipping por overflow:hidden -->
+<div class="modal fade" id="modalConfirmarReporte" tabindex="-1" aria-labelledby="modalConfirmarReporteLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+
+            <!-- Cabecera -->
+            <div class="modal-header border-0" style="background: #fef3c7; padding: 1rem 1.25rem 0.85rem;">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-exclamation-triangle-fill" style="color: #d97706; font-size: 1.2rem;"></i>
+                    <h5 class="modal-title fw-bold mb-0" id="modalConfirmarReporteLabel" style="font-size: 1rem; color: #1a1a1a;">
+                        Confirmar Reporte de Incidente
+                    </h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+
+            <!-- Cuerpo -->
+            <div class="modal-body px-4 pt-3 pb-2">
+
+                <p class="mb-3" style="font-size: 0.92rem; color: #374151;">
+                    Estás a punto de enviar un <strong>reporte oficial de incidente</strong> al
+                    sistema de Seguridad y Salud en el Trabajo del Centro Nacional Minero SENA.
+                </p>
+
+                <!-- Caja de advertencia legal con borde izquierdo -->
+                <div class="mb-3" style="background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 4px; padding: 12px 14px;">
+                    <div class="d-flex align-items-center gap-1 mb-1">
+                        <span style="font-size: 0.95rem;">⚠️</span>
+                        <span style="font-size: 0.95rem;">⚖️</span>
+                        <strong style="font-size: 0.88rem; color: #1a1a1a;">Advertencia Legal</strong>
+                    </div>
+                    <p class="mb-0" style="font-size: 0.85rem; color: #78350f; line-height: 1.5;">
+                        Reportar un incidente falso constituye una falta grave y puede acarrear
+                        <strong>sanciones disciplinarias y consecuencias legales</strong>
+                        conforme a la normativa vigente del SENA y la legislación colombiana.
+                    </p>
+                </div>
+
+                <!-- Checkbox en caja bordeada -->
+                <div style="border: 1px solid #d1d5db; border-radius: 8px; padding: 12px 14px;">
+                    <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox" id="checkConfirmacion" style="margin-top: 0.2rem;">
+                        <label class="form-check-label fw-semibold" for="checkConfirmacion" style="font-size: 0.88rem; color: #1a1a1a; cursor: pointer;">
+                            Confirmo que la información reportada es <u>verídica</u> y
+                            corresponde a un hecho real ocurrido en el centro.
+                        </label>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Pie del modal -->
+            <div class="modal-footer border-0 pt-2 pb-3 px-4">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="font-size: 0.88rem;">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="button" id="btnConfirmarEnvio" class="btn btn-danger" disabled style="font-size: 0.88rem;">
+                    <i class="bi bi-check-circle me-1"></i>Sí, enviar reporte
+                </button>
+            </div>
+
         </div>
     </div>
 </div>
@@ -215,7 +280,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Leaflet ya cargado en base.html -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Mini mapa para seleccionar ubicacion del incidente
@@ -296,6 +361,27 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 vistaPrevia.classList.add('d-none');
             }
+        });
+    }
+
+    // Modal de confirmación: habilitar botón solo cuando el checkbox esté marcado
+    const checkConfirmacion = document.getElementById('checkConfirmacion');
+    const btnConfirmarEnvio = document.getElementById('btnConfirmarEnvio');
+
+    if (checkConfirmacion && btnConfirmarEnvio) {
+        checkConfirmacion.addEventListener('change', function() {
+            btnConfirmarEnvio.disabled = !this.checked;
+        });
+
+        // Al confirmar, enviar el formulario correcto por id
+        btnConfirmarEnvio.addEventListener('click', function() {
+            document.getElementById('formIncidente').submit();
+        });
+
+        // Resetear checkbox cada vez que se abre el modal
+        document.getElementById('modalConfirmarReporte').addEventListener('show.bs.modal', function() {
+            checkConfirmacion.checked = false;
+            btnConfirmarEnvio.disabled = true;
         });
     }
 });
