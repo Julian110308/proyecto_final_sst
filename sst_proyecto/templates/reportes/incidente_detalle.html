@@ -218,34 +218,72 @@
             </div>
         </div>
 
-        <!-- Fechas -->
+        <!-- Timeline de estado -->
         <div class="card mb-3">
             <div class="card-body">
-                <h6 class="text-muted mb-3">Fechas Importantes</h6>
-
-                <div class="mb-3">
-                    <small class="text-muted d-block mb-1">
-                        <i class="bi bi-calendar-event me-1"></i>
-                        Fecha del Incidente
-                    </small>
-                    <strong>{{ incidente.fecha_incidente|date:"d/m/Y H:i" }}</strong>
+                <h6 class="text-muted mb-3">
+                    <i class="bi bi-diagram-3 me-1"></i>Línea de Tiempo
+                </h6>
+                <!-- Paso 1: Ocurrió -->
+                <div class="d-flex align-items-start mb-2">
+                    <div class="me-2 mt-1 rounded-circle d-flex align-items-center justify-content-center bg-secondary" style="width:28px;height:28px;min-width:28px;">
+                        <i class="bi bi-calendar-event text-white" style="font-size:12px;"></i>
+                    </div>
+                    <div>
+                        <div class="fw-semibold" style="font-size:13px;">Ocurrió el incidente</div>
+                        <small class="text-muted">{{ incidente.fecha_incidente|date:"d/m/Y H:i" }}</small>
+                    </div>
                 </div>
-
-                <div class="mb-3">
-                    <small class="text-muted d-block mb-1">
-                        <i class="bi bi-clock me-1"></i>
-                        Fecha de Reporte
-                    </small>
-                    <strong>{{ incidente.fecha_reporte|date:"d/m/Y H:i" }}</strong>
+                <!-- Paso 2: Reportado -->
+                <div class="d-flex align-items-start mb-2">
+                    <div class="me-2 mt-1 rounded-circle d-flex align-items-center justify-content-center bg-warning" style="width:28px;height:28px;min-width:28px;">
+                        <i class="bi bi-flag text-dark" style="font-size:12px;"></i>
+                    </div>
+                    <div>
+                        <div class="fw-semibold" style="font-size:13px;">Reportado</div>
+                        <small class="text-muted">{{ incidente.fecha_reporte|date:"d/m/Y H:i" }}</small>
+                        {% if horas_transcurridas %}
+                        <br>
+                        <small class="{% if sla_estado == 'critico' %}text-danger fw-bold{% elif sla_estado == 'vencido' %}text-danger{% elif sla_estado == 'proximo' %}text-warning{% else %}text-muted{% endif %}">
+                            {% if incidente.estado not in 'RESUELTO,CERRADO' %}
+                                <i class="bi bi-clock me-1"></i>{{ horas_transcurridas }}h sin resolver
+                                {% if sla_estado == 'critico' %} — ⚠ SLA Crítico{% elif sla_estado == 'vencido' %} — SLA Vencido{% endif %}
+                            {% endif %}
+                        </small>
+                        {% endif %}
+                    </div>
                 </div>
-
+                <!-- Paso 3: En proceso (condicional) -->
+                {% if incidente.estado in 'EN_REVISION,EN_PROCESO,RESUELTO,CERRADO' %}
+                <div class="d-flex align-items-start mb-2">
+                    <div class="me-2 mt-1 rounded-circle d-flex align-items-center justify-content-center bg-info" style="width:28px;height:28px;min-width:28px;">
+                        <i class="bi bi-gear text-white" style="font-size:12px;"></i>
+                    </div>
+                    <div>
+                        <div class="fw-semibold" style="font-size:13px;">En proceso</div>
+                        <small class="text-muted">{{ incidente.get_estado_display }}</small>
+                    </div>
+                </div>
+                {% endif %}
+                <!-- Paso 4: Resuelto (condicional) -->
                 {% if incidente.fecha_resolucion %}
-                <div class="mb-0">
-                    <small class="text-muted d-block mb-1">
-                        <i class="bi bi-check-circle me-1"></i>
-                        Fecha de Resolucion
-                    </small>
-                    <strong>{{ incidente.fecha_resolucion|date:"d/m/Y H:i" }}</strong>
+                <div class="d-flex align-items-start">
+                    <div class="me-2 mt-1 rounded-circle d-flex align-items-center justify-content-center bg-success" style="width:28px;height:28px;min-width:28px;">
+                        <i class="bi bi-check-lg text-white" style="font-size:12px;"></i>
+                    </div>
+                    <div>
+                        <div class="fw-semibold" style="font-size:13px;">Resuelto</div>
+                        <small class="text-muted">{{ incidente.fecha_resolucion|date:"d/m/Y H:i" }}</small>
+                    </div>
+                </div>
+                {% else %}
+                <div class="d-flex align-items-start">
+                    <div class="me-2 mt-1 rounded-circle d-flex align-items-center justify-content-center" style="width:28px;height:28px;min-width:28px;background:#e0e0e0;">
+                        <i class="bi bi-check-lg text-secondary" style="font-size:12px;"></i>
+                    </div>
+                    <div>
+                        <div class="fw-semibold text-muted" style="font-size:13px;">Pendiente resolución</div>
+                    </div>
                 </div>
                 {% endif %}
             </div>

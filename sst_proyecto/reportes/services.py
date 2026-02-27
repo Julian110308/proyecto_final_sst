@@ -333,7 +333,8 @@ class ReporteSeguridadService:
         Genera reporte de seguridad enfocado en vigilancia.
         Incluye datos de accesos, visitantes y aforo.
         """
-        from control_acceso.models import RegistroAcceso, ConfiguracionAforo, Visitante
+        from control_acceso.models import RegistroAcceso, ConfiguracionAforo
+        from usuarios.models import Visitante
         from mapas.models import EquipamientoSeguridad
         from django.db.models.functions import TruncDate
 
@@ -356,13 +357,13 @@ class ReporteSeguridadService:
             total=Count('id')
         ).order_by('fecha')
 
-        # Visitantes en el período
+        # Visitantes en el período (fecha_visita y hora_salida son los campos correctos)
         try:
             visitantes = Visitante.objects.filter(
-                fecha_ingreso__range=[periodo_inicio, periodo_fin]
+                fecha_visita__range=[periodo_inicio, periodo_fin]
             )
             total_visitantes = visitantes.count()
-            visitantes_activos = visitantes.filter(fecha_egreso__isnull=True).count()
+            visitantes_activos = visitantes.filter(hora_salida__isnull=True).count()
         except Exception:
             total_visitantes = 0
             visitantes_activos = 0
@@ -448,11 +449,6 @@ class ReporteSeguridadService:
                 'personas_afectadas': em.personas_afectadas or 0
             })
 
-        # Estado de equipamiento
-        equipamiento_total = EquipamientoSeguridad.objects.count()
-        equipamiento_operativo = EquipamientoSeguridad.objects.filter(estado='OPERATIVO').count()
-
-        # Tendencias mensuales
         tendencias = emergencias.annotate(
             mes=TruncMonth('fecha_hora_reporte')
         ).values('mes').annotate(
@@ -474,12 +470,13 @@ class ReporteSeguridadService:
             'tiempo_promedio_resolucion': round(tiempo_promedio_resolucion, 2),
             'emergencias': emergencias_lista,
             'emergencias_por_tipo': emergencias_por_tipo_lista,
-            'equipamiento_total': equipamiento_total,
-            'equipamiento_operativo': equipamiento_operativo,
+            'equipamiento_total': EquipamientoSeguridad.objects.count(),
+            'equipamiento_operativo': EquipamientoSeguridad.objects.filter(estado='OPERATIVO').count(),
             'equipamiento_mantenimiento': EquipamientoSeguridad.objects.filter(estado='MANTENIMIENTO').count(),
             'equipamiento_fuera_servicio': EquipamientoSeguridad.objects.filter(estado='FUERA_SERVICIO').count(),
-            'porcentaje_operativo': round((equipamiento_operativo / equipamiento_total * 100)
-                if equipamiento_total > 0 else 0, 2),
+            'porcentaje_operativo': round((EquipamientoSeguridad.objects.filter(estado='OPERATIVO').count() /
+                EquipamientoSeguridad.objects.count() * 100)
+                if EquipamientoSeguridad.objects.count() > 0 else 0, 2),
             'equipamiento_por_tipo': list(EquipamientoSeguridad.objects.values('tipo').annotate(
                 total=Count('id'),
                 operativo=Count('id', filter=Q(estado='OPERATIVO')),

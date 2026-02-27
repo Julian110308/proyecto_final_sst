@@ -2,6 +2,13 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+# Programas de formación disponibles — fuente de verdad única para registro y filtros
+PROGRAMAS_FORMACION = [
+    ('Analisis y Desarrollo de Software', 'Análisis y Desarrollo de Software'),
+    ('Maquinaria Pesada', 'Maquinaria Pesada'),
+    ('Seguridad y Salud en el Trabajo', 'Seguridad y Salud en el Trabajo'),
+]
+
 class RolePermissions:
     """
     Clase para gestión centralizada de permisos por rol - VERSIÓN CORREGIDA
@@ -201,6 +208,13 @@ class Usuario(AbstractUser):
     # Para aprendices
     ficha = models.CharField(max_length=20, blank=True, null=True)
     programa_formacion = models.CharField(max_length=200, blank=True, null=True)
+
+    # Para instructores: fichas asignadas (varias, separadas por coma)
+    fichas_asignadas = models.TextField(
+        blank=True, default='',
+        verbose_name='Fichas asignadas',
+        help_text='Números de ficha separados por coma (solo instructores)'
+    )
     
     # Control
     activo = models.BooleanField(default=True)
@@ -211,6 +225,12 @@ class Usuario(AbstractUser):
         verbose_name = 'Usuario'
         verbose_name_plural = 'Usuarios'
         ordering = ['-fecha_registro']
+
+    def get_fichas_list(self):
+        """Retorna la lista de fichas asignadas del instructor (vacía si no tiene)."""
+        if self.fichas_asignadas:
+            return [f.strip() for f in self.fichas_asignadas.split(',') if f.strip()]
+        return []
 
     def save(self, *args, **kwargs):
         # Mantener sincronizados activo e is_active
@@ -456,6 +476,30 @@ class Notificacion(models.Model):
             url_relacionada=url,
             fecha_vencimiento=vencimiento
         )
+
+
+class PushSubscripcion(models.Model):
+    """
+    Suscripciones Web Push para notificaciones nativas en dispositivos móviles.
+    Cada dispositivo/navegador genera una suscripción única al aceptar notificaciones.
+    """
+    usuario = models.ForeignKey(
+        'Usuario',
+        on_delete=models.CASCADE,
+        related_name='push_subscripciones'
+    )
+    endpoint = models.TextField(unique=True)
+    p256dh = models.TextField()
+    auth = models.TextField()
+    activo = models.BooleanField(default=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Suscripcion Push'
+        verbose_name_plural = 'Suscripciones Push'
+
+    def __str__(self):
+        return f'Push: {self.usuario.username} ({self.endpoint[:40]}...)'
 
     @classmethod
     def notificar_usuarios_por_rol(cls, rol, titulo, mensaje, tipo='INFO', prioridad='MEDIA'):

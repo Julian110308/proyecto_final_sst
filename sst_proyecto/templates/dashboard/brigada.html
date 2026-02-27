@@ -91,6 +91,17 @@
     {% include 'components/metric-card.html' with label="Incidentes del Mes" value=incidentes_total_mes|default:0 sublabel=incidentes_pendientes|default:0|add:" pendientes" sublabel_icon="bi bi-exclamation-circle" sublabel_color="warning" icon="bi-clipboard-data" icon_color="primary" border_color="primary" %}
 </div>
 
+<!-- Alerta SLA incidentes criticos -->
+{% if incidentes_criticos_sla %}
+<div class="alert alert-danger d-flex align-items-center mb-4 border-danger border-2" role="alert">
+    <i class="bi bi-alarm-fill fs-4 me-3" style="animation:pulse 1.5s infinite;"></i>
+    <div>
+        <strong>{{ incidentes_criticos_sla }} incidente{{ incidentes_criticos_sla|pluralize }} con SLA crítico</strong> — llevan más de 72 horas sin resolverse.
+        <a href="{% url 'listar_incidentes' %}?estado=REPORTADO" class="alert-link ms-2">Ver incidentes pendientes →</a>
+    </div>
+</div>
+{% endif %}
+
 <!-- Seccion 3: Emergencias Activas + Mapa -->
 <div class="row g-4 mb-4">
     <!-- Emergencias Activas -->
@@ -131,7 +142,7 @@
                 <a href="/mapas/" class="btn btn-sm btn-outline-primary">Mapa Completo</a>
             </div>
             <div class="card-body p-0">
-                <div id="evacuationMap" style="height: 400px;"></div>
+                <div id="evacuationMap" style="height: clamp(250px, 45vw, 400px);"></div>
             </div>
         </div>
     </div>
@@ -498,7 +509,7 @@ const emergenciaIcon = L.divIcon({
 });
 
 // Cargar puntos de encuentro
-fetch('/api/mapas/puntos-encuentro/')
+fetch('/api/mapas/api/puntos-encuentro/')
     .then(r => r.json())
     .then(data => {
         (data.results || data).forEach(p => {

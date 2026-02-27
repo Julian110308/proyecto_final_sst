@@ -151,68 +151,93 @@ def dashboard_view(request):
 
     # Datos adicionales para INSTRUCTOR
     if usuario.rol == 'INSTRUCTOR':
-        total_aprendices = Usuario.objects.filter(rol='APRENDIZ', activo=True).count()
-        # Aprendices que ingresaron hoy
-        aprendices_ids_hoy = RegistroAcceso.objects.filter(
-            tipo='INGRESO',
-            fecha_hora_ingreso__date=hoy,
-            usuario__rol='APRENDIZ'
-        ).values_list('usuario_id', flat=True).distinct()
-        aprendices_presentes = aprendices_ids_hoy.count()
-        # Últimos 5 accesos de aprendices hoy
+        ficha_instructor = usuario.ficha or ''
+        programa_instructor = usuario.programa_formacion or ''
+
+        filtro_aprendices = {'rol': 'APRENDIZ', 'activo': True}
+        filtro_acceso = {'tipo': 'INGRESO', 'fecha_hora_ingreso__date': hoy, 'usuario__rol': 'APRENDIZ'}
+
+        if ficha_instructor:
+            filtro_aprendices['ficha'] = ficha_instructor
+            filtro_acceso['usuario__ficha'] = ficha_instructor
+        elif programa_instructor:
+            filtro_aprendices['programa_formacion'] = programa_instructor
+            filtro_acceso['usuario__programa_formacion'] = programa_instructor
+
+        total_aprendices = Usuario.objects.filter(**filtro_aprendices).count()
+        aprendices_presentes = RegistroAcceso.objects.filter(
+            **filtro_acceso
+        ).values('usuario_id').distinct().count()
         ultimos_accesos_aprendices = RegistroAcceso.objects.select_related('usuario').filter(
-            tipo='INGRESO',
-            fecha_hora_ingreso__date=hoy,
-            usuario__rol='APRENDIZ'
+            **filtro_acceso
         ).order_by('-fecha_hora_ingreso')[:5]
+
+        if ficha_instructor:
+            sublabel_aprendices = f'Ficha {ficha_instructor}'
+            sublabel_presentes = f'Ficha {ficha_instructor} en el centro'
+        elif programa_instructor:
+            sublabel_aprendices = programa_instructor
+            sublabel_presentes = 'De mi programa en el centro'
+        else:
+            sublabel_aprendices = 'Todos los aprendices SENA'
+            sublabel_presentes = 'Sin filtro asignado'
+
         context['total_aprendices'] = total_aprendices
         context['aprendices_presentes'] = aprendices_presentes
         context['ultimos_accesos_aprendices'] = ultimos_accesos_aprendices
+        context['programa_instructor'] = programa_instructor
+        context['ficha_instructor'] = ficha_instructor
+        context['sublabel_aprendices'] = sublabel_aprendices
+        context['sublabel_presentes'] = sublabel_presentes
 
-        # Lista de todos los aprendices con estado presente/ausente
-        from django.db.models import Exists, OuterRef
-        aprendices_con_estado = Usuario.objects.filter(
-            rol='APRENDIZ', activo=True
-        ).annotate(
-            presente_hoy=Exists(
-                RegistroAcceso.objects.filter(
-                    usuario=OuterRef('pk'),
-                    tipo='INGRESO',
-                    fecha_hora_ingreso__date=hoy
-                )
-            )
-        ).order_by('ficha', 'last_name', 'first_name')[:20]
-        context['aprendices_con_estado'] = aprendices_con_estado
+        # Estadísticas por ficha (la del instructor o su programa)
+        filtro_ficha_base = {'rol': 'APRENDIZ', 'activo': True, 'ficha__isnull': False}
+        filtro_acceso_ficha = {
+            'tipo': 'INGRESO', 'fecha_hora_ingreso__date': hoy,
+            'usuario__rol': 'APRENDIZ', 'usuario__ficha__isnull': False,
+        }
+        if ficha_instructor:
+            filtro_ficha_base['ficha'] = ficha_instructor
+            filtro_acceso_ficha['usuario__ficha'] = ficha_instructor
+        elif programa_instructor:
+            filtro_ficha_base['programa_formacion'] = programa_instructor
+            filtro_acceso_ficha['usuario__programa_formacion'] = programa_instructor
 
-        # Estadísticas de asistencia por ficha (top 5 fichas con más aprendices) - optimizado
-        # Presentes hoy por ficha en una sola query
         presentes_por_ficha = dict(
-            RegistroAcceso.objects.filter(
-                tipo='INGRESO',
-                fecha_hora_ingreso__date=hoy,
-                usuario__rol='APRENDIZ',
-                usuario__ficha__isnull=False,
-            ).exclude(usuario__ficha='').values('usuario__ficha').annotate(
-                presentes=Count('usuario_id', distinct=True)
-            ).values_list('usuario__ficha', 'presentes')
+            RegistroAcceso.objects.filter(**filtro_acceso_ficha).exclude(usuario__ficha='').values(
+                'usuario__ficha'
+            ).annotate(presentes=Count('usuario_id', distinct=True)).values_list('usuario__ficha', 'presentes')
         )
-
         fichas_stats = list(
-            Usuario.objects.filter(
-                rol='APRENDIZ', activo=True, ficha__isnull=False
-            ).exclude(ficha='').values('ficha').annotate(
+            Usuario.objects.filter(**filtro_ficha_base).exclude(ficha='').values('ficha').annotate(
                 total=Count('id')
             ).order_by('-total')[:5]
         )
-
         for ficha in fichas_stats:
             presentes = presentes_por_ficha.get(ficha['ficha'], 0)
             ficha['presentes'] = presentes
             ficha['porcentaje'] = round((presentes / ficha['total']) * 100) if ficha['total'] > 0 else 0
-
         context['fichas_stats'] = fichas_stats
 
-        # Incidentes del mes para el instructor
+        # Gráfica 7 días filtrada
+        filtro_7dias = {'tipo': 'INGRESO', 'fecha_hora_ingreso__date__gte': fecha_inicio_7,
+                        'fecha_hora_ingreso__date__lte': hoy, 'usuario__rol': 'APRENDIZ'}
+        if ficha_instructor:
+            filtro_7dias['usuario__ficha'] = ficha_instructor
+        elif programa_instructor:
+            filtro_7dias['usuario__programa_formacion'] = programa_instructor
+        registros_instructor_por_dia = dict(
+            RegistroAcceso.objects.filter(**filtro_7dias).annotate(
+                dia=TruncDate('fecha_hora_ingreso')
+            ).values('dia').annotate(cantidad=Count('id')).values_list('dia', 'cantidad')
+        )
+        ultimos_7_dias_instructor = []
+        for i in range(6, -1, -1):
+            fecha = hoy - timedelta(days=i)
+            ultimos_7_dias_instructor.append({'fecha': fecha.strftime('%d/%m'),
+                                              'cantidad': registros_instructor_por_dia.get(fecha, 0)})
+        context['ultimos_7_dias'] = ultimos_7_dias_instructor
+
         from reportes.models import Incidente as IncidenteInstructor
         context['incidentes_mes'] = IncidenteInstructor.objects.filter(
             fecha_reporte__date__gte=inicio_mes
@@ -221,12 +246,38 @@ def dashboard_view(request):
     # Datos adicionales para BRIGADA
     if usuario.rol == 'BRIGADA':
         from reportes.models import Incidente
+        from django.utils import timezone as tz
         incidentes_recientes = Incidente.objects.select_related('reportado_por').order_by('-fecha_reporte')[:10]
         incidentes_pendientes = Incidente.objects.exclude(estado__in=['RESUELTO', 'CERRADO']).count()
         incidentes_total_mes = Incidente.objects.filter(fecha_reporte__date__gte=inicio_mes).count()
+        incidentes_criticos_sla = Incidente.objects.exclude(estado__in=['RESUELTO', 'CERRADO']).filter(
+            fecha_reporte__lte=tz.now() - timedelta(hours=72)
+        ).count()
         context['incidentes_recientes'] = incidentes_recientes
         context['incidentes_pendientes'] = incidentes_pendientes
         context['incidentes_total_mes'] = incidentes_total_mes
+        context['incidentes_criticos_sla'] = incidentes_criticos_sla
+
+    # Datos adicionales para ADMINISTRATIVO
+    if usuario.rol == 'ADMINISTRATIVO':
+        from reportes.models import Incidente
+        from django.utils import timezone as tz
+        from django.db.models import Count
+        incidentes_pendientes = Incidente.objects.exclude(estado__in=['RESUELTO', 'CERRADO']).count()
+        incidentes_total_mes = Incidente.objects.filter(fecha_reporte__date__gte=inicio_mes).count()
+        incidentes_criticos = Incidente.objects.filter(gravedad='CRITICA', estado='REPORTADO').count()
+        incidentes_criticos_sla = Incidente.objects.exclude(estado__in=['RESUELTO', 'CERRADO']).filter(
+            fecha_reporte__lte=tz.now() - timedelta(hours=72)
+        ).count()
+        # Por gravedad para gráfica de dona
+        incidentes_por_gravedad = list(
+            Incidente.objects.values('gravedad').annotate(total=Count('id')).order_by('gravedad')
+        )
+        context['incidentes_pendientes'] = incidentes_pendientes
+        context['incidentes_total_mes'] = incidentes_total_mes
+        context['incidentes_criticos'] = incidentes_criticos
+        context['incidentes_criticos_sla'] = incidentes_criticos_sla
+        context['incidentes_por_gravedad'] = incidentes_por_gravedad
 
     # Datos adicionales para APRENDIZ
     if usuario.rol == 'APRENDIZ':
@@ -242,6 +293,16 @@ def dashboard_view(request):
         ).count()
         context['mis_accesos'] = mis_accesos
         context['mis_ingresos_mes'] = mis_ingresos_mes
+
+        # Estado actual: ¿está el aprendiz en el centro ahora mismo?
+        registro_activo = RegistroAcceso.objects.filter(
+            usuario=usuario,
+            tipo='INGRESO',
+            fecha_hora_egreso__isnull=True,
+            fecha_hora_ingreso__date=hoy
+        ).order_by('-fecha_hora_ingreso').first()
+        context['en_centro'] = registro_activo is not None
+        context['registro_activo'] = registro_activo
 
         # Datos para gráfica de asistencia mensual (últimos 30 días) - una sola query
         fecha_inicio_30 = hoy - timedelta(days=29)
@@ -296,6 +357,13 @@ def mi_perfil_view(request):
         usuario.telefono_emergencia = request.POST.get('telefono_emergencia', usuario.telefono_emergencia).strip()
         usuario.contacto_emergencia = request.POST.get('contacto_emergencia', usuario.contacto_emergencia).strip()
 
+        # Programa y ficha — editables para instructores
+        if usuario.rol == 'INSTRUCTOR':
+            if 'programa_formacion' in request.POST:
+                usuario.programa_formacion = request.POST.get('programa_formacion', '').strip() or None
+            if 'ficha' in request.POST:
+                usuario.ficha = request.POST.get('ficha', '').strip() or None
+
         # Foto de perfil
         if 'foto' in request.FILES:
             foto = request.FILES['foto']
@@ -334,6 +402,22 @@ def mi_perfil_view(request):
         'total_accesos_mes': total_accesos_mes,
         'ultimo_acceso': ultimo_acceso,
     }
+
+    # Para instructores: cargar fichas disponibles por programa para el selector dinámico
+    if usuario.rol == 'INSTRUCTOR':
+        from usuarios.models import Usuario as Usr
+        import json
+        fichas_qs = Usr.objects.filter(
+            rol='APRENDIZ', activo=True, ficha__isnull=False
+        ).exclude(ficha='').values('programa_formacion', 'ficha').distinct().order_by('programa_formacion', 'ficha')
+        fichas_por_programa = {}
+        for item in fichas_qs:
+            prog = item['programa_formacion'] or ''
+            ficha = item['ficha']
+            fichas_por_programa.setdefault(prog, [])
+            if ficha not in fichas_por_programa[prog]:
+                fichas_por_programa[prog].append(ficha)
+        context['fichas_por_programa_json'] = json.dumps(fichas_por_programa)
 
     return render(request, 'perfil.html', context)
 
@@ -421,47 +505,34 @@ def mis_alertas_view(request):
 @rol_requerido('INSTRUCTOR')
 def mis_aprendices_view(request):
     """
-    Vista para que el instructor filtre por programa -> ficha -> aprendices
-    Incluye información de asistencia del día actual
+    Vista para que el instructor vea los aprendices de SUS fichas asignadas.
+    Si no tiene fichas asignadas, muestra un aviso para configurar el perfil.
     """
     from usuarios.models import Usuario
     from control_acceso.models import RegistroAcceso
+    from django.db.models import OuterRef, Subquery, Exists
     from django.utils import timezone
 
-    # Obtener programas dinámicamente de la BD
-    PROGRAMAS = list(
-        Usuario.objects.filter(
-            rol='APRENDIZ', activo=True, programa_formacion__isnull=False
-        ).exclude(programa_formacion='').values_list(
-            'programa_formacion', flat=True
-        ).distinct().order_by('programa_formacion')
-    )
+    instructor = request.user
+    ficha_instructor = instructor.ficha or ''    # única ficha asignada
+    programa_instructor = instructor.programa_formacion or ''
 
-    programa_seleccionado = request.GET.get('programa', '')
-    ficha_seleccionada = request.GET.get('ficha', '')
-    fichas = []
+    hoy = timezone.now().date()
+
     aprendices_con_asistencia = []
     total_aprendices = 0
     presentes_hoy = 0
 
-    if programa_seleccionado:
-        fichas = Usuario.objects.filter(
-            rol='APRENDIZ', activo=True, programa_formacion=programa_seleccionado
-        ).values_list('ficha', flat=True).distinct().order_by('ficha')
+    ficha_seleccionada = ficha_instructor  # solo puede ver su propia ficha
 
-    if ficha_seleccionada:
-        from django.db.models import OuterRef, Subquery, Exists
-
-        hoy = timezone.now().date()
-
-        # Subquery para obtener el último registro de hoy por aprendiz
+    if ficha_instructor:
         ultimo_registro_hoy = RegistroAcceso.objects.filter(
             usuario=OuterRef('pk'),
             fecha_hora_ingreso__date=hoy
         ).order_by('-fecha_hora_ingreso')
 
         aprendices = Usuario.objects.filter(
-            rol='APRENDIZ', activo=True, ficha=ficha_seleccionada, programa_formacion=programa_seleccionado
+            rol='APRENDIZ', activo=True, ficha=ficha_seleccionada
         ).annotate(
             tiene_registro_hoy=Exists(
                 RegistroAcceso.objects.filter(
@@ -482,17 +553,13 @@ def mis_aprendices_view(request):
         total_aprendices = aprendices.count()
 
         for aprendiz in aprendices:
-            # Para el conteo de asistencia: tiene registro hoy = asistio
             asistio = aprendiz.tiene_registro_hoy
-            hora_ingreso = aprendiz._hora_ingreso
-
             if asistio:
                 presentes_hoy += 1
-
             aprendices_con_asistencia.append({
                 'usuario': aprendiz,
                 'presente': aprendiz._en_centro,
-                'hora_ingreso': hora_ingreso,
+                'hora_ingreso': aprendiz._hora_ingreso,
                 'tiene_registro_hoy': asistio,
             })
 
@@ -500,9 +567,8 @@ def mis_aprendices_view(request):
     porcentaje_asistencia = round((presentes_hoy / total_aprendices) * 100) if total_aprendices > 0 else 0
 
     context = {
-        'programas': PROGRAMAS,
-        'programa_seleccionado': programa_seleccionado,
-        'fichas': fichas,
+        'ficha_instructor': ficha_instructor,
+        'programa_instructor': programa_instructor,
         'ficha_seleccionada': ficha_seleccionada,
         'aprendices': aprendices_con_asistencia,
         'total_aprendices': total_aprendices,
@@ -547,32 +613,45 @@ def configuracion_view(request):
     Vista de configuración del sistema
     """
     from control_acceso.models import ConfiguracionAforo
-    from django.contrib import messages
+    from django.contrib import messages as django_messages
 
     config_aforo = ConfiguracionAforo.objects.filter(activo=True).first()
 
     if request.method == 'POST':
-        aforo_maximo = request.POST.get('aforo_maximo')
-        mensaje_alerta = request.POST.get('mensaje_alerta', '')
-        activo = request.POST.get('switchAforo') == 'on'
+        try:
+            aforo_maximo = int(request.POST.get('aforo_maximo', 2000))
+            umbral_alerta = int(request.POST.get('umbral_alerta', 90))
+            mensaje_alerta = request.POST.get('mensaje_alerta', '').strip()
+            aforo_activo = request.POST.get('aforo_activo') == 'on'
+            aforo_minimo = round(aforo_maximo * umbral_alerta / 100)
 
-        if config_aforo:
-            if aforo_maximo:
-                config_aforo.aforo_maximo = int(aforo_maximo)
-            config_aforo.mensaje_alerta = mensaje_alerta
-            config_aforo.activo = activo
-            config_aforo.save()
-        else:
-            ConfiguracionAforo.objects.create(
-                aforo_maximo=int(aforo_maximo) if aforo_maximo else 2000,
-                mensaje_alerta=mensaje_alerta,
-                activo=activo
-            )
-        messages.success(request, 'Configuración guardada correctamente.')
-        config_aforo = ConfiguracionAforo.objects.filter(activo=True).first()
+            if config_aforo:
+                config_aforo.aforo_maximo = aforo_maximo
+                config_aforo.aforo_minimo = aforo_minimo
+                config_aforo.mensaje_alerta = mensaje_alerta
+                config_aforo.activo = aforo_activo
+                config_aforo.save()
+            else:
+                ConfiguracionAforo.objects.create(
+                    aforo_maximo=aforo_maximo,
+                    aforo_minimo=aforo_minimo,
+                    mensaje_alerta=mensaje_alerta,
+                    activo=aforo_activo,
+                )
+
+            django_messages.success(request, 'Configuración guardada correctamente.')
+        except (ValueError, TypeError):
+            django_messages.error(request, 'Error al guardar: verifique los valores ingresados.')
+        return redirect('configuracion_sistema')
+
+    # Calcular umbral como porcentaje para el slider
+    umbral_alerta = 90
+    if config_aforo and config_aforo.aforo_maximo:
+        umbral_alerta = round(config_aforo.aforo_minimo / config_aforo.aforo_maximo * 100)
 
     context = {
-        'config_aforo': config_aforo
+        'config_aforo': config_aforo,
+        'umbral_alerta': umbral_alerta,
     }
     return render(request, 'dashboard/administrativo/configuracion.html', context)
 
@@ -581,18 +660,20 @@ def configuracion_view(request):
 # ==============================================
 
 @login_required
-@rol_requerido('VIGILANCIA')
+@rol_requerido('VIGILANCIA', 'ADMINISTRATIVO')
 def gestion_visitantes_view(request):
     """
-    Vista para gestión de visitantes (Vigilancia)
+    Vista para gestión de visitantes
+    PERMISOS: VIGILANCIA y ADMINISTRATIVO
     """
     from usuarios.models import Visitante
     from django.utils import timezone
-    
+
     hoy = timezone.now().date()
-    # Visitantes registrados hoy
-    visitantes_hoy = Visitante.objects.filter(fecha_visita=hoy).order_by('-hora_ingreso')
-    
+    visitantes_hoy = Visitante.objects.select_related('persona_a_visitar').filter(
+        fecha_visita=hoy
+    ).order_by('-hora_ingreso')
+
     context = {
         'visitantes': visitantes_hoy,
         'total_hoy': visitantes_hoy.count(),
@@ -696,16 +777,14 @@ def control_acceso_view(request):
     """
     return render(request, 'control_acceso.html')
 
-# Importar la vista completa de mapas
-from mapas.views import mapa_interactivo, campus_svg as campus_svg_view
+# Importar las vistas de mapas
+from mapas.views import mapa_interactivo, plano_centro as plano_centro_view
 
-# Decorador aplicado directamente en la vista mapa_interactivo en mapas/views.py
-
-@excluir_visitantes
+@rol_requerido('ADMINISTRATIVO', 'BRIGADA', 'VIGILANCIA')
 def emergencias_view(request):
     """
     Vista de Emergencias
-    PERMISOS: Todos excepto VISITANTE
+    PERMISOS: Solo ADMINISTRATIVO, BRIGADA y VIGILANCIA
     """
     return render(request, 'emergencias.html')
 
@@ -715,7 +794,189 @@ def reportes_view(request):
     Vista de Reportes
     PERMISOS: Todos excepto VISITANTE
     """
-    return render(request, 'reportes.html')
+    return render(request, 'reportes/index.html')
+
+
+# ==============================================
+# EXPORTAR ACCESOS A EXCEL
+# ==============================================
+
+@login_required
+@rol_requerido('ADMINISTRATIVO', 'VIGILANCIA', 'INSTRUCTOR')
+def exportar_accesos_excel(request):
+    """
+    Exporta los registros de acceso del día (o rango indicado) a Excel.
+    Parámetros GET: fecha_desde, fecha_hasta, rol
+    """
+    from control_acceso.models import RegistroAcceso
+    from django.utils import timezone
+    from datetime import datetime
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
+    hoy = timezone.now().date()
+
+    fecha_desde_str = request.GET.get('fecha_desde', hoy.isoformat())
+    fecha_hasta_str = request.GET.get('fecha_hasta', hoy.isoformat())
+    rol_filtro = request.GET.get('rol', '')
+
+    try:
+        fecha_desde = datetime.strptime(fecha_desde_str, '%Y-%m-%d').date()
+    except (ValueError, TypeError):
+        fecha_desde = hoy
+    try:
+        fecha_hasta = datetime.strptime(fecha_hasta_str, '%Y-%m-%d').date()
+    except (ValueError, TypeError):
+        fecha_hasta = hoy
+
+    registros = RegistroAcceso.objects.select_related('usuario').filter(
+        tipo='INGRESO',
+        fecha_hora_ingreso__date__gte=fecha_desde,
+        fecha_hora_ingreso__date__lte=fecha_hasta,
+    ).order_by('-fecha_hora_ingreso')
+
+    if rol_filtro:
+        registros = registros.filter(usuario__rol=rol_filtro)
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Registros de Acceso'
+
+    verde = PatternFill('solid', fgColor='39A900')
+    verde_oscuro = PatternFill('solid', fgColor='2E7D32')
+    borde = Border(
+        left=Side(style='thin', color='DDDDDD'),
+        right=Side(style='thin', color='DDDDDD'),
+        top=Side(style='thin', color='DDDDDD'),
+        bottom=Side(style='thin', color='DDDDDD'),
+    )
+
+    # Título
+    ws.merge_cells('A1:I1')
+    c = ws['A1']
+    c.value = f'Registros de Acceso — Centro Minero SENA — {fecha_desde.strftime("%d/%m/%Y")} al {fecha_hasta.strftime("%d/%m/%Y")}'
+    c.font = Font(bold=True, size=12, color='FFFFFF')
+    c.fill = verde
+    c.alignment = Alignment(horizontal='center', vertical='center')
+    ws.row_dimensions[1].height = 20
+
+    # Encabezados
+    headers = ['Nombre Completo', 'Documento', 'Rol', 'Ficha / Programa',
+               'Hora Ingreso', 'Hora Egreso', 'Permanencia (min)', 'Método', 'Estado']
+    ws.append(headers)
+    for cell in ws[2]:
+        cell.font = Font(bold=True, color='FFFFFF')
+        cell.fill = verde_oscuro
+        cell.alignment = Alignment(horizontal='center')
+        cell.border = borde
+    ws.row_dimensions[2].height = 15
+
+    # Datos
+    for i, reg in enumerate(registros, 3):
+        if reg.fecha_hora_egreso:
+            permanencia = int((reg.fecha_hora_egreso - reg.fecha_hora_ingreso).total_seconds() / 60)
+            estado = 'Salió'
+        else:
+            permanencia = '—'
+            estado = 'En centro'
+
+        row = [
+            reg.usuario.get_full_name() or reg.usuario.username,
+            reg.usuario.numero_documento or '',
+            reg.usuario.get_rol_display(),
+            f"{reg.usuario.ficha or ''} {reg.usuario.programa_formacion or ''}".strip() or '—',
+            reg.fecha_hora_ingreso.strftime('%d/%m/%Y %H:%M'),
+            reg.fecha_hora_egreso.strftime('%d/%m/%Y %H:%M') if reg.fecha_hora_egreso else '—',
+            permanencia,
+            reg.get_metodo_ingreso_display(),
+            estado,
+        ]
+        ws.append(row)
+        fill = PatternFill('solid', fgColor='F9FBF9') if i % 2 == 0 else PatternFill('solid', fgColor='FFFFFF')
+        for cell in ws[i]:
+            cell.fill = fill
+            cell.border = borde
+            cell.alignment = Alignment(vertical='center')
+
+    # Anchos de columna
+    for col, ancho in zip('ABCDEFGHI', [28, 15, 16, 30, 18, 18, 16, 12, 12]):
+        ws.column_dimensions[col].width = ancho
+
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    fecha_str = f"{fecha_desde.strftime('%Y%m%d')}_{fecha_hasta.strftime('%Y%m%d')}"
+    response['Content-Disposition'] = f'attachment; filename="accesos_{fecha_str}.xlsx"'
+    wb.save(response)
+    return response
+
+
+# ==============================================
+# HISTORIAL DE ACCESOS (vista HTML)
+# ==============================================
+
+@login_required
+@rol_requerido('ADMINISTRATIVO', 'VIGILANCIA', 'INSTRUCTOR')
+def historial_accesos_view(request):
+    """
+    Vista HTML con historial de accesos filtrable + exportación Excel.
+    """
+    from control_acceso.models import RegistroAcceso
+    from usuarios.models import Usuario
+    from django.core.paginator import Paginator
+    from django.utils import timezone
+    from datetime import datetime, timedelta
+
+    hoy = timezone.now().date()
+    fecha_desde_str = request.GET.get('fecha_desde', hoy.isoformat())
+    fecha_hasta_str = request.GET.get('fecha_hasta', hoy.isoformat())
+    rol_filtro = request.GET.get('rol', '')
+    q = request.GET.get('q', '').strip()
+
+    try:
+        fecha_desde = datetime.strptime(fecha_desde_str, '%Y-%m-%d').date()
+    except (ValueError, TypeError):
+        fecha_desde = hoy
+    try:
+        fecha_hasta = datetime.strptime(fecha_hasta_str, '%Y-%m-%d').date()
+    except (ValueError, TypeError):
+        fecha_hasta = hoy
+
+    registros = RegistroAcceso.objects.select_related('usuario').filter(
+        tipo='INGRESO',
+        fecha_hora_ingreso__date__gte=fecha_desde,
+        fecha_hora_ingreso__date__lte=fecha_hasta,
+    ).order_by('-fecha_hora_ingreso')
+
+    if rol_filtro:
+        registros = registros.filter(usuario__rol=rol_filtro)
+    if q:
+        from django.db.models import Q
+        registros = registros.filter(
+            Q(usuario__first_name__icontains=q) |
+            Q(usuario__last_name__icontains=q) |
+            Q(usuario__numero_documento__icontains=q)
+        )
+
+    total = registros.count()
+    paginator = Paginator(registros, 25)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    from usuarios.models import Usuario as Usr
+    roles_disponibles = Usr.objects.values_list('rol', flat=True).distinct().order_by('rol')
+
+    context = {
+        'registros': page_obj,
+        'page_obj': page_obj,
+        'total': total,
+        'fecha_desde': fecha_desde_str,
+        'fecha_hasta': fecha_hasta_str,
+        'rol_filtro': rol_filtro,
+        'q': q,
+        'roles_disponibles': roles_disponibles,
+        'hoy': hoy.isoformat(),
+    }
+    return render(request, 'dashboard/vigilancia/historial_accesos.html', context)
 
 urlpatterns = [
     # PWA: Service Worker y Manifest servidos desde la raíz
@@ -768,7 +1029,7 @@ urlpatterns = [
     path('perfil/', mi_perfil_view, name='mi_perfil'),
     path('acceso/', control_acceso_view, name='control_acceso'),
     path('mapas/', mapa_interactivo, name='mapas'),
-    path('mapas/campus/', campus_svg_view, name='campus_svg'),
+    path('mapas/plano/', plano_centro_view, name='plano_centro'),
     path('emergencias/', emergencias_view, name='emergencias'),
 
     # ==============================================
@@ -788,6 +1049,8 @@ urlpatterns = [
 
     # URLs PARA VIGILANCIA
     path('vigilancia/visitantes/', gestion_visitantes_view, name='gestion_visitantes'),
+    path('acceso/historial/', historial_accesos_view, name='historial_accesos'),
+    path('acceso/exportar/excel/', exportar_accesos_excel, name='exportar_accesos_excel'),
 
     # URLs PARA BRIGADA
     path('brigada/equipos/', equipos_brigada_view, name='equipos_brigada'),

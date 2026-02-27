@@ -34,7 +34,7 @@
                         <h3 class="fw-bold mb-0" id="estadoAprendiz">
                             <span class="text-muted"><i class="bi bi-hourglass-split"></i> Verificando...</span>
                         </h3>
-                        <small class="text-muted" id="estadoSub"></small>
+                        <small class="text-muted" id="estadoSub">Obteniendo ubicación...</small>
                     </div>
                     <div class="bg-light rounded-3 p-3">
                         <i class="bi bi-geo-alt fs-2 text-success"></i>
@@ -74,6 +74,10 @@
             <a href="{% url 'mis_alertas' %}" class="btn btn-light border py-2 px-3 d-flex align-items-center text-decoration-none">
                 <i class="bi bi-bell-fill text-warning fs-5 me-2"></i>
                 <span class="small">Mis Alertas</span>
+            </a>
+            <a href="{% url 'informacion_sst' %}" class="btn btn-light border py-2 px-3 d-flex align-items-center text-decoration-none">
+                <i class="bi bi-shield-check text-info fs-5 me-2"></i>
+                <span class="small">Información SST</span>
             </a>
         </div>
     </div>
@@ -237,26 +241,95 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', async function() {
-    // Verificar estado actual del aprendiz
-    try {
-        const r = await fetch('/api/acceso/registros/registros_recientes/?limite=50');
-        const data = await r.json();
-        const miDoc = '{{ user.numero_documento }}';
-        const miRegistro = data.find(d => d.usuario && d.usuario.documento === miDoc && !d.fecha_hora_egreso);
+// Estado actual basado en geocerca via GPS
+(function() {
+    function setEstado(enCentro, sub) {
         const el = document.getElementById('estadoAprendiz');
-        const sub = document.getElementById('estadoSub');
-        if (miRegistro) {
+        const subEl = document.getElementById('estadoSub');
+        if (!el) return;
+        if (enCentro) {
             el.innerHTML = '<span class="text-success"><i class="bi bi-check-circle-fill"></i> En Centro</span>';
-            sub.textContent = 'Ingreso: ' + new Date(miRegistro.fecha_hora_ingreso).toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit'});
         } else {
             el.innerHTML = '<span class="text-muted"><i class="bi bi-x-circle-fill"></i> Fuera</span>';
-            sub.textContent = 'Sin ingreso activo hoy';
         }
-    } catch(e) {
-        document.getElementById('estadoAprendiz').innerHTML = '<span class="text-muted">--</span>';
+        if (subEl) subEl.textContent = sub;
     }
 
+    function getCsrf() {
+        const m = document.cookie.match(/csrftoken=([^;]+)/);
+        return m ? m[1] : '';
+    }
+
+    // Umbral de precisión: si el GPS reporta más de 500m de error, no es confiable
+    var PRECISION_MAXIMA = 500;
+
+    function consultarEstadoBD() {
+        fetch('/api/acceso/registros/mi-estado/')
+            .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
+            .then(function(data) {
+                if (data.en_centro) {
+                    setEstado(true, 'Ingreso: ' + data.hora_ingreso);
+                } else {
+                    setEstado(false, 'Sin ingreso activo hoy');
+                }
+            })
+            .catch(function() {});
+    }
+
+    function verificarUbicacion() {
+        if (!navigator.geolocation) {
+            consultarEstadoBD();
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            function(pos) {
+                var precision = pos.coords.accuracy; // metros de error del GPS
+
+                // GPS impreciso (ej: desktop por WiFi/IP): usar estado de la BD
+                if (precision > PRECISION_MAXIMA) {
+                    consultarEstadoBD();
+                    return;
+                }
+
+                // GPS preciso (ej: móvil): verificar geocerca y registrar
+                fetch('/api/acceso/registros/auto-registro/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+                    body: JSON.stringify({ latitud: pos.coords.latitude, longitud: pos.coords.longitude })
+                })
+                .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
+                .then(function(data) {
+                    if (data.estado === 'DENTRO') {
+                        var msg = data.accion === 'INGRESO' ? 'Ingreso registrado' : 'Dentro del centro';
+                        if (data.mensaje) msg = data.mensaje;
+                        setEstado(true, msg);
+                    } else {
+                        var dist = (data.distancia_metros != null)
+                            ? 'A ' + data.distancia_metros + 'm del centro'
+                            : 'Fuera del centro';
+                        setEstado(false, dist);
+                    }
+                })
+                .catch(function() { consultarEstadoBD(); });
+            },
+            function(err) {
+                if (err.code === 1) {
+                    setEstado(false, 'Activa la ubicación en tu navegador');
+                } else {
+                    consultarEstadoBD();
+                }
+            },
+            { timeout: 10000, maximumAge: 60000, enableHighAccuracy: true }
+        );
+    }
+
+    // Verificar al cargar la página
+    verificarUbicacion();
+    // Re-verificar cada 2 minutos
+    setInterval(verificarUbicacion, 120000);
+})();
+
+document.addEventListener('DOMContentLoaded', function() {
     // Grafica de Asistencia Mensual
     const ctx = document.getElementById('chartAsistencia');
     if (ctx) {

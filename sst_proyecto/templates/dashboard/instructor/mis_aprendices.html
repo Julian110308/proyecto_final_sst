@@ -13,91 +13,61 @@
         <h2 class="fw-bold text-dark mb-0">
             <i class="bi bi-people-fill me-2"></i>Mis Aprendices
         </h2>
-        {% if ficha_seleccionada %}
+        {% if ficha_instructor %}
         <div class="d-flex gap-2 flex-wrap">
-            <span class="badge bg-success fs-6">
-                Ficha {{ ficha_seleccionada }} - {{ total_aprendices }} aprendiz{{ total_aprendices|pluralize:"es" }}
-            </span>
             <span class="badge bg-primary fs-6">
-                <i class="bi bi-person-check me-1"></i>{{ presentes_hoy }} presente{{ presentes_hoy|pluralize:"s" }} hoy
+                <i class="bi bi-bookmark-fill me-1"></i>Ficha {{ ficha_instructor }}
             </span>
+            {% if programa_instructor %}
+            <span class="badge bg-light text-dark border fs-6">
+                <i class="bi bi-mortarboard me-1"></i>{{ programa_instructor }}
+            </span>
+            {% endif %}
         </div>
         {% endif %}
     </div>
 
-    <!-- Filtros: Programa y Ficha -->
-    <div class="card card-modern mb-4">
-        <div class="card-body">
-            <form method="GET" action="{% url 'mis_aprendices' %}" id="filtroForm">
-                <div class="row g-3 align-items-end">
-                    <!-- Selector de Programa -->
-                    <div class="col-md-4">
-                        <label for="selectPrograma" class="form-label fw-bold">
-                            <i class="bi bi-mortarboard me-1"></i>Programa de Formacion
-                        </label>
-                        <select class="form-select" id="selectPrograma" name="programa" onchange="this.form.submit()">
-                            <option value="">-- Seleccione un programa --</option>
-                            {% for programa in programas %}
-                                <option value="{{ programa }}" {% if programa_seleccionado == programa %}selected{% endif %}>{{ programa }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <!-- Selector de Ficha (solo si hay programa) -->
-                    {% if programa_seleccionado %}
-                    <div class="col-md-3">
-                        <label for="selectFicha" class="form-label fw-bold">
-                            <i class="bi bi-journal-bookmark me-1"></i>Ficha
-                        </label>
-                        <select class="form-select" id="selectFicha" name="ficha" onchange="this.form.submit()">
-                            <option value="">-- Seleccione una ficha --</option>
-                            {% for ficha in fichas %}
-                                <option value="{{ ficha }}" {% if ficha_seleccionada == ficha %}selected{% endif %}>{{ ficha }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    {% endif %}
-
-                    <!-- Buscador (solo si hay ficha seleccionada) -->
-                    {% if ficha_seleccionada %}
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold">
-                            <i class="bi bi-search me-1"></i>Buscar
-                        </label>
-                        <input type="text" class="form-control" id="buscadorAprendiz" placeholder="Buscar por nombre o documento...">
-                    </div>
-                    <div class="col-md-2">
-                        <button type="button" class="btn btn-primary-custom w-100" onclick="registrarAsistenciaMasiva()">
-                            <i class="bi bi-check-all me-1"></i>Registrar Todos
-                        </button>
-                    </div>
-                    {% endif %}
-                </div>
-            </form>
+    <!-- Sin ficha asignada: aviso igual al dashboard -->
+    {% if not ficha_instructor %}
+    <div class="alert alert-warning d-flex align-items-center gap-2 mb-4" role="alert">
+        <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+        <div>
+            <strong>No tienes una ficha asignada.</strong>
+            Para ver tus aprendices necesitas configurar la ficha a tu cargo desde tu perfil.
+            <a href="{% url 'mi_perfil' %}" class="alert-link ms-1">Ir a mi perfil &rarr;</a>
         </div>
     </div>
-
-    {% if not programa_seleccionado %}
-    <!-- Mensaje inicial -->
     <div class="card card-modern">
         <div class="card-body text-center py-5">
-            <i class="bi bi-mortarboard text-muted" style="font-size: 3rem;"></i>
-            <h5 class="mt-3 text-muted">Seleccione un programa de formacion</h5>
-            <p class="text-muted">Escoja el programa para ver las fichas disponibles y sus aprendices.</p>
-        </div>
-    </div>
-
-    {% elif not ficha_seleccionada %}
-    <!-- Mensaje cuando hay programa pero no ficha -->
-    <div class="card card-modern">
-        <div class="card-body text-center py-5">
-            <i class="bi bi-journal-bookmark text-muted" style="font-size: 3rem;"></i>
-            <h5 class="mt-3 text-muted">Seleccione una ficha</h5>
-            <p class="text-muted">Se encontraron <strong>{{ fichas|length }}</strong> ficha{{ fichas|length|pluralize:"s" }} en <strong>{{ programa_seleccionado }}</strong>. Seleccione una para ver sus aprendices.</p>
+            <i class="bi bi-journal-bookmark text-muted" style="font-size: 3.5rem;"></i>
+            <h5 class="mt-3 text-muted">Ninguna ficha asignada</h5>
+            <p class="text-muted mb-3">Ve a tu perfil, selecciona tu programa de formacion y elige la ficha que tienes a cargo.</p>
+            <a href="{% url 'mi_perfil' %}" class="btn btn-primary">
+                <i class="bi bi-person-gear me-2"></i>Configurar perfil
+            </a>
         </div>
     </div>
 
     {% else %}
+
+    <!-- Barra superior con buscador y accion masiva -->
+    <div class="card card-modern mb-4">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                        <i class="bi bi-search me-1"></i>Buscar aprendiz
+                    </label>
+                    <input type="text" class="form-control" id="buscadorAprendiz" placeholder="Nombre o numero de documento...">
+                </div>
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-outline-success w-100" onclick="registrarAsistenciaMasiva()">
+                        <i class="bi bi-check-all me-1"></i>Registrar Todos
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Resumen de Asistencia -->
     <div class="row g-3 mb-4">
@@ -139,7 +109,7 @@
     <div class="card card-modern">
         <div class="card-header bg-light d-flex justify-content-between align-items-center">
             <h6 class="mb-0 fw-bold">
-                <i class="bi bi-list-check me-2"></i>Lista de Asistencia - {{ ficha_seleccionada }}
+                <i class="bi bi-list-check me-2"></i>Lista de Asistencia &mdash; Ficha {{ ficha_instructor }}
             </h6>
             <small class="text-muted">Hoy: {% now "d/m/Y" %}</small>
         </div>
@@ -160,7 +130,8 @@
                         <tr data-aprendiz-id="{{ item.usuario.id }}">
                             <td class="ps-4">
                                 <div class="d-flex align-items-center">
-                                    <div class="avatar-initials bg-light-green text-primary-green rounded-circle p-2 me-3 fw-bold" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-3 fw-bold text-primary"
+                                         style="width:40px;height:40px;min-width:40px;">
                                         {{ item.usuario.first_name|slice:":1" }}{{ item.usuario.last_name|slice:":1" }}
                                     </div>
                                     <div>
@@ -261,7 +232,6 @@
 
 {% block extra_js %}
 <script>
-// Obtener token CSRF
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -282,20 +252,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (buscador) {
         buscador.addEventListener('input', function() {
             const filtro = this.value.toLowerCase();
-            const filas = document.querySelectorAll('#tablaAprendices tbody tr');
-            filas.forEach(function(fila) {
-                const texto = fila.textContent.toLowerCase();
-                fila.style.display = texto.includes(filtro) ? '' : 'none';
+            document.querySelectorAll('#tablaAprendices tbody tr').forEach(function(fila) {
+                fila.style.display = fila.textContent.toLowerCase().includes(filtro) ? '' : 'none';
             });
-        });
-    }
-
-    // Al cambiar programa, limpiar la ficha seleccionada
-    const selectPrograma = document.getElementById('selectPrograma');
-    if (selectPrograma) {
-        selectPrograma.addEventListener('change', function() {
-            const fichaInput = document.getElementById('selectFicha');
-            if (fichaInput) fichaInput.value = '';
         });
     }
 });
@@ -303,87 +262,44 @@ document.addEventListener('DOMContentLoaded', function() {
 function registrarAsistencia(aprendizId, nombreAprendiz) {
     document.getElementById('aprendizId').value = aprendizId;
     document.getElementById('aprendizNombre').textContent = nombreAprendiz;
-    const modal = new bootstrap.Modal(document.getElementById('modalAsistencia'));
-    modal.show();
+    new bootstrap.Modal(document.getElementById('modalAsistencia')).show();
 }
 
 function confirmarAsistencia() {
     const aprendizId = parseInt(document.getElementById('aprendizId').value);
-
     fetch('/api/acceso/registros/registrar_asistencia_manual/', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({
-            usuario_id: aprendizId
-        })
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+        body: JSON.stringify({ usuario_id: aprendizId })
     })
-    .then(response => response.json())
+    .then(r => r.json())
     .then(data => {
         const modal = bootstrap.Modal.getInstance(document.getElementById('modalAsistencia'));
         if (modal) modal.hide();
-
-        if (data.success) {
-            location.reload();
-        } else {
-            alert('Error: ' + (data.error || 'No se pudo registrar la asistencia'));
-        }
+        data.success ? location.reload() : alert('Error: ' + (data.error || 'No se pudo registrar'));
     })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error al conectar con el servidor');
-    });
+    .catch(() => alert('Error al conectar con el servidor'));
 }
 
 function registrarAsistenciaMasiva() {
-    if (!confirm('Va a registrar asistencia para TODOS los aprendices sin registro de hoy. Continuar?')) {
-        return;
-    }
-
-    // Obtener IDs de aprendices sin registro
-    const filas = document.querySelectorAll('#tablaAprendices tbody tr');
-    const aprendicesSinRegistro = [];
-
-    filas.forEach(fila => {
-        const btn = fila.querySelector('button[onclick^="registrarAsistencia"]');
-        if (btn) {
-            const aprendizId = fila.dataset.aprendizId;
-            if (aprendizId) {
-                aprendicesSinRegistro.push(parseInt(aprendizId));
-            }
-        }
-    });
-
-    if (aprendicesSinRegistro.length === 0) {
-        alert('Todos los aprendices ya tienen registro de asistencia hoy.');
-        return;
-    }
-
+    if (!confirm('Va a registrar asistencia para TODOS los aprendices sin registro de hoy. Continuar?')) return;
+    const ids = [...document.querySelectorAll('#tablaAprendices tbody tr')].reduce((acc, fila) => {
+        if (fila.querySelector('button[onclick^="registrarAsistencia"]') && fila.dataset.aprendizId)
+            acc.push(parseInt(fila.dataset.aprendizId));
+        return acc;
+    }, []);
+    if (ids.length === 0) { alert('Todos los aprendices ya tienen registro de asistencia hoy.'); return; }
     fetch('/api/acceso/registros/registrar_asistencia_masiva/', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({
-            usuarios_ids: aprendicesSinRegistro
-        })
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+        body: JSON.stringify({ usuarios_ids: ids })
     })
-    .then(response => response.json())
+    .then(r => r.json())
     .then(data => {
-        if (data.success) {
-            alert(`Asistencia registrada para ${data.registrados} aprendiz(es)`);
-            location.reload();
-        } else {
-            alert('Error: ' + (data.error || 'No se pudo registrar la asistencia'));
-        }
+        data.success ? (alert(`Asistencia registrada para ${data.registrados} aprendiz(es)`), location.reload())
+                     : alert('Error: ' + (data.error || 'No se pudo registrar'));
     })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error al conectar con el servidor');
-    });
+    .catch(() => alert('Error al conectar con el servidor'));
 }
 </script>
 {% endblock %}

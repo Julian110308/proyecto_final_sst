@@ -88,6 +88,7 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
             'estadisticas',
             'registros_recientes',
             'auto_registro',
+            'mi_estado',
         ]:
             return [IsAuthenticated()]
         return super().get_permissions()
@@ -118,7 +119,18 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
         usuario = request.user
         hoy = timezone.now().date()
 
-        # Verificar si esta dentro de la geocerca
+        # Calcular distancia a cada geocerca activa y verificar si está dentro
+        from mapas.services import calcular_distancia as _calc_dist
+        geocerca_activa = Geocerca.objects.filter(activo=True).first()
+        distancia_metros = None
+        radio_geocerca = None
+
+        if geocerca_activa:
+            distancia_metros = round(_calc_dist(
+                geocerca_activa.centro_latitud, geocerca_activa.centro_longitud, lat, lng
+            ))
+            radio_geocerca = geocerca_activa.radio_metros
+
         geocerca = Geocerca.verificar_ubicacion_usuario(lat, lng)
         esta_dentro = geocerca is not None
 
@@ -131,26 +143,22 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
         ).order_by('-fecha_hora_ingreso').first()
 
         accion = None
+        mensaje = None
 
         if esta_dentro and not registro_abierto:
             # Usuario entro al centro: registrar INGRESO
-            # Verificar aforo
             aforo = verificar_aforo_actual()
             if aforo['alerta'] == 'CRITICO':
-                return Response({
-                    'estado': 'FUERA',
-                    'accion': None,
-                    'mensaje': 'Aforo maximo alcanzado, no se puede registrar ingreso'
-                })
-
-            RegistroAcceso.objects.create(
-                usuario=usuario,
-                tipo='INGRESO',
-                latitud_ingreso=lat,
-                longitud_ingreso=lng,
-                metodo_ingreso='AUTOMATICO'
-            )
-            accion = 'INGRESO'
+                mensaje = 'Aforo máximo alcanzado'
+            else:
+                RegistroAcceso.objects.create(
+                    usuario=usuario,
+                    tipo='INGRESO',
+                    latitud_ingreso=lat,
+                    longitud_ingreso=lng,
+                    metodo_ingreso='AUTOMATICO'
+                )
+                accion = 'INGRESO'
 
         elif not esta_dentro and registro_abierto:
             # Usuario salio del centro: registrar EGRESO
@@ -161,12 +169,17 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
             registro_abierto.save()
             accion = 'EGRESO'
 
-        return Response({
+        response_data = {
             'estado': 'DENTRO' if esta_dentro else 'FUERA',
             'accion': accion,
             'dentro_geocerca': esta_dentro,
             'registro_abierto': registro_abierto is not None if accion != 'EGRESO' else False,
-        })
+            'distancia_metros': distancia_metros,
+            'radio_geocerca': radio_geocerca,
+        }
+        if mensaje:
+            response_data['mensaje'] = mensaje
+        return Response(response_data)
 
     def get_queryset(self):
         """
@@ -340,10 +353,21 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def registros_recientes(self, request):
         """
-        Obtiene los registros más recientes
+        Obtiene los registros más recientes.
+        Soporta filtros: ?limite=, ?ficha=, ?programa=, ?rol=, ?estado=dentro|fuera
         """
         limite = int(request.query_params.get('limite', 20))
-        registros = RegistroAcceso.objects.select_related('usuario').all().order_by('-fecha_hora_ingreso')[:limite]
+        ficha = request.query_params.get('ficha', '').strip()
+        programa = request.query_params.get('programa', '').strip()
+
+        qs = RegistroAcceso.objects.select_related('usuario').all().order_by('-fecha_hora_ingreso')
+
+        if ficha:
+            qs = qs.filter(usuario__ficha__icontains=ficha)
+        if programa:
+            qs = qs.filter(usuario__programa_formacion__icontains=programa)
+
+        registros = qs[:limite]
 
         data = []
         for registro in registros:
@@ -353,7 +377,9 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
                     'id': registro.usuario.id,
                     'nombre': registro.usuario.get_full_name(),
                     'documento': registro.usuario.numero_documento,
-                    'rol': registro.usuario.get_rol_display()
+                    'rol': registro.usuario.get_rol_display(),
+                    'ficha': registro.usuario.ficha or '',
+                    'programa_formacion': registro.usuario.programa_formacion or '',
                 },
                 'fecha_hora_ingreso': registro.fecha_hora_ingreso,
                 'fecha_hora_egreso': registro.fecha_hora_egreso,
@@ -370,13 +396,22 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
         Retorna las personas actualmente dentro del centro con sus coordenadas.
         Usado para el monitoreo en tiempo real en el mapa.
         Accesible por VIGILANCIA y ADMINISTRATIVO.
+        Soporta filtros: ?ficha=, ?programa=
         """
         hoy = timezone.now().date()
+        ficha = request.query_params.get('ficha', '').strip()
+        programa = request.query_params.get('programa', '').strip()
+
         registros_activos = RegistroAcceso.objects.filter(
             tipo='INGRESO',
             fecha_hora_egreso__isnull=True,
             fecha_hora_ingreso__date=hoy
         ).select_related('usuario')
+
+        if ficha:
+            registros_activos = registros_activos.filter(usuario__ficha__icontains=ficha)
+        if programa:
+            registros_activos = registros_activos.filter(usuario__programa_formacion__icontains=programa)
 
         personas = []
         for registro in registros_activos:
@@ -385,6 +420,8 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
                 'nombre': registro.usuario.get_full_name() or registro.usuario.username,
                 'rol': registro.usuario.get_rol_display(),
                 'rol_code': registro.usuario.rol,
+                'ficha': registro.usuario.ficha or '',
+                'programa_formacion': registro.usuario.programa_formacion or '',
                 'latitud': registro.latitud_ingreso,
                 'longitud': registro.longitud_ingreso,
                 'hora_ingreso': registro.fecha_hora_ingreso.strftime('%H:%M'),
@@ -531,6 +568,49 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
             'registrados': registrados,
             'errores': errores if errores else None
         }, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['get'], url_path='mi-estado')
+    def mi_estado(self, request):
+        """
+        Retorna el estado de acceso actual del usuario autenticado.
+        No requiere GPS — consulta directamente la BD.
+        GET /api/acceso/registros/mi-estado/
+        """
+        hoy = timezone.now().date()
+        registro = RegistroAcceso.objects.filter(
+            usuario=request.user,
+            tipo='INGRESO',
+            fecha_hora_egreso__isnull=True,
+            fecha_hora_ingreso__date=hoy
+        ).order_by('-fecha_hora_ingreso').first()
+
+        return Response({
+            'en_centro': registro is not None,
+            'hora_ingreso': registro.fecha_hora_ingreso.strftime('%H:%M') if registro else None,
+        })
+
+    @action(detail=False, methods=['get'], url_path='buscar_usuario')
+    def buscar_usuario(self, request):
+        """
+        Busca un usuario por número de documento.
+        GET /api/acceso/registros/buscar_usuario/?documento=<numero>
+        Accesible por VIGILANCIA, ADMINISTRATIVO e INSTRUCTOR.
+        """
+        documento = request.query_params.get('documento', '').strip()
+        if not documento:
+            return Response({'error': 'Se requiere el parámetro documento'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            usuario = Usuario.objects.get(numero_documento=documento, activo=True)
+        except Usuario.DoesNotExist:
+            return Response({'error': 'No se encontró un usuario con ese documento'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({
+            'id': usuario.id,
+            'nombre': usuario.get_full_name() or usuario.username,
+            'rol': usuario.get_rol_display(),
+            'rol_code': usuario.rol,
+            'ficha': usuario.ficha or '',
+            'programa': usuario.programa_formacion or '',
+        })
 
 
 class ConfiguracionAforoViewSet(viewsets.ModelViewSet):

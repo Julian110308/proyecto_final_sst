@@ -3,35 +3,99 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
+from django.http import HttpResponse
+from django.utils import timezone
+from datetime import timedelta
 from .models import Incidente
 from .forms import IncidenteForm
 # Servicio centralizado de notificaciones
 from usuarios.services import NotificacionService
 
 
+def _calcular_sla(incidente):
+    """Devuelve el estado SLA de un incidente no resuelto."""
+    if incidente.estado in ['RESUELTO', 'CERRADO']:
+        return 'ok'
+    horas = (timezone.now() - incidente.fecha_reporte).total_seconds() / 3600
+    if horas > 72:
+        return 'critico'
+    if horas > 24:
+        return 'vencido'
+    if horas > 8:
+        return 'proximo'
+    return 'ok'
+
+
 # Vista SIMPLE: Listar todos los incidentes
 @login_required
 def listar_incidentes(request):
     """
-    Muestra todos los incidentes
-    Los administradores ven todos, los demás solo los suyos
+    Muestra todos los incidentes con filtros avanzados y SLA.
+    Administradores y brigada ven todos; los demás solo los suyos.
     """
-    # Si es admin o brigada, ve todos los incidentes
     if request.user.rol in ['ADMINISTRATIVO', 'BRIGADA']:
-        incidentes = Incidente.objects.select_related('reportado_por').all()
+        incidentes = Incidente.objects.select_related('reportado_por', 'asignado_a').all()
     else:
-        # Los demás solo ven los que reportaron
-        incidentes = Incidente.objects.select_related('reportado_por').filter(reportado_por=request.user)
+        incidentes = Incidente.objects.select_related('reportado_por', 'asignado_a').filter(
+            reportado_por=request.user
+        )
 
-    # Contar por estado (sobre el queryset completo, antes de paginar)
+    # --- Filtros ---
+    q = request.GET.get('q', '').strip()
+    estado = request.GET.get('estado', '')
+    area = request.GET.get('area', '')
+    gravedad = request.GET.get('gravedad', '')
+    fecha_desde = request.GET.get('fecha_desde', '')
+    fecha_hasta = request.GET.get('fecha_hasta', '')
+
+    if q:
+        from django.db.models import Q
+        incidentes = incidentes.filter(
+            Q(titulo__icontains=q) | Q(descripcion__icontains=q) | Q(persona_afectada__icontains=q)
+        )
+    if estado:
+        incidentes = incidentes.filter(estado=estado)
+    if area:
+        incidentes = incidentes.filter(area_incidente=area)
+    if gravedad:
+        incidentes = incidentes.filter(gravedad=gravedad)
+    if fecha_desde:
+        try:
+            from datetime import datetime
+            incidentes = incidentes.filter(
+                fecha_reporte__date__gte=datetime.strptime(fecha_desde, '%Y-%m-%d').date()
+            )
+        except ValueError:
+            pass
+    if fecha_hasta:
+        try:
+            from datetime import datetime
+            incidentes = incidentes.filter(
+                fecha_reporte__date__lte=datetime.strptime(fecha_hasta, '%Y-%m-%d').date()
+            )
+        except ValueError:
+            pass
+
+    # Contar por estado (sobre el queryset filtrado)
     total = incidentes.count()
     reportados = incidentes.filter(estado='REPORTADO').count()
     en_proceso = incidentes.filter(estado__in=['EN_REVISION', 'EN_PROCESO']).count()
     resueltos = incidentes.filter(estado__in=['RESUELTO', 'CERRADO']).count()
+    criticos_sla = incidentes.exclude(estado__in=['RESUELTO', 'CERRADO']).filter(
+        fecha_reporte__lte=timezone.now() - timedelta(hours=72)
+    ).count()
+
+    # Anotar SLA en cada incidente para la tabla
+    incidentes_list = list(incidentes)
+    for inc in incidentes_list:
+        inc.sla_estado = _calcular_sla(inc)
 
     # Paginación: 15 incidentes por página
-    paginator = Paginator(incidentes, 15)
+    paginator = Paginator(incidentes_list, 15)
     page_obj = paginator.get_page(request.GET.get('page'))
+
+    # Choices para filtros en template
+    filtros_activos = any([q, estado, area, gravedad, fecha_desde, fecha_hasta])
 
     context = {
         'incidentes': page_obj,
@@ -40,6 +104,19 @@ def listar_incidentes(request):
         'reportados': reportados,
         'en_proceso': en_proceso,
         'resueltos': resueltos,
+        'criticos_sla': criticos_sla,
+        # Filtros aplicados
+        'q': q,
+        'estado_filtro': estado,
+        'area_filtro': area,
+        'gravedad_filtro': gravedad,
+        'fecha_desde': fecha_desde,
+        'fecha_hasta': fecha_hasta,
+        'filtros_activos': filtros_activos,
+        # Choices para los selects
+        'estado_choices': Incidente.ESTADO_CHOICES,
+        'area_choices': Incidente.AREA_CHOICES,
+        'gravedad_choices': Incidente.GRAVEDAD_CHOICES,
     }
 
     return render(request, 'reportes/incidentes_lista.html', context)
@@ -104,8 +181,16 @@ def detalle_incidente(request, pk):
         messages.error(request, 'No tienes permiso para ver este incidente.')
         return redirect('listar_incidentes')
 
+    # Calcular tiempo transcurrido desde el reporte
+    ahora = timezone.now()
+    delta = ahora - incidente.fecha_reporte
+    horas_transcurridas = delta.total_seconds() / 3600
+    sla_estado = _calcular_sla(incidente)
+
     context = {
-        'incidente': incidente
+        'incidente': incidente,
+        'horas_transcurridas': round(horas_transcurridas, 1),
+        'sla_estado': sla_estado,
     }
 
     return render(request, 'reportes/incidente_detalle.html', context)
@@ -147,7 +232,6 @@ def actualizar_incidente(request, pk):
 
         # Si se marca como resuelto, guardar fecha
         if marcar_resuelto and not incidente.fecha_resolucion:
-            from django.utils import timezone
             incidente.fecha_resolucion = timezone.now()
 
         incidente.save()
@@ -167,3 +251,130 @@ def actualizar_incidente(request, pk):
     }
 
     return render(request, 'reportes/incidente_actualizar.html', context)
+
+
+# Vista: Exportar incidentes a Excel
+@login_required
+def exportar_incidentes_excel(request):
+    """Exporta la lista de incidentes (con filtros activos) a Excel."""
+    if request.user.rol in ['ADMINISTRATIVO', 'BRIGADA']:
+        incidentes = Incidente.objects.select_related('reportado_por', 'asignado_a').all()
+    else:
+        incidentes = Incidente.objects.select_related('reportado_por', 'asignado_a').filter(
+            reportado_por=request.user
+        )
+
+    # Aplicar los mismos filtros que la vista de lista
+    q = request.GET.get('q', '').strip()
+    estado = request.GET.get('estado', '')
+    area = request.GET.get('area', '')
+    gravedad = request.GET.get('gravedad', '')
+    fecha_desde = request.GET.get('fecha_desde', '')
+    fecha_hasta = request.GET.get('fecha_hasta', '')
+
+    if q:
+        from django.db.models import Q
+        incidentes = incidentes.filter(
+            Q(titulo__icontains=q) | Q(descripcion__icontains=q)
+        )
+    if estado:
+        incidentes = incidentes.filter(estado=estado)
+    if area:
+        incidentes = incidentes.filter(area_incidente=area)
+    if gravedad:
+        incidentes = incidentes.filter(gravedad=gravedad)
+    if fecha_desde:
+        try:
+            from datetime import datetime
+            incidentes = incidentes.filter(
+                fecha_reporte__date__gte=datetime.strptime(fecha_desde, '%Y-%m-%d').date()
+            )
+        except ValueError:
+            pass
+    if fecha_hasta:
+        try:
+            from datetime import datetime
+            incidentes = incidentes.filter(
+                fecha_reporte__date__lte=datetime.strptime(fecha_hasta, '%Y-%m-%d').date()
+            )
+        except ValueError:
+            pass
+
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Incidentes'
+
+    # Estilos
+    verde = PatternFill('solid', fgColor='39A900')
+    blanco_bold = Font(bold=True, color='FFFFFF')
+    gris = PatternFill('solid', fgColor='F5F5F5')
+    borde_fino = Border(
+        left=Side(style='thin', color='DDDDDD'),
+        right=Side(style='thin', color='DDDDDD'),
+        top=Side(style='thin', color='DDDDDD'),
+        bottom=Side(style='thin', color='DDDDDD'),
+    )
+
+    # Fila de título
+    ws.merge_cells('A1:K1')
+    titulo_cell = ws['A1']
+    titulo_cell.value = f'Reporte de Incidentes - Centro Minero SENA - {timezone.now().strftime("%d/%m/%Y %H:%M")}'
+    titulo_cell.font = Font(bold=True, size=13, color='FFFFFF')
+    titulo_cell.fill = verde
+    titulo_cell.alignment = Alignment(horizontal='center', vertical='center')
+    ws.row_dimensions[1].height = 22
+
+    # Encabezados
+    headers = [
+        'ID', 'Título', 'Tipo', 'Área', 'Gravedad', 'Estado',
+        'Fecha Incidente', 'Fecha Reporte', 'Fecha Resolución',
+        'Reportado Por', 'Asignado A',
+    ]
+    ws.append(headers)
+    for col, cell in enumerate(ws[2], 1):
+        cell.font = Font(bold=True, color='FFFFFF')
+        cell.fill = PatternFill('solid', fgColor='2E7D32')
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+        cell.border = borde_fino
+
+    ws.row_dimensions[2].height = 16
+
+    # Datos
+    colores_gravedad = {'CRITICA': 'FFEBEE', 'ALTA': 'FFF8E1', 'MEDIA': 'E3F2FD', 'BAJA': 'F1F8E9'}
+    for i, inc in enumerate(incidentes, 3):
+        row = [
+            inc.id,
+            inc.titulo,
+            inc.get_tipo_display(),
+            inc.get_area_incidente_display(),
+            inc.get_gravedad_display(),
+            inc.get_estado_display(),
+            inc.fecha_incidente.strftime('%d/%m/%Y %H:%M') if inc.fecha_incidente else '',
+            inc.fecha_reporte.strftime('%d/%m/%Y %H:%M') if inc.fecha_reporte else '',
+            inc.fecha_resolucion.strftime('%d/%m/%Y %H:%M') if inc.fecha_resolucion else 'Sin resolver',
+            inc.reportado_por.get_full_name() or inc.reportado_por.username,
+            inc.asignado_a.get_full_name() if inc.asignado_a else 'Sin asignar',
+        ]
+        ws.append(row)
+        color_fila = colores_gravedad.get(inc.gravedad, 'FFFFFF')
+        fill = PatternFill('solid', fgColor=color_fila) if i % 2 == 0 else PatternFill('solid', fgColor='FFFFFF')
+        for cell in ws[i]:
+            cell.fill = fill
+            cell.border = borde_fino
+            cell.alignment = Alignment(vertical='center', wrap_text=False)
+
+    # Ancho de columnas
+    anchos = [6, 40, 18, 18, 12, 14, 18, 18, 18, 22, 22]
+    for col_idx, ancho in enumerate(anchos, 1):
+        ws.column_dimensions[ws.cell(row=1, column=col_idx).column_letter].width = ancho
+
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    fecha_str = timezone.now().strftime('%Y%m%d_%H%M')
+    response['Content-Disposition'] = f'attachment; filename="incidentes_{fecha_str}.xlsx"'
+    wb.save(response)
+    return response

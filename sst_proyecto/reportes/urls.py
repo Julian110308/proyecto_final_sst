@@ -7,7 +7,8 @@ from .views_incidentes import (
     listar_incidentes,
     crear_incidente,
     detalle_incidente,
-    actualizar_incidente
+    actualizar_incidente,
+    exportar_incidentes_excel,
 )
 
 # Vista simple para /reportes/ (página principal de reportes)
@@ -32,4 +33,5 @@ urlpatterns = [
     path('incidentes/nuevo/', crear_incidente, name='crear_incidente'),
     path('incidentes/<int:pk>/', detalle_incidente, name='detalle_incidente'),
     path('incidentes/<int:pk>/actualizar/', actualizar_incidente, name='actualizar_incidente'),
+    path('incidentes/exportar/excel/', exportar_incidentes_excel, name='exportar_incidentes_excel'),
 ]

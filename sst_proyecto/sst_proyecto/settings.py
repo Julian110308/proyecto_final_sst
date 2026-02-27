@@ -173,7 +173,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Configuración de Leaflet (Mapas)
 LEAFLET_CONFIG = {
-    'DEFAULT_CENTER': (5.7303596, -72.8943613), # Coordenadas Centro Minero SENA - Vereda Morcá, Sogamoso
+    'DEFAULT_CENTER': (5.7303596, -72.8943613),
     'DEFAULT_ZOOM': 16,
     'MIN_ZOOM': 14,
     'MAX_ZOOM': 19,
@@ -231,6 +231,13 @@ else:
     print("="*70 + "\n")
 
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='SST Centro Minero <noreply@centrominerosst.com>')
+
+# ====================================================================
+# CONFIGURACIÓN WEB PUSH (VAPID)
+# ====================================================================
+VAPID_PUBLIC_KEY = config('VAPID_PUBLIC_KEY', default='')
+VAPID_PRIVATE_KEY = config('VAPID_PRIVATE_KEY', default='')
+VAPID_ADMIN_EMAIL = config('VAPID_ADMIN_EMAIL', default='admin@centrominerosena.edu.co')
 
 # Configuración para recuperación de contraseña
 PASSWORD_RESET_TIMEOUT = 3600  # 1 hora (en segundos)

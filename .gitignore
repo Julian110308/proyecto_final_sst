@@ -90,3 +90,11 @@ Thumbs.db
 *.sqlite3
 migrations/__pycache__/
 __pycache__/
+
+# VAPID keys (claves privadas - nunca subir al repo)
+vapid_private.pem
+vapid_public.pem
+*.pem
+
+# Media (archivos subidos por usuarios - son datos locales)
+sst_proyecto/media/

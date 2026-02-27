@@ -13,14 +13,15 @@
         <h2 class="fw-bold text-dark mb-1"><i class="bi bi-door-open me-2"></i>Control de Acceso</h2>
         <p class="text-muted mb-0">Gestiona el ingreso y salida de personal.</p>
     </div>
-    <div class="d-flex gap-2">
-        <div class="text-end me-3">
-            <small class="text-muted d-block">Personas en centro</small>
-            <span class="fw-bold fs-5" id="aforoActual">--</span>
-            <small class="text-muted">/ <span id="aforoMaximo">--</span></small>
-        </div>
-        <button class="btn btn-white border shadow-sm text-muted" onclick="cargarRegistros()">
-            <i class="bi bi-arrow-clockwise me-2"></i>Actualizar
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'historial_accesos' %}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-clock-history me-1"></i>Historial
+        </a>
+        <a href="{% url 'exportar_accesos_excel' %}" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-file-earmark-excel me-1"></i>Exportar Hoy
+        </a>
+        <button class="btn btn-outline-secondary btn-sm" onclick="cargarTodo()">
+            <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
         </button>
         <button class="btn btn-primary text-white shadow-sm rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#modalRegistroManual">
             <i class="bi bi-plus-lg me-2"></i>Registrar Acceso
@@ -28,17 +29,87 @@
     </div>
 </div>
 
+<!-- Métricas -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0 border-start border-4 border-success">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Personas en Centro</h6>
+                        <h3 class="fw-bold text-dark mb-0" id="metPersonas">--</h3>
+                        <small class="text-muted">de <span id="metAforo">--</span> aforo máximo</small>
+                    </div>
+                    <div class="bg-light-success rounded-3 p-3">
+                        <i class="bi bi-people-fill fs-2 text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0 border-start border-4 border-warning">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Aforo Utilizado</h6>
+                        <h3 class="fw-bold text-dark mb-0" id="metPorcentaje">--%</h3>
+                        <div class="progress mt-1" style="height:5px;">
+                            <div class="progress-bar" id="barraAforo" role="progressbar" style="width:0%"></div>
+                        </div>
+                    </div>
+                    <div class="bg-light-warning rounded-3 p-3">
+                        <i class="bi bi-speedometer2 fs-2 text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0 border-start border-4 border-primary">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Ingresos Hoy</h6>
+                        <h3 class="fw-bold text-dark mb-0" id="metIngresos">--</h3>
+                        <small class="text-muted"><i class="bi bi-box-arrow-in-right"></i> Registros de entrada</small>
+                    </div>
+                    <div class="bg-light-primary rounded-3 p-3">
+                        <i class="bi bi-door-open fs-2 text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0 border-start border-4 border-secondary">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Con Salida Registrada</h6>
+                        <h3 class="fw-bold text-dark mb-0" id="metSalidas">--</h3>
+                        <small class="text-muted"><i class="bi bi-box-arrow-right"></i> Egresos hoy</small>
+                    </div>
+                    <div class="bg-light rounded-3 p-3">
+                        <i class="bi bi-door-closed fs-2 text-secondary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Filtros y Busqueda -->
-<div class="card mb-4">
+<div class="card card-modern mb-4">
     <div class="card-body">
         <div class="row g-3">
-            <div class="col-md-5">
+            <div class="col-md-4">
                 <div class="input-group">
                     <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-search"></i></span>
                     <input type="text" class="form-control bg-light border-start-0 ps-0" placeholder="Buscar por nombre o documento..." id="searchInput">
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <select class="form-select bg-light border-0" id="filterRol">
                     <option value="">Todos los Roles</option>
                     <option value="APRENDIZ">Aprendiz</option>
@@ -48,21 +119,28 @@
                     <option value="BRIGADA">Brigada</option>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <select class="form-select bg-light border-0" id="filterEstado">
                     <option value="">Todos los Estados</option>
                     <option value="dentro">En el Centro</option>
                     <option value="fuera">Salida Registrada</option>
                 </select>
             </div>
+            <div class="col-md-2">
+                <input type="text" class="form-control bg-light border-0" placeholder="Ficha (ej: 2847531)" id="filterFicha">
+            </div>
+            <div class="col-md-2">
+                <input type="text" class="form-control bg-light border-0" placeholder="Programa de formacion" id="filterPrograma">
+            </div>
         </div>
     </div>
 </div>
 
 <!-- Tabla de Registros -->
-<div class="card">
-    <div class="card-header">
-        <h5 class="fw-bold mb-0">Historial de Accesos</h5>
+<div class="card card-modern">
+    <div class="card-header-modern d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0"><i class="bi bi-list-ul me-2"></i>Historial de Accesos</h5>
+        <span class="badge bg-secondary" id="contadorRegistros">0 registros</span>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -71,6 +149,7 @@
                     <tr>
                         <th class="ps-4 py-3 text-muted small fw-bold text-uppercase">Usuario</th>
                         <th class="py-3 text-muted small fw-bold text-uppercase">Rol</th>
+                        <th class="py-3 text-muted small fw-bold text-uppercase">Ficha / Programa</th>
                         <th class="py-3 text-muted small fw-bold text-uppercase">Hora Ingreso</th>
                         <th class="py-3 text-muted small fw-bold text-uppercase">Hora Salida</th>
                         <th class="py-3 text-muted small fw-bold text-uppercase">Estado</th>
@@ -79,7 +158,7 @@
                 </thead>
                 <tbody id="tablaRegistros">
                     <tr>
-                        <td colspan="6" class="text-center py-5 text-muted">
+                        <td colspan="7" class="text-center py-5 text-muted">
                             <div class="spinner-border text-primary mb-2" role="status"></div>
                             <p class="mb-0 small">Cargando registros...</p>
                         </td>
@@ -88,6 +167,9 @@
             </table>
         </div>
     </div>
+    <div class="card-footer bg-transparent">
+        <small class="text-muted" id="ultimaActualizacion">Actualizando...</small>
+    </div>
 </div>
 
 <!-- Modal Registro Manual -->
@@ -95,31 +177,36 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 rounded-4 shadow-lg">
             <div class="modal-header border-0 pb-0 pt-4 px-4">
-                <h5 class="modal-title fw-bold">Registrar Acceso Manual</h5>
+                <h5 class="modal-title fw-bold"><i class="bi bi-person-plus me-2"></i>Registrar Acceso Manual</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
                 <div id="modalAlerta" class="alert d-none mb-3"></div>
-                <form id="formRegistroManual">
-                    <div class="mb-4">
-                        <label class="form-label fw-bold text-muted small text-uppercase">Documento de Identidad</label>
-                        <div class="input-group input-group-lg">
-                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-person-vcard"></i></span>
-                            <input type="text" class="form-control bg-light border-start-0" id="documentoInput" placeholder="Ej: 1052..." required>
-                        </div>
-                        <div id="infoUsuario" class="mt-2 d-none">
-                            <small class="text-success"><i class="bi bi-check-circle me-1"></i><span id="nombreUsuario"></span> - <span id="rolUsuario"></span></small>
-                        </div>
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-muted small text-uppercase">Documento de Identidad</label>
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-person-vcard"></i></span>
+                        <input type="text" class="form-control bg-light border-start-0" id="documentoInput" placeholder="Ej: 1052..." autocomplete="off">
                     </div>
-                    <div class="d-grid gap-3">
-                        <button type="button" class="btn btn-success btn-lg fw-bold shadow-sm" id="btnIngreso" onclick="registrarAcceso('INGRESO')">
-                            <i class="bi bi-box-arrow-in-right me-2"></i>Registrar Ingreso
-                        </button>
-                        <button type="button" class="btn btn-outline-danger border-2 fw-bold" id="btnEgreso" onclick="registrarAcceso('EGRESO')">
-                            <i class="bi bi-box-arrow-right me-2"></i>Registrar Salida
-                        </button>
+                    <div id="infoUsuario" class="mt-2 d-none p-2 border rounded bg-light">
+                        <small class="text-success fw-semibold">
+                            <i class="bi bi-check-circle-fill me-1"></i>
+                            <span id="nombreUsuario"></span>
+                        </small>
+                        <small class="text-muted ms-2">— <span id="rolUsuario"></span></small>
                     </div>
-                </form>
+                    <div id="noEncontrado" class="mt-2 d-none">
+                        <small class="text-danger"><i class="bi bi-x-circle me-1"></i>Usuario no encontrado</small>
+                    </div>
+                </div>
+                <div class="d-grid gap-3">
+                    <button type="button" class="btn btn-success btn-lg fw-bold shadow-sm" id="btnIngreso" onclick="registrarAcceso('INGRESO')" disabled>
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Registrar Ingreso
+                    </button>
+                    <button type="button" class="btn btn-outline-danger border-2 fw-bold" id="btnEgreso" onclick="registrarAcceso('EGRESO')" disabled>
+                        <i class="bi bi-box-arrow-right me-2"></i>Registrar Salida
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -128,59 +215,131 @@
 
 {% block extra_js %}
 <script>
-const TOKEN = '{{ request.auth.key|default:"" }}';
 let todosRegistros = [];
+let usuarioEncontrado = null;
+
+function getCookie(name) {
+    let v = null;
+    document.cookie.split(';').forEach(c => {
+        c = c.trim();
+        if (c.startsWith(name + '=')) v = decodeURIComponent(c.substring(name.length + 1));
+    });
+    return v;
+}
 
 document.addEventListener('DOMContentLoaded', function() {
-    cargarRegistros();
-    cargarAforo();
+    cargarTodo();
 
-    // Buscar usuario al escribir documento
+    // Búsqueda de usuario en modal
     let debounce;
     document.getElementById('documentoInput').addEventListener('input', function() {
         clearTimeout(debounce);
-        debounce = setTimeout(() => buscarUsuario(this.value), 400);
+        const doc = this.value.trim();
+        if (doc.length < 3) {
+            resetBuscador();
+            return;
+        }
+        debounce = setTimeout(() => buscarUsuario(doc), 400);
     });
 
-    // Filtros
+    // Limpiar modal al cerrar
+    document.getElementById('modalRegistroManual').addEventListener('hidden.bs.modal', function() {
+        document.getElementById('documentoInput').value = '';
+        document.getElementById('modalAlerta').classList.add('d-none');
+        resetBuscador();
+    });
+
+    // Filtros locales
     document.getElementById('searchInput').addEventListener('input', filtrarTabla);
     document.getElementById('filterRol').addEventListener('change', filtrarTabla);
     document.getElementById('filterEstado').addEventListener('change', filtrarTabla);
+
+    // Filtros por ficha/programa: recargan desde el servidor
+    let debounceServer;
+    ['filterFicha', 'filterPrograma'].forEach(id => {
+        document.getElementById(id).addEventListener('input', function() {
+            clearTimeout(debounceServer);
+            debounceServer = setTimeout(cargarRegistros, 500);
+        });
+    });
+
+    // Auto-refresh cada 30 segundos
+    setInterval(cargarTodo, 30000);
 });
+
+function resetBuscador() {
+    usuarioEncontrado = null;
+    document.getElementById('infoUsuario').classList.add('d-none');
+    document.getElementById('noEncontrado').classList.add('d-none');
+    document.getElementById('btnIngreso').disabled = true;
+    document.getElementById('btnEgreso').disabled = true;
+}
+
+async function cargarTodo() {
+    cargarAforo();
+    cargarRegistros();
+    cargarEstadisticas();
+}
 
 async function cargarAforo() {
     try {
         const r = await fetch('/api/acceso/config-aforo/aforo_actual/');
         const data = await r.json();
-        document.getElementById('aforoActual').textContent = data.personas_dentro || 0;
-        document.getElementById('aforoMaximo').textContent = data.aforo_maximo || '--';
+        const personas = data.personas_dentro || 0;
+        const maximo = data.aforo_maximo || 0;
+        const pct = maximo > 0 ? Math.round((personas / maximo) * 100) : 0;
+
+        document.getElementById('metPersonas').textContent = personas;
+        document.getElementById('metAforo').textContent = maximo;
+        document.getElementById('metPorcentaje').textContent = pct + '%';
+
+        const barra = document.getElementById('barraAforo');
+        barra.style.width = pct + '%';
+        barra.className = 'progress-bar ' + (pct >= 90 ? 'bg-danger' : pct >= 70 ? 'bg-warning' : 'bg-success');
+    } catch(e) { console.error(e); }
+}
+
+async function cargarEstadisticas() {
+    try {
+        const r = await fetch('/api/acceso/registros/estadisticas/');
+        const data = await r.json();
+        document.getElementById('metIngresos').textContent = data.ingresos_hoy ?? data.total_hoy ?? '--';
+        document.getElementById('metSalidas').textContent = data.egresos_hoy ?? data.salidas_hoy ?? '--';
     } catch(e) { console.error(e); }
 }
 
 async function cargarRegistros() {
     try {
-        const r = await fetch('/api/acceso/registros/registros_recientes/?limite=50');
+        const ficha = document.getElementById('filterFicha')?.value.trim() || '';
+        const programa = document.getElementById('filterPrograma')?.value.trim() || '';
+        let url = '/api/acceso/registros/registros_recientes/?limite=100';
+        if (ficha) url += `&ficha=${encodeURIComponent(ficha)}`;
+        if (programa) url += `&programa=${encodeURIComponent(programa)}`;
+        const r = await fetch(url);
         todosRegistros = await r.json();
-        renderTabla(todosRegistros);
-        cargarAforo();
+        filtrarTabla();
+        const ahora = new Date().toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit'});
+        document.getElementById('ultimaActualizacion').textContent = `Última actualización: ${ahora}`;
     } catch (error) {
         console.error('Error:', error);
-        document.getElementById('tablaRegistros').innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">Error al cargar datos</td></tr>';
+        document.getElementById('tablaRegistros').innerHTML = '<tr><td colspan="7" class="text-center text-danger py-4">Error al cargar datos</td></tr>';
     }
 }
 
 function renderTabla(registros) {
     const tbody = document.getElementById('tablaRegistros');
+    document.getElementById('contadorRegistros').textContent = `${registros.length} registro${registros.length !== 1 ? 's' : ''}`;
+
     if (!registros.length) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No hay registros</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No hay registros</td></tr>';
         return;
     }
     tbody.innerHTML = registros.map(reg => `
         <tr>
             <td class="ps-4">
                 <div class="d-flex align-items-center">
-                    <div class="rounded-circle bg-light text-success d-flex align-items-center justify-content-center me-3 border" style="width:40px;height:40px;">
-                        <span class="fw-bold small">${reg.usuario.nombre.charAt(0)}</span>
+                    <div class="rounded-circle bg-light text-success d-flex align-items-center justify-content-center me-3 border fw-bold" style="width:40px;height:40px;min-width:40px;">
+                        ${reg.usuario.nombre.charAt(0).toUpperCase()}
                     </div>
                     <div>
                         <div class="fw-bold text-dark">${reg.usuario.nombre}</div>
@@ -189,16 +348,20 @@ function renderTabla(registros) {
                 </div>
             </td>
             <td><span class="badge bg-light text-dark border fw-normal">${reg.usuario.rol}</span></td>
+            <td>
+                ${reg.usuario.ficha ? `<div class="fw-semibold small text-dark">${reg.usuario.ficha}</div>` : ''}
+                ${reg.usuario.programa_formacion ? `<div class="small text-muted text-truncate" style="max-width:140px">${reg.usuario.programa_formacion}</div>` : (!reg.usuario.ficha ? '<span class="text-muted small">-</span>' : '')}
+            </td>
             <td class="text-dark fw-medium">${new Date(reg.fecha_hora_ingreso).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})}</td>
             <td class="text-muted">${reg.fecha_hora_egreso ? new Date(reg.fecha_hora_egreso).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'}) : '--:--'}</td>
             <td>
                 ${!reg.fecha_hora_egreso
-                    ? '<span class="badge bg-success-subtle text-success rounded-pill px-3 border border-success-subtle">En Centro</span>'
-                    : '<span class="badge bg-secondary-subtle text-secondary rounded-pill px-3 border border-secondary-subtle">Salida</span>'}
+                    ? '<span class="badge bg-success-subtle text-success rounded-pill px-3 border border-success-subtle"><i class="bi bi-check-circle-fill me-1"></i>En Centro</span>'
+                    : '<span class="badge bg-secondary-subtle text-secondary rounded-pill px-3 border border-secondary-subtle"><i class="bi bi-box-arrow-right me-1"></i>Salida</span>'}
             </td>
             <td class="pe-4 text-end">
                 ${!reg.fecha_hora_egreso
-                    ? `<button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="registrarSalida(${reg.usuario.id})">Registrar Salida</button>`
+                    ? `<button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="registrarSalida(${reg.usuario.id}, this)"><i class="bi bi-box-arrow-right me-1"></i>Salida</button>`
                     : ''}
             </td>
         </tr>
@@ -211,7 +374,11 @@ function filtrarTabla() {
     const estado = document.getElementById('filterEstado').value;
 
     const filtrados = todosRegistros.filter(reg => {
-        const matchBusqueda = !busqueda || reg.usuario.nombre.toLowerCase().includes(busqueda) || reg.usuario.documento.includes(busqueda);
+        const matchBusqueda = !busqueda ||
+            reg.usuario.nombre.toLowerCase().includes(busqueda) ||
+            reg.usuario.documento.includes(busqueda) ||
+            (reg.usuario.ficha || '').toLowerCase().includes(busqueda) ||
+            (reg.usuario.programa_formacion || '').toLowerCase().includes(busqueda);
         const matchRol = !rol || reg.usuario.rol.toUpperCase().includes(rol);
         const matchEstado = !estado || (estado === 'dentro' && !reg.fecha_hora_egreso) || (estado === 'fuera' && reg.fecha_hora_egreso);
         return matchBusqueda && matchRol && matchEstado;
@@ -220,97 +387,86 @@ function filtrarTabla() {
 }
 
 async function buscarUsuario(doc) {
-    const info = document.getElementById('infoUsuario');
-    if (doc.length < 3) { info.classList.add('d-none'); return; }
+    resetBuscador();
     try {
-        const r = await fetch(`/api/acceso/registros/registros_recientes/?limite=50`);
-        const data = await r.json();
-        const found = data.find(d => d.usuario.documento === doc);
-        if (found) {
-            document.getElementById('nombreUsuario').textContent = found.usuario.nombre;
-            document.getElementById('rolUsuario').textContent = found.usuario.rol;
-            info.classList.remove('d-none');
+        const r = await fetch(`/api/acceso/registros/buscar_usuario/?documento=${encodeURIComponent(doc)}`);
+        if (r.ok) {
+            const data = await r.json();
+            usuarioEncontrado = data;
+            document.getElementById('nombreUsuario').textContent = data.nombre;
+            document.getElementById('rolUsuario').textContent = data.rol;
+            document.getElementById('infoUsuario').classList.remove('d-none');
+            document.getElementById('noEncontrado').classList.add('d-none');
+            document.getElementById('btnIngreso').disabled = false;
+            document.getElementById('btnEgreso').disabled = false;
         } else {
-            info.classList.add('d-none');
+            document.getElementById('noEncontrado').classList.remove('d-none');
         }
-    } catch(e) { info.classList.add('d-none'); }
-}
-
-function getCookie(name) {
-    let v = null;
-    document.cookie.split(';').forEach(c => {
-        c = c.trim();
-        if (c.startsWith(name + '=')) v = decodeURIComponent(c.substring(name.length + 1));
-    });
-    return v;
+    } catch(e) {
+        document.getElementById('noEncontrado').classList.remove('d-none');
+    }
 }
 
 async function registrarAcceso(tipo) {
-    const doc = document.getElementById('documentoInput').value.trim();
-    if (!doc) { mostrarAlerta('Ingrese un documento', 'warning'); return; }
+    if (!usuarioEncontrado) {
+        mostrarAlerta('Primero busca un usuario por documento.', 'warning');
+        return;
+    }
 
-    // Buscar usuario por documento
-    const alerta = document.getElementById('modalAlerta');
+    const btn = document.getElementById(tipo === 'INGRESO' ? 'btnIngreso' : 'btnEgreso');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Registrando...';
+
     try {
-        const rUsuarios = await fetch('/api/auth/usuarios/', {headers: {'X-CSRFToken': getCookie('csrftoken')}});
-        const usuarios = await rUsuarios.json();
-        const lista = usuarios.results || usuarios;
-        const usuario = lista.find(u => u.numero_documento === doc);
-
-        if (!usuario) { mostrarAlerta('Usuario no encontrado con ese documento', 'danger'); return; }
-
         const endpoint = tipo === 'INGRESO' ? '/api/acceso/registros/registrar_ingreso/' : '/api/acceso/registros/registrar_egreso/';
         const r = await fetch(endpoint, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
-                usuario_id: usuario.id,
-                metodo: 'MANUAL'
-            })
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+            body: JSON.stringify({ usuario_id: usuarioEncontrado.id, metodo: 'MANUAL' })
         });
         const data = await r.json();
         if (r.ok) {
-            mostrarAlerta(data.mensaje, 'success');
+            mostrarAlerta(data.mensaje || 'Acceso registrado correctamente', 'success');
             document.getElementById('documentoInput').value = '';
-            document.getElementById('infoUsuario').classList.add('d-none');
+            resetBuscador();
             setTimeout(() => {
                 bootstrap.Modal.getInstance(document.getElementById('modalRegistroManual')).hide();
-                cargarRegistros();
+                cargarTodo();
             }, 1200);
         } else {
             mostrarAlerta(data.error || 'Error al registrar', 'danger');
+            btn.disabled = false;
+            btn.innerHTML = tipo === 'INGRESO'
+                ? '<i class="bi bi-box-arrow-in-right me-2"></i>Registrar Ingreso'
+                : '<i class="bi bi-box-arrow-right me-2"></i>Registrar Salida';
         }
     } catch(e) {
         console.error(e);
         mostrarAlerta('Error de conexion', 'danger');
+        btn.disabled = false;
     }
 }
 
-async function registrarSalida(usuarioId) {
+async function registrarSalida(usuarioId, btn) {
     if (!confirm('Registrar salida de este usuario?')) return;
+    btn.disabled = true;
     try {
         const r = await fetch('/api/acceso/registros/registrar_egreso/', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
-                usuario_id: usuarioId,
-                metodo: 'MANUAL'
-            })
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+            body: JSON.stringify({ usuario_id: usuarioId, metodo: 'MANUAL' })
         });
         const data = await r.json();
         if (r.ok) {
-            cargarRegistros();
+            mostrarToast('Salida registrada correctamente', 'success');
+            cargarTodo();
         } else {
-            alert(data.error || 'Error al registrar salida');
+            mostrarToast(data.error || 'Error al registrar salida', 'danger');
+            btn.disabled = false;
         }
     } catch(e) {
-        alert('Error de conexion');
+        mostrarToast('Error de conexion', 'danger');
+        btn.disabled = false;
     }
 }
 

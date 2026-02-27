@@ -25,6 +25,13 @@ from usuarios.services import NotificacionService
 
 
 @login_required
+@excluir_visitantes
+def plano_centro(request):
+    """Plano estático del Centro Minero SENA con edificaciones y rutas de evacuación"""
+    return render(request, 'mapas/plano_centro.html')
+
+
+@login_required
 def campus_svg(request):
     """Mapa SVG interactivo del campus con estados dinamicos y pathfinding"""
     edificios = EdificioBloque.objects.filter(activo=True).select_related('estado_actual')
@@ -177,10 +184,11 @@ def mapa_interactivo(request):
             'longitud',
             'descripcion',  # Este campo viene del modelo base UbicacionBase
             'ultima_revision',
+            'proxima_revision',
             'estado',
             'edificio__nombre',  # Relación con edificio
         )
-        
+
         # Convertir a lista con formato correcto
         equipamientos_data = []
         for equipo in equipamientos:
@@ -189,12 +197,12 @@ def mapa_interactivo(request):
             if equipo['ultima_revision']:
                 from django.utils.dateformat import format
                 ultima_revision_str = format(equipo['ultima_revision'], 'Y-m-d')
-            
+
             # Crear descripción más detallada
             descripcion_completa = equipo['descripcion'] or ""
             if equipo['edificio__nombre']:
                 descripcion_completa += f" | Ubicado en: {equipo['edificio__nombre']}"
-            
+
             equipamientos_data.append({
                 'id': equipo['id'],
                 'tipo': equipo['tipo'],
@@ -202,6 +210,7 @@ def mapa_interactivo(request):
                 'latitud': float(equipo['latitud']),
                 'longitud': float(equipo['longitud']),
                 'ultima_revision': ultima_revision_str,
+                'proxima_revision': equipo['proxima_revision'].isoformat() if equipo['proxima_revision'] else None,
                 'descripcion': descripcion_completa or f"Equipo {equipo['tipo']} - {equipo['codigo']}",
             })
         
@@ -359,19 +368,30 @@ def mapa_interactivo(request):
                 }
             ]
         
-        # 5. PREPARAR CONTEXTO
+        # 5. GEOCERCA DESDE LA BASE DE DATOS
+        # Importamos aquí para evitar import circular (control_acceso.models → mapas.services)
+        from control_acceso.models import Geocerca as GeocercaConfig
+        geocerca_obj = GeocercaConfig.objects.filter(activo=True).first()
+        geocerca_config = {
+            'lat': geocerca_obj.centro_latitud if geocerca_obj else 5.7303596,
+            'lng': geocerca_obj.centro_longitud if geocerca_obj else -72.8943613,
+            'radio': geocerca_obj.radio_metros if geocerca_obj else 400,
+        }
+
+        # 6. PREPARAR CONTEXTO
 
         context = {
             'edificios': edificios_data,
             'puntos_encuentro': puntos_data,
             'equipamiento': equipamientos_data,
             'centro_minero': {
-                'lat': 5.7303596,
-                'lng': -72.8943613,
+                'lat': geocerca_config['lat'],
+                'lng': geocerca_config['lng'],
                 'nombre': 'Centro Nacional Minero SENA - Sogamoso, Vereda Morcá'
-            }
+            },
+            'geocerca': geocerca_config,
         }
-        
+
     except Exception as e:
         # Manejo de errores con datos de ejemplo
         context = {
@@ -449,9 +469,14 @@ def mapa_interactivo(request):
                 'lat': 5.7303596,
                 'lng': -72.8943613,
                 'nombre': 'Centro Nacional Minero SENA - Sogamoso, Vereda Morcá'
-            }
+            },
+            'geocerca': {
+                'lat': 5.7303596,
+                'lng': -72.8943613,
+                'radio': 400,
+            },
         }
-    
+
     return render(request, 'mapas.html', context)
 class EdificioBloqueViewSet(viewsets.ModelViewSet):
     """

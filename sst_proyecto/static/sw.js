@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sst-sena-v4';
+const CACHE_NAME = 'sst-sena-v5';
 const URLS_TO_CACHE = [
   '/accounts/login/',
   '/static/css/design-system.css',
@@ -71,5 +71,44 @@ self.addEventListener('fetch', event => {
         return response;
       })
       .catch(() => caches.match(event.request))
+  );
+});
+
+// ============================================================
+// WEB PUSH: recibir notificaciones cuando la app esta cerrada
+// ============================================================
+self.addEventListener('push', event => {
+  let data = { title: 'SST Centro Minero', body: 'Nueva notificacion', url: '/', icon: '/static/icons/icon-192.png', badge: '/static/icons/icon-192.png' };
+  try {
+    if (event.data) data = { ...data, ...event.data.json() };
+  } catch (e) {}
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: data.icon,
+      badge: data.badge,
+      tag: 'sst-emergencia',
+      requireInteraction: true,
+      vibrate: [200, 100, 200, 100, 200],
+      data: { url: data.url },
+    })
+  );
+});
+
+// Al hacer clic en la notificacion: abrir/enfocar la app
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const url = event.notification.data?.url || '/';
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+      for (const client of clientList) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          client.navigate(url);
+          return client.focus();
+        }
+      }
+      return clients.openWindow(url);
+    })
   );
 });
