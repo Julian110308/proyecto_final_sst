@@ -33,7 +33,7 @@
                     </div>
                     {% endif %}
 
-                    <form method="POST" enctype="multipart/form-data">
+                    <form id="formIncidente" method="POST" enctype="multipart/form-data">
                         {% csrf_token %}
 
                         <!-- SECCION 1: Informacion del Incidente -->
@@ -200,8 +200,13 @@
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-<!-- Modal de confirmación antes de enviar el reporte -->
+<!-- Modal FUERA del card para evitar clipping por overflow:hidden -->
 <div class="modal fade" id="modalConfirmarReporte" tabindex="-1" aria-labelledby="modalConfirmarReporteLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">
@@ -263,11 +268,6 @@
         </div>
     </div>
 </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_css %}
@@ -278,7 +278,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Leaflet ya cargado en base.html -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Mini mapa para seleccionar ubicacion del incidente
@@ -371,9 +371,9 @@ document.addEventListener('DOMContentLoaded', function() {
             btnConfirmarEnvio.disabled = !this.checked;
         });
 
-        // Al confirmar, enviar el formulario real
+        // Al confirmar, enviar el formulario correcto por id
         btnConfirmarEnvio.addEventListener('click', function() {
-            document.querySelector('form').submit();
+            document.getElementById('formIncidente').submit();
         });
 
         // Resetear checkbox cada vez que se abre el modal
