@@ -34,27 +34,33 @@ class UsuarioSerializer(serializers.ModelSerializer):
         return instance
 
 class LoginSerializer(serializers.Serializer):
-    username = serializers.CharField()
+    username = serializers.CharField()   # recibe el email del usuario
     password = serializers.CharField(write_only=True)
 
     def validate(self, data):
-        username = data.get('username')
+        email = data.get('username')
         password = data.get('password')
 
-        if username and password:
+        if not email or not password:
+            raise serializers.ValidationError('Debe proporcionar correo y contraseña.')
+
+        # Buscar usuario por email y autenticar con su username interno
+        from .models import Usuario as UsuarioModel
+        try:
+            usuario_obj = UsuarioModel.objects.get(email__iexact=email)
             usuario = authenticate(
                 request=self.context.get('request'),
-                username=username,
+                username=usuario_obj.username,
                 password=password
             )
-            if not usuario:
-                raise serializers.ValidationError('Credenciales incorrectas.')
-            if not usuario.activo:
-                raise serializers.ValidationError('Usuario inactivo.')
-            
-        else:
-            raise serializers.ValidationError('Debe proporcionar username y password.')
-        
+        except UsuarioModel.DoesNotExist:
+            usuario = None
+
+        if not usuario:
+            raise serializers.ValidationError('Correo o contraseña incorrectos.')
+        if not usuario.activo:
+            raise serializers.ValidationError('Usuario inactivo. Contacta al administrador.')
+
         data['usuario'] = usuario
         return data
 

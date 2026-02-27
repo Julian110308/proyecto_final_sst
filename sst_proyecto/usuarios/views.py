@@ -34,11 +34,8 @@ class UsuarioViewSet(viewsets.ModelViewSet):
 
         return [IsAuthenticated()]
     
-    # Roles que se pueden auto-registrar (sin ser ADMINISTRATIVO)
-    ROLES_AUTO_REGISTRO = ['APRENDIZ', 'INSTRUCTOR', 'BRIGADA', 'VIGILANCIA', 'VISITANTE']
-
     def create(self, request, *args, **kwargs):
-        """Registro de nuevos usuarios - Simplificado"""
+        """Registro de nuevos usuarios - rol asignado automáticamente por dominio de correo"""
         try:
             # Validar contraseñas coincidan
             password = request.data.get('password')
@@ -63,59 +60,61 @@ class UsuarioViewSet(viewsets.ModelViewSet):
                 )
 
             # Validar campos requeridos
-            username = request.data.get('username')
             email = request.data.get('email')
             numero_documento = request.data.get('numero_documento')
             tipo_documento = request.data.get('tipo_documento')
-            rol = request.data.get('rol')
+            first_name = request.data.get('first_name', '').strip()
+            last_name = request.data.get('last_name', '').strip()
 
-            # Restringir roles privilegiados: solo un ADMINISTRATIVO puede crear ADMINISTRATIVO o BRIGADA
-            if rol and rol not in self.ROLES_AUTO_REGISTRO:
-                es_admin = (
-                    request.user
-                    and request.user.is_authenticated
-                    and request.user.rol == 'ADMINISTRATIVO'
-                )
-                if not es_admin:
-                    return Response(
-                        {'error': f'No tienes permiso para registrar usuarios con rol {rol}. Contacta al administrador.'},
-                        status=status.HTTP_403_FORBIDDEN
-                    )
-            
-            if not all([username, email, numero_documento, tipo_documento, rol]):
+            if not all([email, numero_documento, tipo_documento]):
                 return Response(
                     {'error': 'Todos los campos son obligatorios'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            
+
+            if not first_name or not last_name:
+                return Response(
+                    {'error': 'El nombre y apellido son obligatorios'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Asignar rol automáticamente según el dominio del correo
+            # Nota: @soy.sena.edu.co se verifica antes de @sena.edu.co para evitar conflictos
+            email_lower = email.lower()
+            if email_lower.endswith('@soy.sena.edu.co'):
+                rol = 'APRENDIZ'
+            elif email_lower.endswith('@sena.edu.co'):
+                rol = 'INSTRUCTOR'
+            elif email_lower.endswith('@gmail.com'):
+                rol = 'VISITANTE'
+            else:
+                rol = None
+
+            if not rol:
+                return Response(
+                    {'error': 'Solo se permiten correos con dominio @gmail.com, @soy.sena.edu.co o @sena.edu.co'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Generar username automáticamente desde nombre + apellido (título case)
+            base_username = f"{first_name} {last_name}".title()
+            username = base_username
+            counter = 2
+            while Usuario.objects.filter(username=username).exists():
+                username = f"{base_username} {counter}"
+                counter += 1
+
             # Validar que el documento no exista
             if Usuario.objects.filter(numero_documento=numero_documento).exists():
                 return Response(
                     {'error': 'Ya existe un usuario con este número de documento'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            
-            # Validar que el username no exista
-            if Usuario.objects.filter(username=username).exists():
-                return Response(
-                    {'error': 'Este nombre de usuario ya está en uso'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
+
             # Validar que el email no exista
             if Usuario.objects.filter(email=email).exists():
                 return Response(
                     {'error': 'Este correo electrónico ya está registrado'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            # Campos opcionales
-            first_name = request.data.get('first_name', '').strip()
-            last_name = request.data.get('last_name', '').strip()
-
-            if not first_name or not last_name:
-                return Response(
-                    {'error': 'El nombre y apellido son obligatorios'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
