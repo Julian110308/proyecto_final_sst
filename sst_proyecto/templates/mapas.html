@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static l10n %}
 
 {% block extra_css %}
 <!-- Leaflet CSS -->
@@ -333,8 +333,8 @@
 // Coordenadas del Centro Nacional Minero SENA - Vereda Morcá, Sogamoso, Boyacá
 // Valores configurados desde la base de datos (modelo Geocerca)
 const centroMinero = {
-    latitud: {{ geocerca.lat }},
-    longitud: {{ geocerca.lng }},
+    latitud: {{ geocerca.lat|unlocalize }},
+    longitud: {{ geocerca.lng|unlocalize }},
     nombre: 'Centro Nacional Minero SENA - Sogamoso, Vereda Morcá'
 };
 
