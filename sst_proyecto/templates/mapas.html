@@ -52,22 +52,6 @@
         <h1 class="h3 fw-bold text-dark mb-1"><i class="bi bi-map me-2"></i>Mapa Interactivo</h1>
         <p class="text-muted mb-0 d-none d-sm-block">Visualización en tiempo real con geolocalización y datos dinámicos</p>
     </div>
-    <div class="btn-group flex-shrink-0" role="group">
-        <input type="radio" class="btn-check" name="mapaVista" id="vistaNormal" autocomplete="off" checked>
-        <label class="btn btn-outline-primary-custom btn-sm" for="vistaNormal">
-            <i class="bi bi-map me-1"></i><span class="d-none d-sm-inline">Normal</span>
-        </label>
-
-        <input type="radio" class="btn-check" name="mapaVista" id="vistaEmergencia" autocomplete="off">
-        <label class="btn btn-outline-warning btn-sm" for="vistaEmergencia">
-            <i class="bi bi-exclamation-triangle me-1"></i><span class="d-none d-sm-inline">Emergencia</span>
-        </label>
-
-        <input type="radio" class="btn-check" name="mapaVista" id="vistaEvacuacion" autocomplete="off">
-        <label class="btn btn-outline-danger btn-sm" for="vistaEvacuacion">
-            <i class="bi bi-arrow-right-circle me-1"></i><span class="d-none d-sm-inline">Evacuación</span>
-        </label>
-    </div>
 </div>
 
 <div class="row g-4">
@@ -1328,29 +1312,6 @@ function inicializarControles() {
             clearInterval(intervalEmergencias);
             intervalEmergencias = null;
         }
-    });
-
-    // Radio buttons de vista del mapa
-    document.querySelectorAll('input[name="mapaVista"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            if (this.id === 'vistaEmergencia') {
-                capaEmergencias.addTo(mapa);
-                document.getElementById('capaEmergenciasCheck').checked = true;
-                cargarEmergenciasActivas();
-                if (!intervalEmergencias) {
-                    intervalEmergencias = setInterval(cargarEmergenciasActivas, 30000);
-                }
-            } else if (this.id === 'vistaNormal') {
-                mapa.removeLayer(capaEmergencias);
-                document.getElementById('capaEmergenciasCheck').checked = false;
-                clearInterval(intervalEmergencias);
-                intervalEmergencias = null;
-            } else if (this.id === 'vistaEvacuacion') {
-                // Mostrar rutas predefinidas al cambiar a vista evacuación
-                capaRutasPredefinidas.addTo(mapa);
-                document.getElementById('capaRutasCheck').checked = true;
-            }
-        });
     });
 
     // ============================================================

@@ -195,7 +195,7 @@
 
                         <div class="d-flex justify-content-end gap-2">
                             <a href="{% url 'listar_incidentes' %}" class="btn btn-secondary">Cancelar</a>
-                            <button type="button" class="btn btn-danger btn-lg" data-bs-toggle="modal" data-bs-target="#modalConfirmarReporte">
+                            <button type="button" class="btn btn-danger btn-lg" id="btnAbrirModal">
                                 <i class="bi bi-send me-2"></i>Enviar Reporte de Incidente
                             </button>
                         </div>
@@ -237,7 +237,7 @@
                         <span style="font-size: 0.95rem;">⚖️</span>
                         <strong style="font-size: 0.88rem; color: #1a1a1a;">Advertencia Legal</strong>
                     </div>
-                    <p class="mb-0" style="font-size: 0.85rem; color: #78350f; line-height: 1.5;">
+                    <p class="mb-0" style="font-size: 0.85rem; color: #b45309; line-height: 1.5;">
                         Reportar un incidente falso constituye una falta grave y puede acarrear
                         <strong>sanciones disciplinarias y consecuencias legales</strong>
                         conforme a la normativa vigente del SENA y la legislación colombiana.
@@ -259,10 +259,12 @@
 
             <!-- Pie del modal -->
             <div class="modal-footer border-0 pt-2 pb-3 px-4">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="font-size: 0.88rem;">
+                <button type="button" class="btn" data-bs-dismiss="modal"
+                        style="font-size: 0.88rem; background-color: #4b5563; color: #fff; border-radius: 6px; padding: 7px 18px;">
                     <i class="bi bi-x-circle me-1"></i>Cancelar
                 </button>
-                <button type="button" id="btnConfirmarEnvio" class="btn btn-danger" disabled style="font-size: 0.88rem;">
+                <button type="button" id="btnConfirmarEnvio" class="btn" disabled
+                        style="font-size: 0.88rem; background-color: #e05c7d; color: #fff; border-radius: 6px; padding: 7px 18px; opacity: 0.5;">
                     <i class="bi bi-check-circle me-1"></i>Sí, enviar reporte
                 </button>
             </div>
@@ -364,6 +366,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Abrir modal solo al hacer click explícito (evita auto-apertura al recargar)
+    const btnAbrirModal = document.getElementById('btnAbrirModal');
+    if (btnAbrirModal) {
+        btnAbrirModal.addEventListener('click', function() {
+            bootstrap.Modal.getOrCreateInstance(
+                document.getElementById('modalConfirmarReporte')
+            ).show();
+        });
+    }
+
     // Modal de confirmación: habilitar botón solo cuando el checkbox esté marcado
     const checkConfirmacion = document.getElementById('checkConfirmacion');
     const btnConfirmarEnvio = document.getElementById('btnConfirmarEnvio');
@@ -371,6 +383,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (checkConfirmacion && btnConfirmarEnvio) {
         checkConfirmacion.addEventListener('change', function() {
             btnConfirmarEnvio.disabled = !this.checked;
+            btnConfirmarEnvio.style.opacity = this.checked ? '1' : '0.5';
         });
 
         // Al confirmar, enviar el formulario correcto por id

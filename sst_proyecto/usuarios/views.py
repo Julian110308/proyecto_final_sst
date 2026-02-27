@@ -264,13 +264,16 @@ class NotificacionViewSet(viewsets.ModelViewSet):
     def no_leidas(self, request):
         """Retorna solo las notificaciones no leidas"""
         from .models import Notificacion
-        notificaciones = Notificacion.objects.filter(
+        qs = Notificacion.objects.filter(
             destinatario=request.user,
             leida=False
-        ).order_by('-fecha_creacion')[:10]
+        ).order_by('-fecha_creacion')
+
+        total = qs.count()
+        notificaciones = qs[:10]
 
         return Response({
-            'count': notificaciones.count(),
+            'count': total,
             'notificaciones': self.get_serializer(notificaciones, many=True).data
         })
 
