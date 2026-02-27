@@ -365,7 +365,12 @@ def mi_perfil_view(request):
                 usuario.ficha = request.POST.get('ficha', '').strip() or None
 
         # Foto de perfil
-        if 'foto' in request.FILES:
+        if request.POST.get('eliminar_foto') == '1' and usuario.foto:
+            import os
+            if os.path.isfile(usuario.foto.path):
+                os.remove(usuario.foto.path)
+            usuario.foto = None
+        elif 'foto' in request.FILES:
             foto = request.FILES['foto']
             if foto.size > 5 * 1024 * 1024:
                 django_messages.error(request, 'La foto no puede superar 5 MB.')
@@ -456,14 +461,6 @@ def mi_asistencia_view(request):
     }
     
     return render(request, 'dashboard/aprendiz/mi_asistencia.html', context)
-
-@login_required
-@rol_requerido('APRENDIZ')
-def informacion_sst_view(request):
-    """
-    Vista de información SST para el aprendiz
-    """
-    return render(request, 'dashboard/aprendiz/informacion_sst.html')
 
 @login_required
 @excluir_visitantes
@@ -1036,7 +1033,6 @@ urlpatterns = [
     # URLs ESPECÍFICAS PARA APRENDIZ
     # ==============================================
     path('aprendiz/mis-accesos/', mi_asistencia_view, name='mi_asistencia'),
-    path('aprendiz/informacion-sst/', informacion_sst_view, name='informacion_sst'),
     path('aprendiz/alertas/', mis_alertas_view, name='mis_alertas'),
     # ==============================================
 
