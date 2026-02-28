@@ -513,6 +513,7 @@ def mis_alertas_view(request):
     # Para BRIGADA: agregar historial completo de incidentes del sistema
     if request.user.rol == 'BRIGADA':
         from reportes.models import Incidente
+        from django.utils import timezone
         from datetime import timedelta
         todos_incidentes = Incidente.objects.select_related(
             'reportado_por', 'asignado_a'
