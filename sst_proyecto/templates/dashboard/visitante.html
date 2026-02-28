@@ -239,24 +239,47 @@ const destIcon = L.divIcon({
 
 // Cargar puntos de encuentro
 fetch('/api/mapas/api/puntos-encuentro/')
-    .then(r => r.json())
+    .then(r => r.ok ? r.json() : Promise.reject(r.status))
     .then(data => {
-        (data.results || data).forEach(p => {
-            L.marker([p.latitud, p.longitud], {icon: peIcon}).addTo(map)
-                .bindPopup('<b>' + p.nombre + '</b><br>' + (p.descripcion || '') + '<br>Capacidad: ' + (p.capacidad || '-'));
+        const lista = Array.isArray(data.results) ? data.results : (Array.isArray(data) ? data : []);
+        lista.forEach(p => {
+            if (p.latitud && p.longitud) {
+                L.marker([p.latitud, p.longitud], {icon: peIcon}).addTo(map)
+                    .bindPopup('<b>' + p.nombre + '</b><br>' + (p.descripcion || '') + '<br>Capacidad: ' + (p.capacidad || '-'));
+            }
         });
     }).catch(() => {});
 
 // Cargar edificios para el selector de destino
-fetch('/api/mapas/api/edificios/')
-    .then(r => r.json())
-    .then(data => {
-        edificiosVisitante = data.results || data;
-        const select = document.getElementById('selectDestino');
+function cargarEdificiosFallback(select) {
+    const ejemplos = [
+        { nombre: 'Edificio Administrativo', latitud: 5.73047, longitud: -72.89440 },
+        { nombre: 'Bloque de Aulas', latitud: 5.73062, longitud: -72.89425 },
+        { nombre: 'Talleres de Mineria', latitud: 5.73012, longitud: -72.89432 },
+        { nombre: 'Laboratorios de Geologia', latitud: 5.73044, longitud: -72.89392 },
+        { nombre: 'Cafeteria y Bienestar', latitud: 5.73033, longitud: -72.89394 },
+        { nombre: 'Biblioteca', latitud: 5.73059, longitud: -72.89399 },
+        { nombre: 'Mina Didactica', latitud: 5.72980, longitud: -72.89464 },
+    ];
+    ejemplos.forEach(function(e, i) {
+        const opt = document.createElement('option');
+        opt.value = 'ej_' + i;
+        opt.textContent = e.nombre;
+        opt.dataset.lat = e.latitud;
+        opt.dataset.lng = e.longitud;
+        select.appendChild(opt);
+    });
+    edificiosVisitante = ejemplos;
+}
 
-        // Agregar edificios de la BD
-        if (edificiosVisitante.length > 0) {
-            edificiosVisitante.forEach(e => {
+fetch('/api/mapas/api/edificios/')
+    .then(r => r.ok ? r.json() : Promise.reject(r.status))
+    .then(data => {
+        const lista = Array.isArray(data.results) ? data.results : (Array.isArray(data) ? data : []);
+        const select = document.getElementById('selectDestino');
+        if (lista.length > 0) {
+            lista.forEach(e => {
+                if (!e.latitud || !e.longitud) return;
                 const opt = document.createElement('option');
                 opt.value = e.id;
                 opt.textContent = e.nombre + (e.tipo ? ' (' + e.tipo + ')' : '');
@@ -264,46 +287,12 @@ fetch('/api/mapas/api/edificios/')
                 opt.dataset.lng = e.longitud;
                 select.appendChild(opt);
             });
+            edificiosVisitante = lista;
         } else {
-            // Datos de ejemplo si no hay en BD
-            const ejemplos = [
-                { nombre: 'Edificio Administrativo', lat: 5.73047, lng: -72.89440 },
-                { nombre: 'Bloque de Aulas', lat: 5.73062, lng: -72.89425 },
-                { nombre: 'Talleres de Mineria', lat: 5.73012, lng: -72.89432 },
-                { nombre: 'Laboratorios de Geologia', lat: 5.73044, lng: -72.89392 },
-                { nombre: 'Cafeteria y Bienestar', lat: 5.73033, lng: -72.89394 },
-                { nombre: 'Biblioteca', lat: 5.73059, lng: -72.89399 },
-                { nombre: 'Mina Didactica', lat: 5.72980, lng: -72.89464 },
-            ];
-            ejemplos.forEach((e, i) => {
-                const opt = document.createElement('option');
-                opt.value = 'ej_' + i;
-                opt.textContent = e.nombre;
-                opt.dataset.lat = e.lat;
-                opt.dataset.lng = e.lng;
-                select.appendChild(opt);
-            });
-            edificiosVisitante = ejemplos.map((e, i) => ({id: 'ej_' + i, nombre: e.nombre, latitud: e.lat, longitud: e.lng}));
+            cargarEdificiosFallback(select);
         }
     }).catch(() => {
-        // Fallback con datos de ejemplo
-        const select = document.getElementById('selectDestino');
-        const ejemplos = [
-            { nombre: 'Edificio Administrativo', lat: 5.73047, lng: -72.89440 },
-            { nombre: 'Bloque de Aulas', lat: 5.73062, lng: -72.89425 },
-            { nombre: 'Talleres de Mineria', lat: 5.73012, lng: -72.89432 },
-            { nombre: 'Cafeteria y Bienestar', lat: 5.73033, lng: -72.89394 },
-            { nombre: 'Mina Didactica', lat: 5.72980, lng: -72.89464 },
-        ];
-        ejemplos.forEach((e, i) => {
-            const opt = document.createElement('option');
-            opt.value = 'ej_' + i;
-            opt.textContent = e.nombre;
-            opt.dataset.lat = e.lat;
-            opt.dataset.lng = e.lng;
-            select.appendChild(opt);
-        });
-        edificiosVisitante = ejemplos.map((e, i) => ({id: 'ej_' + i, nombre: e.nombre, latitud: e.lat, longitud: e.lng}));
+        cargarEdificiosFallback(document.getElementById('selectDestino'));
     });
 
 // Habilitar boton cuando se selecciona destino
