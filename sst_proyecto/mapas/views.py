@@ -115,9 +115,8 @@ def cambiar_estado_edificio(request, pk):
 
 
 @login_required
-@excluir_visitantes
 def mapa_interactivo(request):
-    """Vista principal del mapa interactivo - TODOS excepto VISITANTE"""
+    """Vista principal del mapa interactivo - Todos los roles"""
     
     try:
         # 1. EDIFICIOS/BLOQUES
