@@ -486,8 +486,9 @@ def mi_asistencia_view(request):
 @excluir_visitantes
 def mis_alertas_view(request):
     """
-    Vista de alertas/notificaciones del usuario
-    Accesible por todos los roles excepto visitante
+    Vista de alertas/notificaciones del usuario.
+    Accesible por todos los roles excepto VISITANTE.
+    Para BRIGADA incluye además el historial completo de incidentes del sistema.
     """
     from usuarios.models import Notificacion
 
@@ -495,9 +496,9 @@ def mis_alertas_view(request):
     notificaciones = Notificacion.objects.filter(destinatario=request.user)
 
     # Separar por estado de lectura
-    no_leidas = notificaciones.filter(leida=False).order_by('-fecha_creacion')[:10]
-    leidas = notificaciones.filter(leida=True).order_by('-fecha_creacion')[:10]
-    historial = notificaciones.order_by('-fecha_creacion')[:20]
+    no_leidas = notificaciones.filter(leida=False).order_by('-fecha_creacion')[:15]
+    leidas = notificaciones.filter(leida=True).order_by('-fecha_creacion')[:15]
+    historial = notificaciones.order_by('-fecha_creacion')[:30]
 
     # Contar no leidas
     total_no_leidas = notificaciones.filter(leida=False).count()
@@ -508,6 +509,30 @@ def mis_alertas_view(request):
         'historial': historial,
         'total_no_leidas': total_no_leidas,
     }
+
+    # Para BRIGADA: agregar historial completo de incidentes del sistema
+    if request.user.rol == 'BRIGADA':
+        from reportes.models import Incidente
+        from datetime import timedelta
+        todos_incidentes = Incidente.objects.select_related(
+            'reportado_por', 'asignado_a'
+        ).order_by('-fecha_reporte')[:50]
+        incidentes_pendientes = Incidente.objects.exclude(
+            estado__in=['RESUELTO', 'CERRADO']
+        ).count()
+        incidentes_criticos_sla = Incidente.objects.exclude(
+            estado__in=['RESUELTO', 'CERRADO']
+        ).filter(
+            fecha_reporte__lte=timezone.now() - timedelta(hours=72)
+        ).count()
+        # Anotar SLA en cada incidente
+        from reportes.views_incidentes import _calcular_sla
+        for inc in todos_incidentes:
+            inc.sla_estado = _calcular_sla(inc)
+        context['todos_incidentes'] = todos_incidentes
+        context['incidentes_pendientes_brigada'] = incidentes_pendientes
+        context['incidentes_criticos_sla_brigada'] = incidentes_criticos_sla
+
     return render(request, 'dashboard/aprendiz/mis_alertas.html', context)
 
 # ==============================================
@@ -1053,7 +1078,7 @@ urlpatterns = [
     # URLs ESPECÍFICAS PARA APRENDIZ
     # ==============================================
     path('aprendiz/mis-accesos/', mi_asistencia_view, name='mi_asistencia'),
-    path('aprendiz/alertas/', mis_alertas_view, name='mis_alertas'),
+    path('alertas/', mis_alertas_view, name='mis_alertas'),
     # ==============================================
 
     # URLs PARA INSTRUCTOR

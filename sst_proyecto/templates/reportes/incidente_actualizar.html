@@ -84,7 +84,8 @@
                 <small class="text-muted">Selecciona el nuevo estado del incidente</small>
             </div>
 
-            <!-- Asignar a -->
+            <!-- Asignar a (solo ADMINISTRATIVO) -->
+            {% if puede_reasignar %}
             <div class="mb-3">
                 <label for="id_asignado_a" class="form-label fw-bold">
                     Asignar a
@@ -99,6 +100,16 @@
                 </select>
                 <small class="text-muted">Persona responsable de resolver el incidente</small>
             </div>
+            {% else %}
+            {% if incidente.asignado_a %}
+            <div class="mb-3">
+                <label class="form-label fw-bold">Asignado a</label>
+                <div class="form-control bg-light text-muted">
+                    <i class="bi bi-person-check me-1"></i>{{ incidente.asignado_a.get_full_name|default:incidente.asignado_a.username }}
+                </div>
+            </div>
+            {% endif %}
+            {% endif %}
 
             <!-- Acciones Tomadas -->
             <div class="mb-4">

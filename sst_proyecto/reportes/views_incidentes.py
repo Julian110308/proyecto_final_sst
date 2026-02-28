@@ -196,20 +196,23 @@ def detalle_incidente(request, pk):
     return render(request, 'reportes/incidente_detalle.html', context)
 
 
-# Vista SIMPLE: Actualizar estado (solo admin)
+# Vista SIMPLE: Actualizar estado (admin y brigada)
 @login_required
 def actualizar_incidente(request, pk):
     """
-    Permite al administrador actualizar el estado y acciones
+    Permite al administrador o a la brigada actualizar el estado y acciones del incidente.
+    Notifica automáticamente al usuario que reportó cuando el estado cambia.
     """
-    # Solo admin puede actualizar
-    if request.user.rol != 'ADMINISTRATIVO':
-        messages.error(request, 'Solo los administradores pueden actualizar incidentes.')
+    if request.user.rol not in ['ADMINISTRATIVO', 'BRIGADA']:
+        messages.error(request, 'No tienes permiso para actualizar incidentes.')
         return redirect('listar_incidentes')
 
     incidente = get_object_or_404(Incidente, pk=pk)
 
     if request.method == 'POST':
+        # Guardar estado anterior para detectar cambios
+        estado_anterior = incidente.estado
+
         # Actualizar estado
         estado = request.POST.get('estado')
         acciones = request.POST.get('acciones_tomadas')
@@ -222,32 +225,52 @@ def actualizar_incidente(request, pk):
         if acciones:
             incidente.acciones_tomadas = acciones
 
-        # Asignar a usuario
-        if asignado_a_id:
-            from usuarios.models import Usuario
-            incidente.asignado_a = Usuario.objects.get(id=asignado_a_id)
-        elif asignado_a_id == '':
-            # Si se deja vacío, quitar asignación
-            incidente.asignado_a = None
+        # Asignar a usuario (solo ADMINISTRATIVO puede reasignar)
+        if request.user.rol == 'ADMINISTRATIVO':
+            if asignado_a_id:
+                from usuarios.models import Usuario
+                incidente.asignado_a = Usuario.objects.get(id=asignado_a_id)
+            elif asignado_a_id == '':
+                incidente.asignado_a = None
 
         # Si se marca como resuelto, guardar fecha
         if marcar_resuelto and not incidente.fecha_resolucion:
             incidente.fecha_resolucion = timezone.now()
 
         incidente.save()
+
+        # Notificar al reportador si el estado cambió
+        if estado and estado_anterior != incidente.estado and incidente.reportado_por:
+            from usuarios.models import Notificacion
+            estado_labels = dict(Incidente.ESTADO_CHOICES)
+            nuevo_estado_label = estado_labels.get(incidente.estado, incidente.estado)
+            detalle_acciones = f' Acciones tomadas: {acciones[:100]}' if acciones else ''
+            prioridad = 'ALTA' if incidente.estado in ['RESUELTO', 'CERRADO'] else 'MEDIA'
+            Notificacion.objects.create(
+                destinatario=incidente.reportado_por,
+                titulo=f'Actualización de tu incidente: {incidente.titulo}',
+                mensaje=f'El estado cambió de "{estado_labels.get(estado_anterior, estado_anterior)}" a "{nuevo_estado_label}".{detalle_acciones}',
+                tipo='INCIDENTE',
+                prioridad=prioridad,
+                url_relacionada=f'/reportes/incidentes/{incidente.pk}/',
+            )
+
         messages.success(request, 'Incidente actualizado exitosamente.')
         return redirect('detalle_incidente', pk=pk)
 
-    # Obtener usuarios disponibles para asignar
-    from usuarios.models import Usuario
-    usuarios_disponibles = Usuario.objects.filter(
-        activo=True,
-        rol__in=['ADMINISTRATIVO', 'INSTRUCTOR', 'BRIGADA']
-    )
+    # Obtener usuarios disponibles para asignar (solo ADMINISTRATIVO puede ver/cambiar asignación)
+    usuarios_disponibles = []
+    if request.user.rol == 'ADMINISTRATIVO':
+        from usuarios.models import Usuario
+        usuarios_disponibles = Usuario.objects.filter(
+            activo=True,
+            rol__in=['ADMINISTRATIVO', 'INSTRUCTOR', 'BRIGADA']
+        )
 
     context = {
         'incidente': incidente,
-        'usuarios_disponibles': usuarios_disponibles
+        'usuarios_disponibles': usuarios_disponibles,
+        'puede_reasignar': request.user.rol == 'ADMINISTRATIVO',
     }
 
     return render(request, 'reportes/incidente_actualizar.html', context)

@@ -12,7 +12,11 @@
 <div class="container-fluid">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
         <h2 class="fw-bold text-dark mb-0">
+            {% if user.rol == 'BRIGADA' %}
+            <i class="bi bi-shield-exclamation me-2 text-danger"></i>Mis Alertas e Historial de Incidentes
+            {% else %}
             <i class="bi bi-bell me-2"></i>Mis Alertas y Notificaciones
+            {% endif %}
         </h2>
         {% if total_no_leidas > 0 %}
         <button class="btn btn-outline-primary flex-shrink-0" onclick="marcarTodasLeidas()">
@@ -21,25 +25,25 @@
         {% endif %}
     </div>
 
-    <!-- Resumen -->
+    <!-- Resumen de notificaciones -->
     <div class="row g-3 mb-4">
-        <div class="col-6 col-md-4">
+        <div class="col-6 {% if user.rol == 'BRIGADA' %}col-md-3{% else %}col-md-4{% endif %}">
             <div class="card card-modern h-100 {% if total_no_leidas > 0 %}border-start border-warning border-4{% endif %}">
                 <div class="card-body text-center">
                     <div class="fs-2 {% if total_no_leidas > 0 %}text-warning{% else %}text-muted{% endif %} fw-bold">{{ total_no_leidas }}</div>
-                    <div class="text-muted small">No Leidas</div>
+                    <div class="text-muted small">Alertas No Leídas</div>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="{% if user.rol == 'BRIGADA' %}col-md-3{% else %}col-md-4{% endif %}">
             <div class="card card-modern h-100">
                 <div class="card-body text-center">
                     <div class="fs-2 text-success fw-bold">{{ leidas|length }}</div>
-                    <div class="text-muted small">Leidas Recientemente</div>
+                    <div class="text-muted small">Leídas Recientemente</div>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="{% if user.rol == 'BRIGADA' %}col-md-3{% else %}col-md-4{% endif %}">
             <div class="card card-modern h-100">
                 <div class="card-body text-center">
                     <div class="fs-2 text-primary fw-bold">{{ historial|length }}</div>
@@ -47,6 +51,16 @@
                 </div>
             </div>
         </div>
+        {% if user.rol == 'BRIGADA' %}
+        <div class="col-md-3">
+            <div class="card card-modern h-100 {% if incidentes_pendientes_brigada > 0 %}border-start border-danger border-4{% endif %}">
+                <div class="card-body text-center">
+                    <div class="fs-2 {% if incidentes_pendientes_brigada > 0 %}text-danger{% else %}text-muted{% endif %} fw-bold">{{ incidentes_pendientes_brigada }}</div>
+                    <div class="text-muted small">Incidentes Pendientes</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Alertas no leidas -->
@@ -151,7 +165,7 @@
     </div>
 
     <!-- Historial -->
-    <div class="card card-modern">
+    <div class="card card-modern {% if user.rol == 'BRIGADA' %}mb-4{% endif %}">
         <div class="card-header bg-light">
             <h6 class="mb-0 fw-bold">
                 <i class="bi bi-clock-history me-2"></i>Historial de Notificaciones
@@ -184,7 +198,7 @@
                             </td>
                             <td>
                                 {% if notif.leida %}
-                                    <span class="badge bg-secondary">Leida</span>
+                                    <span class="badge bg-secondary">Leída</span>
                                 {% else %}
                                     <span class="badge bg-warning text-dark">Pendiente</span>
                                 {% endif %}
@@ -199,6 +213,100 @@
             {% endif %}
         </div>
     </div>
+
+    <!-- ============================================ -->
+    <!-- SECCIÓN EXCLUSIVA PARA BRIGADA               -->
+    <!-- Historial completo de incidentes del sistema -->
+    <!-- ============================================ -->
+    {% if user.rol == 'BRIGADA' %}
+    <div class="card card-modern">
+        <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #1b5e20;">
+            <h6 class="mb-0 fw-bold text-white">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>Historial de Incidentes del Sistema
+                {% if incidentes_criticos_sla_brigada > 0 %}
+                <span class="badge bg-danger ms-2">{{ incidentes_criticos_sla_brigada }} SLA vencidos</span>
+                {% endif %}
+            </h6>
+            <a href="{% url 'listar_incidentes' %}" class="btn btn-sm btn-light">
+                <i class="bi bi-list-ul me-1"></i>Ver todos
+            </a>
+        </div>
+        <div class="card-body p-0">
+            {% if todos_incidentes %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-3">Fecha</th>
+                            <th>Incidente</th>
+                            <th>Gravedad</th>
+                            <th>Estado</th>
+                            <th>SLA</th>
+                            <th>Reportado por</th>
+                            <th class="text-center">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for inc in todos_incidentes %}
+                        <tr class="{% if inc.sla_estado == 'critico' %}table-danger{% elif inc.sla_estado == 'vencido' %}table-warning{% endif %}">
+                            <td class="ps-3">
+                                <small>{{ inc.fecha_reporte|date:"d/m/Y" }}</small><br>
+                                <small class="text-muted">{{ inc.fecha_reporte|date:"H:i" }}</small>
+                            </td>
+                            <td>
+                                <strong class="d-block">{{ inc.titulo|truncatechars:45 }}</strong>
+                                <small class="text-muted">{{ inc.get_tipo_display }}</small>
+                            </td>
+                            <td>
+                                <span class="badge {% if inc.gravedad == 'CRITICA' %}bg-danger{% elif inc.gravedad == 'ALTA' %}bg-warning text-dark{% elif inc.gravedad == 'MEDIA' %}bg-info text-dark{% else %}bg-success{% endif %}">
+                                    {{ inc.get_gravedad_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge {% if inc.estado == 'REPORTADO' %}bg-secondary{% elif inc.estado == 'EN_REVISION' %}bg-primary{% elif inc.estado == 'EN_PROCESO' %}bg-info text-dark{% elif inc.estado == 'RESUELTO' %}bg-success{% else %}bg-dark{% endif %}">
+                                    {{ inc.get_estado_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if inc.sla_estado == 'critico' %}
+                                    <span class="badge bg-danger"><i class="bi bi-exclamation-circle me-1"></i>Crítico</span>
+                                {% elif inc.sla_estado == 'vencido' %}
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Vencido</span>
+                                {% elif inc.sla_estado == 'proximo' %}
+                                    <span class="badge bg-info text-dark"><i class="bi bi-clock me-1"></i>Próximo</span>
+                                {% else %}
+                                    <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>OK</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small>{{ inc.reportado_por.get_full_name|default:inc.reportado_por.username }}</small><br>
+                                <small class="text-muted">{{ inc.reportado_por.get_rol_display }}</small>
+                            </td>
+                            <td class="text-center">
+                                <a href="/reportes/incidentes/{{ inc.pk }}/" class="btn btn-sm btn-outline-primary me-1" title="Ver detalle">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if inc.estado not in 'RESUELTO,CERRADO' %}
+                                <a href="/reportes/incidentes/{{ inc.pk }}/actualizar/" class="btn btn-sm btn-outline-warning" title="Actualizar estado">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-clipboard-check fs-1 d-block mb-2 text-success"></i>
+                <p class="mb-0">No hay incidentes registrados en el sistema</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
 </div>
 {% endblock %}
 
