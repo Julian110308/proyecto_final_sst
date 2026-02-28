@@ -2,6 +2,15 @@
 
 {% block title %}Mi Perfil - SST Centro Minero SENA{% endblock %}
 
+{% block extra_css %}
+<style>
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: .5; transform: scale(1.3); }
+}
+</style>
+{% endblock %}
+
 {% block breadcrumb %}
 <li class="breadcrumb-item active" aria-current="page">Mi Perfil</li>
 {% endblock %}
@@ -33,6 +42,24 @@
                 <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill fs-6">
                     {{ usuario.get_rol_display }}
                 </span>
+
+                <!-- Estado actual -->
+                <div class="mt-2">
+                    {% if en_centro %}
+                    <span class="badge rounded-pill px-3 py-2" style="background:#e6f4ea; color:#1e7e34; font-size:.8rem;">
+                        <span class="me-1" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#28a745;animation:pulse-dot 1.4s infinite;"></span>
+                        En el centro
+                    </span>
+                    {% elif ultimo_acceso %}
+                    <span class="badge rounded-pill px-3 py-2" style="background:#fff3cd; color:#856404; font-size:.8rem;">
+                        <i class="bi bi-door-closed me-1"></i>Fuera del centro
+                    </span>
+                    {% else %}
+                    <span class="badge rounded-pill px-3 py-2" style="background:#f8f9fa; color:#6c757d; font-size:.8rem;">
+                        <i class="bi bi-dash-circle me-1"></i>Sin registros hoy
+                    </span>
+                    {% endif %}
+                </div>
 
                 <hr class="my-3">
 
@@ -265,6 +292,33 @@
                         </div>
                     </div>
 
+                    <!-- Seccion: Programa y Ficha (solo instructores) -->
+                    {% if usuario.rol == 'INSTRUCTOR' %}
+                    <div class="rounded-3 p-3 mb-4" style="background:#f0f7f0; border:1px solid #c3e6c3;">
+                        <p class="fw-semibold small text-uppercase mb-3" style="letter-spacing:.07em; color:#39A900;">
+                            <i class="bi bi-mortarboard me-1"></i>Programa y Ficha asignados
+                        </p>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small">Programa de formacion</label>
+                                <select class="form-select" name="programa_formacion" id="selectProgramaModal">
+                                    <option value="">— Sin asignar —</option>
+                                    <option value="Analisis y Desarrollo de Software" {% if usuario.programa_formacion == 'Analisis y Desarrollo de Software' %}selected{% endif %}>Análisis y Desarrollo de Software</option>
+                                    <option value="Maquinaria Pesada" {% if usuario.programa_formacion == 'Maquinaria Pesada' %}selected{% endif %}>Maquinaria Pesada</option>
+                                    <option value="Seguridad y Salud en el Trabajo" {% if usuario.programa_formacion == 'Seguridad y Salud en el Trabajo' %}selected{% endif %}>Seguridad y Salud en el Trabajo</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small">Ficha</label>
+                                <select class="form-select" name="ficha" id="selectFichaModal">
+                                    <option value="">— Sin asignar —</option>
+                                </select>
+                                <div class="form-text">Las fichas disponibles dependen del programa seleccionado.</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <!-- Seccion: Contacto de emergencia -->
                     <div class="rounded-3 p-3" style="background:#fff5f5; border:1px solid #ffd5d5;">
                         <p class="fw-semibold small text-uppercase mb-3" style="letter-spacing:.07em; color:#dc3545;">
@@ -359,6 +413,35 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
+
+    // Selector dinamico de fichas por programa (solo instructores)
+    const selectPrograma = document.getElementById('selectProgramaModal');
+    const selectFicha = document.getElementById('selectFichaModal');
+    {% if fichas_por_programa_json %}
+    const fichasPorPrograma = {{ fichas_por_programa_json|safe }};
+    const fichaActual = "{{ usuario.ficha|default:'' }}";
+
+    function actualizarFichas(programaSeleccionado) {
+        selectFicha.innerHTML = '<option value="">— Sin asignar —</option>';
+        const fichas = fichasPorPrograma[programaSeleccionado] || [];
+        fichas.forEach(function(f) {
+            const opt = document.createElement('option');
+            opt.value = f;
+            opt.textContent = 'Ficha ' + f;
+            if (f === fichaActual) opt.selected = true;
+            selectFicha.appendChild(opt);
+        });
+    }
+
+    if (selectPrograma && selectFicha) {
+        // Cargar fichas del programa actual al abrir el modal
+        actualizarFichas(selectPrograma.value);
+
+        selectPrograma.addEventListener('change', function() {
+            actualizarFichas(this.value);
+        });
+    }
+    {% endif %}
 });
 </script>
 
