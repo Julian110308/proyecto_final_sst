@@ -277,18 +277,21 @@ fetch('/api/mapas/api/edificios/')
     .then(data => {
         const lista = Array.isArray(data.results) ? data.results : (Array.isArray(data) ? data : []);
         const select = document.getElementById('selectDestino');
-        if (lista.length > 0) {
-            lista.forEach(e => {
-                if (!e.latitud || !e.longitud) return;
-                const opt = document.createElement('option');
-                opt.value = e.id;
-                opt.textContent = e.nombre + (e.tipo ? ' (' + e.tipo + ')' : '');
-                opt.dataset.lat = e.latitud;
-                opt.dataset.lng = e.longitud;
-                select.appendChild(opt);
-            });
-            edificiosVisitante = lista;
-        } else {
+        let added = 0;
+        lista.forEach(e => {
+            const lat = parseFloat(e.latitud);
+            const lng = parseFloat(e.longitud);
+            if (isNaN(lat) || isNaN(lng)) return;
+            const opt = document.createElement('option');
+            opt.value = e.id;
+            opt.textContent = e.nombre + (e.tipo ? ' (' + e.tipo + ')' : '');
+            opt.dataset.lat = lat;
+            opt.dataset.lng = lng;
+            select.appendChild(opt);
+            added++;
+        });
+        edificiosVisitante = lista;
+        if (added === 0) {
             cargarEdificiosFallback(select);
         }
     }).catch(() => {
@@ -326,11 +329,17 @@ document.getElementById('btnGenerarRuta').addEventListener('click', function() {
     const select = document.getElementById('selectDestino');
     const selectedOpt = select.options[select.selectedIndex];
 
-    if (!selectedOpt || !selectedOpt.dataset.lat) return;
+    if (!selectedOpt || !selectedOpt.value) return;
 
     const destLat = parseFloat(selectedOpt.dataset.lat);
     const destLng = parseFloat(selectedOpt.dataset.lng);
-    const destNombre = selectedOpt.textContent;
+
+    if (isNaN(destLat) || isNaN(destLng)) {
+        alert('Este destino no tiene coordenadas validas.');
+        return;
+    }
+
+    const destNombre = selectedOpt.textContent.trim();
 
     // Punto de origen: ubicacion del visitante o centro del mapa
     let origenLat, origenLng;
