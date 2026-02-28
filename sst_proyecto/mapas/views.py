@@ -115,9 +115,8 @@ def cambiar_estado_edificio(request, pk):
 
 
 @login_required
-@excluir_visitantes
 def mapa_interactivo(request):
-    """Vista principal del mapa interactivo - TODOS excepto VISITANTE"""
+    """Vista principal del mapa interactivo - Todos los roles"""
     
     try:
         # 1. EDIFICIOS/BLOQUES
@@ -481,7 +480,7 @@ def mapa_interactivo(request):
 class EdificioBloqueViewSet(viewsets.ModelViewSet):
     """
     ViewSet para edificios/bloques
-    PERMISOS: Todos excepto VISITANTE pueden ver, solo ADMINISTRATIVO puede modificar
+    PERMISOS: Todos (incluido VISITANTE) pueden ver, solo ADMINISTRATIVO puede modificar
     """
     queryset = EdificioBloque.objects.filter(activo=True)
     serializer_class = EdificioBloqueSerializer
@@ -489,12 +488,12 @@ class EdificioBloqueViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
             return [EsAdministrativo()]
-        return [NoEsVisitante()]
+        return [IsAuthenticated()]
 
 class PuntoEncuentroViewSet(viewsets.ModelViewSet):
     """
     ViewSet para puntos de encuentro
-    PERMISOS: Todos excepto VISITANTE
+    PERMISOS: Todos (incluido VISITANTE) pueden ver, solo ADMINISTRATIVO puede modificar
     """
     queryset = PuntoEncuentro.objects.filter(activo=True)
     serializer_class = PuntoEncuentroSerializer
@@ -502,7 +501,7 @@ class PuntoEncuentroViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
             return [EsAdministrativo()]
-        return [NoEsVisitante()]
+        return [IsAuthenticated()]
 
     @action(detail=True, methods=['get'])
     def mas_cercano(self, request):

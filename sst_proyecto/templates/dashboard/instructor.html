@@ -48,7 +48,27 @@
 <div class="row g-3 mb-4">
     {% include 'components/metric-card.html' with label="Aprendices Activos" value=total_aprendices|default:0 sublabel=sublabel_aprendices sublabel_icon="bi bi-people" sublabel_color="muted" icon="bi-people-fill" icon_color="success" border_color="success" %}
     {% include 'components/metric-card.html' with label="Presentes Hoy" value=aprendices_presentes|default:0 sublabel=sublabel_presentes sublabel_icon="bi bi-check-circle" sublabel_color="success" icon="bi-person-check-fill" icon_color="primary" border_color="primary" %}
-    {% include 'components/metric-card.html' with label="Ingresos Hoy" value=ingresos_hoy|default:0 sublabel="Registros de entrada" sublabel_color="muted" icon="bi-door-open" icon_color="info" border_color="info" %}
+
+    <!-- Tarjeta Estado Actual -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-modern border-0">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Estado Actual</h6>
+                        <h3 class="fw-bold mb-0" id="estadoInstructor">
+                            <span class="text-muted"><i class="bi bi-hourglass-split"></i> Verificando...</span>
+                        </h3>
+                        <small class="text-muted" id="estadoInstructorSub">Obteniendo ubicacion...</small>
+                    </div>
+                    <div class="bg-light rounded-3 p-3">
+                        <i class="bi bi-geo-alt fs-2 text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {% include 'components/metric-card.html' with label="Incidentes del Mes" value=incidentes_mes|default:0 sublabel="Reportados este mes" sublabel_icon="bi bi-exclamation-triangle" sublabel_color="warning" icon="bi-exclamation-triangle-fill" icon_color="warning" border_color="warning" %}
 </div>
 
@@ -188,8 +208,91 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
+// Estado actual basado en geocerca via GPS
+(function() {
+    function setEstado(enCentro, sub) {
+        const el = document.getElementById('estadoInstructor');
+        const subEl = document.getElementById('estadoInstructorSub');
+        if (!el) return;
+        if (enCentro) {
+            el.innerHTML = '<span class="text-success"><i class="bi bi-check-circle-fill"></i> En Centro</span>';
+        } else {
+            el.innerHTML = '<span class="text-muted"><i class="bi bi-x-circle-fill"></i> Fuera</span>';
+        }
+        if (subEl) subEl.textContent = sub;
+    }
+
+    function getCsrf() {
+        const m = document.cookie.match(/csrftoken=([^;]+)/);
+        return m ? m[1] : '';
+    }
+
+    var PRECISION_MAXIMA = 500;
+
+    function consultarEstadoBD() {
+        fetch('/api/acceso/registros/mi-estado/')
+            .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
+            .then(function(data) {
+                if (data.en_centro) {
+                    setEstado(true, 'Ingreso: ' + data.hora_ingreso);
+                } else {
+                    setEstado(false, 'Sin ingreso activo hoy');
+                }
+            })
+            .catch(function() { setEstado(false, 'Sin ingreso activo hoy'); });
+    }
+
+    function verificarUbicacion() {
+        if (!navigator.geolocation) {
+            consultarEstadoBD();
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            function(pos) {
+                var precision = pos.coords.accuracy;
+                if (precision > PRECISION_MAXIMA) {
+                    consultarEstadoBD();
+                    return;
+                }
+                fetch('/api/acceso/registros/auto-registro/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+                    body: JSON.stringify({ latitud: pos.coords.latitude, longitud: pos.coords.longitude })
+                })
+                .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
+                .then(function(data) {
+                    if (data.estado === 'DENTRO') {
+                        var msg = data.mensaje || (data.accion === 'INGRESO' ? 'Ingreso registrado' : 'Dentro del centro');
+                        setEstado(true, msg);
+                    } else {
+                        var dist = (data.distancia_metros != null)
+                            ? 'A ' + data.distancia_metros + 'm del centro'
+                            : 'Fuera del centro';
+                        setEstado(false, dist);
+                    }
+                })
+                .catch(function() { consultarEstadoBD(); });
+            },
+            function(err) {
+                if (err.code === 1) {
+                    setEstado(false, 'Activa la ubicacion en tu navegador');
+                } else {
+                    consultarEstadoBD();
+                }
+            },
+            { timeout: 10000, maximumAge: 60000, enableHighAccuracy: true }
+        );
+    }
+
+    verificarUbicacion();
+    setInterval(verificarUbicacion, 120000);
+})();
+
+// Grafica de ingresos
 const ctx = document.getElementById('ingresosChart');
 if (ctx) {
     new Chart(ctx, {

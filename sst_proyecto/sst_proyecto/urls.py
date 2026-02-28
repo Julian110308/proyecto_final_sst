@@ -243,6 +243,16 @@ def dashboard_view(request):
             fecha_reporte__date__gte=inicio_mes
         ).count()
 
+        # Estado actual del instructor (si él mismo está en el centro hoy)
+        registro_instructor = RegistroAcceso.objects.filter(
+            usuario=usuario,
+            tipo='INGRESO',
+            fecha_hora_egreso__isnull=True,
+            fecha_hora_ingreso__date=hoy
+        ).order_by('-fecha_hora_ingreso').first()
+        context['en_centro'] = registro_instructor is not None
+        context['registro_activo'] = registro_instructor
+
     # Datos adicionales para BRIGADA
     if usuario.rol == 'BRIGADA':
         from reportes.models import Incidente
@@ -402,10 +412,20 @@ def mi_perfil_view(request):
         tipo='INGRESO'
     ).order_by('-fecha_hora_ingreso').first()
 
+    # Estado actual para todos los roles
+    registro_activo = RegistroAcceso.objects.filter(
+        usuario=usuario,
+        tipo='INGRESO',
+        fecha_hora_egreso__isnull=True,
+        fecha_hora_ingreso__date=hoy
+    ).order_by('-fecha_hora_ingreso').first()
+
     context = {
         'usuario': usuario,
         'total_accesos_mes': total_accesos_mes,
         'ultimo_acceso': ultimo_acceso,
+        'en_centro': registro_activo is not None,
+        'registro_activo': registro_activo,
     }
 
     # Para instructores: cargar fichas disponibles por programa para el selector dinámico
