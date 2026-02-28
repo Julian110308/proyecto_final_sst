@@ -652,6 +652,78 @@
         <span class="emergencia-text ms-2">EMERGENCIA</span>
     </button>
 
+    <!-- Modal de Seleccion de Tipo de Emergencia -->
+    <div class="modal fade" id="modalEmergencia" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="modalEmergenciaLabel" aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-top: 5px solid #dc3545 !important;">
+                <div class="modal-header" style="background: linear-gradient(135deg, #dc3545, #b02a37);">
+                    <h5 class="modal-title text-white fw-bold" id="modalEmergenciaLabel">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Reportar Emergencia
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cancelar"></button>
+                </div>
+                <div class="modal-body p-4">
+
+                    <!-- Paso 1: Tipo -->
+                    <p class="fw-bold mb-2 text-danger">
+                        <span class="badge bg-danger me-2">1</span>Seleccione el tipo de emergencia:
+                    </p>
+                    <div id="tiposEmergenciaGrid" class="row g-2 mb-4">
+                        <div class="col-12 text-center text-muted py-3">
+                            <div class="spinner-border spinner-border-sm me-2"></div>Cargando tipos...
+                        </div>
+                    </div>
+
+                    <!-- Paso 2: Descripcion -->
+                    <p class="fw-bold mb-2">
+                        <span class="badge bg-secondary me-2">2</span>Describa brevemente la situacion
+                        <span class="text-muted fw-normal small">(opcional pero muy util para la brigada)</span>:
+                    </p>
+                    <textarea id="descripcionEmergencia" class="form-control mb-4" rows="2"
+                        placeholder="Ej: Persona caida en taller, humo visible en pasillo 2, derrame de quimico..."></textarea>
+
+                    <!-- Paso 3: Datos adicionales -->
+                    <p class="fw-bold mb-2">
+                        <span class="badge bg-secondary me-2">3</span>Informacion adicional:
+                    </p>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Personas afectadas:</label>
+                            <input type="number" id="personasAfectadas" class="form-control" min="0" max="999" value="0">
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end pb-1">
+                            <div class="form-check">
+                                <input class="form-check-input border-danger" type="checkbox" id="requiereEvacuacion">
+                                <label class="form-check-label fw-bold text-danger" for="requiereEvacuacion">
+                                    <i class="bi bi-sign-stop-fill me-1"></i>Requiere evacuacion del area
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Protocolo del tipo seleccionado -->
+                    <div id="protocoloEmergencia" class="d-none mt-3 p-3 rounded-3 border-start border-4 border-warning bg-warning bg-opacity-10">
+                        <h6 class="fw-bold mb-1"><i class="bi bi-list-check me-1"></i>Protocolo de respuesta:</h6>
+                        <p class="mb-0 small" id="protocoloTexto"></p>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <div class="text-muted small">
+                        <i class="bi bi-geo-alt me-1"></i>Se enviara su ubicacion GPS automaticamente
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-lg me-1"></i>Cancelar
+                        </button>
+                        <button type="button" class="btn btn-danger fw-bold px-4" id="btnConfirmarEmergencia" disabled>
+                            <i class="bi bi-send-fill me-1"></i>Reportar Emergencia
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- CSRF Token global para peticiones AJAX -->
     {% csrf_token %}
 
@@ -753,17 +825,117 @@
             }
         }
 
-        document.getElementById('botonEmergencia')?.addEventListener('click', async function() {
-            if (!confirm('¿ESTÁS EN UNA SITUACIÓN DE EMERGENCIA?\n\nSe notificará inmediatamente al personal de seguridad.')) {
-                return;
+        // Mapa de iconos por nombre de tipo de emergencia
+        const ICONOS_EMERGENCIA = {
+            'incendio': 'bi-fire', 'fuego': 'bi-fire',
+            'medica': 'bi-heart-pulse-fill', 'medico': 'bi-heart-pulse-fill',
+            'cardiaco': 'bi-heart-pulse-fill', 'salud': 'bi-heart-pulse-fill',
+            'accidente': 'bi-person-fill-dash', 'caida': 'bi-person-fill-dash',
+            'quimico': 'bi-droplet-fill', 'derrame': 'bi-droplet-fill',
+            'sismo': 'bi-tsunami', 'temblor': 'bi-tsunami',
+            'electrico': 'bi-lightning-charge-fill', 'electrica': 'bi-lightning-charge-fill',
+            'evacuacion': 'bi-sign-do-not-enter-fill', 'estructural': 'bi-building-fill-slash',
+        };
+
+        function getIconoTipo(nombre) {
+            const n = (nombre || '').toLowerCase();
+            for (const [key, icon] of Object.entries(ICONOS_EMERGENCIA)) {
+                if (n.includes(key)) return icon;
+            }
+            return 'bi-exclamation-triangle-fill';
+        }
+
+        // Variables del modal
+        let _tipoSeleccionadoId = null;
+        const modalEmergencia = new bootstrap.Modal(document.getElementById('modalEmergencia'));
+
+        // Abrir modal al hacer clic en boton de emergencia
+        document.getElementById('botonEmergencia')?.addEventListener('click', function() {
+            _tipoSeleccionadoId = null;
+            document.getElementById('descripcionEmergencia').value = '';
+            document.getElementById('personasAfectadas').value = '0';
+            document.getElementById('requiereEvacuacion').checked = false;
+            document.getElementById('btnConfirmarEmergencia').disabled = true;
+            document.getElementById('protocoloEmergencia').classList.add('d-none');
+
+            // Poblar tipos de emergencia
+            const grid = document.getElementById('tiposEmergenciaGrid');
+            const tipos = window._tiposEmergencia;
+
+            if (tipos && tipos.length > 0) {
+                grid.innerHTML = tipos.map(t => {
+                    const color = t.color || '#dc3545';
+                    const icono = getIconoTipo(t.nombre);
+                    const prioridad = t.prioridad === 1 ? 'CRITICA' : t.prioridad === 2 ? 'ALTA' : t.prioridad === 3 ? 'MEDIA' : 'BAJA';
+                    const badgeColor = t.prioridad === 1 ? 'danger' : t.prioridad === 2 ? 'warning' : t.prioridad === 3 ? 'info' : 'secondary';
+                    return `
+                    <div class="col-6 col-md-4">
+                        <div class="tipo-emergencia-card card border-2 h-100 text-center p-2"
+                             style="cursor:pointer; border-color: #dee2e6 !important; transition: all .2s;"
+                             data-tipo-id="${t.id}" data-tipo-color="${color}"
+                             data-tipo-protocolo="${(t.protocolo || '').replace(/"/g, '&quot;')}"
+                             onclick="seleccionarTipoEmergencia(this)">
+                            <div class="card-body p-2">
+                                <i class="bi ${icono} fs-2 mb-1 d-block" style="color:${color}"></i>
+                                <div class="fw-bold small">${t.nombre}</div>
+                                <span class="badge bg-${badgeColor} mt-1" style="font-size:.65rem;">${prioridad}</span>
+                                <div class="text-muted" style="font-size:.7rem; margin-top:2px;">
+                                    <i class="bi bi-clock me-1"></i>${t.tiempo_respuesta_minutos || 5} min
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('');
+            } else {
+                // Fallback si no cargaron los tipos
+                grid.innerHTML = `
+                <div class="col-6 col-md-4"><div class="tipo-emergencia-card card border-2 h-100 text-center p-2" style="cursor:pointer;border-color:#dee2e6!important;" data-tipo-id="1" data-tipo-color="#dc3545" data-tipo-protocolo="Llame al personal de seguridad y mantenga la calma." onclick="seleccionarTipoEmergencia(this)"><div class="card-body p-2"><i class="bi bi-exclamation-triangle-fill fs-2 mb-1 d-block text-danger"></i><div class="fw-bold small">Emergencia General</div><span class="badge bg-danger mt-1" style="font-size:.65rem;">CRITICA</span></div></div></div>`;
             }
 
-            this.disabled = true;
-            this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Enviando...';
+            modalEmergencia.show();
+        });
+
+        // Seleccionar tipo de emergencia
+        window.seleccionarTipoEmergencia = function(el) {
+            document.querySelectorAll('.tipo-emergencia-card').forEach(c => {
+                c.style.borderColor = '#dee2e6';
+                c.style.backgroundColor = '';
+                c.style.transform = '';
+            });
+            const color = el.dataset.tipoColor || '#dc3545';
+            el.style.borderColor = color;
+            el.style.backgroundColor = color + '15';
+            el.style.transform = 'scale(1.03)';
+            _tipoSeleccionadoId = parseInt(el.dataset.tipoId);
+            document.getElementById('btnConfirmarEmergencia').disabled = false;
+
+            // Mostrar protocolo si existe
+            const protocolo = el.dataset.tipoProtocolo;
+            const protDiv = document.getElementById('protocoloEmergencia');
+            const protTxt = document.getElementById('protocoloTexto');
+            if (protocolo && protocolo.trim()) {
+                protTxt.textContent = protocolo;
+                protDiv.classList.remove('d-none');
+            } else {
+                protDiv.classList.add('d-none');
+            }
+        };
+
+        // Confirmar y enviar emergencia
+        document.getElementById('btnConfirmarEmergencia')?.addEventListener('click', async function() {
+            if (!_tipoSeleccionadoId) return;
+
+            const btn = this;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Enviando alerta...';
+
+            const descripcion = document.getElementById('descripcionEmergencia').value.trim()
+                || 'Emergencia activada desde boton de emergencia';
+            const personas = parseInt(document.getElementById('personasAfectadas').value) || 0;
+            const evacuacion = document.getElementById('requiereEvacuacion').checked;
 
             try {
                 const coords = await obtenerUbicacion();
-                const tipoId = window._tiposEmergencia.length > 0 ? window._tiposEmergencia[0].id : 1;
 
                 const response = await fetch('/api/emergencias/emergencias/boton_panico/', {
                     method: 'POST',
@@ -772,13 +944,17 @@
                         'X-CSRFToken': obtenerCSRFToken()
                     },
                     body: JSON.stringify({
-                        tipo: tipoId,
-                        descripcion: 'Emergencia activada desde boton de emergencia',
+                        tipo: _tipoSeleccionadoId,
+                        descripcion: descripcion,
                         descripcion_ubicacion: 'Ubicacion GPS del usuario',
                         latitud: coords.latitude,
-                        longitud: coords.longitude
+                        longitud: coords.longitude,
+                        personas_afectadas: personas,
+                        requiere_evacuacion: evacuacion
                     })
                 });
+
+                modalEmergencia.hide();
 
                 if (response.ok) {
                     alert('ALERTA DE EMERGENCIA ENVIADA\n\n' +
@@ -787,18 +963,18 @@
                           'Permanezca seguro y siga las instrucciones del personal.');
                 } else {
                     const errData = await response.json().catch(() => ({}));
-                    console.error('Error respuesta:', response.status, errData);
                     throw new Error(errData.detail || 'Error al enviar la alerta');
                 }
             } catch (error) {
-                console.error('Error en boton de emergencia:', error);
+                console.error('Error en emergencia:', error);
+                modalEmergencia.hide();
                 alert('No se pudo enviar la alerta automaticamente.\n\n' +
                       'Por favor contacta directamente:\n' +
                       '- Emergencias: 123\n' +
                       '- Vigilancia SENA: Ext. 100');
             } finally {
-                this.disabled = false;
-                this.innerHTML = '<i class="bi bi-exclamation-triangle-fill fs-5"></i><span class="emergencia-text ms-2">EMERGENCIA</span>';
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-send-fill me-1"></i>Reportar Emergencia';
             }
         });
 
