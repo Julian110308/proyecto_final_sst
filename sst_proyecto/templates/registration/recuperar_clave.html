@@ -22,7 +22,7 @@
             <span class="input-icon-left">
                 <i class="bi bi-envelope"></i>
             </span>
-            <input type="email" name="email" id="id_email" placeholder="ejemplo@misena.edu.co" required autofocus>
+            <input type="email" name="email" id="id_email" placeholder="tu@correo.com" required autofocus>
         </div>
     </div>
 
@@ -39,13 +39,11 @@
 {% endblock %}
 
 {% block image_side %}
-<div class="sena-logo" style="width: 120px; height: 120px; margin-bottom: 20px;">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Sena_Colombia_logo.svg/1200px-Sena_Colombia_logo.svg.png" 
-         alt="Logo SENA" style="filter: brightness(0) invert(1);">
+<div class="sena-logo">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Sena_Colombia_logo.svg/1200px-Sena_Colombia_logo.svg.png"
+         alt="Logo SENA">
 </div>
 <h2>¿Olvidaste tu clave?</h2>
 <p>No te preocupes, te ayudaremos a recuperar el acceso a tu cuenta de forma segura.</p>
-<div style="margin-top: 30px; font-size: 50px;">
-    <i class="bi bi-shield-lock"></i>
-</div>
+<i class="bi bi-shield-lock"></i>
 {% endblock %}

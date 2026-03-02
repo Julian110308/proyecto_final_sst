@@ -1,0 +1,512 @@
+{% extends 'base.html' %}
+
+{% block title %}Panel Coordinador SST{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Panel Coordinador SST</li>
+{% endblock %}
+
+{% block content %}
+
+<style>
+    .badge-pendiente { background-color: #ff6b35; color: #fff; }
+    .badge-activo    { background-color: #2e7d32; color: #fff; }
+    .badge-bloqueado { background-color: #b71c1c; color: #fff; }
+    .card-coord { border-left: 4px solid #39A900; }
+    .btn-aprobar  { background-color: #2e7d32; color:#fff; border:none; }
+    .btn-aprobar:hover  { background-color: #1a4d1a; color:#fff; }
+    .btn-rechazar { background-color: #b71c1c; color:#fff; border:none; }
+    .btn-rechazar:hover { background-color: #7f1010; color:#fff; }
+    .btn-brigada  { background-color: #0077b6; color:#fff; border:none; }
+    .btn-brigada:hover  { background-color: #023e8a; color:#fff; }
+    .pendientes-badge {
+        position: absolute; top: -6px; right: -6px;
+        background: #ff6b35; color: #fff;
+        border-radius: 50%; width: 22px; height: 22px;
+        font-size: .72rem; display: flex; align-items: center; justify-content: center;
+    }
+    .nav-tabs .nav-link.active { border-bottom: 3px solid #39A900; font-weight: 600; color: #39A900; }
+    .coord-header { background: linear-gradient(135deg, #1a4d2e 0%, #39A900 100%); color: #fff; border-radius: 12px; }
+</style>
+
+<!-- Header -->
+<div class="coord-header p-4 mb-4 d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+    <div>
+        <h1 class="h3 fw-bold mb-1">
+            <i class="bi bi-shield-lock-fill me-2"></i>Panel Coordinador SST
+        </h1>
+        <p class="mb-0 opacity-75">
+            {{ usuario.get_full_name|default:usuario.username }} &mdash; Administración del sistema SST
+        </p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'gestion_usuarios' %}" class="btn btn-light btn-sm">
+            <i class="bi bi-people me-1"></i>Gestionar usuarios
+        </a>
+    </div>
+</div>
+
+<!-- Métricas principales -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card card-coord h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="fs-2 fw-bold text-success">{{ total_activos }}</div>
+                <div class="small text-muted"><i class="bi bi-person-check-fill text-success me-1"></i>Usuarios activos</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card h-100 shadow-sm border-start border-4" style="border-color:#ff6b35 !important;">
+            <div class="card-body text-center">
+                <div class="fs-2 fw-bold" style="color:#ff6b35;">{{ pendientes }}</div>
+                <div class="small text-muted"><i class="bi bi-hourglass-split me-1" style="color:#ff6b35;"></i>Pendientes de aprobación</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card h-100 shadow-sm border-start border-danger border-4">
+            <div class="card-body text-center">
+                <div class="fs-2 fw-bold text-danger">{{ total_bloqueados }}</div>
+                <div class="small text-muted"><i class="bi bi-slash-circle-fill text-danger me-1"></i>Bloqueados</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card h-100 shadow-sm border-start border-info border-4">
+            <div class="card-body text-center">
+                <div class="fs-2 fw-bold text-info">{{ brigada_activa }}</div>
+                <div class="small text-muted"><i class="bi bi-shield-fill text-info me-1"></i>Miembros de brigada</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Distribución por rol -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold">
+        <i class="bi bi-bar-chart-fill text-success me-2"></i>Usuarios activos por rol
+    </div>
+    <div class="card-body p-3">
+        <div class="d-flex flex-wrap gap-2">
+            {% for item in por_rol %}
+            <span class="badge rounded-pill px-3 py-2 fs-6
+                {% if item.rol == 'COORDINADOR_SST' %}bg-dark
+                {% elif item.rol == 'ADMINISTRATIVO' %}bg-danger
+                {% elif item.rol == 'INSTRUCTOR' %}bg-primary
+                {% elif item.rol == 'BRIGADA' %}bg-info
+                {% elif item.rol == 'VIGILANCIA' %}bg-warning text-dark
+                {% elif item.rol == 'APRENDIZ' %}bg-success
+                {% else %}bg-secondary{% endif %}">
+                {{ item.rol|capfirst }} &nbsp;<strong>{{ item.total }}</strong>
+            </span>
+            {% empty %}
+            <span class="text-muted">Sin datos</span>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Pestañas principales -->
+<div class="card shadow-sm">
+    <div class="card-header bg-white p-0">
+        <ul class="nav nav-tabs border-0 px-3" id="coordTabs">
+            <li class="nav-item">
+                <button class="nav-link active px-3 py-3" data-bs-toggle="tab" data-bs-target="#tab-pendientes">
+                    <i class="bi bi-hourglass-split me-1"></i>Pendientes
+                    {% if pendientes > 0 %}
+                    <span class="badge ms-1" style="background:#ff6b35;">{{ pendientes }}</span>
+                    {% endif %}
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link px-3 py-3" data-bs-toggle="tab" data-bs-target="#tab-usuarios">
+                    <i class="bi bi-people-fill me-1"></i>Todos los usuarios
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link px-3 py-3" data-bs-toggle="tab" data-bs-target="#tab-brigada">
+                    <i class="bi bi-shield-fill me-1"></i>Brigada
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <div class="card-body tab-content p-3">
+
+        <!-- TAB: PENDIENTES -->
+        <div class="tab-pane fade show active" id="tab-pendientes">
+            <div id="pendientes-container">
+                <div class="text-center py-4 text-muted">
+                    <div class="spinner-border spinner-border-sm me-2"></div> Cargando...
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: TODOS LOS USUARIOS -->
+        <div class="tab-pane fade" id="tab-usuarios">
+            <!-- Filtros -->
+            <div class="row g-2 mb-3">
+                <div class="col-md-5">
+                    <input type="text" id="filtro-nombre" class="form-control form-control-sm"
+                           placeholder="Buscar por nombre, correo o documento..."
+                           oninput="filtrarUsuarios()">
+                </div>
+                <div class="col-md-3">
+                    <select id="filtro-rol" class="form-select form-select-sm" onchange="filtrarUsuarios()">
+                        <option value="">Todos los roles</option>
+                        <option value="COORDINADOR_SST">Coordinador SST</option>
+                        <option value="INSTRUCTOR">Instructor</option>
+                        <option value="ADMINISTRATIVO">Administrativo</option>
+                        <option value="VIGILANCIA">Vigilancia</option>
+                        <option value="BRIGADA">Brigada</option>
+                        <option value="APRENDIZ">Aprendiz</option>
+                        <option value="VISITANTE">Visitante</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select id="filtro-estado" class="form-select form-select-sm" onchange="filtrarUsuarios()">
+                        <option value="">Todos</option>
+                        <option value="ACTIVO">Activo</option>
+                        <option value="PENDIENTE">Pendiente</option>
+                        <option value="BLOQUEADO">Bloqueado</option>
+                    </select>
+                </div>
+            </div>
+            <div id="usuarios-container">
+                <div class="text-center py-4 text-muted">
+                    <div class="spinner-border spinner-border-sm me-2"></div> Cargando...
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: BRIGADA -->
+        <div class="tab-pane fade" id="tab-brigada">
+            <div id="brigada-container">
+                <div class="text-center py-4 text-muted">
+                    <div class="spinner-border spinner-border-sm me-2"></div> Cargando...
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Modal aprobar con cambio de rol -->
+<div class="modal fade" id="modalAprobar" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header" style="background:linear-gradient(135deg,#1a4d2e,#39A900);color:#fff;">
+                <h6 class="modal-title"><i class="bi bi-check-circle me-2"></i>Aprobar cuenta</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small mb-2">Confirma el rol para <strong id="aprobar-nombre"></strong>:</p>
+                <select id="aprobar-rol" class="form-select form-select-sm">
+                    <option value="INSTRUCTOR">Instructor</option>
+                    <option value="ADMINISTRATIVO">Administrativo</option>
+                    <option value="VIGILANCIA">Vigilancia</option>
+                    <option value="BRIGADA">Brigada</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn btn-sm btn-aprobar" onclick="confirmarAprobacion()">
+                    <i class="bi bi-check-lg me-1"></i>Aprobar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast de notificación -->
+<div id="toastCoord" class="position-fixed bottom-0 end-0 p-3" style="z-index:9999;">
+    <div id="toastMsg" class="toast align-items-center text-white border-0" role="alert">
+        <div class="d-flex">
+            <div class="toast-body" id="toastBody"></div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+
+<script>
+const CSRF = document.querySelector('[name=csrfmiddlewaretoken]')
+    ? document.querySelector('[name=csrfmiddlewaretoken]').value
+    : '{{ csrf_token }}';
+
+let todoUsuarios = [];
+let idPendienteActual = null;
+
+// ── Utilidades ──────────────────────────────────────────────────────────
+function showToast(msg, ok = true) {
+    const el = document.getElementById('toastMsg');
+    el.className = `toast align-items-center text-white border-0 bg-${ok ? 'success' : 'danger'}`;
+    document.getElementById('toastBody').textContent = msg;
+    new bootstrap.Toast(el, { delay: 3500 }).show();
+}
+
+function rolBadge(rol) {
+    const mapa = {
+        COORDINADOR_SST: 'dark', ADMINISTRATIVO: 'danger', INSTRUCTOR: 'primary',
+        BRIGADA: 'info', VIGILANCIA: 'warning', APRENDIZ: 'success', VISITANTE: 'secondary'
+    };
+    const color = mapa[rol] || 'secondary';
+    return `<span class="badge bg-${color}">${rol}</span>`;
+}
+
+function estadoBadge(estado) {
+    if (estado === 'ACTIVO')    return '<span class="badge badge-activo">Activo</span>';
+    if (estado === 'PENDIENTE') return '<span class="badge badge-pendiente">Pendiente</span>';
+    return '<span class="badge badge-bloqueado">Bloqueado</span>';
+}
+
+// ── Cargar pendientes ────────────────────────────────────────────────────
+function cargarPendientes() {
+    fetch('/api/auth/usuarios/pendientes/', {
+        headers: { 'X-CSRFToken': CSRF, 'Accept': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        const c = document.getElementById('pendientes-container');
+        if (!data.pendientes || data.pendientes.length === 0) {
+            c.innerHTML = `<div class="text-center py-5 text-muted">
+                <i class="bi bi-check-circle fs-2 d-block mb-2 text-success"></i>
+                No hay solicitudes pendientes.
+            </div>`;
+            return;
+        }
+        const rows = data.pendientes.map(u => `
+            <tr>
+                <td>
+                    <div class="fw-semibold">${u.nombre}</div>
+                    <div class="small text-muted">${u.email}</div>
+                </td>
+                <td>${rolBadge(u.rol_solicitado)}</td>
+                <td class="small text-muted">${u.tipo_documento}: ${u.numero_documento}</td>
+                <td class="small text-muted">${u.fecha_registro}</td>
+                <td>
+                    <div class="d-flex gap-1">
+                        <button class="btn btn-sm btn-aprobar" onclick="abrirModalAprobar(${u.id}, '${u.nombre}', '${u.rol_solicitado}')">
+                            <i class="bi bi-check-lg"></i> Aprobar
+                        </button>
+                        <button class="btn btn-sm btn-rechazar" onclick="rechazarCuenta(${u.id}, '${u.nombre}')">
+                            <i class="bi bi-x-lg"></i> Rechazar
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+        c.innerHTML = `
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light small">
+                        <tr>
+                            <th>Usuario</th><th>Rol solicitado</th>
+                            <th>Documento</th><th>Fecha solicitud</th><th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>`;
+    })
+    .catch(() => {
+        document.getElementById('pendientes-container').innerHTML =
+            '<div class="alert alert-danger small">Error al cargar pendientes.</div>';
+    });
+}
+
+// ── Modal aprobar ────────────────────────────────────────────────────────
+function abrirModalAprobar(id, nombre, rolActual) {
+    idPendienteActual = id;
+    document.getElementById('aprobar-nombre').textContent = nombre;
+    document.getElementById('aprobar-rol').value = rolActual;
+    new bootstrap.Modal(document.getElementById('modalAprobar')).show();
+}
+
+function confirmarAprobacion() {
+    const rol = document.getElementById('aprobar-rol').value;
+    fetch(`/api/auth/usuarios/${idPendienteActual}/aprobar/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rol })
+    })
+    .then(r => r.json())
+    .then(data => {
+        bootstrap.Modal.getInstance(document.getElementById('modalAprobar')).hide();
+        if (data.success) {
+            showToast(data.mensaje, true);
+            cargarPendientes();
+            cargarUsuarios();
+            setTimeout(() => location.reload(), 3000);
+        } else {
+            showToast(data.error || 'Error al aprobar', false);
+        }
+    });
+}
+
+// ── Rechazar ─────────────────────────────────────────────────────────────
+function rechazarCuenta(id, nombre) {
+    if (!confirm(`¿Rechazar la solicitud de ${nombre}? La cuenta quedará bloqueada.`)) return;
+    fetch(`/api/auth/usuarios/${id}/rechazar/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.mensaje, true);
+            cargarPendientes();
+            setTimeout(() => location.reload(), 2500);
+        } else {
+            showToast(data.error || 'Error al rechazar', false);
+        }
+    });
+}
+
+// ── Cargar todos los usuarios ─────────────────────────────────────────────
+function cargarUsuarios() {
+    fetch('/api/auth/usuarios/', {
+        headers: { 'X-CSRFToken': CSRF, 'Accept': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        todoUsuarios = Array.isArray(data) ? data : (data.results || []);
+        renderTablaUsuarios(todoUsuarios);
+    })
+    .catch(() => {
+        document.getElementById('usuarios-container').innerHTML =
+            '<div class="alert alert-danger small">Error al cargar usuarios.</div>';
+    });
+}
+
+function filtrarUsuarios() {
+    const texto = document.getElementById('filtro-nombre').value.toLowerCase();
+    const rol   = document.getElementById('filtro-rol').value;
+    const estado = document.getElementById('filtro-estado').value;
+    const filtrados = todoUsuarios.filter(u => {
+        const matchTexto = !texto ||
+            (u.first_name + ' ' + u.last_name).toLowerCase().includes(texto) ||
+            (u.email || '').toLowerCase().includes(texto) ||
+            (u.numero_documento || '').includes(texto);
+        const matchRol   = !rol   || u.rol === rol;
+        const matchEstado = !estado || u.estado_cuenta === estado;
+        return matchTexto && matchRol && matchEstado;
+    });
+    renderTablaUsuarios(filtrados);
+}
+
+function renderTablaUsuarios(lista) {
+    const c = document.getElementById('usuarios-container');
+    if (!lista.length) {
+        c.innerHTML = '<div class="text-center py-4 text-muted">Sin resultados.</div>';
+        return;
+    }
+    const rows = lista.map(u => {
+        const nombre = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username;
+        const esBrigada = u.es_brigada;
+        return `<tr>
+            <td>
+                <div class="fw-semibold">${nombre}</div>
+                <div class="small text-muted">${u.email}</div>
+            </td>
+            <td>${rolBadge(u.rol)}</td>
+            <td>${estadoBadge(u.estado_cuenta || 'ACTIVO')}</td>
+            <td>
+                <button class="btn btn-sm ${esBrigada ? 'btn-brigada' : 'btn-outline-secondary'}"
+                        onclick="toggleBrigada(${u.id}, '${nombre}')"
+                        title="${esBrigada ? 'Quitar de brigada' : 'Agregar a brigada'}">
+                    <i class="bi bi-shield${esBrigada ? '-fill' : ''}"></i>
+                    ${esBrigada ? 'En brigada' : 'Brigada'}
+                </button>
+            </td>
+        </tr>`;
+    }).join('');
+    c.innerHTML = `
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                    <tr><th>Usuario</th><th>Rol</th><th>Estado</th><th>Brigada</th></tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+        </div>`;
+}
+
+// ── Toggle brigada ────────────────────────────────────────────────────────
+function toggleBrigada(id, nombre) {
+    fetch(`/api/auth/usuarios/${id}/brigada/`, {
+        method: 'PATCH',
+        headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.mensaje, true);
+            cargarUsuarios();
+            cargarBrigada();
+            setTimeout(() => location.reload(), 2500);
+        } else {
+            showToast(data.error || 'Error', false);
+        }
+    });
+}
+
+// ── Cargar brigada ────────────────────────────────────────────────────────
+function cargarBrigada() {
+    fetch('/api/auth/usuarios/?es_brigada=true', {
+        headers: { 'X-CSRFToken': CSRF, 'Accept': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        const lista = (Array.isArray(data) ? data : (data.results || []))
+            .filter(u => u.es_brigada);
+        const c = document.getElementById('brigada-container');
+        if (!lista.length) {
+            c.innerHTML = `<div class="text-center py-5 text-muted">
+                <i class="bi bi-shield-x fs-2 d-block mb-2"></i>
+                Aún no hay miembros de brigada asignados.
+                <div class="small mt-1">Actívalos desde la pestaña "Todos los usuarios".</div>
+            </div>`;
+            return;
+        }
+        // Agrupar por rol
+        const grupos = {};
+        lista.forEach(u => {
+            if (!grupos[u.rol]) grupos[u.rol] = [];
+            grupos[u.rol].push(u);
+        });
+        let html = '';
+        for (const [rol, miembros] of Object.entries(grupos)) {
+            html += `<div class="mb-3">
+                <h6 class="fw-semibold mb-2">${rolBadge(rol)} <span class="text-muted small">(${miembros.length})</span></h6>
+                <div class="d-flex flex-wrap gap-2">`;
+            miembros.forEach(u => {
+                const nombre = `${u.first_name||''} ${u.last_name||''}`.trim() || u.username;
+                html += `<div class="badge bg-light text-dark border d-flex align-items-center gap-2 px-3 py-2">
+                    <i class="bi bi-shield-fill text-info"></i> ${nombre}
+                    <button class="btn btn-sm p-0 ms-1 text-danger" style="line-height:1;"
+                            onclick="toggleBrigada(${u.id}, '${nombre}')" title="Quitar de brigada">
+                        <i class="bi bi-x-circle"></i>
+                    </button>
+                </div>`;
+            });
+            html += '</div></div>';
+        }
+        c.innerHTML = html;
+    });
+}
+
+// ── Inicialización ────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    cargarPendientes();
+
+    document.querySelectorAll('#coordTabs button').forEach(btn => {
+        btn.addEventListener('shown.bs.tab', (e) => {
+            const target = e.target.getAttribute('data-bs-target');
+            if (target === '#tab-usuarios' && todoUsuarios.length === 0) cargarUsuarios();
+            if (target === '#tab-brigada') cargarBrigada();
+        });
+    });
+});
+</script>
+{% endblock %}

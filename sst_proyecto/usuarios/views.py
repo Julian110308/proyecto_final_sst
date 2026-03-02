@@ -78,19 +78,29 @@ class UsuarioViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Asignar rol automáticamente según el dominio del correo
-            # Nota: @soy.sena.edu.co se verifica antes de @sena.edu.co para evitar conflictos
+            # Asignar rol y estado según el dominio del correo
+            # @soy.sena.edu.co → APRENDIZ (directo)
+            # @sena.edu.co     → rol elegido por el usuario, queda PENDIENTE
+            # @gmail.com       → VISITANTE (directo)
             email_lower = email.lower()
+            estado_cuenta = 'ACTIVO'
+
             if email_lower.endswith('@soy.sena.edu.co'):
                 rol = 'APRENDIZ'
             elif email_lower.endswith('@sena.edu.co'):
-                rol = 'INSTRUCTOR'
+                # El usuario elige su rol; si no lo envía, default INSTRUCTOR
+                rol = request.data.get('rol_solicitado', '').upper()
+                roles_sena = ['INSTRUCTOR', 'ADMINISTRATIVO', 'VIGILANCIA']
+                if rol not in roles_sena:
+                    return Response(
+                        {'error': 'Para correos @sena.edu.co debes seleccionar tu rol: INSTRUCTOR, ADMINISTRATIVO o VIGILANCIA'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                # La cuenta queda pendiente de aprobación del Coordinador SST
+                estado_cuenta = 'PENDIENTE'
             elif email_lower.endswith('@gmail.com'):
                 rol = 'VISITANTE'
             else:
-                rol = None
-
-            if not rol:
                 return Response(
                     {'error': 'Solo se permiten correos con dominio @gmail.com, @soy.sena.edu.co o @sena.edu.co'},
                     status=status.HTTP_400_BAD_REQUEST
@@ -134,6 +144,7 @@ class UsuarioViewSet(viewsets.ModelViewSet):
                 email=email,
                 password=password,
                 rol=rol,
+                estado_cuenta=estado_cuenta,
                 tipo_documento=tipo_documento,
                 numero_documento=numero_documento,
                 first_name=first_name,
@@ -141,17 +152,28 @@ class UsuarioViewSet(viewsets.ModelViewSet):
                 ficha=ficha if rol == 'APRENDIZ' else None,
                 programa_formacion=programa_formacion if rol == 'APRENDIZ' else None,
             )
-            
-            # Crear token
-            token, created = Token.objects.get_or_create(user=usuario)
-            
+
+            # Crear token solo para cuentas activas
+            token = None
+            if estado_cuenta == 'ACTIVO':
+                token, _ = Token.objects.get_or_create(user=usuario)
+
+            if estado_cuenta == 'PENDIENTE':
+                mensaje = (
+                    'Tu solicitud fue recibida. Tu cuenta está pendiente de aprobación '
+                    'por el Coordinador SST. Recibirás acceso una vez sea aprobada.'
+                )
+            else:
+                mensaje = 'Usuario registrado exitosamente. Ya puedes iniciar sesión.'
+
             return Response({
                 'id': usuario.id,
                 'username': usuario.username,
                 'email': usuario.email,
                 'rol': usuario.rol,
-                'token': token.key,
-                'mensaje': 'Usuario registrado exitosamente. Ya puedes iniciar sesión.'
+                'estado_cuenta': usuario.estado_cuenta,
+                'token': token.key if token else None,
+                'mensaje': mensaje,
             }, status=status.HTTP_201_CREATED)
             
         except Exception as e:
@@ -160,6 +182,15 @@ class UsuarioViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
     
+    @action(detail=False, methods=['get'], url_path='verificar_email', permission_classes=[AllowAny])
+    def verificar_email(self, request):
+        """Verifica si un email ya está registrado. Público, devuelve solo booleano."""
+        email = request.query_params.get('email', '').strip().lower()
+        if not email:
+            return Response({'exists': False})
+        exists = Usuario.objects.filter(email__iexact=email).exists()
+        return Response({'exists': exists})
+
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def login(self, request):
         serializer = LoginSerializer(data=request.data, context={'request': request})
@@ -188,6 +219,101 @@ class UsuarioViewSet(viewsets.ModelViewSet):
     def perfil(self, request):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='pendientes')
+    def pendientes(self, request):
+        """Lista usuarios con estado PENDIENTE — solo COORDINADOR_SST"""
+        from .permissions import EsCoordinador
+        if not EsCoordinador().has_permission(request, self):
+            return Response({'error': 'No autorizado'}, status=status.HTTP_403_FORBIDDEN)
+
+        qs = Usuario.objects.filter(estado_cuenta='PENDIENTE').order_by('-fecha_registro')
+        data = [
+            {
+                'id': u.id,
+                'nombre': u.get_full_name() or u.username,
+                'email': u.email,
+                'rol_solicitado': u.rol,
+                'tipo_documento': u.tipo_documento,
+                'numero_documento': u.numero_documento,
+                'fecha_registro': u.fecha_registro.strftime('%d/%m/%Y %H:%M'),
+            }
+            for u in qs
+        ]
+        return Response({'total': len(data), 'pendientes': data})
+
+    @action(detail=True, methods=['post'], url_path='aprobar')
+    def aprobar(self, request, pk=None):
+        """Aprueba una cuenta pendiente y opcionalmente cambia el rol — solo COORDINADOR_SST"""
+        from .permissions import EsCoordinador
+        from rest_framework.authtoken.models import Token
+        if not EsCoordinador().has_permission(request, self):
+            return Response({'error': 'No autorizado'}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            usuario = Usuario.objects.get(pk=pk, estado_cuenta='PENDIENTE')
+        except Usuario.DoesNotExist:
+            return Response({'error': 'Usuario pendiente no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+        # El coordinador puede confirmar o cambiar el rol antes de aprobar
+        nuevo_rol = request.data.get('rol', usuario.rol).upper()
+        roles_validos = ['INSTRUCTOR', 'ADMINISTRATIVO', 'VIGILANCIA', 'BRIGADA']
+        if nuevo_rol not in roles_validos:
+            return Response({'error': f'Rol inválido. Opciones: {roles_validos}'}, status=status.HTTP_400_BAD_REQUEST)
+
+        usuario.rol = nuevo_rol
+        usuario.estado_cuenta = 'ACTIVO'
+        usuario.activo = True
+        usuario.save()
+        Token.objects.get_or_create(user=usuario)
+
+        return Response({
+            'success': True,
+            'mensaje': f'Cuenta de {usuario.get_full_name()} aprobada con rol {nuevo_rol}.',
+        })
+
+    @action(detail=True, methods=['post'], url_path='rechazar')
+    def rechazar(self, request, pk=None):
+        """Rechaza (bloquea) una cuenta pendiente — solo COORDINADOR_SST"""
+        from .permissions import EsCoordinador
+        if not EsCoordinador().has_permission(request, self):
+            return Response({'error': 'No autorizado'}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            usuario = Usuario.objects.get(pk=pk, estado_cuenta='PENDIENTE')
+        except Usuario.DoesNotExist:
+            return Response({'error': 'Usuario pendiente no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+        usuario.estado_cuenta = 'BLOQUEADO'
+        usuario.activo = False
+        usuario.save()
+
+        return Response({
+            'success': True,
+            'mensaje': f'Solicitud de {usuario.get_full_name()} rechazada.',
+        })
+
+    @action(detail=True, methods=['patch'], url_path='brigada')
+    def toggle_brigada(self, request, pk=None):
+        """Activa o desactiva la membresía de brigada de un usuario — solo COORDINADOR_SST"""
+        from .permissions import EsCoordinador
+        if not EsCoordinador().has_permission(request, self):
+            return Response({'error': 'No autorizado'}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            usuario = Usuario.objects.get(pk=pk)
+        except Usuario.DoesNotExist:
+            return Response({'error': 'Usuario no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+        usuario.es_brigada = not usuario.es_brigada
+        usuario.save()
+
+        estado = 'agregado a' if usuario.es_brigada else 'removido de'
+        return Response({
+            'success': True,
+            'es_brigada': usuario.es_brigada,
+            'mensaje': f'{usuario.get_full_name()} fue {estado} la brigada.',
+        })
 
 
 class VisitanteViewSet(viewsets.ModelViewSet):

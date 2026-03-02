@@ -1030,6 +1030,30 @@
                         <div class="validation-status" id="email-status" style="display: none;"></div>
                     </div>
 
+                    <!-- Selector de rol para correos @sena.edu.co -->
+                    <div id="sena-rol-fields" style="display: none;">
+                        <div class="form-group">
+                            <label for="reg_rol_solicitado">
+                                Tu rol en el SENA <span class="required">*</span>
+                            </label>
+                            <div class="input-wrapper">
+                                <span class="input-icon-left">
+                                    <i class="bi bi-person-badge"></i>
+                                </span>
+                                <select name="rol_solicitado" id="reg_rol_solicitado">
+                                    <option value="">Selecciona tu rol...</option>
+                                    <option value="INSTRUCTOR">Instructor</option>
+                                    <option value="ADMINISTRATIVO">Administrativo / Funcionario</option>
+                                    <option value="VIGILANCIA">Vigilancia</option>
+                                </select>
+                            </div>
+                            <small class="text-muted" style="color:#666; font-size:0.82rem; margin-top:4px; display:block;">
+                                <i class="bi bi-info-circle"></i>
+                                Tu cuenta quedará <strong>pendiente de aprobación</strong> por el Coordinador SST.
+                            </small>
+                        </div>
+                    </div>
+
                     <!-- Campos exclusivos para Aprendiz -->
                     <div id="aprendiz-fields" style="display: none;">
                         <div class="two-columns">
@@ -1288,11 +1312,13 @@
             }, 200);
         }
 
-        // Detectar rol según el dominio del correo y mostrar/ocultar campos de aprendiz
+        // Detectar rol según el dominio del correo y mostrar/ocultar campos
         function detectRoleFromEmail(email) {
             const aprendizFields = document.getElementById('aprendiz-fields');
             const fichaInput = document.getElementById('reg_ficha');
             const programaInput = document.getElementById('reg_programa');
+            const senaRolFields = document.getElementById('sena-rol-fields');
+            const rolSolicitadoInput = document.getElementById('reg_rol_solicitado');
 
             const emailLower = email.toLowerCase();
             let rol = null;
@@ -1300,12 +1326,12 @@
             if (emailLower.endsWith('@soy.sena.edu.co')) {
                 rol = 'APRENDIZ';
             } else if (emailLower.endsWith('@sena.edu.co')) {
-                rol = 'INSTRUCTOR';
+                rol = 'SENA_STAFF'; // roles internos: instructor, admin, vigilancia
             } else if (emailLower.endsWith('@gmail.com')) {
                 rol = 'VISITANTE';
             }
 
-            // Mostrar campos de ficha y programa solo para APRENDIZ
+            // Mostrar campos de ficha/programa solo para APRENDIZ
             if (rol === 'APRENDIZ') {
                 aprendizFields.style.display = 'block';
                 fichaInput.setAttribute('required', 'required');
@@ -1316,6 +1342,16 @@
                 programaInput.removeAttribute('required');
                 fichaInput.value = '';
                 programaInput.value = '';
+            }
+
+            // Mostrar selector de rol para personal @sena.edu.co
+            if (rol === 'SENA_STAFF') {
+                senaRolFields.style.display = 'block';
+                rolSolicitadoInput.setAttribute('required', 'required');
+            } else {
+                senaRolFields.style.display = 'none';
+                rolSolicitadoInput.removeAttribute('required');
+                rolSolicitadoInput.value = '';
             }
 
             return rol;
@@ -1499,12 +1535,12 @@
             statusDiv.innerHTML = '<i class="bi bi-hourglass-split"></i><span>Verificando...</span>';
 
             emailTimeout = setTimeout(() => {
-                fetch(`/api/auth/usuarios/?email=${encodeURIComponent(email)}`, {
+                fetch(`/api/auth/usuarios/verificar_email/?email=${encodeURIComponent(email)}`, {
                     headers: { 'Accept': 'application/json' }
                 })
                 .then(r => r.json())
                 .then(data => {
-                    const exists = Array.isArray(data) && data.some(u => u.email === email);
+                    const exists = data.exists === true;
                     if (exists) {
                         statusDiv.className = 'validation-status taken';
                         statusDiv.innerHTML = '<i class="bi bi-x-circle-fill"></i><span>Este correo ya está registrado</span>';
@@ -1565,6 +1601,16 @@
                 showAlert(alertDiv, 'Debes registrarte con un correo @gmail.com, @soy.sena.edu.co o @sena.edu.co');
                 document.getElementById('reg_email').focus();
                 return;
+            }
+
+            // Para @sena.edu.co verificar que haya seleccionado rol
+            if (rolDetectado === 'SENA_STAFF') {
+                const rolSel = document.getElementById('reg_rol_solicitado').value;
+                if (!rolSel) {
+                    showAlert(alertDiv, 'Debes seleccionar tu rol dentro del SENA (Instructor, Administrativo o Vigilancia)');
+                    document.getElementById('reg_rol_solicitado').focus();
+                    return;
+                }
             }
 
             // Validar tipo de documento seleccionado
@@ -1644,26 +1690,30 @@
             .then(response => response.json())
             .then(data => {
                 if (data.id || data.mensaje) {
-                    showAlert(alertDiv, '¡Cuenta creada exitosamente! Redirigiendo al login...', true);
+                    const isPendiente = data.estado_cuenta === 'PENDIENTE';
+                    const msgRegistro = isPendiente
+                        ? '¡Solicitud enviada! Tu cuenta está <strong>pendiente de aprobación</strong> por el Coordinador SST.'
+                        : '¡Cuenta creada exitosamente! Redirigiendo al login...';
+                    showAlert(alertDiv, msgRegistro, true);
 
                     setTimeout(() => {
                         switchToLogin();
                         this.reset();
                         alertDiv.style.display = 'none';
                         document.getElementById('password-strength').classList.remove('visible');
+                        document.getElementById('sena-rol-fields').style.display = 'none';
+                        document.getElementById('aprendiz-fields').style.display = 'none';
 
                         // Mostrar mensaje en login
                         const loginMessages = document.querySelector('.login-panel .logo-section');
                         const successMsg = document.createElement('div');
                         successMsg.className = 'alert success';
-                        successMsg.innerHTML = `
-                            <i class="bi bi-check-circle-fill"></i>
-                            <div>¡Registro exitoso! Ingresa tus credenciales para iniciar sesión.</div>
-                        `;
+                        successMsg.innerHTML = isPendiente
+                            ? `<i class="bi bi-clock-history"></i><div>Solicitud enviada. Espera la aprobación del Coordinador SST para iniciar sesión.</div>`
+                            : `<i class="bi bi-check-circle-fill"></i><div>¡Registro exitoso! Ingresa tus credenciales para iniciar sesión.</div>`;
                         loginMessages.insertAdjacentElement('afterend', successMsg);
 
-                        // Remover mensaje después de unos segundos
-                        setTimeout(() => successMsg.remove(), 5000);
+                        setTimeout(() => successMsg.remove(), 7000);
                     }, 2000);
                 } else {
                     showAlert(alertDiv, data.error || data.detail || 'Error al crear la cuenta. Verifica los datos ingresados.');

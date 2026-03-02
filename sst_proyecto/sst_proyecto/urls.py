@@ -52,6 +52,7 @@ def dashboard_view(request):
 
     # Mapeo de roles a templates
     dashboard_templates = {
+        'COORDINADOR_SST': 'dashboard/coordinador_sst.html',
         'APRENDIZ': 'dashboard/aprendiz.html',
         'INSTRUCTOR': 'dashboard/instructor.html',
         'ADMINISTRATIVO': 'dashboard/administrativo.html',
@@ -59,6 +60,28 @@ def dashboard_view(request):
         'BRIGADA': 'dashboard/brigada.html',
         'VISITANTE': 'dashboard/visitante.html',
     }
+
+    # Si es COORDINADOR_SST, construir contexto específico y retornar
+    if usuario.rol == 'COORDINADOR_SST':
+        from django.db.models import Count
+        pendientes = Usuario.objects.filter(estado_cuenta='PENDIENTE').count()
+        total_activos = Usuario.objects.filter(estado_cuenta='ACTIVO', activo=True).count()
+        total_bloqueados = Usuario.objects.filter(estado_cuenta='BLOQUEADO').count()
+        brigada_activa = Usuario.objects.filter(es_brigada=True, activo=True).count()
+        por_rol = list(
+            Usuario.objects.filter(activo=True)
+            .values('rol')
+            .annotate(total=Count('id'))
+            .order_by('rol')
+        )
+        return render(request, 'dashboard/coordinador_sst.html', {
+            'usuario': usuario,
+            'pendientes': pendientes,
+            'total_activos': total_activos,
+            'total_bloqueados': total_bloqueados,
+            'brigada_activa': brigada_activa,
+            'por_rol': por_rol,
+        })
 
     # Obtener el template según el rol
     template = dashboard_templates.get(usuario.rol, 'dashboard.html')
@@ -629,7 +652,7 @@ def mis_aprendices_view(request):
 # ==============================================
 
 @login_required
-@rol_requerido('ADMINISTRATIVO')
+@rol_requerido('ADMINISTRATIVO', 'COORDINADOR_SST')
 def gestion_usuarios_view(request):
     """
     Vista para gestión de usuarios (Administrativo) con paginación
@@ -652,7 +675,7 @@ def gestion_usuarios_view(request):
     return render(request, 'dashboard/administrativo/gestion_usuarios.html', context)
 
 @login_required
-@rol_requerido('ADMINISTRATIVO')
+@rol_requerido('ADMINISTRATIVO', 'COORDINADOR_SST')
 def configuracion_view(request):
     """
     Vista de configuración del sistema
@@ -1041,7 +1064,8 @@ urlpatterns = [
     path('accounts/password-reset/',
         auth_views.PasswordResetView.as_view(
             template_name='registration/recuperar_clave.html',
-            email_template_name='registration/email_recuperacion.html',
+            email_template_name='registration/email_recuperacion.txt',
+            html_email_template_name='registration/email_recuperacion.html',
             subject_template_name='registration/asunto_email.txt',
         ),
         name='password_reset'

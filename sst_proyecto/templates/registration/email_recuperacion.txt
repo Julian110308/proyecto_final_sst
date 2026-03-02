@@ -1,0 +1,15 @@
+Hola,
+
+Recibiste este correo porque solicitaste restablecer la contraseña de tu cuenta en el Sistema SST del Centro Minero SENA.
+
+Haz clic en el siguiente enlace para cambiar tu contraseña:
+
+{{ protocol }}://{{ domain }}{% url 'password_reset_confirm' uidb64=uid token=token %}
+
+El enlace es válido por 1 hora y solo puede usarse una vez.
+
+Si no solicitaste este cambio, ignora este correo.
+
+---
+SENA · Centro Minero Sogamoso, Boyacá, Colombia
+Correo automático, no responder.

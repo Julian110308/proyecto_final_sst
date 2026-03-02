@@ -47,9 +47,9 @@ def rol_requerido(*roles_permitidos):
 
 def solo_administrativo(view_func):
     """
-    Decorador simple para vistas exclusivas de ADMINISTRATIVO
+    Decorador para vistas de ADMINISTRATIVO o COORDINADOR_SST
     """
-    return rol_requerido('ADMINISTRATIVO')(view_func)
+    return rol_requerido('ADMINISTRATIVO', 'COORDINADOR_SST')(view_func)
 
 
 def excluir_visitantes(view_func):
@@ -74,6 +74,20 @@ def excluir_visitantes(view_func):
 # CLASES DE PERMISOS PARA REST FRAMEWORK (API)
 # ====================================================================
 
+class EsCoordinador(BasePermission):
+    """
+    Permiso: Solo el Coordinador SST (administrador del sistema)
+    """
+    message = 'Solo el Coordinador SST puede realizar esta acción.'
+
+    def has_permission(self, request, view):
+        return (
+            request.user
+            and request.user.is_authenticated
+            and request.user.rol == 'COORDINADOR_SST'
+        )
+
+
 class EsAdministrativo(BasePermission):
     """
     Permiso: Solo usuarios con rol ADMINISTRATIVO
@@ -90,7 +104,7 @@ class EsAdministrativo(BasePermission):
 
 class EsAdministrativoOInstructor(BasePermission):
     """
-    Permiso: Usuarios ADMINISTRATIVO o INSTRUCTOR
+    Permiso: Usuarios ADMINISTRATIVO, INSTRUCTOR o COORDINADOR_SST
     """
     message = 'Se requiere ser administrativo o instructor.'
 
@@ -98,14 +112,13 @@ class EsAdministrativoOInstructor(BasePermission):
         return (
             request.user
             and request.user.is_authenticated
-            and request.user.rol in ['ADMINISTRATIVO', 'INSTRUCTOR']
+            and request.user.rol in ['ADMINISTRATIVO', 'INSTRUCTOR', 'COORDINADOR_SST']
         )
 
 
 class EsVigilanciaOAdministrativo(BasePermission):
     """
-    Permiso: Usuarios VIGILANCIA o ADMINISTRATIVO
-    Para control de acceso
+    Permiso: Usuarios VIGILANCIA, ADMINISTRATIVO o COORDINADOR_SST
     """
     message = 'Se requiere ser vigilancia o administrativo.'
 
@@ -113,22 +126,23 @@ class EsVigilanciaOAdministrativo(BasePermission):
         return (
             request.user
             and request.user.is_authenticated
-            and request.user.rol in ['VIGILANCIA', 'ADMINISTRATIVO']
+            and request.user.rol in ['VIGILANCIA', 'ADMINISTRATIVO', 'COORDINADOR_SST']
         )
 
 
 class EsBrigadaOAdministrativo(BasePermission):
     """
-    Permiso: Usuarios BRIGADA o ADMINISTRATIVO
-    Para gestión de emergencias
+    Permiso: Usuarios BRIGADA, ADMINISTRATIVO, COORDINADOR_SST,
+    o cualquier usuario con es_brigada=True
     """
     message = 'Se requiere ser miembro de brigada o administrativo.'
 
     def has_permission(self, request, view):
+        if not (request.user and request.user.is_authenticated):
+            return False
         return (
-            request.user
-            and request.user.is_authenticated
-            and request.user.rol in ['BRIGADA', 'ADMINISTRATIVO']
+            request.user.rol in ['BRIGADA', 'ADMINISTRATIVO', 'COORDINADOR_SST']
+            or request.user.es_brigada
         )
 
 
@@ -148,36 +162,31 @@ class NoEsVisitante(BasePermission):
 
 class PuedeGestionarUsuarios(BasePermission):
     """
-    Permiso: Solo ADMINISTRATIVO puede gestionar usuarios
+    Permiso: ADMINISTRATIVO o COORDINADOR_SST pueden gestionar usuarios
     """
     message = 'Solo el personal administrativo puede gestionar usuarios.'
 
     def has_permission(self, request, view):
-        # GET permitido para todos (ver perfil)
         if request.method == 'GET':
             return request.user and request.user.is_authenticated
 
-        # POST, PUT, DELETE solo para administrativos
         return (
             request.user
             and request.user.is_authenticated
-            and request.user.rol == 'ADMINISTRATIVO'
+            and request.user.rol in ['ADMINISTRATIVO', 'COORDINADOR_SST']
         )
 
 
 class PuedeVerSoloSusDatos(BasePermission):
     """
     Permiso: Los usuarios solo pueden ver sus propios datos
-    Excepto ADMINISTRATIVO que puede ver todo
+    Excepto ADMINISTRATIVO y COORDINADOR_SST que pueden ver todo
     """
     message = 'Solo puedes ver tu propia información.'
 
     def has_object_permission(self, request, view, obj):
-        # ADMINISTRATIVO puede ver todo
-        if request.user.rol == 'ADMINISTRATIVO':
+        if request.user.rol in ['ADMINISTRATIVO', 'COORDINADOR_SST']:
             return True
-
-        # Los demás solo sus propios datos
         return obj.id == request.user.id
 
 
@@ -197,12 +206,12 @@ def usuario_puede_acceder_modulo(usuario, modulo):
         bool: True si tiene acceso, False si no
     """
     PERMISOS_MODULOS = {
-        'acceso': ['ADMINISTRATIVO', 'VIGILANCIA', 'INSTRUCTOR'],
-        'mapas': ['ADMINISTRATIVO', 'INSTRUCTOR', 'VIGILANCIA', 'BRIGADA', 'APRENDIZ'],
-        'emergencias': ['ADMINISTRATIVO', 'BRIGADA', 'VIGILANCIA'],
-        'reportes': ['ADMINISTRATIVO', 'INSTRUCTOR', 'VIGILANCIA', 'BRIGADA', 'APRENDIZ'],
-        'usuarios': ['ADMINISTRATIVO'],
-        'visitantes': ['ADMINISTRATIVO', 'VIGILANCIA'],
+        'acceso': ['COORDINADOR_SST', 'ADMINISTRATIVO', 'VIGILANCIA', 'INSTRUCTOR'],
+        'mapas': ['COORDINADOR_SST', 'ADMINISTRATIVO', 'INSTRUCTOR', 'VIGILANCIA', 'BRIGADA', 'APRENDIZ'],
+        'emergencias': ['COORDINADOR_SST', 'ADMINISTRATIVO', 'BRIGADA', 'VIGILANCIA'],
+        'reportes': ['COORDINADOR_SST', 'ADMINISTRATIVO', 'INSTRUCTOR', 'VIGILANCIA', 'BRIGADA', 'APRENDIZ'],
+        'usuarios': ['COORDINADOR_SST', 'ADMINISTRATIVO'],
+        'visitantes': ['COORDINADOR_SST', 'ADMINISTRATIVO', 'VIGILANCIA'],
     }
 
     roles_permitidos = PERMISOS_MODULOS.get(modulo, [])

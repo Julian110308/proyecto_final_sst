@@ -14,6 +14,37 @@ class RolePermissions:
     Clase para gestión centralizada de permisos por rol - VERSIÓN CORREGIDA
     """
     PERMISSIONS_MAP = {
+        'COORDINADOR_SST': {
+            'can_view_dashboard': True,
+            'can_view_all_reports': True,
+            'can_view_all_data': True,
+            'can_manage_all_users': True,
+            'can_view_capacity': True,
+            'can_report_emergency': True,
+            'can_view_all_emergencies': True,
+            'can_manage_emergencies': True,
+            'can_activate_emergency_protocol': True,
+            'can_view_map': True,
+            'can_view_full_map': True,
+            'can_edit_map': True,
+            'can_view_evacuation_routes': True,
+            'can_create_report': True,
+            'can_approve_reports': True,
+            'can_export_data': True,
+            'can_manage_users': True,
+            'can_manage_visitors': True,
+            'can_create_users': True,
+            'can_edit_users': True,
+            'can_block_users': True,
+            'can_configure_system': True,
+            'can_view_all_access': True,
+            'can_register_manual_access': True,
+            # Exclusivos del coordinador
+            'can_approve_accounts': True,
+            'can_assign_brigada': True,
+            'can_manage_all_roles': True,
+        },
+
         'APRENDIZ': {
             'can_view_dashboard': True,
             'can_view_reports': True,
@@ -177,16 +208,23 @@ class RolePermissions:
         user_role = user.rol
         return cls.PERMISSIONS_MAP.get(user_role, {}).copy()
 class Usuario(AbstractUser):
-    
+
     # Modelo personalizado de usuario para el sistema SST
-    
+
     ROLES = [
+        ('COORDINADOR_SST', 'Coordinador SST'),
         ('APRENDIZ', 'Aprendiz'),
         ('INSTRUCTOR', 'Instructor'),
         ('ADMINISTRATIVO', 'Administrativo'),
         ('VIGILANCIA', 'Vigilancia'),
         ('BRIGADA', 'Brigada de Emergencia'),
         ('VISITANTE', 'Visitante'),
+    ]
+
+    ESTADO_CUENTA = [
+        ('ACTIVO', 'Activo'),
+        ('PENDIENTE', 'Pendiente de aprobación'),
+        ('BLOQUEADO', 'Bloqueado'),
     ]
     
     TIPO_DOCUMENTO = [
@@ -215,7 +253,22 @@ class Usuario(AbstractUser):
         verbose_name='Fichas asignadas',
         help_text='Números de ficha separados por coma (solo instructores)'
     )
-    
+
+    # Estado de la cuenta (para flujo de aprobación)
+    estado_cuenta = models.CharField(
+        max_length=10,
+        choices=ESTADO_CUENTA,
+        default='ACTIVO',
+        verbose_name='Estado de cuenta'
+    )
+
+    # Membresía de brigada (secundaria, independiente del rol principal)
+    es_brigada = models.BooleanField(
+        default=False,
+        verbose_name='Miembro de Brigada',
+        help_text='Indica si este usuario forma parte de la brigada de emergencias'
+    )
+
     # Control
     activo = models.BooleanField(default=True)
     fecha_registro = models.DateTimeField(auto_now_add=True)
@@ -233,8 +286,8 @@ class Usuario(AbstractUser):
         return []
 
     def save(self, *args, **kwargs):
-        # Mantener sincronizados activo e is_active
-        self.is_active = self.activo
+        # is_active solo True si el usuario está activo Y la cuenta está aprobada
+        self.is_active = self.activo and self.estado_cuenta == 'ACTIVO'
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -297,8 +350,13 @@ class Usuario(AbstractUser):
     
     @property
     def is_brigada(self):
-        """Verifica si el usuario es de brigada"""
-        return self.rol == 'BRIGADA'
+        """Verifica si el usuario es de brigada (por rol o membresía voluntaria)"""
+        return self.rol == 'BRIGADA' or self.es_brigada
+
+    @property
+    def is_coordinador(self):
+        """Verifica si el usuario es el Coordinador SST"""
+        return self.rol == 'COORDINADOR_SST'
     
     @property
     def is_visitante(self):
@@ -324,6 +382,7 @@ class Usuario(AbstractUser):
     def get_dashboard_template(self):
         """Devuelve el template del dashboard según el rol"""
         templates = {
+            'COORDINADOR_SST': 'dashboard/coordinador_sst.html',
             'APRENDIZ': 'dashboard/aprendiz.html',
             'INSTRUCTOR': 'dashboard/instructor.html',
             'ADMINISTRATIVO': 'dashboard/administrativo.html',
