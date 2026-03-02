@@ -492,22 +492,24 @@ def mis_alertas_view(request):
     """
     from usuarios.models import Notificacion
 
-    # Obtener notificaciones del usuario actual
+    # Obtener notificaciones del usuario actual (todas, sin límite duro)
     notificaciones = Notificacion.objects.filter(destinatario=request.user)
 
-    # Separar por estado de lectura
-    no_leidas = notificaciones.filter(leida=False).order_by('-fecha_creacion')[:15]
-    leidas = notificaciones.filter(leida=True).order_by('-fecha_creacion')[:15]
-    historial = notificaciones.order_by('-fecha_creacion')[:30]
+    # Separar por estado de lectura (hasta 50 de cada tipo)
+    no_leidas = notificaciones.filter(leida=False).order_by('-fecha_creacion')[:50]
+    leidas = notificaciones.filter(leida=True).order_by('-fecha_creacion')[:50]
 
-    # Contar no leidas
+    # Contar totales reales
     total_no_leidas = notificaciones.filter(leida=False).count()
+    total_leidas = notificaciones.filter(leida=True).count()
+    total_notificaciones = notificaciones.count()
 
     context = {
         'no_leidas': no_leidas,
         'leidas': leidas,
-        'historial': historial,
         'total_no_leidas': total_no_leidas,
+        'total_leidas': total_leidas,
+        'total_notificaciones': total_notificaciones,
     }
 
     # Para BRIGADA: agregar historial completo de incidentes del sistema
@@ -517,7 +519,7 @@ def mis_alertas_view(request):
         from datetime import timedelta
         todos_incidentes = Incidente.objects.select_related(
             'reportado_por', 'asignado_a'
-        ).order_by('-fecha_reporte')[:50]
+        ).order_by('-fecha_reporte')[:100]
         incidentes_pendientes = Incidente.objects.exclude(
             estado__in=['RESUELTO', 'CERRADO']
         ).count()

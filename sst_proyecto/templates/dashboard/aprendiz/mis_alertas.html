@@ -3,6 +3,126 @@
 
 {% block title %}Mis Alertas - Sistema SST{% endblock %}
 
+{% block extra_css %}
+<style>
+  /* ─── Notif card base ─── */
+  .notif-card {
+    border: none;
+    border-left: 4px solid #dee2e6;
+    border-radius: 0 .5rem .5rem 0;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    transition: box-shadow .2s, opacity .35s, max-height .35s ease, margin .35s, padding .35s;
+    overflow: hidden;
+    max-height: 300px;
+  }
+  .notif-card:hover { box-shadow: 0 3px 12px rgba(0,0,0,.1); }
+
+  .notif-card.prioridad-ALTA   { border-left-color: #dc3545; background: #fff8f8; }
+  .notif-card.prioridad-MEDIA  { border-left-color: #fd7e14; background: #fffbf5; }
+  .notif-card.prioridad-BAJA   { border-left-color: #6c757d; background: #fafafa; }
+
+  .notif-card.leida { background: #f8f9fa; }
+  .notif-card.leida .notif-titulo { font-weight: 500; color: #6c757d; }
+
+  /* Animación de salida al marcar leída */
+  .notif-card.saliendo {
+    opacity: 0 !important;
+    max-height: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  /* Icono circular por tipo */
+  .notif-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1.1rem;
+  }
+  .notif-icon.EMERGENCIA  { background: #ffe0e0; color: #dc3545; }
+  .notif-icon.INCIDENTE   { background: #fff3cd; color: #e67e00; }
+  .notif-icon.SISTEMA     { background: #d1ecf1; color: #0dcaf0; }
+  .notif-icon.ASISTENCIA  { background: #d4edda; color: #198754; }
+  .notif-icon.CAPACITACION{ background: #cfe2ff; color: #0d6efd; }
+  .notif-icon.RECORDATORIO{ background: #e2d9f3; color: #6f42c1; }
+  .notif-icon.INFO        { background: #e2e3e5; color: #6c757d; }
+
+  /* Separadores de grupo de fecha */
+  .fecha-grupo {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin: 1.25rem 0 .6rem;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #6c757d;
+  }
+  .fecha-grupo::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #e9ecef;
+  }
+
+  /* Filtros pill */
+  .filtro-pill {
+    border-radius: 2rem;
+    padding: .28rem .85rem;
+    font-size: .78rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all .15s;
+    border: 1.5px solid #dee2e6;
+    background: #fff;
+    color: #495057;
+    white-space: nowrap;
+  }
+  .filtro-pill:hover { border-color: #39A900; color: #39A900; }
+  .filtro-pill.activo { background: #39A900; border-color: #39A900; color: #fff; }
+
+  /* Stat cards */
+  .stat-card {
+    border-radius: .75rem;
+    border: none;
+    box-shadow: 0 1px 6px rgba(0,0,0,.07);
+    transition: transform .15s;
+  }
+  .stat-card:hover { transform: translateY(-2px); }
+
+  /* Empty state */
+  .empty-state {
+    padding: 3rem 1rem;
+    text-align: center;
+    color: #adb5bd;
+  }
+  .empty-state i { font-size: 3.5rem; display: block; margin-bottom: .75rem; }
+
+  /* Tabs brigada */
+  .nav-tabs-alertas .nav-link {
+    border-radius: .5rem .5rem 0 0;
+    font-weight: 600;
+    color: #495057;
+  }
+  .nav-tabs-alertas .nav-link.active { color: #39A900; border-bottom-color: #fff; }
+  .nav-tabs-alertas .nav-link:hover:not(.active) { color: #39A900; }
+
+  /* Búsqueda incidentes */
+  #buscador-incidentes { border-radius: 2rem; padding-left: 2.5rem; }
+  .buscador-wrap { position: relative; }
+  .buscador-wrap .bi-search {
+    position: absolute; left: .9rem; top: 50%; transform: translateY(-50%); color: #adb5bd;
+  }
+</style>
+{% endblock %}
+
 {% block breadcrumb %}
 <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
 <li class="breadcrumb-item active">Mis Alertas</li>
@@ -10,355 +130,256 @@
 
 {% block content %}
 <div class="container-fluid">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
-        <h2 class="fw-bold text-dark mb-0">
-            {% if user.rol == 'BRIGADA' %}
-            <i class="bi bi-shield-exclamation me-2 text-danger"></i>Mis Alertas e Historial de Incidentes
-            {% else %}
-            <i class="bi bi-bell me-2"></i>Mis Alertas y Notificaciones
-            {% endif %}
-        </h2>
-        {% if total_no_leidas > 0 %}
-        <button class="btn btn-outline-primary flex-shrink-0" onclick="marcarTodasLeidas()">
-            <i class="bi bi-check2-all me-1"></i>Marcar todas ({{ total_no_leidas }})
-        </button>
-        {% endif %}
-    </div>
 
-    <!-- Resumen de notificaciones -->
-    <div class="row g-3 mb-4">
-        <div class="col-6 {% if user.rol == 'BRIGADA' %}col-md-3{% else %}col-md-4{% endif %}">
-            <div class="card card-modern h-100 {% if total_no_leidas > 0 %}border-start border-warning border-4{% endif %}">
-                <div class="card-body text-center">
-                    <div class="fs-2 {% if total_no_leidas > 0 %}text-warning{% else %}text-muted{% endif %} fw-bold">{{ total_no_leidas }}</div>
-                    <div class="text-muted small">Alertas No Leídas</div>
-                </div>
-            </div>
-        </div>
-        <div class="{% if user.rol == 'BRIGADA' %}col-md-3{% else %}col-md-4{% endif %}">
-            <div class="card card-modern h-100">
-                <div class="card-body text-center">
-                    <div class="fs-2 text-success fw-bold">{{ leidas|length }}</div>
-                    <div class="text-muted small">Leídas Recientemente</div>
-                </div>
-            </div>
-        </div>
-        <div class="{% if user.rol == 'BRIGADA' %}col-md-3{% else %}col-md-4{% endif %}">
-            <div class="card card-modern h-100">
-                <div class="card-body text-center">
-                    <div class="fs-2 text-primary fw-bold">{{ historial|length }}</div>
-                    <div class="text-muted small">Total en Historial</div>
-                </div>
-            </div>
-        </div>
+  {# ── Encabezado ── #}
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+    <div>
+      <h2 class="fw-bold text-dark mb-0">
         {% if user.rol == 'BRIGADA' %}
-        <div class="col-md-3">
-            <div class="card card-modern h-100 {% if incidentes_pendientes_brigada > 0 %}border-start border-danger border-4{% endif %}">
-                <div class="card-body text-center">
-                    <div class="fs-2 {% if incidentes_pendientes_brigada > 0 %}text-danger{% else %}text-muted{% endif %} fw-bold">{{ incidentes_pendientes_brigada }}</div>
-                    <div class="text-muted small">Incidentes Pendientes</div>
-                </div>
-            </div>
-        </div>
+          <i class="bi bi-shield-exclamation me-2 text-danger"></i>Alertas e Incidentes
+        {% else %}
+          <i class="bi bi-bell me-2 text-primary"></i>Mis Alertas
         {% endif %}
+      </h2>
+      <p class="text-muted small mb-0">Gestiona tus notificaciones y alertas del sistema</p>
     </div>
+    {% if total_no_leidas > 0 %}
+    <button class="btn btn-outline-success flex-shrink-0" id="btn-marcar-todas">
+      <i class="bi bi-check2-all me-1"></i>Marcar todas como leídas
+      <span class="badge bg-success ms-1" id="badge-marcar-todas">{{ total_no_leidas }}</span>
+    </button>
+    {% endif %}
+  </div>
 
-    <!-- Alertas no leidas -->
-    <div class="card card-modern mb-4">
-        <div class="card-header bg-warning-subtle">
-            <h6 class="mb-0 fw-bold text-warning">
-                <i class="bi bi-exclamation-circle me-2"></i>No Leidas
-                {% if total_no_leidas > 0 %}
-                <span class="badge bg-warning text-dark ms-2">{{ total_no_leidas }}</span>
-                {% endif %}
-            </h6>
+  {# ── Stat cards ── #}
+  <div class="row g-3 mb-4">
+    <div class="col-6 {% if user.rol == 'BRIGADA' %}col-md-3{% else %}col-md-4{% endif %}">
+      <div class="stat-card card h-100">
+        <div class="card-body d-flex align-items-center gap-3">
+          <div class="notif-icon INCIDENTE" style="width:48px;height:48px;font-size:1.4rem;">
+            <i class="bi bi-bell-fill"></i>
+          </div>
+          <div>
+            <div class="fs-3 fw-bold lh-1 {% if total_no_leidas > 0 %}text-danger{% else %}text-muted{% endif %}" id="contador-no-leidas">{{ total_no_leidas }}</div>
+            <div class="text-muted small">Sin leer</div>
+          </div>
         </div>
-        <div class="card-body">
-            {% if no_leidas %}
-                {% for notif in no_leidas %}
-                <div class="alert {% if notif.prioridad == 'ALTA' %}alert-danger{% elif notif.prioridad == 'MEDIA' %}alert-warning{% else %}alert-info{% endif %} alert-dismissible fade show" role="alert">
-                    <div class="d-flex">
-                        <div class="me-3">
-                            {% if notif.tipo == 'EMERGENCIA' %}
-                                <i class="bi bi-exclamation-triangle-fill fs-4 text-danger"></i>
-                            {% elif notif.tipo == 'INCIDENTE' %}
-                                <i class="bi bi-shield-exclamation fs-4 text-warning"></i>
-                            {% elif notif.tipo == 'CAPACITACION' %}
-                                <i class="bi bi-book fs-4 text-primary"></i>
-                            {% elif notif.tipo == 'ASISTENCIA' %}
-                                <i class="bi bi-calendar-check fs-4 text-success"></i>
-                            {% elif notif.tipo == 'RECORDATORIO' %}
-                                <i class="bi bi-clock fs-4 text-info"></i>
-                            {% else %}
-                                <i class="bi bi-info-circle fs-4"></i>
-                            {% endif %}
-                        </div>
-                        <div class="flex-grow-1">
-                            <h6 class="alert-heading mb-1">{{ notif.titulo }}</h6>
-                            <p class="mb-1">{{ notif.mensaje }}</p>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small class="text-muted">
-                                    {{ notif.fecha_creacion|timesince }}
-                                    {% if notif.fecha_vencimiento %}
-                                        | Vence: {{ notif.fecha_vencimiento|date:"d/m/Y" }}
-                                    {% endif %}
-                                </small>
-                                <span class="badge {% if notif.tipo == 'EMERGENCIA' %}bg-danger{% elif notif.tipo == 'INCIDENTE' %}bg-warning text-dark{% elif notif.tipo == 'CAPACITACION' %}bg-primary{% else %}bg-info{% endif %}">
-                                    {{ notif.get_tipo_display }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <button type="button" class="btn-close" onclick="marcarLeida({{ notif.id }})" title="Marcar como leida"></button>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="text-center py-4 text-muted">
-                    <i class="bi bi-check-circle fs-1 d-block mb-2 text-success"></i>
-                    <p class="mb-0">No tienes notificaciones pendientes</p>
-                </div>
-            {% endif %}
-        </div>
+      </div>
     </div>
-
-    <!-- Alertas leidas recientemente -->
-    <div class="card card-modern mb-4">
-        <div class="card-header bg-light">
-            <h6 class="mb-0 fw-bold">
-                <i class="bi bi-check2-circle me-2"></i>Leidas Recientemente
-            </h6>
+    <div class="col-6 {% if user.rol == 'BRIGADA' %}col-md-3{% else %}col-md-4{% endif %}">
+      <div class="stat-card card h-100">
+        <div class="card-body d-flex align-items-center gap-3">
+          <div class="notif-icon ASISTENCIA" style="width:48px;height:48px;font-size:1.4rem;">
+            <i class="bi bi-check2-circle"></i>
+          </div>
+          <div>
+            <div class="fs-3 fw-bold lh-1 text-success">{{ total_leidas }}</div>
+            <div class="text-muted small">Leídas</div>
+          </div>
         </div>
-        <div class="card-body">
-            {% if leidas %}
-            <div class="list-group list-group-flush">
-                {% for notif in leidas %}
-                <div class="list-group-item px-0">
-                    <div class="d-flex w-100 justify-content-between align-items-start">
-                        <div class="d-flex">
-                            <div class="me-3">
-                                {% if notif.tipo == 'EMERGENCIA' %}
-                                    <i class="bi bi-exclamation-triangle text-danger"></i>
-                                {% elif notif.tipo == 'INCIDENTE' %}
-                                    <i class="bi bi-shield-exclamation text-warning"></i>
-                                {% elif notif.tipo == 'CAPACITACION' %}
-                                    <i class="bi bi-book text-primary"></i>
-                                {% elif notif.tipo == 'ASISTENCIA' %}
-                                    <i class="bi bi-calendar-check text-success"></i>
-                                {% else %}
-                                    <i class="bi bi-info-circle text-info"></i>
-                                {% endif %}
-                            </div>
-                            <div>
-                                <strong>{{ notif.titulo }}</strong>
-                                <p class="mb-1 small text-muted">{{ notif.mensaje|truncatewords:20 }}</p>
-                            </div>
-                        </div>
-                        <small class="text-muted">{{ notif.fecha_creacion|timesince }}</small>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            {% else %}
-                <p class="text-muted text-center py-3 mb-0">No hay notificaciones leidas recientes</p>
-            {% endif %}
-        </div>
+      </div>
     </div>
-
-    <!-- Historial -->
-    <div class="card card-modern {% if user.rol == 'BRIGADA' %}mb-4{% endif %}">
-        <div class="card-header bg-light">
-            <h6 class="mb-0 fw-bold">
-                <i class="bi bi-clock-history me-2"></i>Historial de Notificaciones
-            </h6>
+    <div class="col-6 {% if user.rol == 'BRIGADA' %}col-md-3{% else %}col-md-4{% endif %}">
+      <div class="stat-card card h-100">
+        <div class="card-body d-flex align-items-center gap-3">
+          <div class="notif-icon SISTEMA" style="width:48px;height:48px;font-size:1.4rem;">
+            <i class="bi bi-clock-history"></i>
+          </div>
+          <div>
+            <div class="fs-3 fw-bold lh-1 text-info">{{ total_notificaciones }}</div>
+            <div class="text-muted small">Total historial</div>
+          </div>
         </div>
-        <div class="card-body p-0">
-            {% if historial %}
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light">
-                        <tr>
-                            <th class="ps-4">Fecha</th>
-                            <th>Tipo</th>
-                            <th>Titulo</th>
-                            <th>Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for notif in historial %}
-                        <tr>
-                            <td class="ps-4">{{ notif.fecha_creacion|date:"d/m/Y H:i" }}</td>
-                            <td>
-                                <span class="badge {% if notif.tipo == 'EMERGENCIA' %}bg-danger{% elif notif.tipo == 'INCIDENTE' %}bg-warning text-dark{% elif notif.tipo == 'CAPACITACION' %}bg-primary{% elif notif.tipo == 'ASISTENCIA' %}bg-success{% else %}bg-info{% endif %}">
-                                    {{ notif.get_tipo_display }}
-                                </span>
-                            </td>
-                            <td>
-                                <strong>{{ notif.titulo }}</strong>
-                                <br><small class="text-muted">{{ notif.mensaje|truncatewords:10 }}</small>
-                            </td>
-                            <td>
-                                {% if notif.leida %}
-                                    <span class="badge bg-secondary">Leída</span>
-                                {% else %}
-                                    <span class="badge bg-warning text-dark">Pendiente</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-                <p class="text-muted text-center py-4 mb-0">No hay notificaciones en el historial</p>
-            {% endif %}
-        </div>
+      </div>
     </div>
-
-    <!-- ============================================ -->
-    <!-- SECCIÓN EXCLUSIVA PARA BRIGADA               -->
-    <!-- Historial completo de incidentes del sistema -->
-    <!-- ============================================ -->
     {% if user.rol == 'BRIGADA' %}
-    <div class="card card-modern">
-        <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #1b5e20;">
-            <h6 class="mb-0 fw-bold text-white">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i>Historial de Incidentes del Sistema
-                {% if incidentes_criticos_sla_brigada > 0 %}
-                <span class="badge bg-danger ms-2">{{ incidentes_criticos_sla_brigada }} SLA vencidos</span>
-                {% endif %}
-            </h6>
-            <a href="{% url 'listar_incidentes' %}" class="btn btn-sm btn-light">
-                <i class="bi bi-list-ul me-1"></i>Ver todos
-            </a>
+    <div class="col-6 col-md-3">
+      <div class="stat-card card h-100 {% if incidentes_pendientes_brigada > 0 %}border-start border-danger border-3{% endif %}">
+        <div class="card-body d-flex align-items-center gap-3">
+          <div class="notif-icon EMERGENCIA" style="width:48px;height:48px;font-size:1.4rem;">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+          </div>
+          <div>
+            <div class="fs-3 fw-bold lh-1 {% if incidentes_pendientes_brigada > 0 %}text-danger{% else %}text-muted{% endif %}">{{ incidentes_pendientes_brigada }}</div>
+            <div class="text-muted small">Pendientes</div>
+          </div>
         </div>
-        <div class="card-body p-0">
-            {% if todos_incidentes %}
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light">
-                        <tr>
-                            <th class="ps-3">Fecha</th>
-                            <th>Incidente</th>
-                            <th>Gravedad</th>
-                            <th>Estado</th>
-                            <th>SLA</th>
-                            <th>Reportado por</th>
-                            <th class="text-center">Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for inc in todos_incidentes %}
-                        <tr class="{% if inc.sla_estado == 'critico' %}table-danger{% elif inc.sla_estado == 'vencido' %}table-warning{% endif %}">
-                            <td class="ps-3">
-                                <small>{{ inc.fecha_reporte|date:"d/m/Y" }}</small><br>
-                                <small class="text-muted">{{ inc.fecha_reporte|date:"H:i" }}</small>
-                            </td>
-                            <td>
-                                <strong class="d-block">{{ inc.titulo|truncatechars:45 }}</strong>
-                                <small class="text-muted">{{ inc.get_tipo_display }}</small>
-                            </td>
-                            <td>
-                                <span class="badge {% if inc.gravedad == 'CRITICA' %}bg-danger{% elif inc.gravedad == 'ALTA' %}bg-warning text-dark{% elif inc.gravedad == 'MEDIA' %}bg-info text-dark{% else %}bg-success{% endif %}">
-                                    {{ inc.get_gravedad_display }}
-                                </span>
-                            </td>
-                            <td>
-                                <span class="badge {% if inc.estado == 'REPORTADO' %}bg-secondary{% elif inc.estado == 'EN_REVISION' %}bg-primary{% elif inc.estado == 'EN_PROCESO' %}bg-info text-dark{% elif inc.estado == 'RESUELTO' %}bg-success{% else %}bg-dark{% endif %}">
-                                    {{ inc.get_estado_display }}
-                                </span>
-                            </td>
-                            <td>
-                                {% if inc.sla_estado == 'critico' %}
-                                    <span class="badge bg-danger"><i class="bi bi-exclamation-circle me-1"></i>Crítico</span>
-                                {% elif inc.sla_estado == 'vencido' %}
-                                    <span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Vencido</span>
-                                {% elif inc.sla_estado == 'proximo' %}
-                                    <span class="badge bg-info text-dark"><i class="bi bi-clock me-1"></i>Próximo</span>
-                                {% else %}
-                                    <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>OK</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <small>{{ inc.reportado_por.get_full_name|default:inc.reportado_por.username }}</small><br>
-                                <small class="text-muted">{{ inc.reportado_por.get_rol_display }}</small>
-                            </td>
-                            <td class="text-center">
-                                <a href="/reportes/incidentes/{{ inc.pk }}/" class="btn btn-sm btn-outline-primary me-1" title="Ver detalle">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                                {% if inc.estado not in 'RESUELTO,CERRADO' %}
-                                <a href="/reportes/incidentes/{{ inc.pk }}/actualizar/" class="btn btn-sm btn-outline-warning" title="Actualizar estado">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="text-center py-5 text-muted">
-                <i class="bi bi-clipboard-check fs-1 d-block mb-2 text-success"></i>
-                <p class="mb-0">No hay incidentes registrados en el sistema</p>
-            </div>
-            {% endif %}
-        </div>
+      </div>
     </div>
     {% endif %}
+  </div>
+
+  {# ── Tabs BRIGADA / Contenido directo otros roles ── #}
+  {% if user.rol == 'BRIGADA' %}
+  <ul class="nav nav-tabs nav-tabs-alertas mb-0 border-bottom" id="tabsAlertas" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="tab-alertas-btn" data-bs-toggle="tab" data-bs-target="#tab-alertas" type="button" role="tab">
+        <i class="bi bi-bell me-1"></i>Mis Alertas
+        {% if total_no_leidas > 0 %}<span class="badge bg-danger ms-1">{{ total_no_leidas }}</span>{% endif %}
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-incidentes-btn" data-bs-toggle="tab" data-bs-target="#tab-incidentes" type="button" role="tab">
+        <i class="bi bi-exclamation-triangle me-1"></i>Historial de Incidentes
+        {% if incidentes_criticos_sla_brigada > 0 %}<span class="badge bg-danger ms-1">{{ incidentes_criticos_sla_brigada }} SLA</span>{% endif %}
+      </button>
+    </li>
+  </ul>
+  <div class="tab-content pt-4" id="tabsAlertasContent">
+    <div class="tab-pane fade show active" id="tab-alertas" role="tabpanel">
+      {% with mostrar_filtros=True %}{% include "dashboard/aprendiz/_alertas_panel.html" %}{% endwith %}
+    </div>
+    <div class="tab-pane fade" id="tab-incidentes" role="tabpanel">
+      {% include "dashboard/aprendiz/_incidentes_brigada_panel.html" %}
+    </div>
+  </div>
+  {% else %}
+    {% include "dashboard/aprendiz/_alertas_panel.html" %}
+  {% endif %}
 
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+/* ── CSRF ── */
 function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
+  const m = document.cookie.match('(^|;)\\s?' + name + '=([^;]*)(;|$)');
+  return m ? decodeURIComponent(m[2]) : null;
+}
+
+/* ── Contador sin-leer ── */
+let noLeidasCount = parseInt(document.getElementById('contador-no-leidas')?.textContent || '0');
+
+function actualizarContadores(decremento) {
+  noLeidasCount = Math.max(0, noLeidasCount - decremento);
+
+  const el = document.getElementById('contador-no-leidas');
+  if (el) {
+    el.textContent = noLeidasCount;
+    el.className = el.className.replace(/text-\w+/, noLeidasCount > 0 ? 'text-danger' : 'text-muted');
+  }
+
+  // Navbar bell badge (cualquier selector que use el base.html)
+  document.querySelectorAll('.notif-count, #notif-count, .badge-notif, [data-notif-badge]').forEach(b => {
+    b.textContent = noLeidasCount > 0 ? noLeidasCount : '';
+    b.style.display = noLeidasCount > 0 ? '' : 'none';
+  });
+
+  const btnTodas  = document.getElementById('btn-marcar-todas');
+  const badgeBtnT = document.getElementById('badge-marcar-todas');
+  if (badgeBtnT) badgeBtnT.textContent = noLeidasCount;
+  if (btnTodas && noLeidasCount === 0) btnTodas.style.display = 'none';
+
+  // Empty state si ya no hay sin leer
+  if (noLeidasCount === 0) {
+    const zona = document.getElementById('zona-no-leidas');
+    if (zona) zona.innerHTML = `
+      <div class="empty-state">
+        <i class="bi bi-check-circle text-success"></i>
+        <p class="fw-semibold mb-1">¡Todo al día!</p>
+        <p class="small text-muted mb-0">No tienes notificaciones pendientes.</p>
+      </div>`;
+    // Badge del tab brigada
+    const tabBadge = document.querySelector('#tab-alertas-btn .badge');
+    if (tabBadge) tabBadge.remove();
+  }
+}
+
+/* ── Marcar una como leída ── */
+function marcarLeida(id, btn) {
+  const card = btn.closest('.notif-card');
+  fetch(`/api/auth/notificaciones/${id}/marcar_leida/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (!data.success) return;
+    card.classList.add('saliendo');
+    actualizarContadores(1);
+    setTimeout(() => {
+      const item = card.closest('.notif-item');
+      if (item) item.remove(); else card.remove();
+    }, 390);
+  })
+  .catch(console.error);
+}
+
+/* ── Marcar todas como leídas ── */
+document.getElementById('btn-marcar-todas')?.addEventListener('click', function () {
+  fetch('/api/auth/notificaciones/marcar_todas_leidas/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (!data.success) return;
+    const cards = document.querySelectorAll('.notif-card.no-leida');
+    cards.forEach(c => c.classList.add('saliendo'));
+    const total = noLeidasCount;
+    actualizarContadores(total);
+    setTimeout(() => cards.forEach(c => {
+      const item = c.closest('.notif-item');
+      if (item) item.remove(); else c.remove();
+    }), 400);
+  })
+  .catch(console.error);
+});
+
+/* ── Filtros client-side ── */
+document.querySelectorAll('.filtro-pill[data-filtro]').forEach(btn => {
+  btn.addEventListener('click', function () {
+    const grupo = this.dataset.grupo;
+    document.querySelectorAll(`.filtro-pill[data-grupo="${grupo}"]`).forEach(b => b.classList.remove('activo'));
+    this.classList.add('activo');
+    aplicarFiltros();
+  });
+});
+
+function aplicarFiltros() {
+  const tipoActivo = document.querySelector('.filtro-pill[data-grupo="tipo"].activo')?.dataset.filtro || 'TODOS';
+  const priActivo  = document.querySelector('.filtro-pill[data-grupo="pri"].activo')?.dataset.filtro  || 'TODOS';
+
+  document.querySelectorAll('.notif-item').forEach(item => {
+    const card = item.querySelector('.notif-card');
+    if (!card) return;
+    const okTipo = tipoActivo === 'TODOS' || card.dataset.tipo === tipoActivo;
+    const okPri  = priActivo  === 'TODOS' || card.dataset.prioridad === priActivo;
+    item.style.display = okTipo && okPri ? '' : 'none';
+  });
+
+  // Ocultar separadores de fecha vacíos
+  document.querySelectorAll('.fecha-grupo').forEach(sep => {
+    let sib = sep.nextElementSibling;
+    let visible = false;
+    while (sib && !sib.classList.contains('fecha-grupo')) {
+      if (sib.style.display !== 'none') visible = true;
+      sib = sib.nextElementSibling;
     }
-    return cookieValue;
+    sep.style.display = visible ? '' : 'none';
+  });
 }
 
-function marcarLeida(notifId) {
-    fetch(`/api/auth/notificaciones/${notifId}/marcar_leida/`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        }
-    })
-    .catch(error => console.error('Error:', error));
-}
+/* ── Buscador incidentes brigada ── */
+document.getElementById('buscador-incidentes')?.addEventListener('input', function () {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('#tabla-incidentes tbody tr').forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
 
-function marcarTodasLeidas() {
-    fetch('/api/auth/notificaciones/marcar_todas_leidas/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        }
-    })
-    .catch(error => console.error('Error:', error));
-}
+/* ── Filtro estado incidentes ── */
+document.getElementById('filtro-estado-inc')?.addEventListener('change', function () {
+  const val = this.value;
+  document.querySelectorAll('#tabla-incidentes tbody tr').forEach(row => {
+    row.style.display = !val || row.dataset.estado === val ? '' : 'none';
+  });
+});
+
+/* ── Tooltips ── */
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
+});
 </script>
 {% endblock %}

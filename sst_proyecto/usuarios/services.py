@@ -362,11 +362,11 @@ class NotificacionService:
 
         url = "/reportes/incidentes/"
 
-        # Si es critico o alto, notificar a Admin e Instructores
+        # Brigada siempre recibe la notificacion; Instructores solo en incidentes graves
         if gravedad in ['ALTA', 'CRITICA']:
-            roles = ['ADMINISTRATIVO', 'INSTRUCTOR']
+            roles = ['ADMINISTRATIVO', 'INSTRUCTOR', 'BRIGADA']
         else:
-            roles = ['ADMINISTRATIVO']
+            roles = ['ADMINISTRATIVO', 'BRIGADA']
 
         notificaciones = []
         usuarios = Usuario.objects.filter(rol__in=roles, activo=True)
