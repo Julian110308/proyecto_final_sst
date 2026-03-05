@@ -21,7 +21,7 @@ class Geocerca(models.Model):
         help_text='Longitud debe estar entre -180 y 180 grados'
     )
     radio_metros = models.IntegerField(
-        default=400,
+        default=200,
         validators=[MinValueValidator(1)],
         help_text='Radio en metros (mínimo 1 metro)'
     )
