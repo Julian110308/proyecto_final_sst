@@ -64,6 +64,11 @@
     100% { transform: rotate(360deg); }
 }
 
+/* Clases utilitarias color SENA verde */
+.border-sena   { border-color: var(--sena-verde) !important; }
+.text-sena     { color: var(--sena-verde) !important; }
+.bg-light-sena { background-color: rgba(57, 169, 0, 0.1) !important; }
+
 /* Estilos para mapas */
 .map-container {
     border-radius: 12px;
