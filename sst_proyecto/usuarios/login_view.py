@@ -1,10 +1,13 @@
 """
 Vista personalizada de login — autenticación por correo electrónico
 """
+import logging
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from .models import Usuario
+
+logger = logging.getLogger('usuarios')
 
 
 def custom_login_view(request):
@@ -14,11 +17,6 @@ def custom_login_view(request):
     if request.method == 'POST':
         email = request.POST.get('username', '').strip()   # el campo HTML sigue llamándose 'username'
         password = request.POST.get('password', '')
-
-        print(f"\n{'='*70}")
-        print(f"INTENTO DE LOGIN:")
-        print(f"  Email ingresado: '{email}'")
-        print(f"  Contraseña: {'*' * len(password)}")
 
         user = None
 
@@ -33,8 +31,7 @@ def custom_login_view(request):
         try:
             usuario_obj_check = Usuario.objects.get(email__iexact=email)
             if usuario_obj_check.estado_cuenta == 'PENDIENTE':
-                print(f"  Error: Cuenta pendiente de aprobación")
-                print(f"{'='*70}\n")
+                logger.warning(f"Intento de login con cuenta pendiente: {email}")
                 messages.warning(
                     request,
                     'Tu cuenta está pendiente de aprobación por el Coordinador SST. '
@@ -42,28 +39,23 @@ def custom_login_view(request):
                 )
                 return render(request, 'login.html')
             elif usuario_obj_check.estado_cuenta == 'BLOQUEADO':
-                print(f"  Error: Cuenta bloqueada")
-                print(f"{'='*70}\n")
+                logger.warning(f"Intento de login con cuenta bloqueada: {email}")
                 messages.error(request, 'Tu cuenta ha sido bloqueada. Contacta al Coordinador SST.')
                 return render(request, 'login.html')
         except Usuario.DoesNotExist:
             pass
 
         if user is not None:
-            print(f"  Autenticacion: OK — {user.username} ({user.rol})")
             if user.activo:
                 login(request, user)
-                print(f"  Login completado")
-                print(f"{'='*70}\n")
+                logger.info(f"Login exitoso: {user.username} ({user.rol})")
                 next_url = request.GET.get('next', '/')
                 return redirect(next_url)
             else:
-                print(f"  Error: Usuario inactivo")
-                print(f"{'='*70}\n")
+                logger.warning(f"Intento de login con usuario inactivo: {email}")
                 messages.error(request, 'Tu cuenta está inactiva. Contacta al administrador.')
         else:
-            print(f"  Autenticacion: FALLO — correo o contraseña incorrectos")
-            print(f"{'='*70}\n")
+            logger.warning(f"Login fallido para: {email}")
             messages.error(request, 'Correo o contraseña incorrectos.')
 
     return render(request, 'login.html')
