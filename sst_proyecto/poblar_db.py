@@ -246,11 +246,11 @@ def crear_registros_acceso(usuarios):
             fecha_hora_ingreso=hora_ingreso,
             defaults={
                 'tipo': 'INGRESO',
-                'metodo_ingreso': 'QR',
+                'metodo_ingreso': 'MANUAL',
                 'latitud_ingreso': 5.7303596,
                 'longitud_ingreso': -72.8943613,
                 'fecha_hora_egreso': hora_egreso,
-                'metodo_egreso': 'QR',
+                'metodo_egreso': 'MANUAL',
                 'latitud_egreso': 5.7303596,
                 'longitud_egreso': -72.8943613
             }

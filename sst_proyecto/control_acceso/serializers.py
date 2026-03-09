@@ -67,7 +67,7 @@ class RegistrarAccesoSerializer(serializers.Serializer):
     latitud = serializers.FloatField(required=False, allow_null=True)
     longitud = serializers.FloatField(required=False, allow_null=True)
     metodo = serializers.ChoiceField(
-        choices=['MANUAL', 'AUTOMATICO'],  # Removido 'QR' - solo registro físico
+        choices=['MANUAL', 'AUTOMATICO'],
         default='MANUAL',
         required=False
     )
