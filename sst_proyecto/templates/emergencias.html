@@ -44,39 +44,39 @@
         </div>
     </div>
     <div class="col-xl-3 col-md-6">
-        <div class="card card-modern border-0 border-start border-4 border-warning">
+        <div class="card card-modern border-0 border-start border-4 border-secondary">
             <div class="card-body p-4">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
                         <h6 class="text-muted mb-2">En Atención</h6>
                         <h3 class="fw-bold text-dark mb-0" id="metricaAtencion">--</h3>
-                        <small class="text-warning"><i class="bi bi-hand-index"></i> Siendo atendidas</small>
+                        <small class="text-muted"><i class="bi bi-hand-index"></i> Siendo atendidas</small>
                     </div>
-                    <div class="bg-light-warning rounded-3 p-3">
-                        <i class="bi bi-person-raised-hand fs-2 text-warning"></i>
+                    <div class="bg-light rounded-3 p-3">
+                        <i class="bi bi-person-raised-hand fs-2 text-secondary"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     <div class="col-xl-3 col-md-6">
-        <div class="card card-modern border-0 border-start border-4 border-success">
+        <div class="card card-modern border-0 border-start border-4 border-secondary">
             <div class="card-body p-4">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
                         <h6 class="text-muted mb-2">Resueltas Hoy</h6>
                         <h3 class="fw-bold text-dark mb-0" id="metricaResueltas">--</h3>
-                        <small class="text-success"><i class="bi bi-check-circle"></i> Cerradas hoy</small>
+                        <small class="text-muted"><i class="bi bi-check-circle"></i> Cerradas hoy</small>
                     </div>
-                    <div class="bg-light-success rounded-3 p-3">
-                        <i class="bi bi-check-circle-fill fs-2 text-success"></i>
+                    <div class="bg-light rounded-3 p-3">
+                        <i class="bi bi-check-circle-fill fs-2 text-secondary"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     <div class="col-xl-3 col-md-6">
-        <div class="card card-modern border-0 border-start border-4 border-primary">
+        <div class="card card-modern border-0 border-start border-4 border-secondary">
             <div class="card-body p-4">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
@@ -84,8 +84,8 @@
                         <h3 class="fw-bold text-dark mb-0" id="metricaMes">--</h3>
                         <small class="text-muted"><i class="bi bi-calendar"></i> Este mes</small>
                     </div>
-                    <div class="bg-light-primary rounded-3 p-3">
-                        <i class="bi bi-clipboard-data fs-2 text-primary"></i>
+                    <div class="bg-light rounded-3 p-3">
+                        <i class="bi bi-clipboard-data fs-2 text-secondary"></i>
                     </div>
                 </div>
             </div>
@@ -97,23 +97,23 @@
     <!-- Panel de Control Emergencias -->
     <div class="col-lg-4">
         <div class="card card-modern mb-4">
-            <div class="card-header-modern bg-warning text-white py-3" style="background:var(--bs-warning)!important;">
-                <h6 class="m-0 fw-bold text-dark">
+            <div class="card-header-modern">
+                <h6 class="m-0 fw-bold">
                     <i class="bi bi-megaphone me-2"></i>
                     Acciones Rapidas
                 </h6>
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
-                    <button class="btn btn-outline-primary btn-sm" onclick="notificarBrigada()">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="notificarBrigada()">
                         <i class="bi bi-bell me-1"></i>
                         Notificar Brigada
                     </button>
-                    <button class="btn btn-outline-success btn-sm" onclick="document.getElementById('contactosSection').scrollIntoView({behavior:'smooth'})">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="document.getElementById('contactosSection').scrollIntoView({behavior:'smooth'})">
                         <i class="bi bi-telephone me-1"></i>
                         Contactar Emergencias
                     </button>
-                    <button class="btn btn-outline-info btn-sm" onclick="window.location.href='/mapas/'">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="window.location.href='/mapas/'">
                         <i class="bi bi-map me-1"></i>
                         Ver Mapa de Evacuacion
                     </button>
@@ -289,7 +289,7 @@
 <div class="modal fade" id="modalResolver" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header bg-success text-white">
+            <div class="modal-header bg-dark text-white">
                 <h5 class="modal-title">
                     <i class="bi bi-check-circle me-2"></i>
                     Resolver Emergencia
@@ -306,7 +306,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-success" id="btnConfirmarResolver">
+                <button type="button" class="btn btn-dark" id="btnConfirmarResolver">
                     <i class="bi bi-check-lg me-1"></i> Confirmar Resolucion
                 </button>
             </div>
