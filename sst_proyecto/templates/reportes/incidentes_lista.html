@@ -28,12 +28,12 @@
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
         <div>
             <h2 class="fw-bold text-dark mb-0">
-                <i class="bi bi-exclamation-triangle-fill me-2 text-warning"></i>Reporte de Incidentes
+                <i class="bi bi-exclamation-triangle-fill me-2 text-secondary"></i>Reporte de Incidentes
             </h2>
             <p class="text-muted mb-0">Seguimiento y gestión de eventos de seguridad.</p>
         </div>
         <div class="d-flex gap-2 flex-wrap">
-            <a href="{% url 'crear_incidente' %}" class="btn btn-danger btn-sm">
+            <a href="{% url 'crear_incidente' %}" class="btn btn-sm" style="background-color:#39A900;color:white;">
                 <i class="bi bi-plus-lg me-1"></i>Reportar Nuevo
             </a>
         </div>
@@ -44,7 +44,7 @@
         <div class="col-6 col-md-3 col-lg">
             <div class="card h-100 border-0 shadow-sm">
                 <div class="card-body text-center p-3">
-                    <div class="fw-bold fs-2 text-primary">{{ total }}</div>
+                    <div class="fw-bold fs-2" style="color:#39A900;">{{ total }}</div>
                     <small class="text-muted">Total</small>
                 </div>
             </div>
@@ -52,7 +52,7 @@
         <div class="col-6 col-md-3 col-lg">
             <div class="card h-100 border-0 shadow-sm">
                 <div class="card-body text-center p-3">
-                    <div class="fw-bold fs-2 text-danger">{{ reportados }}</div>
+                    <div class="fw-bold fs-2 text-secondary">{{ reportados }}</div>
                     <small class="text-muted">Pendientes</small>
                 </div>
             </div>
@@ -60,7 +60,7 @@
         <div class="col-6 col-md-3 col-lg">
             <div class="card h-100 border-0 shadow-sm">
                 <div class="card-body text-center p-3">
-                    <div class="fw-bold fs-2 text-warning">{{ en_proceso }}</div>
+                    <div class="fw-bold fs-2 text-secondary">{{ en_proceso }}</div>
                     <small class="text-muted">En Proceso</small>
                 </div>
             </div>
@@ -68,7 +68,7 @@
         <div class="col-6 col-md-3 col-lg">
             <div class="card h-100 border-0 shadow-sm">
                 <div class="card-body text-center p-3">
-                    <div class="fw-bold fs-2 text-success">{{ resueltos }}</div>
+                    <div class="fw-bold fs-2 text-secondary">{{ resueltos }}</div>
                     <small class="text-muted">Resueltos</small>
                 </div>
             </div>
@@ -141,7 +141,7 @@
                     </div>
                 </div>
                 <div class="mt-2 d-flex justify-content-end">
-                    <button type="submit" class="btn btn-sm btn-primary">
+                    <button type="submit" class="btn btn-sm" style="background-color:#39A900;color:white;">
                         <i class="bi bi-search me-1"></i>Aplicar Filtros
                     </button>
                 </div>
@@ -186,23 +186,21 @@
                             <td><span class="badge bg-secondary">{{ incidente.get_tipo_display }}</span></td>
                             <td>
                                 {% if incidente.area_incidente %}
-                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle">{{ incidente.get_area_incidente_display }}</span>
+                                <span class="badge bg-light text-dark border">{{ incidente.get_area_incidente_display }}</span>
                                 {% else %}
                                 <span class="text-muted">—</span>
                                 {% endif %}
                             </td>
                             <td>
-                                <span class="badge {% if incidente.gravedad == 'CRITICA' %}bg-danger{% elif incidente.gravedad == 'ALTA' %}bg-warning text-dark{% elif incidente.gravedad == 'MEDIA' %}bg-info{% else %}bg-secondary{% endif %}">
+                                <span class="badge {% if incidente.gravedad == 'CRITICA' %}bg-danger{% else %}bg-secondary{% endif %}">
                                     {{ incidente.get_gravedad_display }}
                                 </span>
                             </td>
                             <td>
-                                {% if incidente.estado == 'REPORTADO' %}
-                                <span class="badge bg-warning text-dark">{{ incidente.get_estado_display }}</span>
-                                {% elif incidente.estado in 'EN_REVISION,EN_PROCESO' %}
-                                <span class="badge bg-info">{{ incidente.get_estado_display }}</span>
+                                {% if incidente.estado == 'RESUELTO' %}
+                                <span class="badge" style="background-color:#39A900;">{{ incidente.get_estado_display }}</span>
                                 {% else %}
-                                <span class="badge bg-success">{{ incidente.get_estado_display }}</span>
+                                <span class="badge bg-secondary">{{ incidente.get_estado_display }}</span>
                                 {% endif %}
                             </td>
                             <td>
@@ -230,7 +228,7 @@
                                 <small>{{ incidente.reportado_por.get_full_name|default:incidente.reportado_por.username }}</small>
                             </td>
                             <td class="text-end pe-3">
-                                <a href="{% url 'detalle_incidente' incidente.id %}" class="btn btn-sm btn-outline-primary" title="Ver detalle">
+                                <a href="{% url 'detalle_incidente' incidente.id %}" class="btn btn-sm btn-outline-secondary" title="Ver detalle">
                                     <i class="bi bi-eye"></i>
                                 </a>
                             </td>
