@@ -20,10 +20,10 @@
         </p>
     </div>
     <div class="d-flex gap-2 flex-shrink-0 flex-wrap">
-        <a href="/acceso/" class="btn btn-primary btn-sm">
+        <a href="/acceso/" class="btn btn-sm" style="background-color:#39A900;color:white;border:none;">
             <i class="bi bi-door-open me-1"></i>Control de Acceso
         </a>
-        <button class="btn btn-outline-danger btn-sm" onclick="alertaSeguridad()">
+        <button class="btn btn-outline-secondary btn-sm" onclick="alertaSeguridad()">
             <i class="bi bi-exclamation-triangle me-1"></i>Alerta
         </button>
     </div>
@@ -133,7 +133,7 @@
                     Visitantes Activos (<span id="contadorVisitantes">0</span>)
                 </h6>
                 <div class="d-flex align-items-center gap-2">
-                    <a href="{% url 'gestion_visitantes' %}" class="btn btn-sm btn-primary" onclick="event.stopPropagation();">
+                    <a href="{% url 'gestion_visitantes' %}" class="btn btn-sm" style="background-color:#39A900;color:white;border:none;" onclick="event.stopPropagation();">
                         <i class="bi bi-plus-circle me-1"></i>Nuevo
                     </a>
                     <i class="bi bi-chevron-down"></i>
@@ -168,7 +168,7 @@
                 <h6 class="mb-0">
                     <i class="bi bi-geo-alt me-2"></i>Mapa del Centro
                 </h6>
-                <a href="/mapas/" class="btn btn-sm btn-outline-primary">Ver Completo</a>
+                <a href="/mapas/" class="btn btn-sm btn-outline-secondary">Ver Completo</a>
             </div>
             <div class="card-body p-0">
                 <div id="securityMap" style="height: 350px;"></div>

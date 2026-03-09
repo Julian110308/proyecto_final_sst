@@ -107,7 +107,7 @@
         <h6 class="mb-0">
             <i class="bi bi-people-fill me-2"></i>
             Equipo de Brigada
-            <span class="badge bg-success ms-1" id="badgeBrigadistasDisp">0</span>
+            <span class="badge ms-1" id="badgeBrigadistasDisp" style="background-color:#39A900;">0</span>
             <small class="text-muted ms-1">disponibles</small>
         </h6>
         <i class="bi bi-chevron-down"></i>
@@ -137,7 +137,7 @@
             {% endif %}
         </h6>
         <div class="d-flex align-items-center gap-2">
-            <a href="{% url 'listar_incidentes' %}" class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation();">
+            <a href="{% url 'listar_incidentes' %}" class="btn btn-sm btn-outline-secondary" onclick="event.stopPropagation();">
                 <i class="bi bi-list-ul me-1"></i>Ver Todos
             </a>
             <i class="bi bi-chevron-down"></i>
@@ -195,7 +195,7 @@
                                 <small class="text-muted">{{ incidente.fecha_reporte|time:"h:i A" }}</small>
                             </td>
                             <td>
-                                <a href="{% url 'detalle_incidente' incidente.id %}" class="btn btn-sm btn-outline-primary" title="Ver detalle">
+                                <a href="{% url 'detalle_incidente' incidente.id %}" class="btn btn-sm btn-outline-secondary" title="Ver detalle">
                                     <i class="bi bi-eye"></i>
                                 </a>
                             </td>
@@ -276,7 +276,7 @@
             <i class="bi bi-tools me-2"></i>Estado de Equipos
         </h6>
         <div class="d-flex align-items-center gap-2">
-            <a href="{% url 'equipos_brigada' %}" class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation();">Ver todos</a>
+            <a href="{% url 'equipos_brigada' %}" class="btn btn-sm btn-outline-secondary" onclick="event.stopPropagation();">Ver todos</a>
             <i class="bi bi-chevron-down"></i>
         </div>
     </div>
