@@ -120,14 +120,6 @@
                                 <div style="width:12px;height:12px;border-radius:50%;background:#FF9800;border:2px solid white;animation:pulse 1.5s infinite;"></div><span>Mi ubicación</span>
                                 <div style="width:12px;height:12px;border-radius:50%;background:#DC2626;border:2px solid white;animation:pulse 1.5s infinite;"></div><span>Emergencia</span>
                             </div>
-                            <!-- Estado Edificios -->
-                            <div style="font-size:10px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;border-top:1px solid #eee;padding-top:6px;">Edificios</div>
-                            <div style="display:grid;grid-template-columns:auto 1fr;align-items:center;gap:3px 6px;font-size:11px;">
-                                <div style="width:12px;height:12px;border-radius:2px;background:#4CAF50;"></div><span>Normal</span>
-                                <div style="width:12px;height:12px;border-radius:2px;background:#FF9800;"></div><span>Evacuando</span>
-                                <div style="width:12px;height:12px;border-radius:2px;background:#D32F2F;"></div><span>Emergencia</span>
-                                <div style="width:12px;height:12px;border-radius:2px;background:#9E9E9E;"></div><span>Cerrado</span>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -188,19 +180,6 @@
                     </label>
                 </div>
                 {% endif %}
-            </div>
-        </div>
-
-        <!-- Panel Estado de Edificios -->
-        <div class="card card-modern mb-4" id="panelEstadosEdificios">
-            <div class="card-header-modern">
-                <h6 class="mb-0"><i class="bi bi-building me-2"></i>Estado de Edificios <small class="text-muted ms-1" style="font-size:11px;">(actualiza cada 15s)</small></h6>
-            </div>
-            <div class="card-body p-2" id="resumenEstadosEdificios">
-                <div class="text-center text-muted py-2">
-                    <div class="spinner-border spinner-border-sm" role="status"></div>
-                    <p class="small mb-0 mt-1">Cargando...</p>
-                </div>
             </div>
         </div>
 
@@ -296,7 +275,6 @@
 </div>
 
 <!-- Pasar datos de Django a JavaScript -->
-{{ edificios|json_script:"edificios-data" }}
 {{ puntos_encuentro|json_script:"puntos-encuentro-data" }}
 {{ equipamiento|json_script:"equipamiento-data" }}
 
@@ -324,7 +302,6 @@ let miMarcador = null;
 let circuloPrecision = null;
 let poligonoGeocerca = null;
 let rutaActiva = null;
-let capaEdificios;
 let capaVias;
 let capaAreas;
 let capaPuntosEncuentro;
@@ -334,8 +311,6 @@ let capaPersonas;
 let capaEmergencias;
 let capaRutasPredefinidas;
 
-// Mapa de marcadores de edificios para actualización de estado
-let edificioMarkersMap = {};
 // Intervalo de auto-refresh emergencias
 let intervalEmergencias = null;
 
@@ -343,14 +318,10 @@ let intervalEmergencias = null;
 const userRol = '{{ user.rol }}';
 
 // Cargar datos de Django
-let edificiosData = [];
 let puntosEncuentroData = [];
 let equipamientoData = [];
 
 try {
-    edificiosData = JSON.parse(
-        document.getElementById('edificios-data')?.textContent || '[]'
-    );
     puntosEncuentroData = JSON.parse(
         document.getElementById('puntos-encuentro-data')?.textContent || '[]'
     );
@@ -466,7 +437,7 @@ function inicializarInfraestructura() {
             color: '#ffffff',
             weight: 2,
             fillOpacity: 0.85
-        }).addTo(capaEdificios);
+        });
 
         marker.bindPopup(`
             <div style="min-width: 180px;">
@@ -500,7 +471,7 @@ function inicializarInfraestructura() {
             iconSize: [22, 22],
             iconAnchor: [11, 11]
         });
-        L.marker([edif.lat, edif.lng], { icon: label }).addTo(capaEdificios);
+        L.marker([edif.lat, edif.lng], { icon: label });
     });
 
     // 3. RUTAS DE EVACUACION PREDEFINIDAS
@@ -955,7 +926,6 @@ function inicializarDatosDinamicos() {
     // Actualizar contadores
     document.getElementById('contadorPuntos').textContent = puntosEncuentroData.length;
     document.getElementById('contadorEquipos').textContent = equipamientoData.length;
-    document.getElementById('contadorEdificios').textContent = edificiosData.length;
 
     // ----------------------------------------------------------------
     // ICONOS - Puntos de encuentro
@@ -993,66 +963,6 @@ function inicializarDatosDinamicos() {
             iconAnchor: [15, 15]
         });
     }
-
-    // ----------------------------------------------------------------
-    // EDIFICIOS desde BD - círculos con colores por tipo
-    // ----------------------------------------------------------------
-    const coloresTipoEdificio = {
-        AULAS:          '#1976D2',
-        LABORATORIO:    '#1976D2',
-        TALLER:         '#E65100',
-        ADMINISTRATIVO: '#6A1B9A',
-        CAFETERIA:      '#2E7D32',
-        MINA:           '#4E342E',
-        BIBLIOTECA:     '#37474F',
-        BODEGA:         '#5D4037',
-        PARQUEADERO:    '#546E7A',
-        CANCHA:         '#00695C',
-        ZONA_VERDE:     '#388E3C',
-        OTRO:           '#546E7A',
-    };
-
-    edificiosData.forEach(edif => {
-        const color = coloresTipoEdificio[edif.tipo] || '#546E7A';
-        const marker = L.circleMarker([edif.latitud, edif.longitud], {
-            radius: 14,
-            fillColor: color,
-            color: '#ffffff',
-            weight: 2,
-            fillOpacity: 0.85
-        });
-
-        // Etiqueta con número/inicial
-        const label = L.divIcon({
-            className: '',
-            html: `<div style="background:${color};color:white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:bold;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.4);">${edif.id}</div>`,
-            iconSize: [20, 20],
-            iconAnchor: [10, 10]
-        });
-        const labelMarker = L.marker([edif.latitud, edif.longitud], { icon: label });
-
-        marker.bindPopup(`
-            <div style="min-width:200px;">
-                <h6 style="margin:0 0 6px 0;color:${color};">
-                    <i class="bi bi-building"></i> ${edif.nombre}
-                </h6>
-                <p style="margin:0 0 3px 0;font-size:13px;">
-                    <strong>Tipo:</strong> ${edif.tipo}
-                </p>
-                <p style="margin:0 0 3px 0;font-size:13px;">
-                    <strong>Pisos:</strong> ${edif.pisos || 1} &nbsp; <strong>Capacidad:</strong> ${edif.capacidad || 'N/D'}
-                </p>
-                <p style="margin:0 0 6px 0;font-size:12px;color:#666;">${edif.descripcion || ''}</p>
-                <span id="estadoBadge-${edif.id}" class="badge" style="background:#4CAF50;">NORMAL</span>
-            </div>
-        `);
-
-        marker.addTo(capaEdificios);
-        labelMarker.addTo(capaEdificios);
-
-        // Guardar referencia para actualización de estado
-        edificioMarkersMap[edif.id] = marker;
-    });
 
     // ----------------------------------------------------------------
     // PUNTOS DE ENCUENTRO
@@ -1155,87 +1065,8 @@ function inicializarDatosDinamicos() {
     // ----------------------------------------------------------------
     // Agregar capas al mapa
     // ----------------------------------------------------------------
-    capaEdificios.addTo(mapa);
     capaPuntosEncuentro.addTo(mapa);
     capaEquipamiento.addTo(mapa);
-}
-
-// ====================================================================
-// ESTADO DE EDIFICIOS - Polling desde la API
-// ====================================================================
-
-async function cargarEstadosEdificios() {
-    try {
-        const resp = await fetch('/api/mapas/api/edificios/estados/', { credentials: 'same-origin' });
-        if (!resp.ok) return;
-        const estados = await resp.json();
-
-        estados.forEach(e => {
-            const marker = edificioMarkersMap[e.id];
-            if (!marker) return;
-
-            // Actualizar color del círculo según estado
-            const borderColor = e.estado === 'NORMAL' ? '#ffffff' : e.color;
-            const weight = e.estado === 'NORMAL' ? 2 : 3;
-            marker.setStyle({ fillColor: e.color, color: borderColor, weight: weight });
-
-            // Actualizar el badge de estado dentro del popup (si está abierto)
-            const badge = document.getElementById(`estadoBadge-${e.id}`);
-            if (badge) {
-                badge.style.background = e.color;
-                badge.textContent = e.estado.replace('_', ' ');
-            }
-        });
-
-        actualizarResumenEstados(estados);
-    } catch (err) {
-        console.warn('Error cargando estados de edificios:', err);
-    }
-}
-
-function actualizarResumenEstados(estados) {
-    const conteo = { NORMAL: 0, EVACUANDO: 0, EN_EMERGENCIA: 0, DANADO: 0, CERRADO: 0 };
-    estados.forEach(e => { if (conteo[e.estado] !== undefined) conteo[e.estado]++; });
-
-    const colores = {
-        NORMAL:       { bg: '#4CAF50', label: 'Normal' },
-        EVACUANDO:    { bg: '#FF9800', label: 'Evacuando' },
-        EN_EMERGENCIA:{ bg: '#D32F2F', label: 'Emergencia' },
-        DANADO:       { bg: '#F44336', label: 'Dañado' },
-        CERRADO:      { bg: '#9E9E9E', label: 'Cerrado' },
-    };
-
-    const panel = document.getElementById('resumenEstadosEdificios');
-    if (!panel) return;
-
-    const total = estados.length;
-    if (total === 0) {
-        panel.innerHTML = '<p class="text-muted small text-center mb-0 py-2">Sin edificios registrados</p>';
-        return;
-    }
-
-    let html = '<div class="d-flex flex-wrap gap-1 p-1">';
-    Object.entries(conteo).forEach(([estado, n]) => {
-        if (n === 0) return;
-        const { bg, label } = colores[estado];
-        html += `<span class="badge rounded-pill" style="background:${bg};font-size:11px;">${label}: ${n}</span>`;
-    });
-    html += '</div>';
-
-    // Barra de progreso de estado general
-    const porcentajeNormal = total > 0 ? Math.round((conteo.NORMAL / total) * 100) : 100;
-    const colorBarra = porcentajeNormal === 100 ? '#4CAF50' : porcentajeNormal >= 70 ? '#FF9800' : '#D32F2F';
-    html += `
-        <div class="px-2 pb-2">
-            <div class="d-flex justify-content-between" style="font-size:10px;color:#666;">
-                <span>${conteo.NORMAL} de ${total} en operación normal</span>
-                <span>${porcentajeNormal}%</span>
-            </div>
-            <div class="progress" style="height:6px;border-radius:3px;">
-                <div class="progress-bar" style="width:${porcentajeNormal}%;background:${colorBarra};border-radius:3px;"></div>
-            </div>
-        </div>`;
-    panel.innerHTML = html;
 }
 
 // ====================================================================
@@ -1268,12 +1099,6 @@ function inicializarControles() {
         } else {
             document.exitFullscreen();
         }
-    });
-
-    // Checkbox edificios
-    document.getElementById('capaEdificiosCheck').addEventListener('change', function() {
-        if (this.checked) { mapa.addLayer(capaEdificios); }
-        else { mapa.removeLayer(capaEdificios); }
     });
 
     // Checkbox puntos de encuentro
@@ -1540,13 +1365,6 @@ function realizarBusqueda() {
         return;
     }
 
-    // Buscar en edificios
-    const edificiosEncontrados = edificiosData.filter(e =>
-        e.nombre.toLowerCase().includes(termino) ||
-        e.tipo.toLowerCase().includes(termino) ||
-        (e.descripcion && e.descripcion.toLowerCase().includes(termino))
-    ).map(e => ({ ...e, _tipo: 'edificio' }));
-
     // Buscar en puntos de encuentro
     const puntosEncontrados = puntosEncuentroData.filter(p =>
         p.nombre.toLowerCase().includes(termino) ||
@@ -1560,7 +1378,7 @@ function realizarBusqueda() {
         (e.codigo && e.codigo.toLowerCase().includes(termino))
     ).map(e => ({ ...e, _tipo: 'equipo' }));
 
-    _resultadosBusqueda = [...edificiosEncontrados, ...puntosEncontrados, ...equiposEncontrados];
+    _resultadosBusqueda = [...puntosEncontrados, ...equiposEncontrados];
 
     if (_resultadosBusqueda.length === 0) {
         resultadosDiv.innerHTML = `
@@ -1573,12 +1391,10 @@ function realizarBusqueda() {
     }
 
     const iconosPorTipo = {
-        edificio: 'bi-building',
         punto:    'bi-signpost',
         equipo:   'bi-fire-extinguisher',
     };
     const coloresPorTipo = {
-        edificio: 'secondary',
         punto:    'success',
         equipo:   'danger',
     };
@@ -1618,16 +1434,7 @@ function centrarEnResultado(indice) {
 
     const infoDiv = document.getElementById('infoSeleccionada');
 
-    if (item._tipo === 'edificio') {
-        infoDiv.innerHTML = `
-            <h6 class="text-secondary">
-                <i class="bi bi-building"></i> ${item.nombre}
-            </h6>
-            <p class="mb-1"><strong>Tipo:</strong> ${item.tipo}</p>
-            <p class="mb-1"><strong>Pisos:</strong> ${item.pisos || 1} &nbsp; <strong>Capacidad:</strong> ${item.capacidad || 'N/D'}</p>
-            <p class="mb-0 small text-muted">${item.descripcion || ''}</p>
-        `;
-    } else if (item._tipo === 'punto') {
+    if (item._tipo === 'punto') {
         infoDiv.innerHTML = `
             <h6 class="text-success">
                 <i class="bi bi-signpost"></i> ${item.nombre}
@@ -1893,7 +1700,6 @@ function centrarMapaEnPunto(puntoId) {
 
 document.addEventListener('DOMContentLoaded', function() {
     // 0. Inicializar capas (L ya disponible desde base.html)
-    capaEdificios = L.layerGroup();
     capaVias = L.layerGroup();
     capaAreas = L.layerGroup();
     capaPuntosEncuentro = L.layerGroup();
@@ -1933,12 +1739,7 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
     });
     
-    // 6. Cargar estados de edificios y activar polling
-    cargarEstadosEdificios();
-    setInterval(cargarEstadosEdificios, 15000);
-
     console.log('✅ Mapa interactivo inicializado correctamente');
-    console.log(`📊 Edificios: ${edificiosData.length}`);
     console.log(`📊 Puntos de encuentro: ${puntosEncuentroData.length}`);
     console.log(`📊 Equipamiento: ${equipamientoData.length}`);
 });
