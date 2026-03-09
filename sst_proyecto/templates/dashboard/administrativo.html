@@ -30,13 +30,13 @@
 
 <!-- Metricas Principales -->
 <div class="row g-3 mb-4">
-    {% include 'components/metric-card.html' with label="Personas en Centro" value=personas_en_centro|default:0 sublabel=porcentaje_ocupacion|default:0|add:"% ocupacion" sublabel_icon="bi bi-building" sublabel_color="success" icon="bi-people-fill" icon_color="primary" border_color="primary" %}
+    {% include 'components/metric-card.html' with label="Personas en Centro" value=personas_en_centro|default:0 sublabel=porcentaje_ocupacion|default:0|add:"% ocupacion" sublabel_icon="bi bi-building" sublabel_color="muted" icon="bi-people-fill" icon_color="secondary" border_color="secondary" %}
 
-    {% include 'components/metric-card.html' with label="Ingresos Hoy" value=ingresos_hoy|default:0 sublabel="Registros de entrada" sublabel_color="muted" icon="bi-box-arrow-in-right" icon_color="success" border_color="success" %}
+    {% include 'components/metric-card.html' with label="Ingresos Hoy" value=ingresos_hoy|default:0 sublabel="Registros de entrada" sublabel_color="muted" icon="bi-box-arrow-in-right" icon_color="secondary" border_color="secondary" %}
 
-    {% include 'components/metric-card.html' with label="Visitantes" value=visitantes_hoy|default:0 sublabel="Externos activos" sublabel_color="warning" icon="bi-person-badge" icon_color="warning" border_color="warning" %}
+    {% include 'components/metric-card.html' with label="Visitantes" value=visitantes_hoy|default:0 sublabel="Externos activos" sublabel_color="muted" icon="bi-person-badge" icon_color="secondary" border_color="secondary" %}
 
-    {% include 'components/metric-card.html' with label="Total Usuarios" value=total_usuarios|default:0 sublabel=usuarios_mes|default:0|add:" nuevos este mes" sublabel_icon="bi bi-arrow-up-short" sublabel_color="success" icon="bi-person-check" icon_color="info" border_color="info" %}
+    {% include 'components/metric-card.html' with label="Total Usuarios" value=total_usuarios|default:0 sublabel=usuarios_mes|default:0|add:" nuevos este mes" sublabel_icon="bi bi-arrow-up-short" sublabel_color="muted" icon="bi-person-check" icon_color="secondary" border_color="secondary" %}
 </div>
 
 <!-- Resumen de Incidentes del Mes (Admin) -->
@@ -51,26 +51,26 @@
             <div class="card-body">
                 <div class="row g-2">
                     <div class="col-6 col-sm-3">
-                        <div class="text-center p-2 rounded" style="background:#fff3cd;">
-                            <div class="fw-bold fs-3 text-warning">{{ incidentes_total_mes|default:0 }}</div>
+                        <div class="text-center p-2 rounded bg-light">
+                            <div class="fw-bold fs-3 text-dark">{{ incidentes_total_mes|default:0 }}</div>
                             <small class="text-muted d-block">Este mes</small>
                         </div>
                     </div>
                     <div class="col-6 col-sm-3">
-                        <div class="text-center p-2 rounded" style="background:#f8d7da;">
-                            <div class="fw-bold fs-3 text-danger">{{ incidentes_pendientes|default:0 }}</div>
+                        <div class="text-center p-2 rounded bg-light">
+                            <div class="fw-bold fs-3 text-dark">{{ incidentes_pendientes|default:0 }}</div>
                             <small class="text-muted d-block">Pendientes</small>
                         </div>
                     </div>
                     <div class="col-6 col-sm-3">
-                        <div class="text-center p-2 rounded" style="background:#cce5ff;">
-                            <div class="fw-bold fs-3 text-primary">{{ incidentes_criticos|default:0 }}</div>
+                        <div class="text-center p-2 rounded bg-light">
+                            <div class="fw-bold fs-3 text-dark">{{ incidentes_criticos|default:0 }}</div>
                             <small class="text-muted d-block">Críticos</small>
                         </div>
                     </div>
                     <div class="col-6 col-sm-3">
-                        <div class="text-center p-2 rounded {% if incidentes_criticos_sla %}{% endif %}" style="background:{% if incidentes_criticos_sla %}#f8d7da{% else %}#f8f9fa{% endif %};">
-                            <div class="fw-bold fs-3 {% if incidentes_criticos_sla %}text-danger{% else %}text-muted{% endif %}">{{ incidentes_criticos_sla|default:0 }}</div>
+                        <div class="text-center p-2 rounded bg-light">
+                            <div class="fw-bold fs-3 text-dark">{{ incidentes_criticos_sla|default:0 }}</div>
                             <small class="text-muted d-block">SLA +72h</small>
                         </div>
                     </div>

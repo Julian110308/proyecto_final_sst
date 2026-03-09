@@ -44,9 +44,9 @@
         </div>
     </div>
 
-    {% include 'components/metric-card.html' with label="Mi Programa" value=user.programa_formacion|default:"Sin programa" sublabel="Programa de formacion" sublabel_icon="bi bi-mortarboard" sublabel_color="primary" icon="bi-mortarboard-fill" icon_color="primary" border_color="primary" %}
+    {% include 'components/metric-card.html' with label="Mi Programa" value=user.programa_formacion|default:"Sin programa" sublabel="Programa de formacion" sublabel_icon="bi bi-mortarboard" sublabel_color="muted" icon="bi-mortarboard-fill" icon_color="secondary" border_color="secondary" %}
 
-    {% include 'components/metric-card.html' with label="Dias Asistidos" value=dias_asistidos_mes|default:0 sublabel="Este mes" sublabel_icon="bi bi-calendar-check" sublabel_color="info" icon="bi-calendar-check-fill" icon_color="info" border_color="info" %}
+    {% include 'components/metric-card.html' with label="Dias Asistidos" value=dias_asistidos_mes|default:0 sublabel="Este mes" sublabel_icon="bi bi-calendar-check" sublabel_color="muted" icon="bi-calendar-check-fill" icon_color="secondary" border_color="secondary" %}
 </div>
 
 <!-- Grafica de Asistencia Mensual + Contactos de Emergencia -->
@@ -67,10 +67,10 @@
     </div>
 
     <div class="col-lg-4">
-        <div class="card card-modern border-start border-4 border-danger h-100">
+        <div class="card card-modern h-100">
             <div class="card-header-modern">
                 <h6 class="mb-0">
-                    <i class="bi bi-telephone-fill me-2 text-danger"></i>
+                    <i class="bi bi-telephone-fill me-2"></i>
                     Contactos de Emergencia
                 </h6>
             </div>
@@ -83,7 +83,7 @@
                             <div class="fw-bold small">{{ contacto.nombre }}</div>
                             <small class="text-muted">{{ contacto.entidad }}</small>
                         </div>
-                        <a href="tel:{{ contacto.telefono_principal }}" class="btn btn-sm btn-outline-danger">
+                        <a href="tel:{{ contacto.telefono_principal }}" class="btn btn-sm btn-outline-secondary">
                             <i class="bi bi-telephone"></i> {{ contacto.telefono_principal }}
                         </a>
                     </li>

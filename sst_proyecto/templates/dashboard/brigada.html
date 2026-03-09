@@ -42,7 +42,7 @@
         </div>
     </div>
     <div class="col-xl-3 col-md-6">
-        <div class="card card-modern border-0 border-start border-4 border-warning">
+        <div class="card card-modern border-0 border-start border-4 border-secondary">
             <div class="card-body p-3">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
@@ -51,15 +51,15 @@
                             <span class="spinner-border spinner-border-sm"></span>
                         </h3>
                     </div>
-                    <div class="rounded-3 p-2 bg-warning bg-opacity-10">
-                        <i class="bi bi-people-fill fs-4 text-warning"></i>
+                    <div class="rounded-3 p-2 bg-light">
+                        <i class="bi bi-people-fill fs-4 text-secondary"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    {% include 'components/metric-card.html' with label="Incidentes del Mes" value=incidentes_total_mes|default:0 sublabel=incidentes_pendientes|default:0|add:" pendientes" sublabel_icon="bi bi-exclamation-circle" sublabel_color="warning" icon="bi-clipboard-data" icon_color="primary" border_color="primary" %}
+    {% include 'components/metric-card.html' with label="Incidentes del Mes" value=incidentes_total_mes|default:0 sublabel=incidentes_pendientes|default:0|add:" pendientes" sublabel_icon="bi bi-exclamation-circle" sublabel_color="muted" icon="bi-clipboard-data" icon_color="secondary" border_color="secondary" %}
 </div>
 
 <!-- Alerta SLA incidentes criticos -->

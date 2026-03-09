@@ -46,25 +46,25 @@
 
 <!-- Metricas -->
 <div class="row g-3 mb-4">
-    {% include 'components/metric-card.html' with label="Personas en Centro" value=personas_en_centro|default:0 sublabel=porcentaje_ocupacion|default:0|add:"% ocupacion" sublabel_icon="bi bi-shield-check" sublabel_color="success" icon="bi-people-fill" icon_color="primary" border_color="primary" %}
+    {% include 'components/metric-card.html' with label="Personas en Centro" value=personas_en_centro|default:0 sublabel=porcentaje_ocupacion|default:0|add:"% ocupacion" sublabel_icon="bi bi-shield-check" sublabel_color="muted" icon="bi-people-fill" icon_color="secondary" border_color="secondary" %}
 
-    {% include 'components/metric-card.html' with label="Ingresos Hoy" value=ingresos_hoy|default:0 sublabel="Total del dia" sublabel_color="info" icon="bi-box-arrow-in-right" icon_color="success" border_color="success" %}
+    {% include 'components/metric-card.html' with label="Ingresos Hoy" value=ingresos_hoy|default:0 sublabel="Total del dia" sublabel_color="muted" icon="bi-box-arrow-in-right" icon_color="secondary" border_color="secondary" %}
 
-    {% include 'components/metric-card.html' with label="Visitantes Hoy" value=visitantes_hoy|default:0 sublabel="Registrados" sublabel_icon="bi bi-person-badge" sublabel_color="warning" icon="bi-person-badge" icon_color="warning" border_color="warning" %}
+    {% include 'components/metric-card.html' with label="Visitantes Hoy" value=visitantes_hoy|default:0 sublabel="Registrados" sublabel_icon="bi bi-person-badge" sublabel_color="muted" icon="bi-person-badge" icon_color="secondary" border_color="secondary" %}
 
     <div class="col-xl-3 col-md-6">
-        <div class="card card-modern border-0 border-start border-4 border-info">
+        <div class="card card-modern border-0 border-start border-4 border-secondary">
             <div class="card-body p-3">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
                         <h6 class="text-muted mb-1 small">Aforo</h6>
                         <h3 class="fw-bold mb-0" id="aforoDisplay">{{ personas_en_centro|default:0 }} / {{ aforo_maximo|default:2000 }}</h3>
-                        <small id="aforoIndicator" class="{% if porcentaje_ocupacion > 90 %}text-danger{% elif porcentaje_ocupacion > 70 %}text-warning{% else %}text-success{% endif %}">
+                        <small id="aforoIndicator" class="text-muted">
                             <i class="bi bi-bar-chart"></i> {{ porcentaje_ocupacion|default:0 }}% capacidad
                         </small>
                     </div>
-                    <div class="rounded-3 p-2 bg-info bg-opacity-10">
-                        <i class="bi bi-bar-chart-fill fs-4 text-info"></i>
+                    <div class="rounded-3 p-2 bg-light">
+                        <i class="bi bi-bar-chart-fill fs-4 text-secondary"></i>
                     </div>
                 </div>
             </div>
