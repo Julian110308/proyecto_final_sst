@@ -113,11 +113,9 @@
                                 <div style="width:12px;height:12px;border-radius:50%;background:#f44336;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div><span>Extintor</span>
                                 <div style="width:12px;height:12px;border-radius:50%;background:#2196F3;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div><span>Botiquín</span>
                                 <div style="width:12px;height:12px;border-radius:50%;background:#FF9800;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div><span>Alarma</span>
-                                <div style="width:12px;height:12px;border-radius:50%;background:#1565C0;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div><span>Hidrante</span>
-                                <div style="width:12px;height:12px;border-radius:50%;background:#2E7D32;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div><span>Salida Emerg.</span>
+<div style="width:12px;height:12px;border-radius:50%;background:#2E7D32;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div><span>Salida Emerg.</span>
                                 <div style="width:12px;height:12px;border-radius:50%;background:#546E7A;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div><span>Camilla</span>
-                                <div style="width:12px;height:12px;border-radius:50%;background:#C62828;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div><span>DEA</span>
-                                <div style="width:12px;height:12px;border-radius:50%;background:#FF9800;border:2px solid white;animation:pulse 1.5s infinite;"></div><span>Mi ubicación</span>
+<div style="width:12px;height:12px;border-radius:50%;background:#FF9800;border:2px solid white;animation:pulse 1.5s infinite;"></div><span>Mi ubicación</span>
                                 <div style="width:12px;height:12px;border-radius:50%;background:#DC2626;border:2px solid white;animation:pulse 1.5s infinite;"></div><span>Emergencia</span>
                             </div>
                         </div>
@@ -945,10 +943,8 @@ function inicializarDatosDinamicos() {
             EXTINTOR:         { bg: '#f44336', icon: 'bi-fire-extinguisher' },
             BOTIQUIN:         { bg: '#2196F3', icon: 'bi-heart-pulse' },
             ALARMA:           { bg: '#FF9800', icon: 'bi-bell-fill' },
-            HIDRANTE:         { bg: '#0277BD', icon: 'bi-droplet-fill' },
             SALIDA_EMERGENCIA:{ bg: '#2E7D32', icon: 'bi-door-open-fill' },
             CAMILLA:          { bg: '#546E7A', icon: 'bi-hospital' },
-            DEA:              { bg: '#C62828', icon: 'bi-heart-pulse-fill' },
         };
         const { bg, icon } = cfg[tipo] || { bg: '#607D8B', icon: 'bi-shield-check' };
         const border = alerta === 'vencido'
@@ -1023,10 +1019,8 @@ function inicializarDatosDinamicos() {
             EXTINTOR:         { color: '#D32F2F', icon: 'bi-fire-extinguisher', label: 'Extintor' },
             BOTIQUIN:         { color: '#1976D2', icon: 'bi-heart-pulse',        label: 'Botiquín' },
             ALARMA:           { color: '#E65100', icon: 'bi-bell-fill',          label: 'Alarma' },
-            HIDRANTE:         { color: '#0277BD', icon: 'bi-droplet-fill',       label: 'Hidrante' },
             SALIDA_EMERGENCIA:{ color: '#2E7D32', icon: 'bi-door-open-fill',     label: 'Salida Emergencia' },
             CAMILLA:          { color: '#546E7A', icon: 'bi-hospital',           label: 'Camilla' },
-            DEA:              { color: '#C62828', icon: 'bi-heart-pulse-fill',   label: 'DEA' },
         };
         const info = cfg[equipo.tipo] || { color: '#607D8B', icon: 'bi-shield-check', label: equipo.tipo };
 

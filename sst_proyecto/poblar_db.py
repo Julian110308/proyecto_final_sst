@@ -640,47 +640,6 @@ def crear_equipamientos(edificios):
             'ultima_revision': ahora - timedelta(days=15),
             'proxima_revision': ahora + timedelta(days=350),
         },
-        # Hidrantes
-        {
-            'nombre': 'Hidrante parqueadero',
-            'codigo': 'HID-001',
-            'tipo': 'HIDRANTE',
-            'descripcion': 'Hidrante tipo poste - Zona parqueadero principal',
-            'latitud': 5.73120,
-            'longitud': -72.89510,
-            'edificio': edificios_map.get('Parqueadero Principal'),
-            'piso': 1,
-            'estado': 'OPERATIVO',
-            'ultima_revision': ahora - timedelta(days=90),
-            'proxima_revision': ahora + timedelta(days=90),
-        },
-        {
-            'nombre': 'Hidrante talleres',
-            'codigo': 'HID-002',
-            'tipo': 'HIDRANTE',
-            'descripcion': 'Hidrante tipo poste - Zona talleres',
-            'latitud': 5.73010,
-            'longitud': -72.89400,
-            'edificio': edificios_map.get('Talleres de Minería'),
-            'piso': 1,
-            'estado': 'FUERA_SERVICIO',
-            'ultima_revision': ahora - timedelta(days=180),
-            'proxima_revision': ahora - timedelta(days=30),  # Vencido
-        },
-        # DEA
-        {
-            'nombre': 'Desfibrilador administrativo',
-            'codigo': 'DEA-001',
-            'tipo': 'DEA',
-            'descripcion': 'Desfibrilador automático externo - Recepción administrativa',
-            'latitud': 5.73036,
-            'longitud': -72.89436,
-            'edificio': edificios_map.get('Edificio Administrativo Principal'),
-            'piso': 1,
-            'estado': 'OPERATIVO',
-            'ultima_revision': ahora - timedelta(days=7),
-            'proxima_revision': ahora + timedelta(days=83),
-        },
         # Salidas de emergencia
         {
             'nombre': 'Salida emergencia norte',

@@ -296,35 +296,19 @@ def mapa_interactivo(request):
                 {
                     'id': 1,
                     'nombre': 'Punto Principal - Cancha Deportiva',
-                    'latitud': 5.73040,
-                    'longitud': -72.89430,
+                    'latitud': 5.730056,
+                    'longitud': -72.894250,
                     'capacidad': 500,
                     'descripcion': 'PRIORIDAD 1: Cancha deportiva central - Espacio abierto amplio para evacuación masiva',
                 },
                 {
                     'id': 2,
-                    'nombre': 'Punto Secundario - Parqueadero Norte',
-                    'latitud': 5.73130,
-                    'longitud': -72.89510,
+                    'nombre': 'Punto Secundario - Zona Verde',
+                    'latitud': 5.731083,
+                    'longitud': -72.895028,
                     'capacidad': 250,
-                    'descripcion': 'PRIORIDAD 2: Zona de parqueadero norte - Área despejada',
+                    'descripcion': 'PRIORIDAD 2: Zona verde del centro - Área despejada para evacuación',
                 },
-                {
-                    'id': 3,
-                    'nombre': 'Punto Alterno - Entrada Principal',
-                    'latitud': 5.73150,
-                    'longitud': -72.89460,
-                    'capacidad': 200,
-                    'descripcion': 'PRIORIDAD 3: Zona de acceso principal - Salida rápida del centro',
-                },
-                {
-                    'id': 4,
-                    'nombre': 'Punto de Evacuación Sur',
-                    'latitud': 5.72960,
-                    'longitud': -72.89410,
-                    'capacidad': 150,
-                    'descripcion': 'EMERGENCIA: Punto sur para evacuación de talleres',
-                }
             ]
         
         if not equipamientos_data:
@@ -430,18 +414,18 @@ def mapa_interactivo(request):
                 {
                     'id': 1,
                     'nombre': 'Punto Principal - Cancha Deportiva',
-                    'latitud': 5.73040,
-                    'longitud': -72.89430,
+                    'latitud': 5.730056,
+                    'longitud': -72.894250,
                     'capacidad': 500,
                     'descripcion': 'PRIORIDAD 1: Cancha deportiva central - Espacio abierto amplio para evacuación masiva',
                 },
                 {
                     'id': 2,
-                    'nombre': 'Punto Secundario - Parqueadero Norte',
-                    'latitud': 5.73130,
-                    'longitud': -72.89510,
+                    'nombre': 'Punto Secundario - Zona Verde',
+                    'latitud': 5.731083,
+                    'longitud': -72.895028,
                     'capacidad': 250,
-                    'descripcion': 'PRIORIDAD 2: Zona de parqueadero norte - Área despejada',
+                    'descripcion': 'PRIORIDAD 2: Zona verde del centro - Área despejada para evacuación',
                 }
             ],
             'equipamiento': [
@@ -600,9 +584,9 @@ class EquipamientoSeguridadViewSet(viewsets.ModelViewSet):
             # Actualizar fechas de revisión
             equipo.ultima_revision = ahora
             # Programar próxima revisión según el tipo de equipo
-            if equipo.tipo in ['EXTINTOR', 'HIDRANTE']:
+            if equipo.tipo in ['EXTINTOR']:
                 equipo.proxima_revision = ahora + timedelta(days=180)  # 6 meses
-            elif equipo.tipo in ['BOTIQUIN', 'DEA']:
+            elif equipo.tipo in ['BOTIQUIN']:
                 equipo.proxima_revision = ahora + timedelta(days=90)   # 3 meses
             else:
                 equipo.proxima_revision = ahora + timedelta(days=365)  # 1 año
@@ -690,9 +674,9 @@ class EquipamientoSeguridadViewSet(viewsets.ModelViewSet):
             for equipo in equipos_operativos:
                 equipo.ultima_revision = ahora
                 # Programar próxima revisión según el tipo
-                if equipo.tipo in ['EXTINTOR', 'HIDRANTE']:
+                if equipo.tipo in ['EXTINTOR']:
                     equipo.proxima_revision = ahora + timedelta(days=180)
-                elif equipo.tipo in ['BOTIQUIN', 'DEA']:
+                elif equipo.tipo in ['BOTIQUIN']:
                     equipo.proxima_revision = ahora + timedelta(days=90)
                 else:
                     equipo.proxima_revision = ahora + timedelta(days=365)

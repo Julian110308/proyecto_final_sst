@@ -101,11 +101,9 @@ class EquipamientoSeguridad(UbicacionBase):
         ('EXTINTOR', 'Extintor'),
         ('BOTIQUIN', 'Botiquin'),
         ('ALARMA', 'Alarma de emergencia'),
-        ('HIDRANTE', 'Hidrante'),
-        ('SALIDA_EMERGENCIA', 'Señal de salida de emergencia'),
+('SALIDA_EMERGENCIA', 'Señal de salida de emergencia'),
         ('CAMILLA', 'Camilla'),
-        ('DEA', 'Desfibrilador (DEA)'),
-        ('OTRO', 'Otro'),
+('OTRO', 'Otro'),
     ]
     
     tipo = models.CharField(max_length=30, choices=TIPO_EQUIPAMIENTO)
