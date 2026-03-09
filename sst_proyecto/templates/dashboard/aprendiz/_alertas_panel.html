@@ -8,19 +8,19 @@
       <span class="text-muted small fw-semibold me-1">Tipo:</span>
       <button class="filtro-pill activo" data-grupo="tipo" data-filtro="TODOS">Todos</button>
       <button class="filtro-pill" data-grupo="tipo" data-filtro="EMERGENCIA">
-        <i class="bi bi-exclamation-triangle-fill text-danger me-1"></i>Emergencia
+        <i class="bi bi-exclamation-triangle-fill text-secondary me-1"></i>Emergencia
       </button>
       <button class="filtro-pill" data-grupo="tipo" data-filtro="INCIDENTE">
-        <i class="bi bi-shield-exclamation text-warning me-1"></i>Incidente
+        <i class="bi bi-shield-exclamation text-secondary me-1"></i>Incidente
       </button>
       <button class="filtro-pill" data-grupo="tipo" data-filtro="SISTEMA">
-        <i class="bi bi-gear text-info me-1"></i>Sistema
+        <i class="bi bi-gear text-secondary me-1"></i>Sistema
       </button>
       <button class="filtro-pill" data-grupo="tipo" data-filtro="RECORDATORIO">
-        <i class="bi bi-clock text-purple me-1"></i>Recordatorio
+        <i class="bi bi-clock text-secondary me-1"></i>Recordatorio
       </button>
       <button class="filtro-pill" data-grupo="tipo" data-filtro="CAPACITACION">
-        <i class="bi bi-book text-primary me-1"></i>Capacitación
+        <i class="bi bi-book text-secondary me-1"></i>Capacitación
       </button>
     </div>
     <div class="d-flex flex-wrap align-items-center gap-2">
@@ -30,7 +30,7 @@
         <span class="d-inline-block rounded-circle bg-danger me-1" style="width:8px;height:8px;"></span>Alta
       </button>
       <button class="filtro-pill" data-grupo="pri" data-filtro="MEDIA">
-        <span class="d-inline-block rounded-circle bg-warning me-1" style="width:8px;height:8px;"></span>Media
+        <span class="d-inline-block rounded-circle bg-secondary me-1" style="width:8px;height:8px;"></span>Media
       </button>
       <button class="filtro-pill" data-grupo="pri" data-filtro="BAJA">
         <span class="d-inline-block rounded-circle bg-secondary me-1" style="width:8px;height:8px;"></span>Baja
@@ -41,11 +41,11 @@
 
 {# ── Sin leer ── #}
 <div class="card card-modern mb-4">
-  <div class="card-header d-flex align-items-center gap-2 bg-warning-subtle py-2">
-    <i class="bi bi-bell-fill text-warning"></i>
-    <span class="fw-bold text-warning">Sin leer</span>
+  <div class="card-header d-flex align-items-center gap-2 bg-light py-2">
+    <i class="bi bi-bell-fill text-secondary"></i>
+    <span class="fw-bold text-dark">Sin leer</span>
     {% if total_no_leidas > 0 %}
-      <span class="badge bg-warning text-dark ms-auto">{{ total_no_leidas }}</span>
+      <span class="badge bg-secondary ms-auto">{{ total_no_leidas }}</span>
     {% endif %}
   </div>
   <div class="card-body p-3" id="zona-no-leidas">
@@ -90,19 +90,8 @@
                 </div>
                 <p class="mb-2 text-muted small" style="white-space:pre-line;">{{ notif.mensaje }}</p>
                 <div class="d-flex align-items-center flex-wrap gap-2">
-                  <span class="badge
-                    {% if notif.tipo == 'EMERGENCIA' %}bg-danger
-                    {% elif notif.tipo == 'INCIDENTE' %}bg-warning text-dark
-                    {% elif notif.tipo == 'CAPACITACION' %}bg-primary
-                    {% elif notif.tipo == 'ASISTENCIA' %}bg-success
-                    {% elif notif.tipo == 'RECORDATORIO' %}bg-purple
-                    {% else %}bg-info text-dark{% endif %}">
-                    {{ notif.get_tipo_display }}
-                  </span>
-                  <span class="badge
-                    {% if notif.prioridad == 'ALTA' %}bg-danger
-                    {% elif notif.prioridad == 'MEDIA' %}bg-warning text-dark
-                    {% else %}bg-secondary{% endif %}">
+                  <span class="badge bg-secondary">{{ notif.get_tipo_display }}</span>
+                  <span class="badge {% if notif.prioridad == 'ALTA' %}bg-danger{% else %}bg-secondary{% endif %}">
                     {{ notif.get_prioridad_display }}
                   </span>
                   {% if notif.url_relacionada %}
@@ -110,7 +99,7 @@
                     <i class="bi bi-arrow-right me-1"></i>Ver más
                   </a>
                   {% endif %}
-                  <button class="btn btn-sm btn-outline-success py-0 {% if not notif.url_relacionada %}ms-auto{% endif %}"
+                  <button class="btn btn-sm btn-outline-secondary py-0 {% if not notif.url_relacionada %}ms-auto{% endif %}"
                           onclick="marcarLeida({{ notif.id }}, this)"
                           title="Marcar como leída">
                     <i class="bi bi-check2 me-1"></i>Leída
@@ -135,7 +124,7 @@
 {# ── Leídas recientemente ── #}
 <div class="card card-modern">
   <div class="card-header d-flex align-items-center gap-2 bg-light py-2">
-    <i class="bi bi-check2-circle text-success"></i>
+    <i class="bi bi-check2-circle text-secondary"></i>
     <span class="fw-bold">Leídas recientemente</span>
     <span class="badge bg-secondary ms-auto">{{ total_leidas }}</span>
   </div>
@@ -175,14 +164,7 @@
               </div>
               <p class="mb-1 text-muted small">{{ notif.mensaje|truncatewords:25 }}</p>
               <div class="d-flex align-items-center gap-2 flex-wrap">
-                <span class="badge
-                  {% if notif.tipo == 'EMERGENCIA' %}bg-danger
-                  {% elif notif.tipo == 'INCIDENTE' %}bg-warning text-dark
-                  {% elif notif.tipo == 'CAPACITACION' %}bg-primary
-                  {% elif notif.tipo == 'ASISTENCIA' %}bg-success
-                  {% else %}bg-secondary{% endif %} bg-opacity-75">
-                  {{ notif.get_tipo_display }}
-                </span>
+                <span class="badge bg-secondary bg-opacity-75">{{ notif.get_tipo_display }}</span>
                 {% if notif.url_relacionada %}
                 <a href="{{ notif.url_relacionada }}" class="btn btn-sm btn-link p-0 ms-auto text-muted">
                   <i class="bi bi-arrow-right me-1"></i>Ver

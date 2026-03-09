@@ -2,14 +2,13 @@
 {% load static %}
 
 <div class="card card-modern">
-  <div class="card-header d-flex flex-column flex-md-row align-items-start align-items-md-center gap-3"
-       style="background-color:#1b5e20;">
+  <div class="card-header d-flex flex-column flex-md-row align-items-start align-items-md-center gap-3 bg-light">
     <div class="flex-grow-1">
-      <h6 class="mb-0 fw-bold text-white">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i>Historial de Incidentes del Sistema
+      <h6 class="mb-0 fw-bold text-dark">
+        <i class="bi bi-exclamation-triangle-fill me-2 text-secondary"></i>Historial de Incidentes del Sistema
       </h6>
       {% if incidentes_criticos_sla_brigada > 0 %}
-      <small class="text-white opacity-75">
+      <small class="text-muted">
         <i class="bi bi-clock-history me-1"></i>{{ incidentes_criticos_sla_brigada }} incidente{{ incidentes_criticos_sla_brigada|pluralize }} con SLA vencido
       </small>
       {% endif %}
@@ -63,7 +62,7 @@
         </thead>
         <tbody>
           {% for inc in todos_incidentes %}
-          <tr class="{% if inc.sla_estado == 'critico' %}table-danger{% elif inc.sla_estado == 'vencido' %}table-warning{% endif %}"
+          <tr
               data-estado="{{ inc.estado }}">
             <td class="ps-3">
               <span class="d-block">{{ inc.fecha_reporte|date:"d/m/Y" }}</span>
@@ -74,21 +73,13 @@
               <small class="text-muted">{{ inc.get_tipo_display }}</small>
             </td>
             <td>
-              <span class="badge
-                {% if inc.gravedad == 'CRITICA' %}bg-danger
-                {% elif inc.gravedad == 'ALTA' %}bg-warning text-dark
-                {% elif inc.gravedad == 'MEDIA' %}bg-info text-dark
-                {% else %}bg-success{% endif %}">
+              <span class="badge {% if inc.gravedad == 'CRITICA' %}bg-danger{% else %}bg-secondary{% endif %}">
                 {{ inc.get_gravedad_display }}
               </span>
             </td>
             <td>
-              <span class="badge
-                {% if inc.estado == 'REPORTADO' %}bg-secondary
-                {% elif inc.estado == 'EN_REVISION' %}bg-primary
-                {% elif inc.estado == 'EN_PROCESO' %}bg-info text-dark
-                {% elif inc.estado == 'RESUELTO' %}bg-success
-                {% else %}bg-dark{% endif %}">
+              <span class="badge {% if inc.estado == 'RESUELTO' %}{% else %}bg-secondary{% endif %}"
+                    {% if inc.estado == 'RESUELTO' %}style="background-color:#39A900;"{% endif %}>
                 {{ inc.get_estado_display }}
               </span>
             </td>
@@ -99,17 +90,17 @@
                   <i class="bi bi-exclamation-circle me-1"></i>Crítico
                 </span>
               {% elif inc.sla_estado == 'vencido' %}
-                <span class="badge bg-warning text-dark"
+                <span class="badge bg-secondary"
                       data-bs-toggle="tooltip" title="SLA superado entre 24 y 72h">
                   <i class="bi bi-clock me-1"></i>Vencido
                 </span>
               {% elif inc.sla_estado == 'proximo' %}
-                <span class="badge bg-info text-dark"
+                <span class="badge bg-secondary"
                       data-bs-toggle="tooltip" title="SLA próximo a vencer (8-24h)">
                   <i class="bi bi-clock me-1"></i>Próximo
                 </span>
               {% else %}
-                <span class="badge bg-success"
+                <span class="badge bg-secondary"
                       data-bs-toggle="tooltip" title="Dentro del SLA (&lt;8h)">
                   <i class="bi bi-check-circle me-1"></i>OK
                 </span>
@@ -121,14 +112,14 @@
             </td>
             <td class="text-center">
               <a href="/reportes/incidentes/{{ inc.pk }}/"
-                 class="btn btn-sm btn-outline-primary"
+                 class="btn btn-sm btn-outline-secondary"
                  title="Ver detalle"
                  data-bs-toggle="tooltip">
                 <i class="bi bi-eye"></i>
               </a>
               {% if inc.estado != 'RESUELTO' and inc.estado != 'CERRADO' %}
               <a href="/reportes/incidentes/{{ inc.pk }}/actualizar/"
-                 class="btn btn-sm btn-outline-warning ms-1"
+                 class="btn btn-sm btn-outline-secondary ms-1"
                  title="Actualizar estado"
                  data-bs-toggle="tooltip">
                 <i class="bi bi-pencil"></i>
