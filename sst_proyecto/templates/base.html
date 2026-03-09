@@ -441,8 +441,51 @@
                     </a>
                 </li>
 
+                <!-- OPCIONES PARA COORDINADOR SST -->
+                {% if user.rol == 'COORDINADOR_SST' %}
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="{% url 'gestion_usuarios' %}">
+                            <i class="bi bi-people me-2"></i>Gestión Usuarios
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="/acceso/">
+                            <i class="bi bi-person-check me-2"></i>Control Acceso
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="/emergencias/">
+                            <i class="bi bi-exclamation-octagon me-2"></i>Emergencias
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="/reportes/">
+                            <i class="bi bi-graph-up me-2"></i>Reportes
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="/reportes/incidentes/">
+                            <i class="bi bi-exclamation-triangle me-2"></i>Incidentes
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="/mapas/">
+                            <i class="bi bi-map me-2"></i>Mapa Interactivo
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="{% url 'gestion_visitantes' %}">
+                            <i class="bi bi-person-badge me-2"></i>Visitantes
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="{% url 'mis_alertas' %}">
+                            <i class="bi bi-bell me-2"></i>Mis Alertas
+                        </a>
+                    </li>
+
                 <!-- OPCIONES PARA ADMINISTRATIVO - Acceso completo -->
-                {% if user.rol == 'ADMINISTRATIVO' %}
+                {% elif user.rol == 'ADMINISTRATIVO' %}
                     <li class="nav-item mb-2">
                         <a class="nav-link" href="/acceso/">
                             <i class="bi bi-person-check me-2"></i>Control Acceso
