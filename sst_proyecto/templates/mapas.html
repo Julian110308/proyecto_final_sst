@@ -156,12 +156,6 @@
                     </label>
                 </div>
                 <div class="form-check form-switch mb-3">
-                    <input class="form-check-input" type="checkbox" id="capaRutasCheck">
-                    <label class="form-check-label" for="capaRutasCheck">
-                        <i class="bi bi-arrow-right-circle me-2"></i>Rutas de Evacuacion
-                    </label>
-                </div>
-                <div class="form-check form-switch mb-3">
                     <input class="form-check-input" type="checkbox" id="capaEmergenciasCheck">
                     <label class="form-check-label" for="capaEmergenciasCheck">
                         <i class="bi bi-exclamation-triangle-fill me-2 text-danger"></i>Emergencias Activas
@@ -240,7 +234,7 @@
             </div>
         </div>
 
-        <!-- Ruta de Evacuación Rápida -->
+        <!-- Acciones Rápidas -->
         <div class="card card-modern">
             <div class="card-header-modern">
                 <h6 class="mb-0">
@@ -249,24 +243,10 @@
                 </h6>
             </div>
             <div class="card-body">
-                <button id="btnRutaEvacuacion" class="btn btn-warning w-100 mb-3">
-                    <i class="bi bi-arrow-right-circle me-2"></i>
-                    Ruta de Evacuación Más Cercana
-                </button>
                 <button id="btnZoomCentro" class="btn btn-outline-primary w-100 mb-2">
                     <i class="bi bi-geo-alt me-2"></i>
                     Centrar en el SENA
                 </button>
-                <button id="btnLimpiarRutas" class="btn btn-outline-secondary w-100">
-                    <i class="bi bi-trash me-2"></i>
-                    Limpiar Rutas
-                </button>
-                <div class="text-center text-muted mt-3">
-                    <small>
-                        <i class="bi bi-info-circle me-1"></i>
-                        Calcula la ruta más segura hacia el punto de encuentro
-                    </small>
-                </div>
             </div>
         </div>
     </div>
@@ -299,7 +279,6 @@ let mapa;
 let miMarcador = null;
 let circuloPrecision = null;
 let poligonoGeocerca = null;
-let rutaActiva = null;
 let capaVias;
 let capaAreas;
 let capaPuntosEncuentro;
@@ -307,7 +286,6 @@ let capaEquipamiento;
 let capaInfraestructura;
 let capaPersonas;
 let capaEmergencias;
-let capaRutasPredefinidas;
 
 // Intervalo de auto-refresh emergencias
 let intervalEmergencias = null;
@@ -472,117 +450,7 @@ function inicializarInfraestructura() {
         L.marker([edif.lat, edif.lng], { icon: label });
     });
 
-    // 3. RUTAS DE EVACUACION PREDEFINIDAS
-    // Red de caminos del campus con waypoints reales
-    const rutasEvacuacionPredefinidas = [
-        {
-            nombre: 'Ruta Norte - Zona Aulas hacia Punto de Encuentro',
-            color: '#4CAF50',
-            waypoints: [
-                [5.7308266, -72.8944621],
-                [5.7307180, -72.8943197],
-                [5.7306089, -72.8944388],
-                [5.7305964, -72.8943091],
-                [5.7304729, -72.8946135],
-                [5.7303035, -72.8948299]
-            ]
-        },
-        {
-            nombre: 'Ruta Centro - Edificios Centrales hacia Cancha',
-            color: '#2196F3',
-            waypoints: [
-                [5.7303504, -72.8944825],
-                [5.7304729, -72.8946135],
-                [5.7306460, -72.8947499],
-                [5.7308157, -72.8947557]
-            ]
-        },
-        {
-            nombre: 'Ruta Sur - Talleres hacia Zona Segura',
-            color: '#FF9800',
-            waypoints: [
-                [5.7296547, -72.8947003],
-                [5.7300200, -72.8947224],
-                [5.7303035, -72.8948299],
-                [5.7304729, -72.8946135]
-            ]
-        },
-        {
-            nombre: 'Ruta Este - Laboratorios hacia Punto de Encuentro',
-            color: '#9C27B0',
-            waypoints: [
-                [5.7304283, -72.8938899],
-                [5.7303758, -72.8936851],
-                [5.7300397, -72.8942211],
-                [5.7302012, -72.8944738],
-                [5.7303504, -72.8944825]
-            ]
-        },
-        {
-            nombre: 'Ruta Sureste - Mina y Zona Baja',
-            color: '#F44336',
-            waypoints: [
-                [5.7296381, -72.8930312],
-                [5.7297075, -72.8932150],
-                [5.7298857, -72.8933810],
-                [5.7301815, -72.8933961],
-                [5.7303758, -72.8936851],
-                [5.7304283, -72.8938899]
-            ]
-        },
-        {
-            nombre: 'Ruta Suroeste - Zona Mina Didactica',
-            color: '#E91E63',
-            waypoints: [
-                [5.7297219, -72.8935096],
-                [5.7296522, -72.8937856],
-                [5.7299135, -72.8937115],
-                [5.7300397, -72.8942211],
-                [5.7302012, -72.8944738]
-            ]
-        }
-    ];
-
-    // Almacenar rutas para uso global
-    window.rutasEvacuacionData = rutasEvacuacionPredefinidas;
-
-    // Dibujar rutas en la capa (inicialmente ocultas, se muestran con el checkbox)
-    rutasEvacuacionPredefinidas.forEach(ruta => {
-        const polyline = L.polyline(ruta.waypoints, {
-            color: ruta.color,
-            weight: 4,
-            opacity: 0.8,
-            dashArray: '12, 8',
-            lineCap: 'round',
-            lineJoin: 'round'
-        }).addTo(capaRutas);
-
-        // Flecha al final de la ruta
-        const ultimoPunto = ruta.waypoints[ruta.waypoints.length - 1];
-        const flechaIcon = L.divIcon({
-            className: 'ruta-flecha',
-            html: `<div style="
-                color: ${ruta.color};
-                font-size: 18px;
-                text-shadow: 0 0 3px white;
-            "><i class="bi bi-geo-alt-fill"></i></div>`,
-            iconSize: [18, 18],
-            iconAnchor: [9, 18]
-        });
-        L.marker(ultimoPunto, { icon: flechaIcon }).addTo(capaRutas);
-
-        polyline.bindPopup(`
-            <div style="min-width: 200px;">
-                <h6 style="color: ${ruta.color};">
-                    <i class="bi bi-signpost-2"></i> ${ruta.nombre}
-                </h6>
-                <p class="mb-1 small"><strong>Puntos de paso:</strong> ${ruta.waypoints.length}</p>
-                <p class="mb-0 small text-muted">Siga esta ruta en caso de evacuacion</p>
-            </div>
-        `);
-    });
-
-    // 4. INFRAESTRUCTURA
+    // 3. INFRAESTRUCTURA
     const cerramientoPerimetral = L.polygon([
         [5.73100, -72.89510],
         [5.73100, -72.89360],
@@ -908,8 +776,7 @@ function verificarDentroGeocerca(latitud, longitud) {
             const infoPunto = document.getElementById('infoPuntoMasCercano');
             if (infoPunto) {
                 infoPunto.innerHTML = `<i class="bi bi-signpost-fill text-success me-1"></i>
-                    Punto cercano: <strong>${puntoCercano.nombre}</strong> (${minDist.toFixed(0)} m)
-                    &nbsp;<a href="#" class="text-success fw-semibold" onclick="event.preventDefault();calcularRutaHaciaPunto(${puntoCercano.id});">→ Ruta</a>`;
+                    Punto cercano: <strong>${puntoCercano.nombre}</strong> (${minDist.toFixed(0)} m)`;
             }
         }
     }
@@ -978,9 +845,6 @@ function inicializarDatosDinamicos() {
                     <i class="bi bi-info-circle"></i> ${punto.descripcion || 'Sin descripción'}
                 </p>
                 <div style="display: flex; justify-content: space-between; gap: 5px;">
-                    <button class="btn btn-sm btn-success" onclick="calcularRutaHaciaPunto(${punto.id})" style="flex: 1;">
-                        <i class="bi bi-arrow-right-circle"></i> Ruta
-                    </button>
                     <button class="btn btn-sm btn-outline-secondary" onclick="mostrarDetallesPunto(${punto.id})" style="flex: 1;">
                         <i class="bi bi-info-circle"></i> Detalles
                     </button>
@@ -995,53 +859,65 @@ function inicializarDatosDinamicos() {
     const hoy = new Date();
     let equiposConAlerta = 0;
 
+    const cfg = {
+        EXTINTOR:         { color: '#D32F2F', icon: 'bi-fire-extinguisher', label: 'Extintor' },
+        BOTIQUIN:         { color: '#1976D2', icon: 'bi-heart-pulse',        label: 'Botiquín' },
+        ALARMA:           { color: '#E65100', icon: 'bi-bell-fill',          label: 'Alarma' },
+        SALIDA_EMERGENCIA:{ color: '#2E7D32', icon: 'bi-door-open-fill',     label: 'Salida Emergencia' },
+        CAMILLA:          { color: '#546E7A', icon: 'bi-hospital',           label: 'Camilla' },
+    };
+
+    // Agrupar equipos que están en la misma ubicación exacta
+    const grupos = {};
     equipamientoData.forEach(equipo => {
-        // Calcular estado de revisión
-        const proxRevision = equipo.proxima_revision ? new Date(equipo.proxima_revision) : null;
-        const diasRestantes = proxRevision ? Math.floor((proxRevision - hoy) / 86400000) : null;
-        const estadoRevision = diasRestantes === null ? 'sin_fecha'
-            : diasRestantes < 0 ? 'vencido'
-            : diasRestantes <= 30 ? 'proximo'
-            : 'ok';
+        const key = `${equipo.latitud},${equipo.longitud}`;
+        if (!grupos[key]) grupos[key] = [];
+        grupos[key].push(equipo);
+    });
 
-        if (estadoRevision === 'vencido' || estadoRevision === 'proximo') equiposConAlerta++;
+    Object.values(grupos).forEach(items => {
+        // Calcular estado de revisión del grupo (el peor)
+        let estadoGrupo = 'sin_fecha';
+        items.forEach(equipo => {
+            const proxRevision = equipo.proxima_revision ? new Date(equipo.proxima_revision) : null;
+            const dias = proxRevision ? Math.floor((proxRevision - hoy) / 86400000) : null;
+            const estado = dias === null ? 'sin_fecha' : dias < 0 ? 'vencido' : dias <= 30 ? 'proximo' : 'ok';
+            if (estado === 'vencido') { estadoGrupo = 'vencido'; if (equiposConAlerta++ >= 0) {} }
+            else if (estado === 'proximo' && estadoGrupo !== 'vencido') { estadoGrupo = 'proximo'; equiposConAlerta++; }
+        });
 
-        const icono = crearIconoEquipo(equipo.tipo, estadoRevision);
+        const primerTipo = items[0].tipo;
+        const icono = crearIconoEquipo(primerTipo, estadoGrupo);
         const marker = L.marker(
-            [equipo.latitud, equipo.longitud],
-            { icon: icono, title: equipo.tipo }
+            [items[0].latitud, items[0].longitud],
+            { icon: icono, title: items.map(i => cfg[i.tipo]?.label || i.tipo).join(' · ') }
         ).addTo(capaEquipamiento);
 
-        const cfg = {
-            EXTINTOR:         { color: '#D32F2F', icon: 'bi-fire-extinguisher', label: 'Extintor' },
-            BOTIQUIN:         { color: '#1976D2', icon: 'bi-heart-pulse',        label: 'Botiquín' },
-            ALARMA:           { color: '#E65100', icon: 'bi-bell-fill',          label: 'Alarma' },
-            SALIDA_EMERGENCIA:{ color: '#2E7D32', icon: 'bi-door-open-fill',     label: 'Salida Emergencia' },
-            CAMILLA:          { color: '#546E7A', icon: 'bi-hospital',           label: 'Camilla' },
-        };
-        const info = cfg[equipo.tipo] || { color: '#607D8B', icon: 'bi-shield-check', label: equipo.tipo };
-
-        const alertaHTML = estadoRevision === 'vencido'
-            ? `<div class="alert alert-danger py-1 px-2 mb-1" style="font-size:11px;"><i class="bi bi-exclamation-triangle-fill me-1"></i>Revisión VENCIDA</div>`
-            : estadoRevision === 'proximo'
-                ? `<div class="alert alert-warning py-1 px-2 mb-1" style="font-size:11px;"><i class="bi bi-clock-fill me-1"></i>Revisión en ${diasRestantes} días</div>`
-                : '';
-
-        marker.bindPopup(`
-            <div style="min-width: 200px;">
-                <h6 style="margin: 0 0 6px 0; color: ${info.color};">
+        // Construir popup: si hay varios items, listarlos todos
+        let contenidoPopup = `<div style="min-width:200px;">`;
+        if (items.length > 1) {
+            contenidoPopup += `<h6 style="margin:0 0 8px 0; color:#333;"><i class="bi bi-geo-alt-fill"></i> Equipos en este lugar <span class="badge bg-secondary">${items.length}</span></h6>`;
+            items.forEach(equipo => {
+                const info = cfg[equipo.tipo] || { color: '#607D8B', icon: 'bi-shield-check', label: equipo.tipo };
+                contenidoPopup += `
+                    <div style="border-left:3px solid ${info.color}; padding:4px 8px; margin-bottom:6px;">
+                        <strong style="color:${info.color};"><i class="bi ${info.icon}"></i> ${info.label}</strong>
+                        <small style="color:#888;"> #${equipo.codigo}</small>
+                        ${equipo.ultima_revision ? `<div style="font-size:12px;">Rev: ${equipo.ultima_revision}</div>` : ''}
+                    </div>`;
+            });
+        } else {
+            const equipo = items[0];
+            const info = cfg[equipo.tipo] || { color: '#607D8B', icon: 'bi-shield-check', label: equipo.tipo };
+            contenidoPopup += `
+                <h6 style="margin:0 0 6px 0; color:${info.color};">
                     <i class="bi ${info.icon}"></i> ${info.label}
-                    <small style="font-weight:normal;color:#888;"> #${equipo.codigo || equipo.id}</small>
+                    <small style="font-weight:normal;color:#888;"> #${equipo.codigo}</small>
                 </h6>
-                ${alertaHTML}
-                <p style="margin: 0 0 3px 0; font-size: 13px;">
-                    <strong>Última revisión:</strong> ${equipo.ultima_revision || 'No registrada'}
-                </p>
-                ${equipo.proxima_revision ? `<p style="margin: 0 0 3px 0; font-size: 13px;"><strong>Próxima revisión:</strong> ${equipo.proxima_revision}</p>` : ''}
-                ${equipo.descripcion ? `<p style="margin: 4px 0 6px 0; font-size: 12px; color: #666;">${equipo.descripcion}</p>` : ''}
-                <span class="badge bg-success">OPERATIVO</span>
-            </div>
-        `);
+                ${equipo.ultima_revision ? `<p style="margin:0 0 3px 0;font-size:13px;"><strong>Última revisión:</strong> ${equipo.ultima_revision}</p>` : ''}`;
+        }
+        contenidoPopup += `<span class="badge bg-success mt-1">OPERATIVO</span></div>`;
+        marker.bindPopup(contenidoPopup);
     });
 
     // Mostrar alerta en el panel si hay equipos por vencer
@@ -1102,12 +978,6 @@ function inicializarControles() {
     document.getElementById('capaEquipos').addEventListener('change', function() {
         if (this.checked) { mapa.addLayer(capaEquipamiento); }
         else { mapa.removeLayer(capaEquipamiento); }
-    });
-
-    // Checkbox rutas predefinidas (separado de la ruta calculada)
-    document.getElementById('capaRutasCheck').addEventListener('change', function() {
-        if (this.checked) { mapa.addLayer(capaRutasPredefinidas); }
-        else { mapa.removeLayer(capaRutasPredefinidas); }
     });
 
     // Checkbox emergencias + auto-refresh
@@ -1267,17 +1137,6 @@ function inicializarControles() {
         if (e.key === 'Enter') realizarBusqueda();
     });
 
-    // Ruta de evacuación
-    document.getElementById('btnRutaEvacuacion').addEventListener('click', mostrarRutaEvacuacionCercana);
-    
-    // Limpiar rutas
-    document.getElementById('btnLimpiarRutas').addEventListener('click', function() {
-        if (rutaActiva) {
-            mapa.removeLayer(rutaActiva);
-            rutaActiva = null;
-            document.getElementById('capaRutasCheck').checked = false;
-        }
-    });
 }
 
 // ====================================================================
@@ -1397,7 +1256,7 @@ function realizarBusqueda() {
         const titulo = item._tipo === 'equipo' ? item.tipo : item.nombre;
         const subtitulo = item._tipo === 'edificio' ? `Tipo: ${item.tipo}`
             : item._tipo === 'punto' ? item.nombre
-            : `Rev: ${item.ultima_revision || 'No registrada'}`;
+            : item.ultima_revision ? `Rev: ${item.ultima_revision}` : '';
         html += `
             <a href="#" class="list-group-item list-group-item-action py-2"
                onclick="event.preventDefault();centrarEnResultado(${idx});">
@@ -1431,9 +1290,6 @@ function centrarEnResultado(indice) {
                 <i class="bi bi-signpost"></i> ${item.nombre}
             </h6>
             <p class="mb-1 small text-muted">${item.descripcion || ''}</p>
-            <button class="btn btn-sm btn-success mt-1" onclick="calcularRutaHaciaPunto(${item.id})">
-                <i class="bi bi-arrow-right-circle"></i> Calcular ruta
-            </button>
         `;
     } else {
         infoDiv.innerHTML = `
@@ -1441,217 +1297,12 @@ function centrarEnResultado(indice) {
                 <i class="bi bi-fire-extinguisher"></i> ${item.tipo}
                 <small class="text-muted fw-normal">#${item.codigo || item.id}</small>
             </h6>
-            <p class="mb-1"><strong>Última revisión:</strong> ${item.ultima_revision || 'No registrada'}</p>
+            ${item.ultima_revision ? `<p class="mb-1"><strong>Última revisión:</strong> ${item.ultima_revision}</p>` : ''}
             ${item.proxima_revision ? `<p class="mb-1"><strong>Próxima revisión:</strong> ${item.proxima_revision}</p>` : ''}
             ${item.descripcion ? `<p class="mb-0 small text-muted">${item.descripcion}</p>` : ''}
             <span class="badge bg-success mt-1">OPERATIVO</span>
         `;
     }
-}
-
-// ====================================================================
-// RUTAS DE EVACUACIÓN
-// ====================================================================
-
-function mostrarRutaEvacuacionCercana() {
-    if (!miMarcador) {
-        alert('Necesitamos tu ubicacion actual para calcular la ruta mas segura.');
-        return;
-    }
-
-    const miPos = miMarcador.getLatLng();
-    const rutas = window.rutasEvacuacionData || [];
-
-    if (rutas.length === 0 && puntosEncuentroData.length === 0) {
-        alert('No hay rutas de evacuacion ni puntos de encuentro registrados.');
-        return;
-    }
-
-    // Buscar la ruta predefinida cuyo waypoint este mas cerca del usuario
-    let mejorRuta = null;
-    let distanciaMinRuta = Infinity;
-
-    rutas.forEach(ruta => {
-        ruta.waypoints.forEach((wp, idx) => {
-            const dist = mapa.distance(miPos, wp);
-            if (dist < distanciaMinRuta) {
-                distanciaMinRuta = dist;
-                mejorRuta = { ...ruta, indiceInicio: idx };
-            }
-        });
-    });
-
-    // Limpiar ruta anterior
-    if (rutaActiva) {
-        mapa.removeLayer(rutaActiva);
-    }
-
-    if (mejorRuta) {
-        // Construir ruta: desde mi posicion, pasando por waypoints desde el mas cercano
-        const waypointsRuta = [
-            [miPos.lat, miPos.lng],
-            ...mejorRuta.waypoints.slice(mejorRuta.indiceInicio)
-        ];
-
-        rutaActiva = L.polyline(waypointsRuta, {
-            color: '#FF5722',
-            weight: 6,
-            opacity: 0.9,
-            dashArray: '10, 8',
-            lineCap: 'round',
-            lineJoin: 'round'
-        }).addTo(mapa);
-
-        // Calcular distancia total por waypoints
-        let distanciaTotal = 0;
-        for (let i = 0; i < waypointsRuta.length - 1; i++) {
-            distanciaTotal += mapa.distance(waypointsRuta[i], waypointsRuta[i + 1]);
-        }
-        const tiempoMinutos = (distanciaTotal / 5000) * 60;
-
-        document.getElementById('infoSeleccionada').innerHTML = `
-            <div class="alert alert-warning">
-                <h6 class="alert-heading">
-                    <i class="bi bi-arrow-right-circle-fill"></i> Ruta de Evacuacion
-                </h6>
-                <p class="mb-1"><strong>Ruta:</strong> ${mejorRuta.nombre}</p>
-                <p class="mb-1"><strong>Distancia:</strong> ${distanciaTotal.toFixed(0)} metros</p>
-                <p class="mb-1"><strong>Tiempo estimado:</strong> ${tiempoMinutos.toFixed(0)} min (a pie)</p>
-                <p class="mb-1"><strong>Puntos de paso:</strong> ${waypointsRuta.length - 1}</p>
-                <hr>
-                <p class="mb-0 small">
-                    <i class="bi bi-info-circle"></i>
-                    Siga la linea naranja. La ruta sigue los caminos del centro.
-                </p>
-            </div>
-        `;
-
-        mapa.fitBounds(L.latLngBounds(waypointsRuta), { padding: [80, 80] });
-    } else {
-        // Fallback: linea recta al punto mas cercano
-        let puntoMasCercano = null;
-        let distanciaMinima = Infinity;
-
-        puntosEncuentroData.forEach(punto => {
-            const dist = mapa.distance(miPos, [punto.latitud, punto.longitud]);
-            if (dist < distanciaMinima) {
-                distanciaMinima = dist;
-                puntoMasCercano = punto;
-            }
-        });
-
-        if (puntoMasCercano) {
-            rutaActiva = L.polyline([
-                miPos,
-                [puntoMasCercano.latitud, puntoMasCercano.longitud]
-            ], {
-                color: '#FF5722', weight: 5, opacity: 0.8,
-                dashArray: '10, 10', lineCap: 'round'
-            }).addTo(mapa);
-
-            const tiempoMinutos = (distanciaMinima / 5000) * 60;
-
-            document.getElementById('infoSeleccionada').innerHTML = `
-                <div class="alert alert-warning">
-                    <h6 class="alert-heading">
-                        <i class="bi bi-arrow-right-circle-fill"></i> Ruta de Evacuacion
-                    </h6>
-                    <p class="mb-1"><strong>Destino:</strong> ${puntoMasCercano.nombre}</p>
-                    <p class="mb-1"><strong>Distancia:</strong> ${distanciaMinima.toFixed(0)} metros</p>
-                    <p class="mb-1"><strong>Tiempo:</strong> ${tiempoMinutos.toFixed(0)} min (a pie)</p>
-                </div>
-            `;
-
-            mapa.fitBounds(L.latLngBounds([
-                miPos, [puntoMasCercano.latitud, puntoMasCercano.longitud]
-            ]), { padding: [100, 100] });
-        }
-    }
-}
-
-function calcularRutaHaciaPunto(puntoId) {
-    if (!miMarcador) {
-        alert('Primero necesitamos conocer tu ubicacion actual.');
-        return;
-    }
-
-    const punto = puntosEncuentroData.find(p => p.id === puntoId);
-    if (!punto) {
-        alert('No se encontro el punto de encuentro seleccionado.');
-        return;
-    }
-
-    const miPos = miMarcador.getLatLng();
-    const rutas = window.rutasEvacuacionData || [];
-
-    // Limpiar ruta anterior
-    if (rutaActiva) {
-        mapa.removeLayer(rutaActiva);
-    }
-
-    // Buscar ruta predefinida que pase cerca del destino
-    let mejorRuta = null;
-    let distMinDestino = Infinity;
-
-    rutas.forEach(ruta => {
-        const ultimoWp = ruta.waypoints[ruta.waypoints.length - 1];
-        const distDestino = mapa.distance(ultimoWp, [punto.latitud, punto.longitud]);
-        if (distDestino < distMinDestino) {
-            distMinDestino = distDestino;
-            mejorRuta = ruta;
-        }
-    });
-
-    let waypointsRuta;
-    if (mejorRuta && distMinDestino < 200) {
-        // Usar ruta predefinida + destino final
-        let indiceInicio = 0;
-        let distMin = Infinity;
-        mejorRuta.waypoints.forEach((wp, idx) => {
-            const d = mapa.distance(miPos, wp);
-            if (d < distMin) { distMin = d; indiceInicio = idx; }
-        });
-        waypointsRuta = [
-            [miPos.lat, miPos.lng],
-            ...mejorRuta.waypoints.slice(indiceInicio),
-            [punto.latitud, punto.longitud]
-        ];
-    } else {
-        // Linea recta
-        waypointsRuta = [
-            [miPos.lat, miPos.lng],
-            [punto.latitud, punto.longitud]
-        ];
-    }
-
-    rutaActiva = L.polyline(waypointsRuta, {
-        color: '#4CAF50',
-        weight: 5,
-        opacity: 0.8,
-        dashArray: '12, 8',
-        lineCap: 'round',
-        lineJoin: 'round'
-    }).addTo(mapa);
-
-    // Calcular distancia total
-    let distanciaTotal = 0;
-    for (let i = 0; i < waypointsRuta.length - 1; i++) {
-        distanciaTotal += mapa.distance(waypointsRuta[i], waypointsRuta[i + 1]);
-    }
-    const tiempoMinutos = (distanciaTotal / 5000) * 60;
-
-    document.getElementById('infoSeleccionada').innerHTML = `
-        <div class="alert alert-success">
-            <h6 class="alert-heading">
-                <i class="bi bi-signpost"></i> Ruta calculada
-            </h6>
-            <p class="mb-1"><strong>Destino:</strong> ${punto.nombre}</p>
-            <p class="mb-1"><strong>Distancia:</strong> ${distanciaTotal.toFixed(0)} metros</p>
-            <p class="mb-1"><strong>Tiempo:</strong> ${tiempoMinutos.toFixed(0)} min (a pie)</p>
-        </div>
-    `;
-
-    mapa.fitBounds(L.latLngBounds(waypointsRuta), { padding: [80, 80] });
 }
 
 function mostrarDetallesPunto(puntoId) {
@@ -1665,9 +1316,6 @@ function mostrarDetallesPunto(puntoId) {
         <p class="mb-1"><strong>Coordenadas:</strong> ${punto.latitud}, ${punto.longitud}</p>
         <p class="mb-2"><strong>Descripción:</strong> ${punto.descripcion || 'Sin descripción'}</p>
         <div class="d-grid gap-2">
-            <button class="btn btn-sm btn-success" onclick="calcularRutaHaciaPunto(${punto.id})">
-                <i class="bi bi-arrow-right-circle"></i> Calcular ruta desde mi ubicación
-            </button>
             <button class="btn btn-sm btn-outline-primary" onclick="centrarMapaEnPunto(${punto.id})">
                 <i class="bi bi-geo-alt"></i> Centrar en este punto
             </button>
@@ -1695,7 +1343,6 @@ document.addEventListener('DOMContentLoaded', function() {
     capaInfraestructura = L.layerGroup();
     capaPersonas = L.layerGroup();
     capaEmergencias = L.layerGroup();
-    capaRutasPredefinidas = L.layerGroup();
 
     // 1. Inicializar mapa
     mapa = inicializarMapa();

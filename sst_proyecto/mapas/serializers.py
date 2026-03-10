@@ -3,7 +3,6 @@ from .models import (
     EdificioBloque,
     PuntoEncuentro,
     EquipamientoSeguridad,
-    RutaEvacuacion,
 )
 
 class EdificioBloqueSerializer(serializers.ModelSerializer):
@@ -27,11 +26,3 @@ class EquipamientoSeguridadSerializer(serializers.ModelSerializer):
         model = EquipamientoSeguridad
         fields = '__all__'
 
-class RutaEvacuacionSerializer(serializers.ModelSerializer):
-
-    # Serializer para rutas de evacuación
-    punto_fin_nombre = serializers.CharField(source='punto_fin.nombre', read_only=True)
-
-    class Meta:
-        model = RutaEvacuacion
-        fields = '__all__'

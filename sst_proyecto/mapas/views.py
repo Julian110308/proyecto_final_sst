@@ -9,7 +9,6 @@ from .models import (
     EdificioBloque,
     PuntoEncuentro,
     EquipamientoSeguridad,
-    RutaEvacuacion,
     EstadoEdificio,
     HistorialEstadoEdificio,
 )
@@ -17,7 +16,6 @@ from .serializers import (
     EdificioBloqueSerializer,
     PuntoEncuentroSerializer,
     EquipamientoSeguridadSerializer,
-    RutaEvacuacionSerializer,
 )
 from .services import encontrar_mas_cercano
 from usuarios.permissions import NoEsVisitante, EsAdministrativo, EsBrigadaOAdministrativo, excluir_visitantes
@@ -313,40 +311,49 @@ def mapa_interactivo(request):
                     'id': 1,
                     'tipo': 'EXTINTOR',
                     'codigo': 'EXT-001',
-                    'latitud': 5.73036,
-                    'longitud': -72.89436,
-                    'ultima_revision': '2026-01-15',
-                    'descripcion': 'Extintor PQS - Entrada principal edificio administrativo',
+                    'latitud': 5.730639,
+                    'longitud': -72.894389,
+                    'ultima_revision': '',
+                    'descripcion': 'Extintor',
                 },
                 {
                     'id': 2,
-                    'tipo': 'EXTINTOR',
-                    'codigo': 'EXT-002',
-                    'latitud': 5.72970,
-                    'longitud': -72.89430,
-                    'ultima_revision': '2026-01-15',
-                    'descripcion': 'Extintor CO2 - Entrada mina didáctica',
+                    'tipo': 'BOTIQUIN',
+                    'codigo': 'BOT-001',
+                    'latitud': 5.730639,
+                    'longitud': -72.894389,
+                    'ultima_revision': '',
+                    'descripcion': 'Botiquín',
                 },
                 {
                     'id': 3,
-                    'tipo': 'BOTIQUIN',
-                    'codigo': 'BOT-001',
-                    'latitud': 5.73070,
-                    'longitud': -72.89460,
-                    'ultima_revision': '2026-01-20',
-                    'descripcion': 'Botiquín tipo A - Bloque de aulas',
+                    'tipo': 'CAMILLA',
+                    'codigo': 'CAM-001',
+                    'latitud': 5.730639,
+                    'longitud': -72.894389,
+                    'ultima_revision': '',
+                    'descripcion': 'Camilla',
                 },
                 {
                     'id': 4,
-                    'tipo': 'BOTIQUIN',
-                    'codigo': 'BOT-002',
-                    'latitud': 5.73000,
-                    'longitud': -72.89410,
-                    'ultima_revision': '2026-01-20',
-                    'descripcion': 'Botiquín tipo A - Talleres de minería',
-                }
+                    'tipo': 'EXTINTOR',
+                    'codigo': 'EXT-002',
+                    'latitud': 5.730667,
+                    'longitud': -72.894361,
+                    'ultima_revision': '',
+                    'descripcion': 'Extintor',
+                },
+                {
+                    'id': 5,
+                    'tipo': 'CAMILLA',
+                    'codigo': 'CAM-002',
+                    'latitud': 5.730333,
+                    'longitud': -72.894528,
+                    'ultima_revision': '',
+                    'descripcion': 'Camilla',
+                },
             ]
-        
+
         # 5. GEOCERCA DESDE LA BASE DE DATOS
         # Importamos aquí para evitar import circular (control_acceso.models → mapas.services)
         from control_acceso.models import Geocerca as GeocercaConfig
@@ -427,20 +434,47 @@ def mapa_interactivo(request):
                     'id': 1,
                     'tipo': 'EXTINTOR',
                     'codigo': 'EXT-001',
-                    'latitud': 5.73036,
-                    'longitud': -72.89436,
-                    'ultima_revision': '2026-01-15',
-                    'descripcion': 'Extintor PQS - Entrada principal edificio administrativo',
+                    'latitud': 5.730639,
+                    'longitud': -72.894389,
+                    'ultima_revision': '',
+                    'descripcion': 'Extintor',
                 },
                 {
                     'id': 2,
                     'tipo': 'BOTIQUIN',
                     'codigo': 'BOT-001',
-                    'latitud': 5.73070,
-                    'longitud': -72.89460,
-                    'ultima_revision': '2026-01-20',
-                    'descripcion': 'Botiquín tipo A - Bloque de aulas',
-                }
+                    'latitud': 5.730639,
+                    'longitud': -72.894389,
+                    'ultima_revision': '',
+                    'descripcion': 'Botiquín',
+                },
+                {
+                    'id': 3,
+                    'tipo': 'CAMILLA',
+                    'codigo': 'CAM-001',
+                    'latitud': 5.730639,
+                    'longitud': -72.894389,
+                    'ultima_revision': '',
+                    'descripcion': 'Camilla',
+                },
+                {
+                    'id': 4,
+                    'tipo': 'EXTINTOR',
+                    'codigo': 'EXT-002',
+                    'latitud': 5.730667,
+                    'longitud': -72.894361,
+                    'ultima_revision': '',
+                    'descripcion': 'Extintor',
+                },
+                {
+                    'id': 5,
+                    'tipo': 'CAMILLA',
+                    'codigo': 'CAM-002',
+                    'latitud': 5.730333,
+                    'longitud': -72.894528,
+                    'ultima_revision': '',
+                    'descripcion': 'Camilla',
+                },
             ],
             'centro_minero': {
                 'lat': 5.7303596,
@@ -688,16 +722,3 @@ class EquipamientoSeguridadViewSet(viewsets.ModelViewSet):
                 'success': False,
                 'error': str(e)
             }, status=400)
-    
-class RutaEvacuacionViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet para rutas de evacuación
-    PERMISOS: Todos excepto VISITANTE
-    """
-    queryset = RutaEvacuacion.objects.filter(activa=True)
-    serializer_class = RutaEvacuacionSerializer
-
-    def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [EsAdministrativo()]
-        return [NoEsVisitante()]

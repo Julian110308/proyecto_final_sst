@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import EdificioBloque, PuntoEncuentro, EquipamientoSeguridad, RutaEvacuacion
+from .models import EdificioBloque, PuntoEncuentro, EquipamientoSeguridad
 
 
 @admin.register(PuntoEncuentro)

@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from . import views
 from .views import (
     EdificioBloqueViewSet, PuntoEncuentroViewSet,
-    EquipamientoSeguridadViewSet, RutaEvacuacionViewSet,
+    EquipamientoSeguridadViewSet,
     mapa_interactivo, plano_centro,
     estados_edificios, cambiar_estado_edificio,
 )
@@ -12,7 +12,6 @@ router = DefaultRouter()
 router.register('edificios', EdificioBloqueViewSet)
 router.register('puntos-encuentro', PuntoEncuentroViewSet)
 router.register('equipamientos', EquipamientoSeguridadViewSet)
-router.register('rutas-evacuacion', RutaEvacuacionViewSet)
 
 urlpatterns = [
     # Ruta principal para el mapa HTML

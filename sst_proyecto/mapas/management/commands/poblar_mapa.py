@@ -6,9 +6,8 @@ Uso:
     python manage.py poblar_mapa
     python manage.py poblar_mapa --reset   (borra y recrea todo)
 """
-import json
 from django.core.management.base import BaseCommand
-from mapas.models import EdificioBloque, PuntoEncuentro, RutaEvacuacion
+from mapas.models import EdificioBloque, PuntoEncuentro
 
 
 EDIFICACIONES = [
@@ -66,99 +65,6 @@ PUNTOS_ENCUENTRO = [
     },
 ]
 
-RUTAS_EVACUACION = [
-    {
-        'nombre': 'Ruta Norte - Zona Aulas',
-        'descripcion': 'Ruta de evacuación para la zona norte donde se encuentran las aulas principales',
-        'waypoints': [
-            [5.7308266, -72.8944621],
-            [5.7307180, -72.8943197],
-            [5.7306089, -72.8944388],
-            [5.7305964, -72.8943091],
-            [5.7304729, -72.8946135],
-            [5.7303035, -72.8948299],
-        ],
-        'distancia_metros': 180,
-        'tiempo_estimado_minutos': 3,
-        'prioridad': 1,
-        'punto_fin_idx': 0,  # P1 Cancha
-    },
-    {
-        'nombre': 'Ruta Centro - Edificios Centrales',
-        'descripcion': 'Ruta de evacuación para los edificios centrales del campus',
-        'waypoints': [
-            [5.7303504, -72.8944825],
-            [5.7304729, -72.8946135],
-            [5.7306460, -72.8947499],
-            [5.7308157, -72.8947557],
-        ],
-        'distancia_metros': 120,
-        'tiempo_estimado_minutos': 2,
-        'prioridad': 1,
-        'punto_fin_idx': 1,  # P2 Parqueadero
-    },
-    {
-        'nombre': 'Ruta Sur - Talleres',
-        'descripcion': 'Ruta de evacuación para la zona sur donde están los talleres',
-        'waypoints': [
-            [5.7296547, -72.8947003],
-            [5.7300200, -72.8947224],
-            [5.7303035, -72.8948299],
-            [5.7304729, -72.8946135],
-        ],
-        'distancia_metros': 250,
-        'tiempo_estimado_minutos': 4,
-        'prioridad': 2,
-        'punto_fin_idx': 0,  # P1 Cancha
-    },
-    {
-        'nombre': 'Ruta Este - Laboratorios',
-        'descripcion': 'Ruta de evacuación para la zona de laboratorios',
-        'waypoints': [
-            [5.7304283, -72.8938899],
-            [5.7303758, -72.8936851],
-            [5.7300397, -72.8942211],
-            [5.7302012, -72.8944738],
-            [5.7303504, -72.8944825],
-        ],
-        'distancia_metros': 220,
-        'tiempo_estimado_minutos': 4,
-        'prioridad': 2,
-        'punto_fin_idx': 2,  # P3 Jardín
-    },
-    {
-        'nombre': 'Ruta Sureste - Zona Baja',
-        'descripcion': 'Ruta de evacuación para la zona baja del campus',
-        'waypoints': [
-            [5.7296381, -72.8930312],
-            [5.7297075, -72.8932150],
-            [5.7298857, -72.8933810],
-            [5.7301815, -72.8933961],
-            [5.7303758, -72.8936851],
-            [5.7304283, -72.8938899],
-        ],
-        'distancia_metros': 350,
-        'tiempo_estimado_minutos': 6,
-        'prioridad': 3,
-        'punto_fin_idx': 2,  # P3 Jardín
-    },
-    {
-        'nombre': 'Ruta Suroeste - Mina Didactica',
-        'descripcion': 'Ruta de evacuación desde la mina didáctica',
-        'waypoints': [
-            [5.7297219, -72.8935096],
-            [5.7296522, -72.8937856],
-            [5.7299135, -72.8937115],
-            [5.7300397, -72.8942211],
-            [5.7302012, -72.8944738],
-        ],
-        'distancia_metros': 280,
-        'tiempo_estimado_minutos': 5,
-        'prioridad': 2,
-        'punto_fin_idx': 2,  # P3 Jardín
-    },
-]
-
 
 class Command(BaseCommand):
     help = 'Pobla la base de datos con las edificaciones reales del Centro Minero SENA'
@@ -173,7 +79,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         if options['reset']:
             self.stdout.write(self.style.WARNING('Eliminando datos existentes del mapa...'))
-            RutaEvacuacion.objects.all().delete()
             PuntoEncuentro.objects.all().delete()
             EdificioBloque.objects.all().delete()
             self.stdout.write(self.style.SUCCESS('Datos eliminados.'))
@@ -200,7 +105,6 @@ class Command(BaseCommand):
 
         # 2. Crear puntos de encuentro
         self.stdout.write('Creando puntos de encuentro...')
-        puntos_objs = []
         puntos_creados = 0
         for pe in PUNTOS_ENCUENTRO:
             obj, created = PuntoEncuentro.objects.get_or_create(
@@ -218,40 +122,10 @@ class Command(BaseCommand):
                     'activo': True,
                 }
             )
-            puntos_objs.append(obj)
             if created:
                 puntos_creados += 1
         self.stdout.write(self.style.SUCCESS(
             f'  {puntos_creados} puntos de encuentro creados ({len(PUNTOS_ENCUENTRO) - puntos_creados} ya existian)'
-        ))
-
-        # 3. Crear rutas de evacuación
-        self.stdout.write('Creando rutas de evacuacion...')
-        rutas_creadas = 0
-        for ruta in RUTAS_EVACUACION:
-            punto_fin = puntos_objs[ruta['punto_fin_idx']] if puntos_objs else None
-            # Calcular inicio desde el primer waypoint
-            inicio_lat = ruta['waypoints'][0][0]
-            inicio_lng = ruta['waypoints'][0][1]
-
-            obj, created = RutaEvacuacion.objects.get_or_create(
-                nombre=ruta['nombre'],
-                defaults={
-                    'descripcion': ruta['descripcion'],
-                    'inicio_latitud': inicio_lat,
-                    'inicio_longitud': inicio_lng,
-                    'punto_fin': punto_fin,
-                    'distancia_metros': ruta['distancia_metros'],
-                    'tiempo_estimado_minutos': ruta['tiempo_estimado_minutos'],
-                    'waypoints': json.dumps(ruta['waypoints']),
-                    'prioridad': ruta['prioridad'],
-                    'activa': True,
-                }
-            )
-            if created:
-                rutas_creadas += 1
-        self.stdout.write(self.style.SUCCESS(
-            f'  {rutas_creadas} rutas de evacuacion creadas ({len(RUTAS_EVACUACION) - rutas_creadas} ya existian)'
         ))
 
         self.stdout.write('')
