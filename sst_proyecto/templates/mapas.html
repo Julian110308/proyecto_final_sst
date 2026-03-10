@@ -974,9 +974,6 @@ function inicializarDatosDinamicos() {
                 <h6 style="margin: 0 0 8px 0; color: #2E7D32;">
                     <i class="bi bi-signpost"></i> ${punto.nombre}
                 </h6>
-                <p style="margin: 0 0 5px 0; font-size: 14px;">
-                    <strong><i class="bi bi-people"></i> Capacidad:</strong> ${punto.capacidad} personas
-                </p>
                 <p style="margin: 0 0 10px 0; font-size: 13px; color: #666;">
                     <i class="bi bi-info-circle"></i> ${punto.descripcion || 'Sin descripción'}
                 </p>
@@ -1399,7 +1396,7 @@ function realizarBusqueda() {
         const color = coloresPorTipo[item._tipo];
         const titulo = item._tipo === 'equipo' ? item.tipo : item.nombre;
         const subtitulo = item._tipo === 'edificio' ? `Tipo: ${item.tipo}`
-            : item._tipo === 'punto' ? `Cap: ${item.capacidad} personas`
+            : item._tipo === 'punto' ? item.nombre
             : `Rev: ${item.ultima_revision || 'No registrada'}`;
         html += `
             <a href="#" class="list-group-item list-group-item-action py-2"
@@ -1433,7 +1430,6 @@ function centrarEnResultado(indice) {
             <h6 class="text-success">
                 <i class="bi bi-signpost"></i> ${item.nombre}
             </h6>
-            <p class="mb-1"><strong>Capacidad:</strong> ${item.capacidad} personas</p>
             <p class="mb-1 small text-muted">${item.descripcion || ''}</p>
             <button class="btn btn-sm btn-success mt-1" onclick="calcularRutaHaciaPunto(${item.id})">
                 <i class="bi bi-arrow-right-circle"></i> Calcular ruta
@@ -1652,7 +1648,6 @@ function calcularRutaHaciaPunto(puntoId) {
             <p class="mb-1"><strong>Destino:</strong> ${punto.nombre}</p>
             <p class="mb-1"><strong>Distancia:</strong> ${distanciaTotal.toFixed(0)} metros</p>
             <p class="mb-1"><strong>Tiempo:</strong> ${tiempoMinutos.toFixed(0)} min (a pie)</p>
-            <p class="mb-0"><strong>Capacidad:</strong> ${punto.capacidad} personas</p>
         </div>
     `;
 
@@ -1667,7 +1662,6 @@ function mostrarDetallesPunto(puntoId) {
         <h6 class="text-success">
             <i class="bi bi-signpost"></i> ${punto.nombre}
         </h6>
-        <p class="mb-1"><strong>Capacidad:</strong> ${punto.capacidad} personas</p>
         <p class="mb-1"><strong>Coordenadas:</strong> ${punto.latitud}, ${punto.longitud}</p>
         <p class="mb-2"><strong>Descripción:</strong> ${punto.descripcion || 'Sin descripción'}</p>
         <div class="d-grid gap-2">

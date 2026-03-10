@@ -149,16 +149,15 @@ def mapa_interactivo(request):
         # 2. PUNTOS DE ENCUENTRO
 
         puntos_encuentro = PuntoEncuentro.objects.filter(activo=True).values(
-            'id', 
-            'nombre', 
-            'latitud', 
-            'longitud', 
-            'capacidad', 
+            'id',
+            'nombre',
+            'latitud',
+            'longitud',
             'descripcion',
-            'tipo_terreno',  # Agregado
-            'prioridad',     # Agregado
+            'tipo_terreno',
+            'prioridad',
         )
-        
+
         # Convertir a lista con formato correcto
         puntos_data = []
         for punto in puntos_encuentro:
@@ -167,7 +166,6 @@ def mapa_interactivo(request):
                 'nombre': punto['nombre'],
                 'latitud': float(punto['latitud']),
                 'longitud': float(punto['longitud']),
-                'capacidad': punto['capacidad'],
                 'descripcion': punto['descripcion'] or f"Punto de encuentro {punto['tipo_terreno']} - Prioridad {punto['prioridad']}",
             })
 
@@ -298,7 +296,6 @@ def mapa_interactivo(request):
                     'nombre': 'Punto Principal - Cancha Deportiva',
                     'latitud': 5.730056,
                     'longitud': -72.894250,
-                    'capacidad': 500,
                     'descripcion': 'PRIORIDAD 1: Cancha deportiva central - Espacio abierto amplio para evacuación masiva',
                 },
                 {
@@ -306,7 +303,6 @@ def mapa_interactivo(request):
                     'nombre': 'Punto Secundario - Zona Verde',
                     'latitud': 5.731083,
                     'longitud': -72.895028,
-                    'capacidad': 250,
                     'descripcion': 'PRIORIDAD 2: Zona verde del centro - Área despejada para evacuación',
                 },
             ]
@@ -416,7 +412,6 @@ def mapa_interactivo(request):
                     'nombre': 'Punto Principal - Cancha Deportiva',
                     'latitud': 5.730056,
                     'longitud': -72.894250,
-                    'capacidad': 500,
                     'descripcion': 'PRIORIDAD 1: Cancha deportiva central - Espacio abierto amplio para evacuación masiva',
                 },
                 {
@@ -424,7 +419,6 @@ def mapa_interactivo(request):
                     'nombre': 'Punto Secundario - Zona Verde',
                     'latitud': 5.731083,
                     'longitud': -72.895028,
-                    'capacidad': 250,
                     'descripcion': 'PRIORIDAD 2: Zona verde del centro - Área despejada para evacuación',
                 }
             ],
