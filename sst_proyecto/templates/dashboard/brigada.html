@@ -779,8 +779,8 @@ async function cargarEstadoEquipos() {
             if (e.estado === 'OPERATIVO') porTipo[e.tipo].operativos++;
         });
 
-        const iconos = { EXTINTOR:'bi-fire text-danger', BOTIQUIN:'bi-heart-pulse text-success', CAMILLA:'bi-hospital text-primary', DESFIBRILADOR:'bi-lightning-charge text-warning', ALARMA:'bi-bell text-warning', SENALIZACION:'bi-signpost text-secondary' };
-        const nombres = { EXTINTOR:'Extintores', BOTIQUIN:'Botiquines', CAMILLA:'Camillas', DESFIBRILADOR:'Desfibriladores', ALARMA:'Alarmas', SENALIZACION:'Senalizacion' };
+        const iconos = { EXTINTOR:'bi-fire text-danger', BOTIQUIN:'bi-heart-pulse text-success', CAMILLA:'bi-hospital text-primary', ALARMA:'bi-bell text-warning', SENALIZACION:'bi-signpost text-secondary' };
+        const nombres = { EXTINTOR:'Extintores', BOTIQUIN:'Botiquines', CAMILLA:'Camillas', ALARMA:'Alarmas', SENALIZACION:'Senalizacion' };
 
         if (Object.keys(porTipo).length === 0) {
             cont.innerHTML = '<p class="text-center text-muted py-2">Sin equipos registrados</p>';
