@@ -80,11 +80,6 @@
                                 <i class="bi bi-geo-alt-fill me-1"></i> Cargando ubicación...
                             </small>
                         </div>
-                        <div class="col-md-4 text-end">
-                            <small id="estadoGeocerca" class="text-muted">
-                                <i class="bi bi-shield-check me-1"></i> Verificando...
-                            </small>
-                        </div>
                         <div class="col-12">
                             <small id="infoPuntoMasCercano" class="text-muted"></small>
                         </div>
@@ -713,8 +708,6 @@ function cuandoHayError(error) {
 }
 
 function verificarDentroGeocerca(latitud, longitud) {
-    const estadoElemento = document.getElementById('estadoGeocerca');
-
     // Verificar si el punto está dentro de la circunferencia de geocerca
     const distanciaAlCentro = mapa.distance(
         [latitud, longitud],
@@ -722,46 +715,17 @@ function verificarDentroGeocerca(latitud, longitud) {
     );
     const dentroDeLaGeocerca = distanciaAlCentro <= GEOCERCA_RADIO_METROS;
 
-    if (dentroDeLaGeocerca) {
-        estadoElemento.innerHTML = `
-            <span class="text-success">
-                <i class="bi bi-check-circle-fill me-1"></i>
-                Dentro del centro
-            </span>
-        `;
-        if (miMarcador) {
-            miMarcador.bindPopup(`
-                <div style="min-width: 200px;">
-                    <h6 style="margin: 0 0 8px 0; color: #2E7D32;">
-                        <i class="bi bi-person-circle"></i> Mi ubicación
-                    </h6>
-                    <p style="margin: 0 0 5px 0;">
-                        <span class="badge bg-success">✓ Dentro del perímetro</span><br>
-                        <small>Distancia al centro: ${distanciaAlCentro.toFixed(0)} m</small>
-                    </p>
-                </div>
-            `);
-        }
-    } else {
-        estadoElemento.innerHTML = `
-            <span class="text-warning">
-                <i class="bi bi-exclamation-triangle me-1"></i>
-                Fuera del centro
-            </span>
-        `;
-        if (miMarcador) {
-            miMarcador.bindPopup(`
-                <div style="min-width: 200px;">
-                    <h6 style="margin: 0 0 8px 0; color: #F57C00;">
-                        <i class="bi bi-person-circle"></i> Mi ubicación
-                    </h6>
-                    <p style="margin: 0 0 5px 0;">
-                        <span class="badge bg-warning">⚠ Fuera del perímetro</span><br>
-                        <small>Distancia al centro: ${distanciaAlCentro.toFixed(0)} m</small>
-                    </p>
-                </div>
-            `);
-        }
+    if (miMarcador) {
+        miMarcador.bindPopup(`
+            <div style="min-width: 200px;">
+                <h6 style="margin: 0 0 8px 0; color: #2E7D32;">
+                    <i class="bi bi-person-circle"></i> Mi ubicación
+                </h6>
+                <p style="margin: 0 0 5px 0;">
+                    <small>Distancia al centro: ${distanciaAlCentro.toFixed(0)} m</small>
+                </p>
+            </div>
+        `);
     }
 
     // Mostrar punto de encuentro más cercano
