@@ -510,10 +510,10 @@ function inicializarMapa() {
         18
     );
 
-    // Capa Satelital de Esri (mejor calidad que OpenStreetMap)
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-        maxZoom: 19
+    // Capa Satelital de Google (cobertura global completa)
+    L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        attribution: '© Google',
+        maxZoom: 20
     }).addTo(mapa);
 
     // Capa opcional de etiquetas sobre la imagen satelital
@@ -669,20 +669,36 @@ function cuandoObtengoUbicacion(posicion) {
         `);
     }
 
-    // Actualizar círculo de precisión
+    // Actualizar círculo de precisión GPS (limitado a 300m para no distorsionar el mapa)
+    const radioMostrar = Math.min(precision, 300);
+    const precisionMala = precision > GEOCERCA_RADIO_METROS;
+
     if (circuloPrecision) {
         circuloPrecision.setLatLng([miLatitud, miLongitud]);
-        circuloPrecision.setRadius(precision);
+        circuloPrecision.setRadius(radioMostrar);
     } else {
         circuloPrecision = L.circle(
             [miLatitud, miLongitud],
             {
-                color: '#4CAF50',
-                fillColor: '#4CAF50',
-                fillOpacity: 0.15,
-                radius: precision
+                color: precisionMala ? '#FF9800' : '#4CAF50',
+                fillColor: precisionMala ? '#FF9800' : '#4CAF50',
+                fillOpacity: 0.12,
+                weight: 1,
+                dashArray: '4, 4',
+                radius: radioMostrar
             }
         ).addTo(mapa);
+    }
+
+    // Advertir si la precisión GPS es peor que el radio de la geocerca
+    const infoUbicacion = document.getElementById('infoUbicacion');
+    if (precisionMala && infoUbicacion) {
+        infoUbicacion.innerHTML = `
+            <i class="bi bi-geo-alt-fill me-1"></i>
+            <strong>Lat:</strong> ${miLatitud.toFixed(6)} |
+            <strong>Lng:</strong> ${miLongitud.toFixed(6)} |
+            <span class="text-warning fw-semibold"><i class="bi bi-exclamation-triangle-fill me-1"></i>Precisión baja: ±${precision.toFixed(0)} m — el GPS no puede confirmar tu ubicación exacta</span>
+        `;
     }
 
     // Verificar si está dentro de la geocerca

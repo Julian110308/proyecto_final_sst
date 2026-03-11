@@ -161,14 +161,10 @@ document.addEventListener('DOMContentLoaded', function() {
         attributionControl: false
     }).setView([5.7302, -72.8940], 17);
 
-    // Capa satelital
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 20
-    }).addTo(mapa);
-
-    // Etiquetas
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
-        maxZoom: 20, opacity: 0.7
+    // Capa base satelital (Google Satellite — cobertura global completa)
+    L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        attribution: '© Google'
     }).addTo(mapa);
 
     // ============================================================

@@ -233,52 +233,86 @@
 
 <!-- Modal Reportar Emergencia -->
 <div class="modal fade" id="modalEmergencia" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    Reportar Emergencia
-                </h5>
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 520px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+
+            <!-- Header -->
+            <div class="modal-header border-0 pb-0" style="background: linear-gradient(135deg, #DC2626 0%, #991B1B 100%); padding: 1.25rem 1.5rem 1rem;">
+                <div class="d-flex align-items-center gap-3">
+                    <div style="width: 42px; height: 42px; background: rgba(255,255,255,0.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <i class="bi bi-exclamation-triangle-fill text-white" style="font-size: 1.2rem;"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-bold text-white mb-0" style="font-size: 1rem;">Reportar Emergencia</h5>
+                        <small style="color: rgba(255,255,255,0.75); font-size: 0.78rem;">Se notificará a la brigada de emergencia</small>
+                    </div>
+                </div>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                <div id="alertaEmergencia" class="alert d-none mb-3"></div>
+
+            <!-- Body -->
+            <div class="modal-body px-4 pt-4 pb-2">
+                <div id="alertaEmergencia" class="alert d-none mb-3" style="border-radius: 10px; font-size: 0.88rem;"></div>
                 <form id="formEmergencia">
+
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Tipo de Emergencia <span class="text-danger">*</span></label>
-                        <select class="form-select" id="tipoEmergencia" required>
+                        <label class="form-label fw-semibold" style="font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; color: #6B7280;">
+                            Tipo de Emergencia <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select" id="tipoEmergencia" required style="border: 1.5px solid #E5E7EB; border-radius: 8px; font-size: 0.9rem; background-color: #F9FAFB;">
                             <option value="">Cargando tipos...</option>
                         </select>
                     </div>
+
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Descripcion <span class="text-danger">*</span></label>
-                        <textarea class="form-control" id="descripcionEmergencia" rows="3" placeholder="Describe la emergencia..." required></textarea>
+                        <label class="form-label fw-semibold" style="font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; color: #6B7280;">
+                            Descripción <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" id="descripcionEmergencia" rows="3"
+                            placeholder="Describe detalladamente la emergencia..." required
+                            style="border: 1.5px solid #E5E7EB; border-radius: 8px; font-size: 0.9rem; background-color: #F9FAFB; resize: vertical;"></textarea>
                     </div>
+
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Ubicacion</label>
-                        <input type="text" class="form-control" id="ubicacionEmergencia" placeholder="Edificio, area o referencia">
+                        <label class="form-label fw-semibold" style="font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; color: #6B7280;">
+                            Ubicación
+                        </label>
+                        <input type="text" class="form-control" id="ubicacionEmergencia"
+                            placeholder="Ej: Bloque C, Taller de soldadura"
+                            style="border: 1.5px solid #E5E7EB; border-radius: 8px; font-size: 0.9rem; background-color: #F9FAFB;">
                     </div>
-                    <div class="row">
-                        <div class="col-6 mb-3">
-                            <label class="form-label fw-semibold">Personas Afectadas</label>
-                            <input type="number" class="form-control" id="personasAfectadas" value="0" min="0">
+
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold" style="font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; color: #6B7280;">
+                                Personas Afectadas
+                            </label>
+                            <input type="number" class="form-control" id="personasAfectadas" value="0" min="0"
+                                style="border: 1.5px solid #E5E7EB; border-radius: 8px; font-size: 0.9rem; background-color: #F9FAFB;">
                         </div>
-                        <div class="col-6 mb-3 d-flex align-items-end">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="requiereEvacuacion">
-                                <label class="form-check-label" for="requiereEvacuacion">
-                                    Requiere evacuacion
-                                </label>
+                        <div class="col-6 d-flex align-items-end pb-1">
+                            <div style="background: #FFF7ED; border: 1.5px solid #FED7AA; border-radius: 10px; padding: 0.625rem 0.875rem; width: 100%;">
+                                <div class="form-check mb-0">
+                                    <input class="form-check-input" type="checkbox" id="requiereEvacuacion">
+                                    <label class="form-check-label fw-semibold" for="requiereEvacuacion"
+                                        style="font-size: 0.85rem; color: #92400E; cursor: pointer;">
+                                        <i class="bi bi-arrow-right-circle me-1"></i>Requiere evacuación
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>
+
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-danger" id="btnReportarEmergencia">
-                    <i class="bi bi-exclamation-triangle me-1"></i> Reportar Emergencia
+
+            <!-- Footer -->
+            <div class="modal-footer border-0 px-4 pt-3 pb-4 gap-2">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" style="border-radius: 8px; font-size: 0.88rem;">
+                    <i class="bi bi-x-lg me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-danger px-4" id="btnReportarEmergencia" style="border-radius: 8px; font-size: 0.88rem; font-weight: 600;">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Reportar Emergencia
                 </button>
             </div>
         </div>
@@ -287,27 +321,39 @@
 
 <!-- Modal Resolver Emergencia -->
 <div class="modal fade" id="modalResolver" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title">
-                    <i class="bi bi-check-circle me-2"></i>
-                    Resolver Emergencia
-                </h5>
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+
+            <div class="modal-header border-0 pb-0" style="background: linear-gradient(135deg, #16a34a 0%, #166534 100%); padding: 1.25rem 1.5rem 1rem;">
+                <div class="d-flex align-items-center gap-3">
+                    <div style="width: 42px; height: 42px; background: rgba(255,255,255,0.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <i class="bi bi-check-circle-fill text-white" style="font-size: 1.2rem;"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-bold text-white mb-0" style="font-size: 1rem;">Resolver Emergencia</h5>
+                        <small style="color: rgba(255,255,255,0.75); font-size: 0.78rem;">Documente las acciones de respuesta tomadas</small>
+                    </div>
+                </div>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
+
+            <div class="modal-body px-4 pt-4 pb-2">
                 <input type="hidden" id="resolverEmergenciaId">
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Acciones Tomadas <span class="text-danger">*</span></label>
-                    <textarea class="form-control" id="accionesResolver" rows="4"
-                        placeholder="Describe las acciones tomadas para resolver la emergencia..." required></textarea>
-                </div>
+                <label class="form-label fw-semibold" style="font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; color: #6B7280;">
+                    Acciones Tomadas <span class="text-danger">*</span>
+                </label>
+                <textarea class="form-control" id="accionesResolver" rows="5"
+                    placeholder="Describa las acciones tomadas para controlar y resolver la emergencia..."
+                    style="border: 1.5px solid #E5E7EB; border-radius: 8px; font-size: 0.9rem; background-color: #F9FAFB; resize: vertical;"></textarea>
+                <div class="form-text mt-1">Este registro quedará en el historial de la emergencia.</div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-dark" id="btnConfirmarResolver">
-                    <i class="bi bi-check-lg me-1"></i> Confirmar Resolucion
+
+            <div class="modal-footer border-0 px-4 pt-3 pb-4 gap-2">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" style="border-radius: 8px; font-size: 0.88rem;">
+                    <i class="bi bi-x-lg me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-success px-4" id="btnConfirmarResolver" style="border-radius: 8px; font-size: 0.88rem; font-weight: 600;">
+                    <i class="bi bi-check-circle-fill me-2"></i>Confirmar Resolución
                 </button>
             </div>
         </div>
@@ -316,31 +362,48 @@
 
 <!-- Modal Falsa Alarma -->
 <div class="modal fade" id="modalFalsaAlarma" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-secondary text-white">
-                <h5 class="modal-title">
-                    <i class="bi bi-shield-exclamation me-2"></i>
-                    Marcar como Falsa Alarma
-                </h5>
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+
+            <div class="modal-header border-0 pb-0" style="background: linear-gradient(135deg, #4B5563 0%, #1F2937 100%); padding: 1.25rem 1.5rem 1rem;">
+                <div class="d-flex align-items-center gap-3">
+                    <div style="width: 42px; height: 42px; background: rgba(255,255,255,0.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <i class="bi bi-shield-exclamation text-white" style="font-size: 1.2rem;"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-bold text-white mb-0" style="font-size: 1rem;">Marcar como Falsa Alarma</h5>
+                        <small style="color: rgba(255,255,255,0.75); font-size: 0.78rem;">Se notificará al usuario y a los administrativos</small>
+                    </div>
+                </div>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                <div class="alert alert-warning">
-                    <i class="bi bi-info-circle me-2"></i>
-                    Esta accion marcara la emergencia como falsa alarma. Se notificara al usuario que la reporto y a los administrativos.
+
+            <div class="modal-body px-4 pt-4 pb-2">
+                <div style="background: #FFF7ED; border: 1px solid #FED7AA; border-left: 4px solid #F59E0B; border-radius: 10px; padding: 0.875rem 1rem; margin-bottom: 1.25rem;">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <i class="bi bi-info-circle-fill" style="color: #D97706;"></i>
+                        <strong style="font-size: 0.85rem; color: #92400E;">Advertencia</strong>
+                    </div>
+                    <p class="mb-0" style="font-size: 0.83rem; color: #B45309; line-height: 1.5;">
+                        Esta acción marcará la emergencia como falsa alarma y quedará en el registro del usuario que la reportó.
+                    </p>
                 </div>
+
                 <input type="hidden" id="falsaAlarmaEmergenciaId">
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Motivo <span class="text-danger">*</span></label>
-                    <textarea class="form-control" id="motivoFalsaAlarma" rows="3"
-                        placeholder="Explique por que se considera falsa alarma..." required></textarea>
-                </div>
+                <label class="form-label fw-semibold" style="font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; color: #6B7280;">
+                    Motivo <span class="text-danger">*</span>
+                </label>
+                <textarea class="form-control" id="motivoFalsaAlarma" rows="3"
+                    placeholder="Explique por qué se considera una falsa alarma..."
+                    style="border: 1.5px solid #E5E7EB; border-radius: 8px; font-size: 0.9rem; background-color: #F9FAFB; resize: vertical;"></textarea>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-danger" id="btnConfirmarFalsaAlarma">
-                    <i class="bi bi-shield-exclamation me-1"></i> Confirmar Falsa Alarma
+
+            <div class="modal-footer border-0 px-4 pt-3 pb-4 gap-2">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" style="border-radius: 8px; font-size: 0.88rem;">
+                    <i class="bi bi-x-lg me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-danger px-4" id="btnConfirmarFalsaAlarma" style="border-radius: 8px; font-size: 0.88rem; font-weight: 600;">
+                    <i class="bi bi-shield-exclamation me-2"></i>Confirmar Falsa Alarma
                 </button>
             </div>
         </div>

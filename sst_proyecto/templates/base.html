@@ -449,16 +449,6 @@
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="/acceso/">
-                            <i class="bi bi-person-check me-2"></i>Control Acceso
-                        </a>
-                    </li>
-                    <li class="nav-item mb-2">
-                        <a class="nav-link" href="/emergencias/">
-                            <i class="bi bi-exclamation-octagon me-2"></i>Emergencias
-                        </a>
-                    </li>
-                    <li class="nav-item mb-2">
                         <a class="nav-link" href="/reportes/">
                             <i class="bi bi-graph-up me-2"></i>Reportes
                         </a>
@@ -471,11 +461,6 @@
                     <li class="nav-item mb-2">
                         <a class="nav-link" href="/mapas/">
                             <i class="bi bi-map me-2"></i>Mapa Interactivo
-                        </a>
-                    </li>
-                    <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'gestion_visitantes' %}">
-                            <i class="bi bi-person-badge me-2"></i>Visitantes
                         </a>
                     </li>
                     <li class="nav-item mb-2">
@@ -716,75 +701,177 @@
 
     <!-- Modal de Seleccion de Tipo de Emergencia -->
     <div class="modal fade" id="modalEmergencia" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="modalEmergenciaLabel" aria-modal="true" role="dialog">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content border-0 shadow-lg" style="border-top: 5px solid #dc3545 !important;">
-                <div class="modal-header" style="background: linear-gradient(135deg, #dc3545, #b02a37);">
-                    <h5 class="modal-title text-white fw-bold" id="modalEmergenciaLabel">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Reportar Emergencia
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cancelar"></button>
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 18px; overflow: hidden;">
+
+                <!-- Header dramático -->
+                <div class="modal-header border-0 p-0">
+                    <div style="background: linear-gradient(135deg, #DC2626 0%, #7F1D1D 100%); width: 100%; padding: 1.5rem 1.75rem 1.25rem; position: relative; overflow: hidden;">
+                        <!-- Círculos decorativos -->
+                        <div style="position:absolute; top:-30px; right:-30px; width:130px; height:130px; background:rgba(255,255,255,0.06); border-radius:50%;"></div>
+                        <div style="position:absolute; bottom:-50px; right:80px; width:90px; height:90px; background:rgba(255,255,255,0.04); border-radius:50%;"></div>
+                        <!-- Pulso animado -->
+                        <div style="position:absolute; top:1.4rem; left:1.75rem; width:44px; height:44px;">
+                            <div style="position:absolute; inset:0; background:rgba(255,255,255,0.15); border-radius:50%; animation: emg-pulse 1.5s ease-out infinite;"></div>
+                            <div style="position:absolute; inset:6px; background:rgba(255,255,255,0.2); border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                                <i class="bi bi-exclamation-triangle-fill text-white" style="font-size:1.1rem;"></i>
+                            </div>
+                        </div>
+                        <div style="padding-left: 58px;">
+                            <h5 class="modal-title text-white fw-bold mb-0" id="modalEmergenciaLabel" style="font-size:1.1rem;">Reportar Emergencia</h5>
+                            <small style="color:rgba(255,255,255,0.75); font-size:0.78rem;">Se notificará inmediatamente a la brigada de respuesta</small>
+                        </div>
+                        <button type="button" class="btn-close btn-close-white position-absolute" data-bs-dismiss="modal" aria-label="Cancelar" style="top:1rem; right:1rem;"></button>
+                    </div>
                 </div>
-                <div class="modal-body p-4">
+
+                <!-- Pantalla de éxito (oculta por defecto) -->
+                <div id="emergenciaExito" class="d-none" style="padding: 3rem 2rem; text-align:center;">
+                    <div style="width:80px; height:80px; background:#D1FAE5; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1.25rem;">
+                        <i class="bi bi-check-lg" style="font-size:2.5rem; color:#16a34a;"></i>
+                    </div>
+                    <h4 class="fw-bold mb-2" style="color:#15803D;">¡Alerta Enviada!</h4>
+                    <p class="text-muted mb-3" style="font-size:0.9rem; max-width:340px; margin:0 auto;">
+                        La brigada de emergencia y personal de seguridad han sido notificados.<br>
+                        <strong>Ayuda está en camino.</strong>
+                    </p>
+                    <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:10px; padding:0.875rem 1rem; display:inline-block; margin-bottom:1.5rem;">
+                        <p class="mb-0" style="font-size:0.83rem; color:#166534;">
+                            <i class="bi bi-shield-check me-1"></i>Permanezca seguro y siga las instrucciones del personal autorizado.
+                        </p>
+                    </div>
+                    <div><button type="button" class="btn btn-success px-4" data-bs-dismiss="modal">Cerrar</button></div>
+                </div>
+
+                <!-- Pantalla de error (oculta por defecto) -->
+                <div id="emergenciaError" class="d-none" style="padding: 2.5rem 2rem; text-align:center;">
+                    <div style="width:70px; height:70px; background:#FEE2E2; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem;">
+                        <i class="bi bi-wifi-off" style="font-size:2rem; color:#DC2626;"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2 text-danger">Error al enviar</h5>
+                    <p class="text-muted mb-3" style="font-size:0.88rem;">No se pudo enviar la alerta automáticamente.</p>
+                    <div style="background:#FFF7ED; border:1px solid #FED7AA; border-radius:10px; padding:0.875rem 1rem; text-align:left; margin-bottom:1.5rem;">
+                        <p class="fw-bold mb-1" style="font-size:0.85rem; color:#92400E;"><i class="bi bi-telephone-fill me-1"></i>Contacte directamente:</p>
+                        <p class="mb-0" style="font-size:0.85rem; color:#78350F;">Emergencias: <strong>123</strong> &nbsp;·&nbsp; Vigilancia SENA: <strong>Ext. 100</strong></p>
+                    </div>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="button" class="btn btn-danger" id="btnReintentar">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Reintentar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Cuerpo del formulario -->
+                <div id="emergenciaFormBody" class="modal-body" style="padding: 1.5rem 1.75rem 0.5rem;">
 
                     <!-- Paso 1: Tipo -->
-                    <p class="fw-bold mb-2 text-danger">
-                        <span class="badge bg-danger me-2">1</span>Seleccione el tipo de emergencia:
-                    </p>
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <div style="width:26px; height:26px; background:#DC2626; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            <span style="color:white; font-size:0.75rem; font-weight:700;">1</span>
+                        </div>
+                        <span class="fw-bold" style="font-size:0.9rem;">Seleccione el tipo de emergencia</span>
+                    </div>
                     <div id="tiposEmergenciaGrid" class="row g-2 mb-4">
                         <div class="col-12 text-center text-muted py-3">
                             <div class="spinner-border spinner-border-sm me-2"></div>Cargando tipos...
                         </div>
                     </div>
 
-                    <!-- Paso 2: Descripcion -->
-                    <p class="fw-bold mb-2">
-                        <span class="badge bg-secondary me-2">2</span>Describa brevemente la situacion
-                        <span class="text-muted fw-normal small">(opcional pero muy util para la brigada)</span>:
-                    </p>
-                    <textarea id="descripcionEmergencia" class="form-control mb-4" rows="2"
-                        placeholder="Ej: Persona caida en taller, humo visible en pasillo 2, derrame de quimico..."></textarea>
+                    <!-- Paso 2: Descripción -->
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div style="width:26px; height:26px; background:#6B7280; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            <span style="color:white; font-size:0.75rem; font-weight:700;">2</span>
+                        </div>
+                        <span class="fw-bold" style="font-size:0.9rem;">
+                            Describa brevemente la situación
+                            <span class="fw-normal text-muted" style="font-size:0.8rem;"> — opcional pero útil para la brigada</span>
+                        </span>
+                    </div>
+                    <textarea id="descripcionEmergencia" rows="2" style="width:100%; border:1.5px solid #E5E7EB; border-radius:10px; padding:0.625rem 0.875rem; font-size:0.9rem; background:#F9FAFB; resize:vertical; margin-bottom:1.25rem; font-family:inherit;"
+                        placeholder="Ej: Persona caída en taller, humo en pasillo 2, derrame de químico..."></textarea>
 
                     <!-- Paso 3: Datos adicionales -->
-                    <p class="fw-bold mb-2">
-                        <span class="badge bg-secondary me-2">3</span>Informacion adicional:
-                    </p>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold">Personas afectadas:</label>
-                            <input type="number" id="personasAfectadas" class="form-control" min="0" max="999" value="0">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <div style="width:26px; height:26px; background:#6B7280; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            <span style="color:white; font-size:0.75rem; font-weight:700;">3</span>
                         </div>
-                        <div class="col-md-6 d-flex align-items-end pb-1">
-                            <div class="form-check">
-                                <input class="form-check-input border-danger" type="checkbox" id="requiereEvacuacion">
-                                <label class="form-check-label fw-bold text-danger" for="requiereEvacuacion">
-                                    <i class="bi bi-sign-stop-fill me-1"></i>Requiere evacuacion del area
-                                </label>
+                        <span class="fw-bold" style="font-size:0.9rem;">Información adicional</span>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-5">
+                            <label style="font-size:0.78rem; font-weight:600; color:#6B7280; text-transform:uppercase; letter-spacing:0.04em; display:block; margin-bottom:0.375rem;">Personas afectadas</label>
+                            <input type="number" id="personasAfectadas" min="0" max="999" value="0"
+                                style="width:100%; border:1.5px solid #E5E7EB; border-radius:8px; padding:0.6rem 0.875rem; font-size:0.9rem; background:#F9FAFB;">
+                        </div>
+                        <div class="col-md-7 d-flex align-items-end">
+                            <div style="background:#FFF1F2; border:1.5px solid #FECDD3; border-radius:10px; padding:0.75rem 1rem; width:100%; cursor:pointer;"
+                                 onclick="document.getElementById('requiereEvacuacion').click(); event.stopPropagation();">
+                                <div class="form-check mb-0">
+                                    <input class="form-check-input" type="checkbox" id="requiereEvacuacion"
+                                        style="border-color:#DC2626; cursor:pointer;"
+                                        onclick="event.stopPropagation();">
+                                    <label for="requiereEvacuacion" style="font-weight:700; color:#9F1239; font-size:0.88rem; cursor:pointer;" onclick="event.stopPropagation();">
+                                        <i class="bi bi-sign-stop-fill me-1"></i>Requiere evacuación del área
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Protocolo del tipo seleccionado -->
-                    <div id="protocoloEmergencia" class="d-none mt-3 p-3 rounded-3 border-start border-4 border-warning bg-warning bg-opacity-10">
-                        <h6 class="fw-bold mb-1"><i class="bi bi-list-check me-1"></i>Protocolo de respuesta:</h6>
-                        <p class="mb-0 small" id="protocoloTexto"></p>
+                    <div id="protocoloEmergencia" class="d-none mb-3" style="background:#FFFBEB; border-left:4px solid #F59E0B; border-radius:8px; padding:0.875rem 1rem;">
+                        <h6 class="fw-bold mb-1" style="font-size:0.85rem; color:#92400E;">
+                            <i class="bi bi-list-check me-1"></i>Protocolo de respuesta
+                        </h6>
+                        <p class="mb-0" style="font-size:0.83rem; color:#78350F; line-height:1.55;" id="protocoloTexto"></p>
                     </div>
+
                 </div>
-                <div class="modal-footer justify-content-between">
-                    <div class="text-muted small">
-                        <i class="bi bi-geo-alt me-1"></i>Se enviara su ubicacion GPS automaticamente
+
+                <!-- Footer -->
+                <div id="emergenciaFormFooter" class="modal-footer border-0" style="padding: 1rem 1.75rem 1.5rem; justify-content:space-between; align-items:center;">
+                    <div style="font-size:0.78rem; color:#9CA3AF; display:flex; align-items:center; gap:0.375rem;">
+                        <i class="bi bi-geo-alt-fill"></i>
+                        <span>Se enviará su ubicación GPS automáticamente</span>
                     </div>
                     <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" style="border-radius:8px; font-size:0.88rem;">
                             <i class="bi bi-x-lg me-1"></i>Cancelar
                         </button>
-                        <button type="button" class="btn btn-danger fw-bold px-4" id="btnConfirmarEmergencia" disabled>
-                            <i class="bi bi-send-fill me-1"></i>Reportar Emergencia
+                        <button type="button" class="btn btn-danger fw-bold px-4" id="btnConfirmarEmergencia" disabled style="border-radius:8px; font-size:0.88rem;">
+                            <i class="bi bi-send-fill me-2"></i>Reportar Emergencia
                         </button>
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
+
+    <style>
+    @keyframes emg-pulse {
+        0%   { transform: scale(1);   opacity: 0.7; }
+        70%  { transform: scale(2.2); opacity: 0; }
+        100% { transform: scale(2.2); opacity: 0; }
+    }
+    .tipo-emergencia-card {
+        cursor: pointer;
+        border: 2px solid #E5E7EB !important;
+        border-radius: 12px !important;
+        transition: all 0.18s ease;
+        background: white;
+    }
+    .tipo-emergencia-card:hover {
+        border-color: #9CA3AF !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .tipo-emergencia-card.selected {
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+    }
+    </style>
 
     <!-- CSRF Token global para peticiones AJAX -->
     {% csrf_token %}
@@ -911,14 +998,23 @@
         let _tipoSeleccionadoId = null;
         const modalEmergencia = new bootstrap.Modal(document.getElementById('modalEmergencia'));
 
-        // Abrir modal al hacer clic en boton de emergencia
-        document.getElementById('botonEmergencia')?.addEventListener('click', function() {
+        function resetModalEmergencia() {
             _tipoSeleccionadoId = null;
             document.getElementById('descripcionEmergencia').value = '';
             document.getElementById('personasAfectadas').value = '0';
             document.getElementById('requiereEvacuacion').checked = false;
             document.getElementById('btnConfirmarEmergencia').disabled = true;
             document.getElementById('protocoloEmergencia').classList.add('d-none');
+            // Mostrar formulario, ocultar pantallas de estado
+            document.getElementById('emergenciaFormBody').classList.remove('d-none');
+            document.getElementById('emergenciaFormFooter').classList.remove('d-none');
+            document.getElementById('emergenciaExito').classList.add('d-none');
+            document.getElementById('emergenciaError').classList.add('d-none');
+        }
+
+        // Abrir modal al hacer clic en boton de emergencia
+        document.getElementById('botonEmergencia')?.addEventListener('click', function() {
+            resetModalEmergencia();
 
             // Poblar tipos de emergencia
             const grid = document.getElementById('tiposEmergenciaGrid');
@@ -928,27 +1024,37 @@
                 grid.innerHTML = tipos.map(t => {
                     const color = t.color || '#dc3545';
                     const icono = getIconoTipo(t.nombre);
-                    const prioridad = t.prioridad === 1 ? 'CRITICA' : t.prioridad === 2 ? 'ALTA' : t.prioridad === 3 ? 'MEDIA' : 'BAJA';
-                    const badgeColor = t.prioridad === 1 ? 'danger' : t.prioridad === 2 ? 'warning' : t.prioridad === 3 ? 'info' : 'secondary';
+                    const prioridad = t.prioridad === 1 ? 'CRÍTICA' : t.prioridad === 2 ? 'ALTA' : t.prioridad === 3 ? 'MEDIA' : 'BAJA';
+                    const priColor = t.prioridad === 1 ? '#DC2626' : t.prioridad === 2 ? '#D97706' : t.prioridad === 3 ? '#0891b2' : '#6B7280';
+                    const priBg   = t.prioridad === 1 ? '#FEE2E2' : t.prioridad === 2 ? '#FEF3C7' : t.prioridad === 3 ? '#CFFAFE' : '#F3F4F6';
                     return `
                     <div class="col-6 col-md-4">
-                        <div class="tipo-emergencia-card card border-2 h-100 text-center p-2"
-                             style="cursor:pointer; border-color: #dee2e6 !important; transition: all .2s;"
+                        <div class="tipo-emergencia-card text-center"
+                             style="padding: 1rem 0.5rem;"
                              data-tipo-id="${t.id}" data-tipo-color="${color}"
                              data-tipo-protocolo="${(t.protocolo || '').replace(/"/g, '&quot;')}"
                              onclick="seleccionarTipoEmergencia(this)">
-                            <div class="card-body p-2">
-                                <i class="bi ${icono} fs-2 mb-1 d-block" style="color:${color}"></i>
-                                <div class="fw-bold small">${t.nombre}</div>
-                                <span class="badge bg-${badgeColor} mt-1" style="font-size:.65rem;">${prioridad}</span>
+                            <div style="width:52px; height:52px; background:${color}18; border-radius:14px; display:flex; align-items:center; justify-content:center; margin:0 auto 0.625rem;">
+                                <i class="bi ${icono}" style="color:${color}; font-size:1.5rem;"></i>
                             </div>
+                            <div style="font-size:0.82rem; font-weight:700; color:#1F2937; line-height:1.3; margin-bottom:0.375rem;">${t.nombre}</div>
+                            <span style="font-size:0.65rem; font-weight:700; color:${priColor}; background:${priBg}; border-radius:999px; padding:0.15rem 0.5rem;">${prioridad}</span>
                         </div>
                     </div>`;
                 }).join('');
             } else {
-                // Fallback si no cargaron los tipos
                 grid.innerHTML = `
-                <div class="col-6 col-md-4"><div class="tipo-emergencia-card card border-2 h-100 text-center p-2" style="cursor:pointer;border-color:#dee2e6!important;" data-tipo-id="1" data-tipo-color="#dc3545" data-tipo-protocolo="Llame al personal de seguridad y mantenga la calma." onclick="seleccionarTipoEmergencia(this)"><div class="card-body p-2"><i class="bi bi-exclamation-triangle-fill fs-2 mb-1 d-block text-danger"></i><div class="fw-bold small">Emergencia General</div><span class="badge bg-danger mt-1" style="font-size:.65rem;">CRITICA</span></div></div></div>`;
+                <div class="col-6 col-md-4">
+                    <div class="tipo-emergencia-card text-center" style="padding:1rem 0.5rem;"
+                         data-tipo-id="1" data-tipo-color="#dc3545" data-tipo-protocolo="Llame al personal de seguridad y mantenga la calma."
+                         onclick="seleccionarTipoEmergencia(this)">
+                        <div style="width:52px;height:52px;background:#FEE2E218;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 0.625rem;">
+                            <i class="bi bi-exclamation-triangle-fill" style="color:#DC2626;font-size:1.5rem;"></i>
+                        </div>
+                        <div style="font-size:0.82rem;font-weight:700;color:#1F2937;margin-bottom:0.375rem;">Emergencia General</div>
+                        <span style="font-size:0.65rem;font-weight:700;color:#DC2626;background:#FEE2E2;border-radius:999px;padding:0.15rem 0.5rem;">CRÍTICA</span>
+                    </div>
+                </div>`;
             }
 
             modalEmergencia.show();
@@ -957,15 +1063,21 @@
         // Seleccionar tipo de emergencia
         window.seleccionarTipoEmergencia = function(el) {
             document.querySelectorAll('.tipo-emergencia-card').forEach(c => {
-                c.style.borderColor = '#dee2e6';
-                c.style.backgroundColor = '';
-                c.style.transform = '';
+                c.classList.remove('selected');
+                c.style.borderColor = '#E5E7EB';
+                c.style.backgroundColor = 'white';
             });
             const color = el.dataset.tipoColor || '#dc3545';
+            el.classList.add('selected');
             el.style.borderColor = color;
-            el.style.backgroundColor = color + '15';
-            el.style.transform = 'scale(1.03)';
+            el.style.backgroundColor = color + '12';
             _tipoSeleccionadoId = parseInt(el.dataset.tipoId);
+
+            // Activar el número 2 y 3
+            document.querySelectorAll('#emergenciaFormBody .d-flex > div[style*="background:#6B7280"]').forEach(d => {
+                d.style.background = '#DC2626';
+            });
+
             document.getElementById('btnConfirmarEmergencia').disabled = false;
 
             // Mostrar protocolo si existe
@@ -1013,28 +1125,30 @@
                     })
                 });
 
-                modalEmergencia.hide();
-
                 if (response.ok) {
-                    alert('ALERTA DE EMERGENCIA ENVIADA\n\n' +
-                          'La brigada de emergencia y personal de seguridad han sido notificados.\n' +
-                          'Ayuda en camino a tu ubicacion.\n\n' +
-                          'Permanezca seguro y siga las instrucciones del personal.');
+                    // Mostrar pantalla de éxito
+                    document.getElementById('emergenciaFormBody').classList.add('d-none');
+                    document.getElementById('emergenciaFormFooter').classList.add('d-none');
+                    document.getElementById('emergenciaExito').classList.remove('d-none');
                 } else {
                     const errData = await response.json().catch(() => ({}));
                     throw new Error(errData.detail || 'Error al enviar la alerta');
                 }
             } catch (error) {
                 console.error('Error en emergencia:', error);
-                modalEmergencia.hide();
-                alert('No se pudo enviar la alerta automaticamente.\n\n' +
-                      'Por favor contacta directamente:\n' +
-                      '- Emergencias: 123\n' +
-                      '- Vigilancia SENA: Ext. 100');
+                // Mostrar pantalla de error
+                document.getElementById('emergenciaFormBody').classList.add('d-none');
+                document.getElementById('emergenciaFormFooter').classList.add('d-none');
+                document.getElementById('emergenciaError').classList.remove('d-none');
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="bi bi-send-fill me-1"></i>Reportar Emergencia';
             }
+        });
+
+        // Reintentar emergencia (el modal ya está abierto, solo restaurar el formulario)
+        document.getElementById('btnReintentar')?.addEventListener('click', function() {
+            resetModalEmergencia();
         });
 
         // Auto-ocultar alertas

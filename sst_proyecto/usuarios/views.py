@@ -6,7 +6,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import login, logout
 from .models import Usuario, Visitante
 from .serializers import UsuarioSerializer, LoginSerializer, VisitanteSerializer
-from .permissions import PuedeGestionarUsuarios, EsAdministrativoOInstructor
+from .permissions import PuedeGestionarUsuarios
 
 class UsuarioViewSet(viewsets.ModelViewSet):
     """
@@ -16,8 +16,15 @@ class UsuarioViewSet(viewsets.ModelViewSet):
     - Ver perfil propio: Todos autenticados
     - Listar/Modificar usuarios: Solo ADMINISTRATIVO
     """
-    queryset = Usuario.objects.all()
+    queryset = Usuario.objects.all()  # necesario para que el router detecte el basename
     serializer_class = UsuarioSerializer
+
+    def get_queryset(self):
+        qs = Usuario.objects.all()
+        es_brigada = self.request.query_params.get('es_brigada')
+        if es_brigada is not None:
+            qs = qs.filter(es_brigada=es_brigada.lower() == 'true')
+        return qs
 
     def get_permissions(self):
         # Permitir login y registro sin autenticación

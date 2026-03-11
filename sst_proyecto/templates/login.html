@@ -28,7 +28,8 @@
             background: linear-gradient(135deg, var(--color-primary-dark) 0%, #0d3b1e 100%);
             padding: 20px;
             position: relative;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
         }
 
         body::before {
@@ -708,6 +709,11 @@
         }
 
         @media (max-width: 968px) {
+            body {
+                align-items: flex-start;
+                padding: 20px;
+            }
+
             .container-wrapper {
                 height: auto;
                 max-width: 90%;
@@ -716,7 +722,6 @@
             .login-wrapper {
                 grid-template-columns: 1fr;
                 height: auto;
-                max-height: 90vh;
             }
 
             .login-panel,
@@ -747,7 +752,6 @@
 
             .register-panel {
                 display: none;
-                max-height: 80vh;
             }
 
             .two-columns {
@@ -913,25 +917,23 @@
                         <button type="button" class="switch-btn" onclick="switchToRegister()">Regístrate aquí</button>
                     </div>
 
-                    <!-- Separador -->
-                    <div style="display:flex;align-items:center;gap:10px;margin:16px 0 14px;">
-                        <div style="flex:1;height:1px;background:#e0e0e0;"></div>
-                        <span style="font-size:12px;color:#bbb;font-weight:500;">o</span>
-                        <div style="flex:1;height:1px;background:#e0e0e0;"></div>
-                    </div>
-
-                    <!-- Botón Instalar App -->
-                    <div id="pwa-install-section">
+                    <!-- Separador + Botón Instalar App (oculto hasta que el navegador soporte PWA) -->
+                    <div id="pwa-install-section" style="display:none;">
+                        <div style="display:flex;align-items:center;gap:10px;margin:16px 0 14px;">
+                            <div style="flex:1;height:1px;background:#e0e0e0;"></div>
+                            <span style="font-size:12px;color:#bbb;font-weight:500;">o</span>
+                            <div style="flex:1;height:1px;background:#e0e0e0;"></div>
+                        </div>
                         <button id="sst-install-btn" type="button" class="btn btn-login"
                             style="background:linear-gradient(135deg,#1565c0,#0d47a1);box-shadow:0 6px 16px rgba(21,101,192,0.3);"
                             onclick="
-                                if(window._pwaPrompt){
-                                    window._pwaPrompt.prompt();
-                                    window._pwaPrompt.userChoice.then(function(r){
+                                if(_pwaPrompt){
+                                    _pwaPrompt.prompt();
+                                    _pwaPrompt.userChoice.then(function(r){
                                         if(r.outcome==='accepted'){
                                             document.getElementById('pwa-install-section').style.display='none';
                                         }
-                                        window._pwaPrompt=null;
+                                        _pwaPrompt=null;
                                     });
                                 } else {
                                     document.getElementById('sst-pwa-modal').style.display='flex';
@@ -1773,27 +1775,26 @@
                 .catch(function(err) { console.log('SW registro fallido:', err); });
         }
 
-        // ===== PWA Install (desde cero) =====
+        // ===== PWA Install =====
         var _pwaPrompt = null;
 
-        // Limpiar claves viejas de localStorage
-        ['pwa_dismissed', 'pwa_dismissed_v2'].forEach(function(k) { localStorage.removeItem(k); });
-
-        // Capturar el diálogo nativo si el navegador lo ofrece
-        window.addEventListener('beforeinstallprompt', function(e) {
-            e.preventDefault();
-            _pwaPrompt = e;
-            var btn = document.getElementById('sst-install-btn');
-            if (btn) btn.textContent = 'Instalar ahora';
-        });
-
-        // Ocultar el botón si la app ya está instalada (modo standalone)
-        window.addEventListener('DOMContentLoaded', function() {
+        // Ocultar el botón si ya corre como app instalada (modo standalone)
+        (function() {
             var isApp = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
             if (isApp) {
                 var s = document.getElementById('pwa-install-section');
                 if (s) s.style.display = 'none';
             }
+        })();
+
+        // Capturar el diálogo nativo si el navegador lo ofrece (Chrome/Edge)
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            _pwaPrompt = e;
+            var section = document.getElementById('pwa-install-section');
+            var btn = document.getElementById('sst-install-btn');
+            if (section) section.style.display = 'block';
+            if (btn) btn.innerHTML = '<i class="bi bi-download"></i> Instalar ahora';
         });
 
         // Ocultar botón después de instalar exitosamente

@@ -81,8 +81,11 @@ class IncidenteForm(forms.ModelForm):
             }),
             'documento_afectado': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Numero de documento',
-                'maxlength': '20'
+                'placeholder': 'Ej: 1234567890',
+                'maxlength': '11',
+                'inputmode': 'numeric',
+                'pattern': '[0-9]*',
+                'autocomplete': 'off',
             }),
             'rol_afectado': forms.Select(attrs={'class': 'form-select'}, choices=[
                 ('', 'Seleccione...'),
@@ -188,6 +191,18 @@ class IncidenteForm(forms.ModelForm):
             if len(testigos) > 1000:
                 raise forms.ValidationError('La informacion de testigos no puede exceder 1000 caracteres.')
         return testigos
+
+    def clean_documento_afectado(self):
+        doc = self.cleaned_data.get('documento_afectado', '')
+        if doc:
+            doc = doc.strip()
+            if not doc.isdigit():
+                raise forms.ValidationError('El documento solo puede contener dígitos numéricos.')
+            if len(doc) < 6:
+                raise forms.ValidationError('El documento debe tener al menos 6 dígitos.')
+            if len(doc) > 11:
+                raise forms.ValidationError('El documento no puede tener más de 11 dígitos.')
+        return doc
 
     def clean_persona_afectada(self):
         persona = self.cleaned_data.get('persona_afectada', '')

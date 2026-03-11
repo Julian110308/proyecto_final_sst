@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from django.db.models import Q, Count
+from django.db.models import Q
 from django.http import HttpResponse
 from datetime import datetime, timedelta
 

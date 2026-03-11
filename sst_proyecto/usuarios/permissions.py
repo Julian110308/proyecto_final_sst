@@ -6,7 +6,6 @@ Sistema SST - Centro Minero SENA
 from functools import wraps
 from django.shortcuts import redirect
 from django.contrib import messages
-from django.http import HttpResponseForbidden
 from rest_framework.permissions import BasePermission
 
 
@@ -43,13 +42,6 @@ def rol_requerido(*roles_permitidos):
             return view_func(request, *args, **kwargs)
         return wrapper
     return decorador
-
-
-def solo_administrativo(view_func):
-    """
-    Decorador para vistas de ADMINISTRATIVO o COORDINADOR_SST
-    """
-    return rol_requerido('ADMINISTRATIVO', 'COORDINADOR_SST')(view_func)
 
 
 def excluir_visitantes(view_func):
@@ -177,60 +169,3 @@ class PuedeGestionarUsuarios(BasePermission):
         )
 
 
-class PuedeVerSoloSusDatos(BasePermission):
-    """
-    Permiso: Los usuarios solo pueden ver sus propios datos
-    Excepto ADMINISTRATIVO y COORDINADOR_SST que pueden ver todo
-    """
-    message = 'Solo puedes ver tu propia información.'
-
-    def has_object_permission(self, request, view, obj):
-        if request.user.rol in ['ADMINISTRATIVO', 'COORDINADOR_SST']:
-            return True
-        return obj.id == request.user.id
-
-
-# ====================================================================
-# FUNCIONES HELPER
-# ====================================================================
-
-def usuario_puede_acceder_modulo(usuario, modulo):
-    """
-    Verifica si un usuario puede acceder a un módulo específico
-
-    Args:
-        usuario: Instancia del Usuario
-        modulo: Nombre del módulo ('acceso', 'mapas', 'emergencias', etc.)
-
-    Returns:
-        bool: True si tiene acceso, False si no
-    """
-    PERMISOS_MODULOS = {
-        'acceso': ['COORDINADOR_SST', 'ADMINISTRATIVO', 'VIGILANCIA', 'INSTRUCTOR'],
-        'mapas': ['COORDINADOR_SST', 'ADMINISTRATIVO', 'INSTRUCTOR', 'VIGILANCIA', 'BRIGADA', 'APRENDIZ'],
-        'emergencias': ['COORDINADOR_SST', 'ADMINISTRATIVO', 'BRIGADA', 'VIGILANCIA'],
-        'reportes': ['COORDINADOR_SST', 'ADMINISTRATIVO', 'INSTRUCTOR', 'VIGILANCIA', 'BRIGADA', 'APRENDIZ'],
-        'usuarios': ['COORDINADOR_SST', 'ADMINISTRATIVO'],
-        'visitantes': ['COORDINADOR_SST', 'ADMINISTRATIVO', 'VIGILANCIA'],
-    }
-
-    roles_permitidos = PERMISOS_MODULOS.get(modulo, [])
-    return usuario.rol in roles_permitidos
-
-
-def obtener_modulos_disponibles(usuario):
-    """
-    Obtiene la lista de módulos a los que el usuario tiene acceso
-
-    Args:
-        usuario: Instancia del Usuario
-
-    Returns:
-        list: Lista de nombres de módulos
-    """
-    TODOS_MODULOS = ['acceso', 'mapas', 'emergencias', 'reportes', 'usuarios', 'visitantes']
-
-    return [
-        modulo for modulo in TODOS_MODULOS
-        if usuario_puede_acceder_modulo(usuario, modulo)
-    ]

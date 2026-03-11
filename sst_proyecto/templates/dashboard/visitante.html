@@ -292,11 +292,8 @@ const centroMineroV = { lat: 5.7303596, lng: -72.8943613 };
 
 // Mapa del Centro
 const mapVisitante = L.map('visitanteMap').setView([centroMineroV.lat, centroMineroV.lng], 17);
-L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Esri'
-}).addTo(mapVisitante);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
-    pane: 'overlayPane'
+L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+    attribution: '© Google', maxZoom: 20
 }).addTo(mapVisitante);
 
 // Variables para ruta

@@ -35,6 +35,9 @@
                             <span class="text-muted"><i class="bi bi-hourglass-split"></i> Verificando...</span>
                         </h3>
                         <small class="text-muted" id="estadoSub">Obteniendo ubicación...</small>
+                        <div class="mt-1">
+                            <small class="text-muted fst-italic" id="estadoDebug" style="font-size:0.7rem;"></small>
+                        </div>
                     </div>
                     <div class="bg-light rounded-3 p-3">
                         <i class="bi bi-geo-alt fs-2 text-success"></i>
@@ -209,6 +212,9 @@
 <script>
 // Estado actual basado en geocerca via GPS
 (function() {
+    var watchId = null;
+    var mejorPosicion = null;
+
     function setEstado(enCentro, sub) {
         const el = document.getElementById('estadoAprendiz');
         const subEl = document.getElementById('estadoSub');
@@ -221,13 +227,14 @@
         if (subEl) subEl.textContent = sub;
     }
 
-    function getCsrf() {
-        const m = document.cookie.match(/csrftoken=([^;]+)/);
-        return m ? m[1] : '';
+    function setDebug(msg) {
+        var el = document.getElementById('estadoDebug');
+        if (el) el.textContent = msg;
     }
 
-    // Umbral de precisión: si el GPS reporta más de 500m de error, no es confiable
-    var PRECISION_MAXIMA = 500;
+    function getCsrf() {
+        return document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+    }
 
     function consultarEstadoBD() {
         fetch('/api/acceso/registros/mi-estado/')
@@ -235,57 +242,105 @@
             .then(function(data) {
                 if (data.en_centro) {
                     setEstado(true, 'Ingreso: ' + data.hora_ingreso);
+                    setDebug('Estado desde base de datos');
                 } else {
-                    setEstado(false, 'Sin ingreso activo hoy');
+                    setEstado(false, 'Sin registro de ingreso hoy');
+                    setDebug('Sin registro activo en BD');
                 }
             })
-            .catch(function() {});
+            .catch(function() {
+                setEstado(false, 'No se pudo verificar');
+                setDebug('Error al consultar BD');
+            });
+    }
+
+    function enviarUbicacion(lat, lng, precision) {
+        setDebug('GPS: ' + lat.toFixed(6) + ', ' + lng.toFixed(6) + ' (±' + Math.round(precision) + 'm)');
+        fetch('/api/acceso/registros/auto-registro/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+            body: JSON.stringify({ latitud: lat, longitud: lng })
+        })
+        .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
+        .then(function(data) {
+            if (data.estado === 'DENTRO') {
+                var msg = data.accion === 'INGRESO' ? 'Ingreso registrado' : 'Dentro del centro';
+                if (data.mensaje) msg = data.mensaje;
+                setEstado(true, msg);
+                setDebug('GPS ±' + Math.round(precision) + 'm | dist: ' + (data.distancia_metros || 0) + 'm del centro');
+            } else {
+                var dist = data.distancia_metros != null ? data.distancia_metros : '?';
+                setEstado(false, 'A ' + dist + 'm del centro (radio: ' + (data.radio_geocerca || 200) + 'm)');
+                setDebug('GPS ±' + Math.round(precision) + 'm | fuera por ' + (data.distancia_metros - (data.radio_geocerca || 200)) + 'm');
+            }
+        })
+        .catch(function(err) {
+            setDebug('Error auto-registro: ' + err + ' | usando BD');
+            consultarEstadoBD();
+        });
     }
 
     function verificarUbicacion() {
         if (!navigator.geolocation) {
+            setDebug('GPS no disponible en este dispositivo');
             consultarEstadoBD();
             return;
         }
-        navigator.geolocation.getCurrentPosition(
-            function(pos) {
-                var precision = pos.coords.accuracy; // metros de error del GPS
 
-                // GPS impreciso (ej: desktop por WiFi/IP): usar estado de la BD
-                if (precision > PRECISION_MAXIMA) {
-                    consultarEstadoBD();
-                    return;
+        // Detener watch anterior si existe
+        if (watchId !== null) {
+            navigator.geolocation.clearWatch(watchId);
+            watchId = null;
+        }
+        mejorPosicion = null;
+
+        // Timeout: si en 15 segundos no logramos precision < 100m, usamos la mejor obtenida
+        var timeout = setTimeout(function() {
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+            if (mejorPosicion) {
+                setDebug('Timeout GPS — usando mejor lectura obtenida ±' + Math.round(mejorPosicion.accuracy) + 'm');
+                enviarUbicacion(mejorPosicion.latitude, mejorPosicion.longitude, mejorPosicion.accuracy);
+            } else {
+                setDebug('Timeout GPS sin lectura — consultando BD');
+                consultarEstadoBD();
+            }
+        }, 15000);
+
+        watchId = navigator.geolocation.watchPosition(
+            function(pos) {
+                var precision = pos.coords.accuracy;
+                var lat = pos.coords.latitude;
+                var lng = pos.coords.longitude;
+
+                // Guardar la mejor posicion obtenida hasta ahora
+                if (!mejorPosicion || precision < mejorPosicion.accuracy) {
+                    mejorPosicion = { latitude: lat, longitude: lng, accuracy: precision };
                 }
 
-                // GPS preciso (ej: móvil): verificar geocerca y registrar
-                fetch('/api/acceso/registros/auto-registro/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
-                    body: JSON.stringify({ latitud: pos.coords.latitude, longitud: pos.coords.longitude })
-                })
-                .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
-                .then(function(data) {
-                    if (data.estado === 'DENTRO') {
-                        var msg = data.accion === 'INGRESO' ? 'Ingreso registrado' : 'Dentro del centro';
-                        if (data.mensaje) msg = data.mensaje;
-                        setEstado(true, msg);
-                    } else {
-                        var dist = (data.distancia_metros != null)
-                            ? 'A ' + data.distancia_metros + 'm del centro'
-                            : 'Fuera del centro';
-                        setEstado(false, dist);
-                    }
-                })
-                .catch(function() { consultarEstadoBD(); });
+                setDebug('Obteniendo GPS... ±' + Math.round(precision) + 'm');
+
+                // Si la precision es suficientemente buena (< 100m), usarla de inmediato
+                if (precision <= 100) {
+                    clearTimeout(timeout);
+                    navigator.geolocation.clearWatch(watchId);
+                    watchId = null;
+                    enviarUbicacion(lat, lng, precision);
+                }
             },
             function(err) {
-                if (err.code === 1) {
-                    setEstado(false, 'Activa la ubicación en tu navegador');
-                } else {
-                    consultarEstadoBD();
+                clearTimeout(timeout);
+                if (watchId !== null) {
+                    navigator.geolocation.clearWatch(watchId);
+                    watchId = null;
                 }
+                var errMsg = err.code === 1 ? 'Permiso GPS denegado' : err.code === 2 ? 'GPS no disponible' : 'Timeout GPS';
+                setDebug(errMsg + ' — consultando BD');
+                consultarEstadoBD();
             },
-            { timeout: 10000, maximumAge: 60000, enableHighAccuracy: true }
+            { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
         );
     }
 
