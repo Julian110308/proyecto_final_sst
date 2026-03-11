@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sst-sena-v5';
+const CACHE_NAME = 'sst-sena-v7';
 const URLS_TO_CACHE = [
   '/accounts/login/',
   '/static/css/design-system.css',
