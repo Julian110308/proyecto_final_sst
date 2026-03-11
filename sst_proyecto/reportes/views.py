@@ -6,7 +6,9 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.db.models import Q
 from django.http import HttpResponse
+from django.core.serializers.json import DjangoJSONEncoder
 from datetime import datetime, timedelta
+import json
 
 from .models import ConfiguracionReporte, ReporteGenerado
 from .serializers import ConfiguracionReporteSerializer, ReporteGeneradoSerializer
@@ -41,8 +43,8 @@ class ReporteViewSet(viewsets.ModelViewSet):
         if not user.is_authenticated:
             return ReporteGenerado.objects.none()
         
-        # ADMINISTRATIVO: Ve todos los reportes
-        if user.rol == 'ADMINISTRATIVO' or user.is_superuser:
+        # ADMINISTRATIVO / COORDINADOR_SST: Ve todos los reportes
+        if user.rol in ('ADMINISTRATIVO', 'COORDINADOR_SST') or user.is_superuser:
             return super().get_queryset()
         
         # INSTRUCTOR: Solo ve reportes de asistencia que generó
@@ -75,7 +77,7 @@ class ReporteViewSet(viewsets.ModelViewSet):
     def aforo(self, request):
         """Genera reporte de aforo"""
         # Verificar permisos
-        if request.user.rol not in ['ADMINISTRATIVO', 'VIGILANCIA']:
+        if request.user.rol not in ['ADMINISTRATIVO', 'COORDINADOR_SST', 'VIGILANCIA']:
             return Response(
                 {'error': 'No tienes permisos para generar reportes de aforo.'},
                 status=status.HTTP_403_FORBIDDEN
@@ -92,30 +94,38 @@ class ReporteViewSet(viewsets.ModelViewSet):
             )
 
         try:
-            periodo_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d')
-            periodo_fin = datetime.strptime(fecha_fin, '%Y-%m-%d')
+            periodo_inicio = timezone.make_aware(datetime.strptime(fecha_inicio, '%Y-%m-%d'))
+            periodo_fin = timezone.make_aware(datetime.strptime(fecha_fin, '%Y-%m-%d'))
         except ValueError:
             return Response(
                 {'error': 'Formato de fecha inválido. Use YYYY-MM-DD'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Generar reporte
-        datos = ReporteAforoService.generar_reporte(periodo_inicio, periodo_fin)
+        try:
+            # Generar reporte
+            datos = ReporteAforoService.generar_reporte(periodo_inicio, periodo_fin)
 
-        # Guardar en base de datos si se solicita
-        if request.query_params.get('guardar') == 'true':
-            config, _ = ConfiguracionReporte.objects.get_or_create(
-                nombre=f'Reporte Aforo {fecha_inicio} a {fecha_fin}',
-                tipo_reporte='AFORO',
-            )
-
-            ReporteGenerado.objects.create(
-                configuracion=config,
-                periodo_inicio=periodo_inicio,
-                periodo_fin=periodo_fin,
-                datos_json=datos,
-                generado_por=request.user
+            # Guardar en base de datos si se solicita
+            if request.query_params.get('guardar') == 'true':
+                config, _ = ConfiguracionReporte.objects.get_or_create(
+                    nombre=f'Reporte Aforo {fecha_inicio} a {fecha_fin}',
+                    tipo_reporte='AFORO',
+                    defaults={'frecuencia': 'MENSUAL', 'hora_generacion': '00:00:00'},
+                )
+                datos_serializables = json.loads(json.dumps(datos, cls=DjangoJSONEncoder))
+                ReporteGenerado.objects.create(
+                    configuracion=config,
+                    periodo_inicio=periodo_inicio.date(),
+                    periodo_fin=periodo_fin.date(),
+                    datos_json=datos_serializables,
+                    generado_por=request.user
+                )
+        except Exception as e:
+            import traceback
+            return Response(
+                {'error': f'Error interno: {str(e)}', 'detalle': traceback.format_exc()},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
         # Retornar en el formato solicitado
@@ -145,7 +155,7 @@ class ReporteViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def incidentes(self, request):
         """Genera reporte de incidentes"""
-        if request.user.rol not in ['ADMINISTRATIVO', 'BRIGADA', 'INSTRUCTOR']:
+        if request.user.rol not in ['ADMINISTRATIVO', 'COORDINADOR_SST', 'BRIGADA', 'INSTRUCTOR']:
             return Response(
                 {'error': 'No tienes permisos para generar reportes de incidentes.'},
                 status=status.HTTP_403_FORBIDDEN
@@ -162,8 +172,8 @@ class ReporteViewSet(viewsets.ModelViewSet):
             )
 
         try:
-            periodo_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d')
-            periodo_fin = datetime.strptime(fecha_fin, '%Y-%m-%d')
+            periodo_inicio = timezone.make_aware(datetime.strptime(fecha_inicio, '%Y-%m-%d'))
+            periodo_fin = timezone.make_aware(datetime.strptime(fecha_fin, '%Y-%m-%d'))
         except ValueError:
             return Response(
                 {'error': 'Formato de fecha inválido. Use YYYY-MM-DD'},
@@ -207,7 +217,7 @@ class ReporteViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def asistencia(self, request):
         """Genera reporte de asistencia"""
-        if request.user.rol not in ['INSTRUCTOR', 'ADMINISTRATIVO', 'VIGILANCIA']:
+        if request.user.rol not in ['INSTRUCTOR', 'ADMINISTRATIVO', 'COORDINADOR_SST', 'VIGILANCIA']:
             return Response(
                 {'error': 'No tienes permisos para generar reportes de asistencia.'},
                 status=status.HTTP_403_FORBIDDEN
@@ -225,8 +235,8 @@ class ReporteViewSet(viewsets.ModelViewSet):
             )
 
         try:
-            periodo_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d')
-            periodo_fin = datetime.strptime(fecha_fin, '%Y-%m-%d')
+            periodo_inicio = timezone.make_aware(datetime.strptime(fecha_inicio, '%Y-%m-%d'))
+            periodo_fin = timezone.make_aware(datetime.strptime(fecha_fin, '%Y-%m-%d'))
         except ValueError:
             return Response(
                 {'error': 'Formato de fecha inválido. Use YYYY-MM-DD'},
@@ -263,7 +273,7 @@ class ReporteViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def seguridad(self, request):
         """Genera reporte de seguridad"""
-        if request.user.rol not in ['ADMINISTRATIVO', 'BRIGADA', 'VIGILANCIA']:
+        if request.user.rol not in ['ADMINISTRATIVO', 'COORDINADOR_SST', 'BRIGADA', 'VIGILANCIA']:
             return Response(
                 {'error': 'No tienes permisos para generar reportes de seguridad.'},
                 status=status.HTTP_403_FORBIDDEN
@@ -280,8 +290,8 @@ class ReporteViewSet(viewsets.ModelViewSet):
             periodo_fin = fecha_fin
         else:
             try:
-                periodo_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d')
-                periodo_fin = datetime.strptime(fecha_fin, '%Y-%m-%d')
+                periodo_inicio = timezone.make_aware(datetime.strptime(fecha_inicio, '%Y-%m-%d'))
+                periodo_fin = timezone.make_aware(datetime.strptime(fecha_fin, '%Y-%m-%d'))
             except ValueError:
                 return Response(
                     {'error': 'Formato de fecha inválido. Use YYYY-MM-DD'},

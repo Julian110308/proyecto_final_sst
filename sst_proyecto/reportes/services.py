@@ -49,8 +49,8 @@ class ReporteAforoService:
         if registros_con_egreso.exists():
             tiempos = []
             for registro in registros_con_egreso:
-                if registro.duracion_permanencia:
-                    tiempos.append(registro.duracion_permanencia.total_seconds() / 60) # En minutos
+                duracion = registro.fecha_hora_egreso - registro.fecha_hora_ingreso
+                tiempos.append(duracion.total_seconds() / 60)  # En minutos
             if tiempos:
                 tiempo_promedio = sum(tiempos) / len(tiempos)
         

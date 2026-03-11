@@ -57,7 +57,7 @@ class PDFReporteGenerator:
             subtitulo_style
         ))
         elements.append(Paragraph(
-            f"Periodo: {datos['periodo_inicio']} a {datos['periodo_fin']}",
+            f"Periodo: {datos['periodo_inicio'].strftime('%d/%m/%Y') if hasattr(datos['periodo_inicio'], 'strftime') else datos['periodo_inicio']} a {datos['periodo_fin'].strftime('%d/%m/%Y') if hasattr(datos['periodo_fin'], 'strftime') else datos['periodo_fin']}",
             subtitulo_style
         ))
         elements.append(Spacer(1, 0.3*inch))
@@ -144,7 +144,7 @@ class PDFReporteGenerator:
             subtitulo_style
         ))
         elements.append(Paragraph(
-            f"Periodo: {datos['periodo_inicio']} a {datos['periodo_fin']}",
+            f"Periodo: {datos['periodo_inicio'].strftime('%d/%m/%Y') if hasattr(datos['periodo_inicio'], 'strftime') else datos['periodo_inicio']} a {datos['periodo_fin'].strftime('%d/%m/%Y') if hasattr(datos['periodo_fin'], 'strftime') else datos['periodo_fin']}",
             subtitulo_style
         ))
         elements.append(Spacer(1, 0.3*inch))
@@ -342,7 +342,7 @@ class PDFReporteGenerator:
             subtitulo_style
         ))
         elements.append(Paragraph(
-            f"Periodo: {datos['periodo_inicio']} a {datos['periodo_fin']}",
+            f"Periodo: {datos['periodo_inicio'].strftime('%d/%m/%Y') if hasattr(datos['periodo_inicio'], 'strftime') else datos['periodo_inicio']} a {datos['periodo_fin'].strftime('%d/%m/%Y') if hasattr(datos['periodo_fin'], 'strftime') else datos['periodo_fin']}",
             subtitulo_style
         ))
         elements.append(Spacer(1, 0.3*inch))
