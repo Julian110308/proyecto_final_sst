@@ -11,7 +11,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
             'id', 'username', 'email', 'password', 'first_name', 'last_name',
             'rol', 'tipo_documento', 'numero_documento', 'telefono',
             'telefono_emergencia', 'contacto_emergencia', 'foto',
-            'ficha', 'programa_formacion', 'activo',
+            'ficha', 'programa_formacion', 'activo', 'es_brigada', 'estado_cuenta',
             'fecha_registro', 'ultima_actualizacion'
         ]
         read_only_fields = ['fecha_registro', 'ultima_actualizacion']

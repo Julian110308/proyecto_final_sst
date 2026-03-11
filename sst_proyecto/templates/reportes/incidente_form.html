@@ -8,263 +8,636 @@
 <li class="breadcrumb-item active">Nuevo Reporte</li>
 {% endblock %}
 
+{% block extra_css %}
+<style>
+/* ===== FORM INCIDENTE - DISEÑO MEJORADO ===== */
+.form-incidente-wrapper {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* Header principal */
+.form-page-header {
+    background: linear-gradient(135deg, #DC2626 0%, #991B1B 100%);
+    border-radius: var(--radius-xl);
+    padding: 2rem 2rem 1.75rem;
+    margin-bottom: 1.75rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+.form-page-header::before {
+    content: '';
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 180px;
+    height: 180px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 50%;
+}
+.form-page-header::after {
+    content: '';
+    position: absolute;
+    bottom: -60px;
+    right: 60px;
+    width: 120px;
+    height: 120px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 50%;
+}
+.form-page-header .header-icon {
+    width: 52px;
+    height: 52px;
+    background: rgba(255,255,255,0.15);
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+/* Secciones del formulario */
+.form-section {
+    background: var(--color-bg-surface);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--color-border);
+    margin-bottom: 1.25rem;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    transition: box-shadow 0.2s;
+}
+.form-section:focus-within {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    border-color: var(--color-gray-300);
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 1.1rem 1.5rem;
+    border-bottom: 1px solid var(--color-border);
+}
+.section-number {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    color: white;
+}
+.section-header h6 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--color-text-primary);
+    letter-spacing: 0.01em;
+}
+.section-header .section-subtitle {
+    font-size: 0.77rem;
+    color: var(--color-text-muted);
+    margin: 0;
+    line-height: 1.3;
+}
+.section-body {
+    padding: 1.5rem;
+}
+
+/* Colores de sección */
+.sec-danger  .section-number { background: var(--color-danger); }
+.sec-primary .section-number { background: var(--color-tertiary); }
+.sec-warning .section-number { background: var(--color-warning); }
+.sec-info    .section-number { background: #0891b2; }
+.sec-success .section-number { background: var(--color-success); }
+.sec-purple  .section-number { background: #7c3aed; }
+.sec-photo   .section-number { background: #be185d; }
+
+.sec-danger  { border-top: 3px solid var(--color-danger); }
+.sec-primary { border-top: 3px solid var(--color-tertiary); }
+.sec-warning { border-top: 3px solid var(--color-warning); }
+.sec-info    { border-top: 3px solid #0891b2; }
+.sec-success { border-top: 3px solid var(--color-success); }
+.sec-purple  { border-top: 3px solid #7c3aed; }
+.sec-photo   { border-top: 3px solid #be185d; }
+
+/* Labels de campo */
+.field-label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    margin-bottom: 0.375rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.field-required::after {
+    content: ' *';
+    color: var(--color-danger);
+}
+
+/* Inputs mejorados */
+.form-control, .form-select {
+    border: 1.5px solid var(--color-gray-200);
+    border-radius: var(--radius-md);
+    padding: 0.625rem 0.875rem;
+    font-size: 0.9rem;
+    color: var(--color-text-primary);
+    background-color: var(--color-gray-50);
+    transition: all 0.2s ease;
+}
+.form-control:focus, .form-select:focus {
+    border-color: var(--color-primary);
+    background-color: white;
+    box-shadow: 0 0 0 3px rgba(57, 169, 0, 0.1);
+    outline: none;
+}
+textarea.form-control {
+    resize: vertical;
+    min-height: 110px;
+}
+
+/* Mapa */
+.mapa-container {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 2px solid var(--color-gray-200);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);
+}
+#mapaIncidente {
+    height: 320px;
+    z-index: 1;
+}
+.mapa-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.875rem;
+    background: var(--color-gray-50);
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-md);
+    font-size: 0.82rem;
+    color: var(--color-text-muted);
+    margin-top: 0.625rem;
+}
+
+/* Zona de subida de foto */
+.photo-upload-zone {
+    border: 2px dashed var(--color-gray-300);
+    border-radius: var(--radius-lg);
+    padding: 2rem 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--color-gray-50);
+    position: relative;
+}
+.photo-upload-zone:hover,
+.photo-upload-zone.drag-over {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+}
+.photo-upload-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+}
+.photo-upload-zone .upload-icon {
+    font-size: 2.5rem;
+    color: var(--color-gray-400);
+    margin-bottom: 0.75rem;
+    display: block;
+    transition: color 0.2s;
+}
+.photo-upload-zone:hover .upload-icon {
+    color: var(--color-primary);
+}
+.photo-upload-zone .upload-text {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    margin-bottom: 0.25rem;
+}
+.photo-upload-zone .upload-hint {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+}
+
+/* Vista previa foto */
+#vistaPrevia {
+    margin-top: 1rem;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+}
+#vistaPrevia img {
+    max-height: 240px;
+    width: 100%;
+    object-fit: cover;
+}
+.preview-label {
+    background: var(--color-gray-50);
+    padding: 0.5rem 0.875rem;
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+/* Barra de acción sticky */
+.form-action-bar {
+    background: var(--color-bg-surface);
+    border-top: 1px solid var(--color-border);
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius-xl);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.5rem;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+    gap: 1rem;
+}
+.form-action-bar .action-info {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+/* Alerta de errores */
+.error-alert {
+    background: var(--color-danger-light);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    border-left: 4px solid var(--color-danger);
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+    .form-page-header { padding: 1.5rem; }
+    .section-body { padding: 1rem; }
+    .form-action-bar { flex-direction: column; align-items: stretch; }
+    .form-action-bar .btn { width: 100%; justify-content: center; }
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <div class="card card-modern">
-                <div class="card-header-modern bg-danger text-white">
-                    <h4 class="mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>Reportar Nuevo Incidente</h4>
-                    <small class="opacity-75">Complete todos los campos con la mayor cantidad de informacion posible</small>
-                </div>
-                <div class="card-body p-4">
+<div class="form-incidente-wrapper">
 
-                    {% if form.errors %}
-                    <div class="alert alert-danger">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                        <strong>Corrige los siguientes errores:</strong>
-                        <ul class="mb-0 mt-2">
-                            {% for field, errors in form.errors.items %}
-                                {% for error in errors %}
-                                <li>{{ error }}</li>
-                                {% endfor %}
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    {% endif %}
-
-                    <form id="formIncidente" method="POST" enctype="multipart/form-data">
-                        {% csrf_token %}
-
-                        <!-- SECCION 1: Informacion del Incidente -->
-                        <div class="border rounded-3 p-3 mb-4">
-                            <h6 class="fw-bold text-danger mb-3">
-                                <i class="bi bi-1-circle-fill me-2"></i>Informacion del Incidente
-                            </h6>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">{{ form.titulo.label }} <span class="text-danger">*</span></label>
-                                {{ form.titulo }}
-                                {% if form.titulo.help_text %}<div class="form-text">{{ form.titulo.help_text }}</div>{% endif %}
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <label class="form-label fw-bold">{{ form.tipo.label }} <span class="text-danger">*</span></label>
-                                    {{ form.tipo }}
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-bold">{{ form.gravedad.label }} <span class="text-danger">*</span></label>
-                                    {{ form.gravedad }}
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-bold">{{ form.area_incidente.label }} <span class="text-danger">*</span></label>
-                                    {{ form.area_incidente }}
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- SECCION 2: Fecha, Hora y Lugar -->
-                        <div class="border rounded-3 p-3 mb-4">
-                            <h6 class="fw-bold text-primary mb-3">
-                                <i class="bi bi-2-circle-fill me-2"></i>Fecha, Hora y Lugar del Incidente
-                            </h6>
-
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold">{{ form.fecha_incidente.label }} <span class="text-danger">*</span></label>
-                                    {{ form.fecha_incidente }}
-                                    <div class="form-text">Seleccione la fecha y hora exacta en que ocurrio el incidente</div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold">{{ form.ubicacion.label }}</label>
-                                    {{ form.ubicacion }}
-                                    <div class="form-text">Bloque, edificio o zona general</div>
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">{{ form.lugar_exacto.label }}</label>
-                                {{ form.lugar_exacto }}
-                                <div class="form-text">Describa con precision el lugar exacto dentro del area</div>
-                            </div>
-
-                            <!-- Mini mapa para seleccionar ubicacion -->
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">
-                                    <i class="bi bi-geo-alt-fill text-danger me-1"></i>Ubicacion en el Mapa
-                                </label>
-                                <div class="form-text mb-2">Haga clic en el mapa para marcar el lugar exacto del incidente</div>
-                                <div id="mapaIncidente" style="height: 300px; border-radius: 8px; border: 2px solid #dee2e6;"></div>
-                                <div class="mt-1">
-                                    <small id="coordenadasSeleccionadas" class="text-muted">
-                                        <i class="bi bi-geo-alt me-1"></i>Haga clic en el mapa para seleccionar ubicacion
-                                    </small>
-                                </div>
-                            </div>
-
-                            {{ form.latitud }}
-                            {{ form.longitud }}
-                        </div>
-
-                        <!-- SECCION 3: Persona Afectada -->
-                        <div class="border rounded-3 p-3 mb-4">
-                            <h6 class="fw-bold text-warning mb-3">
-                                <i class="bi bi-3-circle-fill me-2"></i>Persona Afectada
-                            </h6>
-
-                            <div class="row mb-3">
-                                <div class="col-md-5">
-                                    <label class="form-label fw-bold">{{ form.persona_afectada.label }}</label>
-                                    {{ form.persona_afectada }}
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-bold">{{ form.documento_afectado.label }}</label>
-                                    {{ form.documento_afectado }}
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label fw-bold">{{ form.rol_afectado.label }}</label>
-                                    {{ form.rol_afectado }}
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- SECCION 4: Descripcion y Version del Accidente -->
-                        <div class="border rounded-3 p-3 mb-4">
-                            <h6 class="fw-bold text-info mb-3">
-                                <i class="bi bi-4-circle-fill me-2"></i>Descripcion y Version del Accidente
-                            </h6>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">{{ form.descripcion.label }} <span class="text-danger">*</span></label>
-                                {{ form.descripcion }}
-                                {% if form.descripcion.help_text %}<div class="form-text">{{ form.descripcion.help_text }}</div>{% endif %}
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">{{ form.version_accidente.label }}</label>
-                                {{ form.version_accidente }}
-                                {% if form.version_accidente.help_text %}<div class="form-text">{{ form.version_accidente.help_text }}</div>{% endif %}
-                            </div>
-                        </div>
-
-                        <!-- SECCION 5: Riesgos Identificados -->
-                        <div class="border rounded-3 p-3 mb-4">
-                            <h6 class="fw-bold text-success mb-3">
-                                <i class="bi bi-5-circle-fill me-2"></i>Riesgos Identificados en el Area
-                            </h6>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">{{ form.riesgos_identificados.label }}</label>
-                                {{ form.riesgos_identificados }}
-                                {% if form.riesgos_identificados.help_text %}<div class="form-text">{{ form.riesgos_identificados.help_text }}</div>{% endif %}
-                            </div>
-                        </div>
-
-                        <!-- SECCION 6: Testigos -->
-                        <div class="border rounded-3 p-3 mb-4">
-                            <h6 class="fw-bold mb-3" style="color: #6f42c1;">
-                                <i class="bi bi-6-circle-fill me-2"></i>Testigos del Incidente
-                            </h6>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">{{ form.testigos.label }}</label>
-                                {{ form.testigos }}
-                                {% if form.testigos.help_text %}<div class="form-text">{{ form.testigos.help_text }}</div>{% endif %}
-                            </div>
-                        </div>
-
-                        <!-- SECCION 7: Evidencia Fotografica -->
-                        <div class="border rounded-3 p-3 mb-4 border-danger">
-                            <h6 class="fw-bold text-danger mb-3">
-                                <i class="bi bi-7-circle-fill me-2"></i>Evidencia Fotografica <span class="badge bg-danger">Obligatoria</span>
-                            </h6>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">{{ form.foto.label }} <span class="text-danger">*</span></label>
-                                {{ form.foto }}
-                                {% if form.foto.help_text %}<div class="form-text">{{ form.foto.help_text }}</div>{% endif %}
-                            </div>
-
-                            <!-- Vista previa de la foto -->
-                            <div id="vistaPrevia" class="text-center d-none">
-                                <img id="imagenPrevia" src="#" alt="Vista previa" class="img-fluid rounded" style="max-height: 200px;">
-                                <p class="text-muted small mt-1">Vista previa de la imagen seleccionada</p>
-                            </div>
-                        </div>
-
-                        <div class="d-flex justify-content-end gap-2">
-                            <a href="{% url 'listar_incidentes' %}" class="btn btn-secondary">Cancelar</a>
-                            <button type="button" class="btn btn-danger btn-lg" id="btnAbrirModal">
-                                <i class="bi bi-send me-2"></i>Enviar Reporte de Incidente
-                            </button>
-                        </div>
-                    </form>
-                </div>
+    <!-- Header Principal -->
+    <div class="form-page-header">
+        <div class="d-flex align-items-start gap-3">
+            <div class="header-icon">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+            <div>
+                <h4 class="fw-bold mb-1" style="font-size: 1.2rem;">Reportar Nuevo Incidente</h4>
+                <p class="mb-0 opacity-75" style="font-size: 0.875rem;">
+                    Complete todos los campos con la mayor cantidad de información posible para facilitar la investigación.
+                </p>
             </div>
         </div>
     </div>
+
+    <!-- Errores del formulario -->
+    {% if form.errors %}
+    <div class="error-alert">
+        <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="bi bi-exclamation-circle-fill text-danger"></i>
+            <strong style="font-size: 0.9rem; color: var(--color-danger);">Por favor corrija los siguientes errores:</strong>
+        </div>
+        <ul class="mb-0 ps-3" style="font-size: 0.85rem; color: var(--color-danger);">
+            {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <form id="formIncidente" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <!-- ══════════════════════════════════════════ -->
+        <!-- SECCIÓN 1 · Información del Incidente    -->
+        <!-- ══════════════════════════════════════════ -->
+        <div class="form-section sec-danger">
+            <div class="section-header">
+                <div class="section-number">1</div>
+                <div>
+                    <h6>Información del Incidente</h6>
+                    <p class="section-subtitle">Tipo, gravedad y área donde ocurrió el evento</p>
+                </div>
+            </div>
+            <div class="section-body">
+                <div class="mb-3">
+                    <label class="field-label field-required">{{ form.titulo.label }}</label>
+                    {{ form.titulo }}
+                    {% if form.titulo.help_text %}
+                    <div class="form-text mt-1">{{ form.titulo.help_text }}</div>
+                    {% endif %}
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="field-label field-required">{{ form.tipo.label }}</label>
+                        {{ form.tipo }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="field-label field-required">{{ form.gravedad.label }}</label>
+                        {{ form.gravedad }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="field-label field-required">{{ form.area_incidente.label }}</label>
+                        {{ form.area_incidente }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════ -->
+        <!-- SECCIÓN 2 · Fecha, Hora y Lugar          -->
+        <!-- ══════════════════════════════════════════ -->
+        <div class="form-section sec-primary">
+            <div class="section-header">
+                <div class="section-number">2</div>
+                <div>
+                    <h6>Fecha, Hora y Lugar del Incidente</h6>
+                    <p class="section-subtitle">Cuándo y dónde ocurrió — sea lo más preciso posible</p>
+                </div>
+            </div>
+            <div class="section-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="field-label field-required">{{ form.fecha_incidente.label }}</label>
+                        {{ form.fecha_incidente }}
+                        <div class="form-text mt-1">Fecha y hora exacta en que ocurrió el incidente</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="field-label">{{ form.ubicacion.label }}</label>
+                        {{ form.ubicacion }}
+                        <div class="form-text mt-1">Bloque, edificio o zona general</div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="field-label">{{ form.lugar_exacto.label }}</label>
+                    {{ form.lugar_exacto }}
+                    <div class="form-text mt-1">Describa con precisión el lugar dentro del área (ej: "Taller de soldadura, puerta norte")</div>
+                </div>
+
+                <!-- Mapa -->
+                <div>
+                    <label class="field-label">
+                        <i class="bi bi-geo-alt-fill me-1" style="color: var(--color-danger);"></i>Ubicación en el Mapa
+                    </label>
+                    <div class="form-text mb-2">Haga clic en el mapa para marcar el lugar exacto del incidente</div>
+                    <div class="mapa-container">
+                        <div id="mapaIncidente"></div>
+                    </div>
+                    <div class="mapa-status">
+                        <i class="bi bi-geo-alt" id="coordIcono"></i>
+                        <span id="coordenadasSeleccionadas">Haga clic en el mapa para seleccionar ubicación</span>
+                    </div>
+                </div>
+
+                {{ form.latitud }}
+                {{ form.longitud }}
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════ -->
+        <!-- SECCIÓN 3 · Persona Afectada             -->
+        <!-- ══════════════════════════════════════════ -->
+        <div class="form-section sec-warning">
+            <div class="section-header">
+                <div class="section-number">3</div>
+                <div>
+                    <h6>Persona Afectada</h6>
+                    <p class="section-subtitle">Datos de la persona involucrada en el incidente</p>
+                </div>
+            </div>
+            <div class="section-body">
+                <div class="row g-3">
+                    <div class="col-md-5">
+                        <label class="field-label">{{ form.persona_afectada.label }}</label>
+                        {{ form.persona_afectada }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="field-label">{{ form.documento_afectado.label }}</label>
+                        {{ form.documento_afectado }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="field-label">{{ form.rol_afectado.label }}</label>
+                        {{ form.rol_afectado }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════ -->
+        <!-- SECCIÓN 4 · Descripción del Accidente    -->
+        <!-- ══════════════════════════════════════════ -->
+        <div class="form-section sec-info">
+            <div class="section-header">
+                <div class="section-number">4</div>
+                <div>
+                    <h6>Descripción y Versión del Accidente</h6>
+                    <p class="section-subtitle">Relate detalladamente cómo sucedieron los hechos</p>
+                </div>
+            </div>
+            <div class="section-body">
+                <div class="mb-3">
+                    <label class="field-label field-required">{{ form.descripcion.label }}</label>
+                    {{ form.descripcion }}
+                    {% if form.descripcion.help_text %}
+                    <div class="form-text mt-1">{{ form.descripcion.help_text }}</div>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="field-label">{{ form.version_accidente.label }}</label>
+                    {{ form.version_accidente }}
+                    {% if form.version_accidente.help_text %}
+                    <div class="form-text mt-1">{{ form.version_accidente.help_text }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════ -->
+        <!-- SECCIÓN 5 · Riesgos Identificados        -->
+        <!-- ══════════════════════════════════════════ -->
+        <div class="form-section sec-success">
+            <div class="section-header">
+                <div class="section-number">5</div>
+                <div>
+                    <h6>Riesgos Identificados en el Área</h6>
+                    <p class="section-subtitle">Factores de riesgo presentes que contribuyeron al incidente</p>
+                </div>
+            </div>
+            <div class="section-body">
+                <label class="field-label">{{ form.riesgos_identificados.label }}</label>
+                {{ form.riesgos_identificados }}
+                {% if form.riesgos_identificados.help_text %}
+                <div class="form-text mt-1">{{ form.riesgos_identificados.help_text }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════ -->
+        <!-- SECCIÓN 6 · Testigos                     -->
+        <!-- ══════════════════════════════════════════ -->
+        <div class="form-section sec-purple">
+            <div class="section-header">
+                <div class="section-number">6</div>
+                <div>
+                    <h6>Testigos del Incidente</h6>
+                    <p class="section-subtitle">Personas que presenciaron el evento</p>
+                </div>
+            </div>
+            <div class="section-body">
+                <label class="field-label">{{ form.testigos.label }}</label>
+                {{ form.testigos }}
+                {% if form.testigos.help_text %}
+                <div class="form-text mt-1">{{ form.testigos.help_text }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════ -->
+        <!-- SECCIÓN 7 · Evidencia Fotográfica        -->
+        <!-- ══════════════════════════════════════════ -->
+        <div class="form-section sec-photo">
+            <div class="section-header">
+                <div class="section-number">7</div>
+                <div>
+                    <h6>
+                        Evidencia Fotográfica
+                        <span class="badge ms-2" style="background: #be185d; font-size: 0.65rem; vertical-align: middle;">Obligatoria</span>
+                    </h6>
+                    <p class="section-subtitle">Fotografía del lugar del incidente o del afectado</p>
+                </div>
+            </div>
+            <div class="section-body">
+                <label class="field-label field-required">{{ form.foto.label }}</label>
+
+                <!-- Zona de carga de foto estilizada -->
+                <div class="photo-upload-zone" id="photoZone">
+                    <!-- Input real oculto visualmente pero accesible -->
+                    <div style="position:relative; overflow:hidden; display:inline-block; width:100%; height:100%; position:absolute; inset:0;">
+                        {{ form.foto }}
+                    </div>
+                    <i class="bi bi-cloud-upload upload-icon"></i>
+                    <p class="upload-text mb-1">Haga clic o arrastre una foto aquí</p>
+                    <p class="upload-hint mb-0">PNG, JPG o JPEG · Máximo 10 MB</p>
+                    <p class="upload-hint" id="nombreArchivo"></p>
+                </div>
+
+                {% if form.foto.help_text %}
+                <div class="form-text mt-2">{{ form.foto.help_text }}</div>
+                {% endif %}
+
+                <!-- Vista previa -->
+                <div id="vistaPrevia" class="d-none mt-3">
+                    <div style="border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--color-border);">
+                        <img id="imagenPrevia" src="#" alt="Vista previa" style="width:100%; max-height:280px; object-fit:cover; display:block;">
+                        <div class="preview-label">
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            <span>Imagen seleccionada correctamente</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Barra de acción -->
+        <div class="form-action-bar">
+            <div class="action-info">
+                <i class="bi bi-info-circle"></i>
+                <span>Los campos marcados con <strong style="color:var(--color-danger);">*</strong> son obligatorios</span>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{% url 'listar_incidentes' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-lg me-1"></i>Cancelar
+                </a>
+                <button type="button" class="btn btn-danger px-4" id="btnAbrirModal">
+                    <i class="bi bi-send-fill me-2"></i>Enviar Reporte
+                </button>
+            </div>
+        </div>
+
+    </form>
 </div>
 
-<!-- Modal FUERA del card para evitar clipping por overflow:hidden -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- MODAL DE CONFIRMACIÓN                                     -->
+<!-- ══════════════════════════════════════════════════════════ -->
 <div class="modal fade" id="modalConfirmarReporte" tabindex="-1" aria-labelledby="modalConfirmarReporteLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-xl); overflow: hidden;">
 
-            <!-- Cabecera -->
-            <div class="modal-header border-0" style="background: #fef3c7; padding: 1rem 1.25rem 0.85rem;">
+            <div class="modal-header border-0 pb-0" style="background: #fff7ed; padding: 1.25rem 1.5rem 0.75rem;">
                 <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-exclamation-triangle-fill" style="color: #d97706; font-size: 1.2rem;"></i>
-                    <h5 class="modal-title fw-bold mb-0" id="modalConfirmarReporteLabel" style="font-size: 1rem; color: #1a1a1a;">
-                        Confirmar Reporte de Incidente
-                    </h5>
+                    <div style="width:38px; height:38px; background: #fed7aa; border-radius: var(--radius-md); display:flex; align-items:center; justify-content:center;">
+                        <i class="bi bi-exclamation-triangle-fill" style="color: #d97706; font-size: 1.1rem;"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-bold mb-0" id="modalConfirmarReporteLabel" style="font-size: 1rem;">
+                            Confirmar Reporte de Incidente
+                        </h5>
+                        <small style="color: var(--color-text-muted); font-size: 0.78rem;">Esta acción quedará registrada en el sistema</small>
+                    </div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
 
-            <!-- Cuerpo -->
             <div class="modal-body px-4 pt-3 pb-2">
-
-                <p class="mb-3" style="font-size: 0.92rem; color: #374151;">
-                    Estás a punto de enviar un <strong>reporte oficial de incidente</strong> al
-                    sistema de Seguridad y Salud en el Trabajo del Centro Nacional Minero SENA.
+                <p style="font-size: 0.9rem; color: var(--color-text-secondary); margin-bottom: 1rem;">
+                    Estás a punto de enviar un <strong>reporte oficial de incidente</strong> al sistema de
+                    Seguridad y Salud en el Trabajo del Centro Nacional Minero SENA.
                 </p>
 
-                <!-- Caja de advertencia legal con borde izquierdo -->
-                <div class="mb-3" style="background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 4px; padding: 12px 14px;">
-                    <div class="d-flex align-items-center gap-1 mb-1">
-                        <span style="font-size: 0.95rem;">⚠️</span>
-                        <span style="font-size: 0.95rem;">⚖️</span>
-                        <strong style="font-size: 0.88rem; color: #1a1a1a;">Advertencia Legal</strong>
+                <div style="background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: var(--radius-md); padding: 0.875rem 1rem; margin-bottom: 1rem;">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <i class="bi bi-shield-exclamation" style="color: #d97706;"></i>
+                        <strong style="font-size: 0.85rem; color: var(--color-gray-800);">Advertencia Legal</strong>
                     </div>
-                    <p class="mb-0" style="font-size: 0.85rem; color: #b45309; line-height: 1.5;">
+                    <p class="mb-0" style="font-size: 0.83rem; color: #b45309; line-height: 1.55;">
                         Reportar un incidente falso constituye una falta grave y puede acarrear
                         <strong>sanciones disciplinarias y consecuencias legales</strong>
                         conforme a la normativa vigente del SENA y la legislación colombiana.
                     </p>
                 </div>
 
-                <!-- Checkbox en caja bordeada -->
-                <div style="border: 1px solid #d1d5db; border-radius: 8px; padding: 12px 14px;">
+                <div style="border: 1.5px solid var(--color-gray-200); border-radius: var(--radius-md); padding: 0.875rem 1rem; background: var(--color-gray-50);">
                     <div class="form-check mb-0">
-                        <input class="form-check-input" type="checkbox" id="checkConfirmacion" style="margin-top: 0.2rem;">
-                        <label class="form-check-label fw-semibold" for="checkConfirmacion" style="font-size: 0.88rem; color: #1a1a1a; cursor: pointer;">
+                        <input class="form-check-input" type="checkbox" id="checkConfirmacion">
+                        <label class="form-check-label fw-semibold" for="checkConfirmacion" style="font-size: 0.85rem; color: var(--color-text-primary); cursor: pointer; line-height: 1.5;">
                             Confirmo que la información reportada es <u>verídica</u> y
                             corresponde a un hecho real ocurrido en el centro.
                         </label>
                     </div>
                 </div>
-
             </div>
 
-            <!-- Pie del modal -->
-            <div class="modal-footer border-0 pt-2 pb-3 px-4">
-                <button type="button" class="btn" data-bs-dismiss="modal"
-                        style="font-size: 0.88rem; background-color: #4b5563; color: #fff; border-radius: 6px; padding: 7px 18px;">
+            <div class="modal-footer border-0 px-4 pt-3 pb-4 gap-2">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
                     <i class="bi bi-x-circle me-1"></i>Cancelar
                 </button>
-                <button type="button" id="btnConfirmarEnvio" class="btn" disabled
-                        style="font-size: 0.88rem; background-color: #e05c7d; color: #fff; border-radius: 6px; padding: 7px 18px; opacity: 0.5;">
+                <button type="button" id="btnConfirmarEnvio" class="btn btn-danger" disabled style="opacity: 0.5;">
                     <i class="bi bi-check-circle me-1"></i>Sí, enviar reporte
                 </button>
             </div>
@@ -274,86 +647,94 @@
 </div>
 {% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<style>
-    #mapaIncidente { z-index: 1; }
-</style>
-{% endblock %}
-
 {% block extra_js %}
-<!-- Leaflet ya cargado en base.html -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Mini mapa para seleccionar ubicacion del incidente
+
+    /* ─── MAPA ─────────────────────────────────────────── */
     const mapaInc = L.map('mapaIncidente').setView([5.7303596, -72.8943613], 17);
 
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Esri', maxZoom: 19
-    }).addTo(mapaInc);
-
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19, opacity: 0.7
+    L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        attribution: '© Google'
     }).addTo(mapaInc);
 
     let marcadorIncidente = null;
 
+    function setCoordInfo(lat, lng) {
+        document.getElementById('coordenadasSeleccionadas').innerHTML =
+            '<strong>Ubicación seleccionada:</strong> ' + lat.toFixed(6) + ', ' + lng.toFixed(6);
+        const icon = document.getElementById('coordIcono');
+        icon.classList.remove('bi-geo-alt');
+        icon.classList.add('bi-geo-alt-fill');
+        icon.style.color = 'var(--color-success)';
+    }
+
+    const redIcon = L.icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+    });
+
     mapaInc.on('click', function(e) {
         const lat = e.latlng.lat;
         const lng = e.latlng.lng;
-
-        // Actualizar campos ocultos
         document.getElementById('id_latitud').value = lat.toFixed(6);
         document.getElementById('id_longitud').value = lng.toFixed(6);
-
-        // Actualizar texto
-        document.getElementById('coordenadasSeleccionadas').innerHTML =
-            '<i class="bi bi-check-circle-fill text-success me-1"></i>' +
-            '<strong>Ubicacion seleccionada:</strong> ' + lat.toFixed(6) + ', ' + lng.toFixed(6);
-
-        // Marcador
+        setCoordInfo(lat, lng);
         if (marcadorIncidente) {
             marcadorIncidente.setLatLng(e.latlng);
         } else {
-            marcadorIncidente = L.marker(e.latlng, {
-                icon: L.icon({
-                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-                    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
-                })
-            }).addTo(mapaInc);
+            marcadorIncidente = L.marker(e.latlng, { icon: redIcon }).addTo(mapaInc);
         }
         marcadorIncidente.bindPopup('<strong>Lugar del incidente</strong>').openPopup();
     });
 
-    // Si ya hay coordenadas (edicion), mostrar marcador
     const latVal = document.getElementById('id_latitud').value;
     const lngVal = document.getElementById('id_longitud').value;
     if (latVal && lngVal) {
         const lat = parseFloat(latVal);
         const lng = parseFloat(lngVal);
-        marcadorIncidente = L.marker([lat, lng], {
-            icon: L.icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-                iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
-            })
-        }).addTo(mapaInc);
+        marcadorIncidente = L.marker([lat, lng], { icon: redIcon }).addTo(mapaInc);
         mapaInc.setView([lat, lng], 18);
-        document.getElementById('coordenadasSeleccionadas').innerHTML =
-            '<i class="bi bi-check-circle-fill text-success me-1"></i>' +
-            '<strong>Ubicacion seleccionada:</strong> ' + lat.toFixed(6) + ', ' + lng.toFixed(6);
+        setCoordInfo(lat, lng);
     }
 
-    // Vista previa de foto
+    /* ─── DOCUMENTO AFECTADO ─────────────────────────── */
+    const inputDoc = document.getElementById('id_documento_afectado');
+    if (inputDoc) {
+        // Bloquear letras en tiempo real
+        inputDoc.addEventListener('input', function() {
+            const soloDigitos = this.value.replace(/\D/g, '');
+            if (this.value !== soloDigitos) this.value = soloDigitos;
+        });
+        inputDoc.addEventListener('keypress', function(e) {
+            if (!/[0-9]/.test(e.key) && !['Backspace','Delete','ArrowLeft','ArrowRight','Tab'].includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+        inputDoc.addEventListener('paste', function(e) {
+            e.preventDefault();
+            const texto = (e.clipboardData || window.clipboardData).getData('text');
+            const soloDigitos = texto.replace(/\D/g, '').slice(0, 11);
+            this.value = soloDigitos;
+        });
+    }
+
+    /* ─── SUBIDA DE FOTO ──────────────────────────────── */
     const inputFoto = document.getElementById('id_foto');
     if (inputFoto) {
+        // Aplicar estilos al input de archivo dentro de la zona
+        inputFoto.style.cssText = 'position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;';
+
         inputFoto.addEventListener('change', function(e) {
             const file = e.target.files[0];
             const vistaPrevia = document.getElementById('vistaPrevia');
             const imagenPrevia = document.getElementById('imagenPrevia');
+            const nombreArchivo = document.getElementById('nombreArchivo');
 
             if (file && file.type.startsWith('image/')) {
+                nombreArchivo.textContent = file.name;
                 const reader = new FileReader();
                 reader.onload = function(ev) {
                     imagenPrevia.src = ev.target.result;
@@ -362,11 +743,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 reader.readAsDataURL(file);
             } else {
                 vistaPrevia.classList.add('d-none');
+                nombreArchivo.textContent = '';
             }
         });
+
+        // Feedback drag-and-drop visual
+        const zone = document.getElementById('photoZone');
+        zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('drag-over'); });
+        zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+        zone.addEventListener('drop', () => zone.classList.remove('drag-over'));
     }
 
-    // Abrir modal solo al hacer click explícito (evita auto-apertura al recargar)
+    /* ─── MODAL DE CONFIRMACIÓN ─────────────────────── */
     const btnAbrirModal = document.getElementById('btnAbrirModal');
     if (btnAbrirModal) {
         btnAbrirModal.addEventListener('click', function() {
@@ -376,7 +764,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Modal de confirmación: habilitar botón solo cuando el checkbox esté marcado
     const checkConfirmacion = document.getElementById('checkConfirmacion');
     const btnConfirmarEnvio = document.getElementById('btnConfirmarEnvio');
 
@@ -385,18 +772,16 @@ document.addEventListener('DOMContentLoaded', function() {
             btnConfirmarEnvio.disabled = !this.checked;
             btnConfirmarEnvio.style.opacity = this.checked ? '1' : '0.5';
         });
-
-        // Al confirmar, enviar el formulario correcto por id
         btnConfirmarEnvio.addEventListener('click', function() {
             document.getElementById('formIncidente').submit();
         });
-
-        // Resetear checkbox cada vez que se abre el modal
         document.getElementById('modalConfirmarReporte').addEventListener('show.bs.modal', function() {
             checkConfirmacion.checked = false;
             btnConfirmarEnvio.disabled = true;
+            btnConfirmarEnvio.style.opacity = '0.5';
         });
     }
+
 });
 </script>
 {% endblock %}

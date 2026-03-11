@@ -9,153 +9,326 @@
 <li class="breadcrumb-item active">Actualizar</li>
 {% endblock %}
 
-{% block content %}
-<!-- Header -->
-<div class="mb-4">
-    <h1 class="h3 fw-bold text-dark mb-1">
-        <i class="bi bi-pencil-square text-primary me-2"></i>
-        Actualizar Estado del Incidente
-    </h1>
-    <p class="text-muted mb-0">{{ incidente.titulo }}</p>
-</div>
+{% block extra_css %}
+<style>
+.actualizar-wrapper {
+    max-width: 800px;
+    margin: 0 auto;
+}
 
-<!-- Resumen del Incidente -->
-<div class="card mb-4">
-    <div class="card-header bg-light">
-        <h5 class="mb-0">
-            <i class="bi bi-info-circle me-2"></i>
-            Resumen del Incidente
-        </h5>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <small class="text-muted d-block mb-1">Tipo</small>
-                <span class="badge bg-secondary">{{ incidente.get_tipo_display }}</span>
+/* Header */
+.update-page-header {
+    background: linear-gradient(135deg, #1565C0 0%, #0D47A1 100%);
+    border-radius: 16px;
+    padding: 1.75rem 2rem;
+    margin-bottom: 1.5rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+.update-page-header::before {
+    content: '';
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 140px; height: 140px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 50%;
+}
+.update-page-header .header-icon {
+    width: 46px; height: 46px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+
+/* Info resumen */
+.incidente-info-card {
+    background: white;
+    border-radius: 14px;
+    border: 1px solid #E5E7EB;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+.info-item .info-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #9CA3AF;
+}
+.info-item .info-value {
+    font-size: 0.9rem;
+    color: #1F2937;
+    font-weight: 500;
+}
+
+/* Formulario */
+.update-form-card {
+    background: white;
+    border-radius: 14px;
+    border: 1px solid #E5E7EB;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    margin-bottom: 1.25rem;
+}
+.update-form-card .form-card-header {
+    background: #F9FAFB;
+    border-bottom: 1px solid #E5E7EB;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.update-form-card .form-card-header .header-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #1565C0;
+    flex-shrink: 0;
+}
+.update-form-card .form-card-header h6 {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #1F2937;
+    margin: 0;
+}
+.update-form-card .form-card-body {
+    padding: 1.5rem;
+}
+
+/* Fields */
+.field-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #6B7280;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.4rem;
+}
+.form-control, .form-select {
+    border: 1.5px solid #E5E7EB;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    padding: 0.6rem 0.875rem;
+    background-color: #F9FAFB;
+    color: #1F2937;
+    transition: all 0.2s;
+}
+.form-control:focus, .form-select:focus {
+    border-color: #1565C0;
+    background-color: white;
+    box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.1);
+}
+textarea.form-control { resize: vertical; }
+
+/* Checkbox especial */
+.check-card {
+    border: 1.5px solid #E5E7EB;
+    border-radius: 10px;
+    padding: 0.875rem 1rem;
+    background: #F9FAFB;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.check-card:has(input:checked) {
+    border-color: #16a34a;
+    background: #F0FDF4;
+}
+.check-card input { cursor: pointer; }
+.check-card label { cursor: pointer; font-size: 0.88rem; font-weight: 600; color: #374151; }
+
+/* Acción bar */
+.action-bar {
+    background: white;
+    border-radius: 14px;
+    border: 1px solid #E5E7EB;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+@media (max-width: 576px) {
+    .action-bar { flex-direction: column; }
+    .action-bar .btn { width: 100%; justify-content: center; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="actualizar-wrapper">
+
+    <!-- Header -->
+    <div class="update-page-header">
+        <div class="d-flex align-items-start gap-3">
+            <div class="header-icon">
+                <i class="bi bi-pencil-square"></i>
             </div>
-            <div class="col-md-6 mb-3">
-                <small class="text-muted d-block mb-1">Gravedad</small>
-                {% if incidente.gravedad == 'CRITICA' %}
-                <span class="badge bg-danger">Crítica</span>
-                {% elif incidente.gravedad == 'ALTA' %}
-                <span class="badge bg-warning">Alta</span>
-                {% elif incidente.gravedad == 'MEDIA' %}
-                <span class="badge bg-info">Media</span>
-                {% else %}
-                <span class="badge bg-secondary">Baja</span>
-                {% endif %}
-            </div>
-            <div class="col-md-6">
-                <small class="text-muted d-block mb-1">Reportado por</small>
-                <strong>{{ incidente.reportado_por.get_full_name|default:incidente.reportado_por.username }}</strong>
-            </div>
-            <div class="col-md-6">
-                <small class="text-muted d-block mb-1">Fecha de Reporte</small>
-                <strong>{{ incidente.fecha_reporte|date:"d/m/Y H:i" }}</strong>
+            <div>
+                <h4 class="fw-bold mb-1" style="font-size: 1.1rem;">Actualizar Estado del Incidente</h4>
+                <p class="mb-0 opacity-75" style="font-size: 0.85rem;">{{ incidente.titulo }}</p>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Formulario de Actualización -->
-<div class="card">
-    <div class="card-header">
-        <h5 class="mb-0">
-            <i class="bi bi-clipboard-check me-2"></i>
-            Actualizar Información
-        </h5>
-    </div>
-    <div class="card-body">
-        <form method="post">
-            {% csrf_token %}
-
-            <!-- Estado -->
-            <div class="mb-3">
-                <label for="id_estado" class="form-label fw-bold">
-                    Estado <span class="text-danger">*</span>
-                </label>
-                <select name="estado" id="id_estado" class="form-select" required>
-                    <option value="REPORTADO" {% if incidente.estado == 'REPORTADO' %}selected{% endif %}>Reportado</option>
-                    <option value="EN_REVISION" {% if incidente.estado == 'EN_REVISION' %}selected{% endif %}>En Revisión</option>
-                    <option value="EN_PROCESO" {% if incidente.estado == 'EN_PROCESO' %}selected{% endif %}>En Proceso</option>
-                    <option value="RESUELTO" {% if incidente.estado == 'RESUELTO' %}selected{% endif %}>Resuelto</option>
-                    <option value="CERRADO" {% if incidente.estado == 'CERRADO' %}selected{% endif %}>Cerrado</option>
-                </select>
-                <small class="text-muted">Selecciona el nuevo estado del incidente</small>
-            </div>
-
-            <!-- Asignar a (solo ADMINISTRATIVO) -->
-            {% if puede_reasignar %}
-            <div class="mb-3">
-                <label for="id_asignado_a" class="form-label fw-bold">
-                    Asignar a
-                </label>
-                <select name="asignado_a" id="id_asignado_a" class="form-select">
-                    <option value="">Sin asignar</option>
-                    {% for usuario in usuarios_disponibles %}
-                    <option value="{{ usuario.id }}" {% if incidente.asignado_a.id == usuario.id %}selected{% endif %}>
-                        {{ usuario.get_full_name|default:usuario.username }} - {{ usuario.get_rol_display }}
-                    </option>
-                    {% endfor %}
-                </select>
-                <small class="text-muted">Persona responsable de resolver el incidente</small>
-            </div>
-            {% else %}
-            {% if incidente.asignado_a %}
-            <div class="mb-3">
-                <label class="form-label fw-bold">Asignado a</label>
-                <div class="form-control bg-light text-muted">
-                    <i class="bi bi-person-check me-1"></i>{{ incidente.asignado_a.get_full_name|default:incidente.asignado_a.username }}
+    <!-- Resumen del Incidente -->
+    <div class="incidente-info-card">
+        <p class="fw-semibold mb-3" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #9CA3AF;">
+            <i class="bi bi-info-circle me-1"></i>Resumen del Incidente
+        </p>
+        <div class="row g-3">
+            <div class="col-6 col-md-3">
+                <div class="info-item">
+                    <span class="info-label">Tipo</span>
+                    <span class="info-value">
+                        <span class="badge bg-secondary" style="font-size: 0.78rem;">{{ incidente.get_tipo_display }}</span>
+                    </span>
                 </div>
             </div>
-            {% endif %}
-            {% endif %}
-
-            <!-- Acciones Tomadas -->
-            <div class="mb-4">
-                <label for="id_acciones_tomadas" class="form-label fw-bold">
-                    Acciones Tomadas
-                </label>
-                <textarea name="acciones_tomadas" id="id_acciones_tomadas" rows="4" class="form-control" placeholder="Describe las acciones correctivas o preventivas implementadas...">{{ incidente.acciones_tomadas }}</textarea>
-                <small class="text-muted">Registra las medidas adoptadas para resolver el incidente</small>
+            <div class="col-6 col-md-3">
+                <div class="info-item">
+                    <span class="info-label">Gravedad</span>
+                    <span class="info-value">
+                        {% if incidente.gravedad == 'CRITICA' %}
+                        <span class="badge bg-danger" style="font-size: 0.78rem;">Crítica</span>
+                        {% elif incidente.gravedad == 'ALTA' %}
+                        <span class="badge bg-warning" style="font-size: 0.78rem;">Alta</span>
+                        {% elif incidente.gravedad == 'MEDIA' %}
+                        <span class="badge" style="background:#0891b2; font-size: 0.78rem;">Media</span>
+                        {% else %}
+                        <span class="badge bg-secondary" style="font-size: 0.78rem;">Baja</span>
+                        {% endif %}
+                    </span>
+                </div>
             </div>
-
-            <!-- Marcar como Resuelto -->
-            <div class="form-check mb-4">
-                <input class="form-check-input" type="checkbox" name="marcar_resuelto" id="id_marcar_resuelto" {% if incidente.fecha_resolucion %}checked{% endif %}>
-                <label class="form-check-label" for="id_marcar_resuelto">
-                    Marcar como resuelto (registra la fecha de resolución)
-                </label>
+            <div class="col-6 col-md-3">
+                <div class="info-item">
+                    <span class="info-label">Reportado por</span>
+                    <span class="info-value">{{ incidente.reportado_por.get_full_name|default:incidente.reportado_por.username }}</span>
+                </div>
             </div>
+            <div class="col-6 col-md-3">
+                <div class="info-item">
+                    <span class="info-label">Fecha de Reporte</span>
+                    <span class="info-value">{{ incidente.fecha_reporte|date:"d/m/Y H:i" }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            <!-- Botones -->
+    <!-- Formulario -->
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="update-form-card">
+            <div class="form-card-header">
+                <div class="header-dot"></div>
+                <h6>Actualizar Información</h6>
+            </div>
+            <div class="form-card-body">
+
+                <!-- Estado -->
+                <div class="mb-4">
+                    <label class="field-label">Estado <span class="text-danger">*</span></label>
+                    <select name="estado" id="id_estado" class="form-select" required>
+                        <option value="REPORTADO"   {% if incidente.estado == 'REPORTADO'   %}selected{% endif %}>📋 Reportado</option>
+                        <option value="EN_REVISION" {% if incidente.estado == 'EN_REVISION' %}selected{% endif %}>🔍 En Revisión</option>
+                        <option value="EN_PROCESO"  {% if incidente.estado == 'EN_PROCESO'  %}selected{% endif %}>⚙️ En Proceso</option>
+                        <option value="RESUELTO"    {% if incidente.estado == 'RESUELTO'    %}selected{% endif %}>✅ Resuelto</option>
+                        <option value="CERRADO"     {% if incidente.estado == 'CERRADO'     %}selected{% endif %}>🔒 Cerrado</option>
+                    </select>
+                    <div class="form-text mt-1">Seleccione el nuevo estado del incidente</div>
+                </div>
+
+                <!-- Asignar a -->
+                {% if puede_reasignar %}
+                <div class="mb-4">
+                    <label class="field-label">Asignar a</label>
+                    <select name="asignado_a" id="id_asignado_a" class="form-select">
+                        <option value="">— Sin asignar —</option>
+                        {% for usuario in usuarios_disponibles %}
+                        <option value="{{ usuario.id }}" {% if incidente.asignado_a.id == usuario.id %}selected{% endif %}>
+                            {{ usuario.get_full_name|default:usuario.username }} · {{ usuario.get_rol_display }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text mt-1">Responsable de resolver el incidente</div>
+                </div>
+                {% else %}
+                    {% if incidente.asignado_a %}
+                    <div class="mb-4">
+                        <label class="field-label">Asignado a</label>
+                        <div class="form-control bg-light text-muted" style="pointer-events: none;">
+                            <i class="bi bi-person-check me-1"></i>{{ incidente.asignado_a.get_full_name|default:incidente.asignado_a.username }}
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endif %}
+
+                <!-- Acciones Tomadas -->
+                <div class="mb-4">
+                    <label class="field-label">Acciones Tomadas</label>
+                    <textarea name="acciones_tomadas" id="id_acciones_tomadas" rows="5" class="form-control"
+                        placeholder="Describe las acciones correctivas o preventivas implementadas para resolver el incidente...">{{ incidente.acciones_tomadas }}</textarea>
+                    <div class="form-text mt-1">Registre todas las medidas adoptadas para atender el incidente</div>
+                </div>
+
+                <!-- Marcar como Resuelto -->
+                <div class="check-card" onclick="document.getElementById('id_marcar_resuelto').click(); event.stopPropagation();">
+                    <input class="form-check-input mt-0" type="checkbox" name="marcar_resuelto" id="id_marcar_resuelto"
+                        {% if incidente.fecha_resolucion %}checked{% endif %}
+                        onclick="event.stopPropagation();">
+                    <label for="id_marcar_resuelto" onclick="event.stopPropagation();">
+                        <i class="bi bi-calendar-check me-1 text-success"></i>
+                        Marcar como resuelto — registra automáticamente la fecha y hora de resolución
+                    </label>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Barra de acción -->
+        <div class="action-bar">
+            <p class="mb-0" style="font-size: 0.8rem; color: #9CA3AF;">
+                <i class="bi bi-shield-check me-1"></i>Los cambios quedarán registrados en la auditoría del sistema
+            </p>
             <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-check-circle me-1"></i>
-                    Guardar Cambios
-                </button>
-                <a href="{% url 'detalle_incidente' incidente.pk %}" class="btn btn-secondary">
-                    <i class="bi bi-x-circle me-1"></i>
-                    Cancelar
+                <a href="{% url 'detalle_incidente' incidente.pk %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-lg me-1"></i>Cancelar
                 </a>
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-check-circle-fill me-2"></i>Guardar Cambios
+                </button>
             </div>
-        </form>
-    </div>
-</div>
+        </div>
 
-<!-- Historial de Cambios (Placeholder) -->
-<div class="card mt-4">
-    <div class="card-header">
-        <h5 class="mb-0">
-            <i class="bi bi-clock-history me-2"></i>
-            Historial de Cambios
-        </h5>
+    </form>
+
+    <!-- Historial -->
+    <div class="update-form-card mt-0" style="opacity: 0.7;">
+        <div class="form-card-header">
+            <div class="header-dot" style="background: #9CA3AF;"></div>
+            <h6 style="color: #9CA3AF;">Historial de Cambios</h6>
+        </div>
+        <div class="form-card-body">
+            <p class="text-muted mb-0" style="font-size: 0.88rem;">
+                <i class="bi bi-clock-history me-2"></i>El historial de cambios estará disponible próximamente
+            </p>
+        </div>
     </div>
-    <div class="card-body">
-        <p class="text-muted mb-0">
-            <i class="bi bi-info-circle me-2"></i>
-            El historial de cambios estará disponible próximamente
-        </p>
-    </div>
+
 </div>
 {% endblock %}
