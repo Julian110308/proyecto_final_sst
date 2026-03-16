@@ -14,6 +14,16 @@ from usuarios.permissions import rol_requerido, excluir_visitantes
 from usuarios.login_view import custom_login_view
 
 
+# Páginas de error personalizadas
+def error_404(request, exception=None):
+    return render(request, '404.html', status=404)
+
+def error_500(request):
+    return render(request, '500.html', status=500)
+
+handler404 = error_404
+handler500 = error_500
+
 # Vistas para servir SW y manifest desde la raíz (requerido para PWA)
 import os
 from django.http import HttpResponse
