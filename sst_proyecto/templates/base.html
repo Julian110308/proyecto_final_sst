@@ -1245,7 +1245,7 @@
                         </div>`;
                 }
             } catch (e) {
-                console.log('Error cargando notificaciones:', e);
+                // error silencioso
             }
         }
 
@@ -1326,12 +1326,12 @@
                             }),
                         });
                     } catch(e) {
-                        console.log('Push no disponible:', e.message);
+                        // push no disponible
                     }
                 }
                 {% endif %}
             })
-            .catch(err => console.log('SW registro fallido:', err));
+            .catch(err => {});
     }
     </script>
 

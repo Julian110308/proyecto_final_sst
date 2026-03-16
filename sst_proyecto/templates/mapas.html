@@ -940,9 +940,7 @@ function inicializarControles() {
     document.getElementById('btnPantallaCompleta').addEventListener('click', function() {
         const mapaElement = document.getElementById('mapaPrincipal');
         if (!document.fullscreenElement) {
-            mapaElement.requestFullscreen().catch(err => {
-                console.log(`Error al activar pantalla completa: ${err.message}`);
-            });
+            mapaElement.requestFullscreen().catch(err => {});
         } else {
             document.exitFullscreen();
         }
@@ -1354,9 +1352,6 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
     });
     
-    console.log('✅ Mapa interactivo inicializado correctamente');
-    console.log(`📊 Puntos de encuentro: ${puntosEncuentroData.length}`);
-    console.log(`📊 Equipamiento: ${equipamientoData.length}`);
 });
 
 // ====================================================================
