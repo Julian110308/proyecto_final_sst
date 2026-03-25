@@ -2,8 +2,10 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 from django.utils import timezone
 from django.db.models import Q
+from django_ratelimit.core import is_ratelimited
 from .models import (
     TipoEmergencia,
     Emergencia,
@@ -19,20 +21,33 @@ from .serializers import (
     NotificacionEmergenciaSerializer,
     ContactoExternoSerializer,
 )
+
 # Servicio centralizado de notificaciones
 from usuarios.services import NotificacionService
 
-class TipoEmergenciaViewSet(viewsets.ModelViewSet):
 
-    # ViewSet para tipos de emergencia (solo lectura)
+class TipoEmergenciaViewSet(viewsets.ModelViewSet):
+    # ViewSet para tipos de emergencia — catálogo casi estático, se cachea 1 hora
     queryset = TipoEmergencia.objects.all()
     serializer_class = TipoEmergenciaSerializer
     permission_classes = [IsAuthenticated]
 
-class EmergenciaViewSet(viewsets.ModelViewSet):
+    def get_queryset(self):
+        from django.core.cache import cache
+        from django.conf import settings
 
+        cached = cache.get("tipos_emergencia")
+        if cached is not None:
+            return cached
+        qs = TipoEmergencia.objects.all()
+        ttl = getattr(settings, "CACHE_TTL_CATALOGOS", 3600)
+        cache.set("tipos_emergencia", qs, ttl)
+        return qs
+
+
+class EmergenciaViewSet(viewsets.ModelViewSet):
     # ViewSet para gestión de emergencias
-    queryset = Emergencia.objects.all()
+    queryset = Emergencia.objects.select_related("tipo", "reportada_por", "edificio").prefetch_related("atendida_por")
     permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
@@ -44,18 +59,18 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
         """
         from usuarios.permissions import EsBrigadaOAdministrativo, EsAdministrativo
 
-        if self.action in ['atender', 'resolver', 'marcar_falsa_alarma']:
+        if self.action in ["atender", "resolver", "marcar_falsa_alarma"]:
             return [EsBrigadaOAdministrativo()]
-        elif self.action in ['update', 'partial_update', 'destroy']:
+        elif self.action in ["update", "partial_update", "destroy"]:
             return [EsAdministrativo()]
 
         return [IsAuthenticated()]
 
     def get_serializer_class(self):
-        if self.action == 'create':
+        if self.action == "create":
             return EmergenciaCreateSerializer
         return EmergenciaSerializer
-    
+
     def perform_create(self, serializer):
         emergencia = serializer.save(reportada_por=self.request.user)
         # Notificar via sistema centralizado a Brigada y Administrativos
@@ -63,14 +78,25 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
         # También notificar vía NotificacionEmergencia (modelo específico)
         self.notificar_brigada(emergencia)
 
-    @action(detail=False, methods=['post'])
+    @extend_schema(
+        summary="Botón de pánico",
+        description="Activa una emergencia inmediata. Notifica a Brigada y Administrativos. Limitado a 3 activaciones/hora por usuario.",
+        tags=["emergencias"],
+        responses={201: EmergenciaSerializer, 429: OpenApiResponse(description="Rate limit excedido")},
+    )
+    @action(detail=False, methods=["post"])
     def boton_panico(self, request):
+        # Máximo 3 activaciones por usuario por hora (previene falsas alarmas en loop)
+        if is_ratelimited(request, group="boton_panico", key="user_or_ip", rate="3/h", method="POST", increment=True):
+            return Response(
+                {
+                    "error": "Has activado demasiadas alertas de emergencia en poco tiempo. Si es una emergencia real, llama al número de emergencias directamente."
+                },
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
 
         # Endpoint para botón de pánico desde app móvil
-        serializer = EmergenciaCreateSerializer(
-            data=request.data,
-            context={'request': request}
-        )
+        serializer = EmergenciaCreateSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         emergencia = serializer.save(reportada_por=self.request.user)
 
@@ -79,19 +105,26 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
         # También notificar vía NotificacionEmergencia (modelo específico de emergencias)
         self.notificar_brigada(emergencia)
 
-        return Response({
-            'emergencia': EmergenciaSerializer(emergencia).data,
-            'mensaje': 'Emergencia reportada exitosamente. Ayuda en camino.'
-        }, status=status.HTTP_201_CREATED)
-    
-    @action(detail=True, methods=['post'])
-    def atender(self, request, pk=None):
+        return Response(
+            {
+                "emergencia": EmergenciaSerializer(emergencia).data,
+                "mensaje": "Emergencia reportada exitosamente. Ayuda en camino.",
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
+    @extend_schema(
+        summary="Atender emergencia",
+        description="Marca una emergencia como EN_ATENCION. Solo Brigada y Administrativo.",
+        tags=["emergencias"],
+    )
+    @action(detail=True, methods=["post"])
+    def atender(self, request, pk=None):
         # Marcar emergencia como en atención
         emergencia = self.get_object()
 
-        if emergencia.estado == 'REPORTADA':
-            emergencia.estado = 'EN_ATENCION'
+        if emergencia.estado == "REPORTADA":
+            emergencia.estado = "EN_ATENCION"
             emergencia.fecha_hora_atencion = timezone.now()
             emergencia.atendida_por.add(self.request.user)
             emergencia.save()
@@ -99,25 +132,31 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
             # Notificar al usuario que reportó la emergencia
             NotificacionService.notificar_emergencia_atendida(emergencia, self.request.user)
 
-            return Response({
-                'mensaje': 'Emergencia marcada como en atención',
-                'tiempo_respuesta_minutos': emergencia.tiempo_respuesta
-            })
+            return Response(
+                {
+                    "mensaje": "Emergencia marcada como en atención",
+                    "tiempo_respuesta_minutos": emergencia.tiempo_respuesta,
+                }
+            )
 
         return Response(
-            {'error': 'La emergencia ya está siendo atendida o no está en estado reportada.'},
-            status=status.HTTP_400_BAD_REQUEST
+            {"error": "La emergencia ya está siendo atendida o no está en estado reportada."},
+            status=status.HTTP_400_BAD_REQUEST,
         )
-    
-    @action(detail=True, methods=['post'])
-    def resolver(self, request, pk=None):
 
+    @extend_schema(
+        summary="Resolver emergencia",
+        description="Marca una emergencia como RESUELTA. Solo Brigada y Administrativo.",
+        tags=["emergencias"],
+    )
+    @action(detail=True, methods=["post"])
+    def resolver(self, request, pk=None):
         # Marcar emergencia como resuelta
         emergencia = self.get_object()
 
-        acciones = request.data.get('acciones_tomadas', '')
+        acciones = request.data.get("acciones_tomadas", "")
 
-        emergencia.estado = 'RESUELTA'
+        emergencia.estado = "RESUELTA"
         emergencia.fecha_hora_resolucion = timezone.now()
         emergencia.acciones_tomadas = acciones
         emergencia.save()
@@ -125,29 +164,28 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
         # Notificar que la emergencia fue resuelta
         NotificacionService.notificar_emergencia_resuelta(emergencia)
 
-        return Response({
-            'mensaje': 'Emergencia resuelta exitosamente',
-            'tiempo_total_minutos': emergencia.tiempo_resolucion
-        })
-    
-    @action(detail=True, methods=['post'], url_path='marcar-falsa-alarma')
+        return Response(
+            {"mensaje": "Emergencia resuelta exitosamente", "tiempo_total_minutos": emergencia.tiempo_resolucion}
+        )
+
+    @action(detail=True, methods=["post"], url_path="marcar-falsa-alarma")
     def marcar_falsa_alarma(self, request, pk=None):
         emergencia = self.get_object()
 
-        if emergencia.estado in ['RESUELTA', 'FALSA_ALARMA']:
+        if emergencia.estado in ["RESUELTA", "FALSA_ALARMA"]:
             return Response(
-                {'error': 'Esta emergencia ya fue resuelta o ya está marcada como falsa alarma.'},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "Esta emergencia ya fue resuelta o ya está marcada como falsa alarma."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        motivo = request.data.get('motivo', '')
+        motivo = request.data.get("motivo", "")
         if not motivo.strip():
             return Response(
-                {'error': 'Debe proporcionar un motivo para marcar como falsa alarma.'},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "Debe proporcionar un motivo para marcar como falsa alarma."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        emergencia.estado = 'FALSA_ALARMA'
+        emergencia.estado = "FALSA_ALARMA"
         emergencia.motivo_falsa_alarma = motivo
         emergencia.marcada_falsa_por = request.user
         emergencia.fecha_hora_falsa_alarma = timezone.now()
@@ -157,109 +195,99 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
         NotificacionService.notificar_falsa_alarma(emergencia, request.user)
 
         # Contar falsas alarmas del usuario que reportó
-        total_falsas = Emergencia.objects.filter(
-            reportada_por=emergencia.reportada_por,
-            estado='FALSA_ALARMA'
-        ).count()
+        total_falsas = Emergencia.objects.filter(reportada_por=emergencia.reportada_por, estado="FALSA_ALARMA").count()
 
-        return Response({
-            'mensaje': 'Emergencia marcada como falsa alarma',
-            'reportada_por': emergencia.reportada_por.get_full_name() if emergencia.reportada_por else 'Desconocido',
-            'total_falsas_alarmas_usuario': total_falsas
-        })
+        return Response(
+            {
+                "mensaje": "Emergencia marcada como falsa alarma",
+                "reportada_por": emergencia.reportada_por.get_full_name()
+                if emergencia.reportada_por
+                else "Desconocido",
+                "total_falsas_alarmas_usuario": total_falsas,
+            }
+        )
 
-    @action(detail=False, methods=['get'], url_path='falsas-alarmas')
+    @action(detail=False, methods=["get"], url_path="falsas-alarmas")
     def falsas_alarmas(self, request):
         from django.db.models import Count
 
-        falsas = Emergencia.objects.filter(
-            estado='FALSA_ALARMA'
-        ).select_related('reportada_por', 'tipo', 'marcada_falsa_por')
+        falsas = Emergencia.objects.filter(estado="FALSA_ALARMA").select_related(
+            "reportada_por", "tipo", "marcada_falsa_por"
+        )
 
         # Estadísticas por usuario
-        reincidentes = Emergencia.objects.filter(
-            estado='FALSA_ALARMA',
-            reportada_por__isnull=False
-        ).values(
-            'reportada_por__id',
-            'reportada_por__first_name',
-            'reportada_por__last_name',
-            'reportada_por__numero_documento',
-            'reportada_por__rol'
-        ).annotate(
-            total_falsas=Count('id')
-        ).order_by('-total_falsas')
+        reincidentes = (
+            Emergencia.objects.filter(estado="FALSA_ALARMA", reportada_por__isnull=False)
+            .values(
+                "reportada_por__id",
+                "reportada_por__first_name",
+                "reportada_por__last_name",
+                "reportada_por__numero_documento",
+                "reportada_por__rol",
+            )
+            .annotate(total_falsas=Count("id"))
+            .order_by("-total_falsas")
+        )
 
         serializer = EmergenciaSerializer(falsas, many=True)
 
-        return Response({
-            'falsas_alarmas': serializer.data,
-            'reincidentes': list(reincidentes),
-            'total': falsas.count()
-        })
+        return Response(
+            {"falsas_alarmas": serializer.data, "reincidentes": list(reincidentes), "total": falsas.count()}
+        )
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
     def por_tipo(self, request):
-
         # Filtrar emergencias por tipo
-        tipo_id = request.query_params.get('tipo_id')
+        tipo_id = request.query_params.get("tipo_id")
         if tipo_id:
             emergencias = self.queryset.filter(tipo_id=tipo_id)
             serializer = self.get_serializer(emergencias, many=True)
             return Response(serializer.data)
-        return Response({'error': 'Parámetros tipo_id requerido.'}, status=400)
-    
-    def notificar_brigada(self, emergencia):
+        return Response({"error": "Parámetros tipo_id requerido."}, status=400)
 
+    def notificar_brigada(self, emergencia):
         # Notificar a miembros de la brigada
-        brigada = BrigadaEmergencia.objects.filter(
-            activo=True,
-            disponible=True
-        )
+        brigada = BrigadaEmergencia.objects.filter(activo=True, disponible=True)
 
         for miembro in brigada:
             NotificacionEmergencia.objects.create(
                 emergencia=emergencia,
                 destinatario=miembro.usuario,
-                tipo_notificacion='APP',
-                mensaje=f'EMERGENCIA: {emergencia.tipo.nombre} en {emergencia.descripcion_ubicacion}'
+                tipo_notificacion="APP",
+                mensaje=f"EMERGENCIA: {emergencia.tipo.nombre} en {emergencia.descripcion_ubicacion}",
             )
 
 
 class BrigadaEmergenciaViewSet(viewsets.ModelViewSet):
-
     # ViewSet para brigada de emergencia
     queryset = BrigadaEmergencia.objects.all()
     serializer_class = BrigadaEmergenciaSerializer
     permission_classes = [IsAuthenticated]
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
     def disponibles(self, request):
-
         # Obtener brigadistas disponibles
         brigadistas = BrigadaEmergencia.objects.filter(activo=True, disponible=True)
         serializer = BrigadaEmergenciaSerializer(brigadistas, many=True)
         return Response(serializer.data)
-    
-    @action(detail=True, methods=['post'])
-    def cambiar_disponibilidad(self, request, pk=None):
 
+    @action(detail=True, methods=["post"])
+    def cambiar_disponibilidad(self, request, pk=None):
         # Cambiar disponibilidad de brigadista
         brigadista = self.get_object()
-        disponible = request.data.get('disponible', None)
+        disponible = request.data.get("disponible", None)
 
         if disponible is not None:
             brigadista.disponible = disponible
             brigadista.save()
 
-            return Response({
-                'mensaje': f'Disponibilidad actualizada a {disponible}',
-                'disponible': brigadista.disponible
-            })
+            return Response(
+                {"mensaje": f"Disponibilidad actualizada a {disponible}", "disponible": brigadista.disponible}
+            )
 
-        return Response({'error': 'Parámetro disponible requerido.'}, status=400)
+        return Response({"error": "Parámetro disponible requerido."}, status=400)
 
-    @action(detail=False, methods=['post', 'get'], url_path='mi-disponibilidad')
+    @action(detail=False, methods=["post", "get"], url_path="mi-disponibilidad")
     def mi_disponibilidad(self, request):
         """
         GET: Obtiene el estado de disponibilidad del brigadista actual
@@ -271,22 +299,22 @@ class BrigadaEmergenciaViewSet(viewsets.ModelViewSet):
         try:
             brigadista = BrigadaEmergencia.objects.get(usuario=request.user)
         except BrigadaEmergencia.DoesNotExist:
-            return Response({
-                'error': 'No eres miembro de la brigada de emergencia'
-            }, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "No eres miembro de la brigada de emergencia"}, status=status.HTTP_404_NOT_FOUND)
 
-        if request.method == 'GET':
-            return Response({
-                'brigadista_id': brigadista.id,
-                'usuario': request.user.get_full_name(),
-                'disponible': brigadista.disponible,
-                'especializacion': brigadista.especializacion,
-                'especializacion_display': brigadista.get_especializacion_display(),
-                'activo': brigadista.activo
-            })
+        if request.method == "GET":
+            return Response(
+                {
+                    "brigadista_id": brigadista.id,
+                    "usuario": request.user.get_full_name(),
+                    "disponible": brigadista.disponible,
+                    "especializacion": brigadista.especializacion,
+                    "especializacion_display": brigadista.get_especializacion_display(),
+                    "activo": brigadista.activo,
+                }
+            )
 
         # POST - Toggle o set disponibilidad
-        nuevo_estado = request.data.get('disponible')
+        nuevo_estado = request.data.get("disponible")
 
         if nuevo_estado is None:
             # Toggle si no se especifica
@@ -296,13 +324,15 @@ class BrigadaEmergenciaViewSet(viewsets.ModelViewSet):
 
         brigadista.save()
 
-        return Response({
-            'success': True,
-            'mensaje': f'Disponibilidad {"activada" if brigadista.disponible else "desactivada"}',
-            'disponible': brigadista.disponible
-        })
+        return Response(
+            {
+                "success": True,
+                "mensaje": f"Disponibilidad {'activada' if brigadista.disponible else 'desactivada'}",
+                "disponible": brigadista.disponible,
+            }
+        )
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
     def estadisticas(self, request):
         """
         Obtiene estadísticas de la brigada
@@ -312,65 +342,63 @@ class BrigadaEmergenciaViewSet(viewsets.ModelViewSet):
 
         # Por especialización
         from django.db.models import Count
-        por_especializacion = BrigadaEmergencia.objects.filter(
-            activo=True
-        ).values('especializacion').annotate(
-            total=Count('id'),
-            disponibles=Count('id', filter=Q(disponible=True))
+
+        por_especializacion = (
+            BrigadaEmergencia.objects.filter(activo=True)
+            .values("especializacion")
+            .annotate(total=Count("id"), disponibles=Count("id", filter=Q(disponible=True)))
         )
 
-        return Response({
-            'total': total,
-            'disponibles': disponibles,
-            'no_disponibles': total - disponibles,
-            'porcentaje_disponible': round((disponibles / total) * 100, 1) if total > 0 else 0,
-            'por_especializacion': list(por_especializacion)
-        })
-    
-class NotificacionEmergenciaViewSet(viewsets.ModelViewSet):
+        return Response(
+            {
+                "total": total,
+                "disponibles": disponibles,
+                "no_disponibles": total - disponibles,
+                "porcentaje_disponible": round((disponibles / total) * 100, 1) if total > 0 else 0,
+                "por_especializacion": list(por_especializacion),
+            }
+        )
 
+
+class NotificacionEmergenciaViewSet(viewsets.ModelViewSet):
     # ViewSet para notificaciones
     queryset = NotificacionEmergencia.objects.all()
     serializer_class = NotificacionEmergenciaSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        
-        #Filtrar notificaciones del usuario actual
+        # Filtrar notificaciones del usuario actual
         return self.queryset.filter(destinatario=self.request.user)
-    
-    @action(detail=False, methods=['get'])
-    def no_leidas(self, request):
 
+    @action(detail=False, methods=["get"])
+    def no_leidas(self, request):
         # Obtener notificaciones no leídas
         notificaciones = self.get_queryset().filter(leida=False)
         serializer = self.get_serializer(notificaciones, many=True)
         return Response(serializer.data)
-    
-    @action(detail=True, methods=['post'])
-    def marcar_leida(self, request, pk=None):
 
+    @action(detail=True, methods=["post"])
+    def marcar_leida(self, request, pk=None):
         # Marcar notificación como leída
         notificacion = self.get_object()
         notificacion.leida = True
         notificacion.fecha_lectura = timezone.now()
         notificacion.save()
-        return Response({'mensaje': 'Notificación marcada como leída'})
+        return Response({"mensaje": "Notificación marcada como leída"})
+
 
 class ContactoExternoViewSet(viewsets.ModelViewSet):
-
     # ViewSet para contactos externos
     queryset = ContactoExterno.objects.filter(activo=True)
     serializer_class = ContactoExternoSerializer
     permission_classes = [IsAuthenticated]
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
     def por_tipo(self, request):
-
         # Filtrar contactos por tipo
-        tipo = request.query_params.get('tipo')
+        tipo = request.query_params.get("tipo")
         if tipo:
             contactos = self.queryset.filter(tipo=tipo)
             serializer = self.get_serializer(contactos, many=True)
             return Response(serializer.data)
-        return Response({'error': 'Parámetros tipo requerido.'}, status=400)
+        return Response({"error": "Parámetros tipo requerido."}, status=400)

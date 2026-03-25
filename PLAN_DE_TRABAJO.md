@@ -1,363 +1,357 @@
 # Plan de Trabajo - Proyecto SST SENA
-
-## Estado Actual del Proyecto
-
-| Categoría | Estado |
-|-----------|--------|
-| Funcionalidades Completas | 98% |
-| Funcionalidades Parciales | 1% |
-| Funcionalidades Pendientes | 1% |
-
-### Progreso Fase 1 (COMPLETADA - Febrero 2026)
-- [x] 1.1 Modulo de Equipamiento (Brigada) - Conectado con BD real
-- [x] 1.2 Registro de Asistencia (Instructor) - Vista y API implementadas
-- [x] 1.3 Sistema de Alertas/Notificaciones - App completa con modelo y API
-
-### Progreso Fase 2 (COMPLETADA - Febrero 2026)
-- [x] 2.1 Tablas dinamicas con AJAX - Auto-refresh cada 30s en Vigilancia y Brigada
-- [x] 2.2 Indicadores en tiempo real - Aforo cada 15s, equipos cada 60s, badges "EN VIVO"
-- [x] 2.3 Boton de activacion de emergencia - Modal completo con formulario y geolocalizacion
-
-### Progreso Fase 3 (COMPLETADA - Febrero 2026)
-- [x] 3.1 Servicio centralizado de notificaciones (usuarios/services.py)
-- [x] 3.2 Notificacion automatica de emergencias → Brigada y Admin
-- [x] 3.3 Notificacion automatica de incidentes → Admin e Instructor
-- [x] 3.4 Notificacion de equipos que requieren revision → Brigada
-- [x] 3.5 Servicio de verificacion de visitantes que exceden tiempo → Vigilancia
-- [x] 3.6 Notificacion de aforo critico → Vigilancia y Admin
-- [x] 3.7 Badge de notificaciones en navbar con polling cada 30s
-- [x] 3.8 APIs: /api/auth/notificaciones/no_leidas/, marcar_leida/, marcar_todas_leidas/
-
-### Progreso Fase 4 (COMPLETADA - Febrero 2026)
-- [x] 4.1 Dashboard Aprendiz: Grafica de asistencia mensual con Chart.js
-- [x] 4.1 Dashboard Aprendiz: Widget de contactos de emergencia
-- [x] 4.1 Dashboard Aprendiz: Acceso rapido a reportar incidente
-- [x] 4.2 Dashboard Instructor: Grafica de asistencia por ficha (barras de progreso)
-- [x] 4.2 Dashboard Instructor: Lista de aprendices con estado presente/ausente
-- [x] 4.4 Dashboard Vigilancia: Alertas de aforo visual con sonido
-- [x] 4.5 Dashboard Brigada: Panel de emergencia con timeline interactivo
-- [x] 4.5 Dashboard Brigada: Estadisticas del mes y tiempos de respuesta
-
-### Progreso Fase 5 (COMPLETADA - Febrero 2026)
-- [x] 5.2 API /api/auth/estadisticas/dashboard/ - Estadisticas consolidadas
-- [x] 5.2 API /api/auth/estadisticas/asistencia-por-ficha/ - Asistencia por ficha
-- [x] 5.2 API /api/auth/estadisticas/asistencia-aprendices/ - Lista de aprendices con estado
-- [x] 5.2 API /api/emergencias/brigada/mi-disponibilidad/ - Toggle disponibilidad
-- [x] 5.2 API /api/emergencias/brigada/estadisticas/ - Stats de brigada
-- [x] 5.3 Permisos por accion en EmergenciaViewSet y EstadisticasViewSet
-
-### Progreso Fase 6 (COMPLETADA - Febrero 2026)
-- [x] 6.1 Generador de reportes PDF (existente)
-- [x] 6.1 Generador de reportes Excel (excel_generator.py con openpyxl)
-- [x] 6.1 Generador de reportes CSV (csv_generator.py)
-- [x] 6.1 Reporte de aforo diario/semanal/mensual
-- [x] 6.1 Reporte de incidentes por periodo
-- [x] 6.1 Reporte de asistencia por programa/ficha
-- [x] 6.1 Reporte de seguridad y emergencias
-- [x] 6.2 Endpoint /reportes/api/aforo/?formato=pdf|excel|csv|json
-- [x] 6.2 Endpoint /reportes/api/incidentes/?formato=pdf|excel|csv|json
-- [x] 6.2 Endpoint /reportes/api/asistencia/?formato=pdf|excel|csv|json
-- [x] 6.2 Endpoint /reportes/api/seguridad/?formato=pdf|excel|csv|json
-- [x] 6.3 Comando manage.py generar_reportes para cron
-- [x] 6.3 Tareas Celery para reportes programados (tasks.py)
-- [x] 6.3 Vista frontend para generar/descargar reportes (index.html actualizado)
+*Actualizado: Marzo 2026*
 
 ---
 
-## FASE 1: Corrección de Funcionalidades Críticas
-**Prioridad: ALTA | Impacto: Todos los roles**
+## Historial Completado (Fases 1–6 — Febrero 2026)
 
-### 1.1 Completar Módulo de Equipamiento (Brigada)
-- [ ] Crear vista `equipos_brigada_view` que consuma datos reales de `EquipamientoSeguridad`
-- [ ] Implementar API `/api/brigada/equipos/` para CRUD de equipamiento
-- [ ] Agregar funcionalidad para actualizar estado de equipos
-- [ ] Implementar alertas de equipos próximos a revisión
+El sistema funcional fue completado en su totalidad. A continuación el resumen:
 
-**Archivos a modificar:**
-- `sst_proyecto/urls.py` (línea 328)
-- `mapas/views.py` o crear `brigada/views.py`
-- `templates/dashboard/brigada/equipos.html`
-
-### 1.2 Implementar Registro de Asistencia (Instructor)
-- [ ] Crear vista `registrar_asistencia_view`
-- [ ] Implementar API `/api/instructor/registrar-asistencia/`
-- [ ] Agregar lógica AJAX para guardar asistencia sin recargar página
-- [ ] Conectar con modelo `RegistroAcceso` o crear modelo `Asistencia`
-
-**Archivos a crear/modificar:**
-- `usuarios/views.py` - Nueva vista
-- `sst_proyecto/urls.py` - Nueva URL
-- `templates/dashboard/instructor/registrar_asistencia.html`
-
-### 1.3 Completar Sistema de Alertas (Aprendiz)
-- [ ] Crear modelo `Notificacion` centralizado
-- [ ] Implementar API `/api/notificaciones/`
-- [ ] Conectar template `mis_alertas.html` con datos reales
-- [ ] Implementar WebSocket o polling para alertas en tiempo real
-
-**Archivos a crear:**
-- `notificaciones/models.py`
-- `notificaciones/views.py`
-- `notificaciones/serializers.py`
+| Módulo | Estado |
+|--------|--------|
+| Autenticación y roles (7 roles) | ✅ Completo |
+| Control de acceso + geovallas | ✅ Completo |
+| Sistema de emergencias + botón pánico | ✅ Completo |
+| Mapas, edificios, equipamiento | ✅ Completo |
+| Notificaciones in-app + Web Push | ✅ Completo |
+| Reportes PDF / Excel / CSV + Celery | ✅ Completo |
+| Dashboards por rol con tiempo real (AJAX) | ✅ Completo |
+| PWA (Service Worker + manifest) | ✅ Completo |
 
 ---
 
-## FASE 2: Integración de Datos en Tiempo Real (COMPLETADA)
-**Prioridad: ALTA | Impacto: Vigilancia, Brigada, Admin**
+## Nueva Hoja de Ruta: Madurez y Robustez del Sistema
 
-### 2.1 Tablas Dinámicas con AJAX
-- [x] Tabla de accesos recientes (Vigilancia) - conectar con API existente
-- [x] Tabla de emergencias activas (Brigada) - conectar con API existente
-- [x] Tabla de visitantes activos (Vigilancia) - conectar con API existente
-- [x] Actualización automática cada 30 segundos
-- [x] Auto-refresh inteligente (se detiene cuando la pagina no es visible)
+El objetivo de esta etapa es llevar el proyecto de "funcionando en desarrollo" a "confiable en producción".
+Las fases están ordenadas por impacto y riesgo real.
+
+---
+
+## FASE 1: Seguridad Inmediata
+**Prioridad: CRÍTICA | Riesgo activo hoy**
+
+### 1.1 Mover claves VAPID al entorno ✅ COMPLETADO
+- [x] Mover `vapid_private.pem` y `vapid_public.pem` fuera del código fuente
+- [x] Agregar claves como variables de entorno en `.env`
+- [x] Actualizar `settings.py` para leerlas con `python-decouple`
+- [x] Agregar `*.pem` al `.gitignore`
+- [x] Documentar variables VAPID en `.env.example`
+
+**Archivos afectados:**
+- `sst_proyecto/settings.py`
+- `.env` / `.env.example`
+- `.gitignore`
+
+### 1.2 Rate Limiting en endpoints críticos ✅ COMPLETADO
+- [x] Instalar `django-ratelimit` y `django-axes` (agregados a requirements.txt)
+- [x] Aplicar límite en `POST /api/auth/login/` → máx. 10 intentos/minuto por IP
+- [x] Aplicar límite en login HTML → máx. 10 intentos/minuto por IP
+- [x] Aplicar límite en `POST /api/emergencias/boton_panico/` → máx. 3/hora por usuario
+- [x] Configurar bloqueo de IP tras 5 intentos fallidos (django-axes)
+- [x] Cooldown de 15 minutos tras bloqueo
+
+**Archivos afectados:**
+- `usuarios/views.py`
+- `emergencias/views.py`
+- `sst_proyecto/settings.py`
+
+### 1.3 Permisos a nivel de objeto ✅ COMPLETADO
+- [x] Verificar que un usuario solo pueda ver/editar sus propios registros de acceso
+- [x] Verificar que un aprendiz no pueda leer notificaciones de otro usuario
+- [x] Agregar `get_queryset()` filtrado por `request.user` donde falte
+
+**Archivos afectados:**
+- `control_acceso/views.py`
+- `usuarios/views.py`
+- `reportes/views.py`
+
+---
+
+## FASE 2: Suite de Tests ✅ COMPLETADO (135/135 tests — 75% cobertura)
+**Prioridad: ALTA | Riesgo: cualquier cambio puede romper producción sin saberlo**
+
+### 2.1 Configurar entorno de testing ✅ COMPLETADO
+- [x] Instalar `pytest-django`, `factory_boy`, `coverage`, `faker`
+- [x] Crear `pytest.ini`
+- [x] Crear `conftest.py` con fixtures base (usuarios por rol, tokens, clientes sesión y API)
+- [x] Crear factories para los modelos principales
+
+**Archivos creados:**
+- `pytest.ini`
+- `conftest.py`
+- `.coveragerc`
+- `usuarios/tests/factories.py`
+- `emergencias/tests/factories.py`
+
+### 2.2 Tests críticos — Permisos por rol ✅ COMPLETADO
+- [x] Test: APRENDIZ no puede crear emergencia
+- [x] Test: VISITANTE no puede acceder a dashboards internos
+- [x] Test: Solo BRIGADA/ADMIN puede resolver emergencia
+- [x] Test: COORDINADOR_SST puede ver todos los reportes
+- [x] Test: Token inválido devuelve 401
+- [x] Test: IDOR — APRENDIZ no puede ver perfil ajeno
+
+**Archivos creados:**
+- `usuarios/tests/test_permissions.py`
+
+### 2.3 Tests críticos — Flujos de negocio ✅ COMPLETADO
+- [x] Test: Flujo completo botón pánico → notificación a brigada
+- [x] Test: Registro de acceso fuera de geovalla → rechazado
+- [x] Test: Cálculo Haversine con coordenadas conocidas
+- [x] Test: Aforo al umbral ADVERTENCIA → notificación automática
+- [x] Test: Generación de reporte PDF sin error (smoke test)
+- [x] Test: Marcar notificación como leída
+- [x] Test: Crear/listar incidentes con permisos y filtros
+- [x] Test: Login HTML (cuenta pendiente, bloqueada, inactiva)
+- [x] Test: Dashboards HTML por rol
+- [x] Test: Acciones Coordinador SST (aprobar/rechazar cuentas, brigada)
+- [x] Test: NotificacionService (emergencia atendida/resuelta, incidente crítico, aforo crítico)
+
+**Archivos creados:**
+- `emergencias/tests/test_panico.py`
+- `emergencias/tests/test_emergencias.py`
+- `control_acceso/tests/test_geovalla.py`
+- `control_acceso/tests/test_registros.py`
+- `reportes/tests/test_generacion.py`
+- `reportes/tests/test_incidentes.py`
+- `usuarios/tests/test_notificaciones.py`
+- `usuarios/tests/test_auth.py`
+- `usuarios/tests/test_login_view.py`
+- `usuarios/tests/test_dashboard_views.py`
+
+### 2.4 Meta de cobertura ✅ COMPLETADO
+- [x] Alcanzar 70% de cobertura en `usuarios/`, `emergencias/`, `control_acceso/`
+  - `control_acceso`: 75% ✅
+  - `emergencias`: 80% ✅
+  - `usuarios`: 70%+ ✅
+  - **Total: 75%**
+- [x] Reporte de cobertura con `coverage html` → generado en `htmlcov/`
+
+---
+
+## FASE 3: CI/CD con GitHub Actions ✅ COMPLETADO
+**Prioridad: ALTA | Impacto: calidad continua automática**
+
+### 3.1 Lint y formateo ✅ COMPLETADO
+- [x] Instalar `ruff` (reemplaza flake8 + isort, mucho más rápido)
+- [x] Crear `sst_proyecto/ruff.toml` con configuración adaptada al proyecto
+- [x] Corregir 88 errores de lint existentes (F401, F841, F541, F821)
+- [x] 0 errores tras corrección (`ruff check .` → All checks passed)
+
+**Archivos creados/modificados:**
+- `sst_proyecto/ruff.toml`
+- `requirements-dev.txt` (dependencias solo de desarrollo/testing)
+
+### 3.2 Pipeline de CI ✅ COMPLETADO
+- [x] Crear `.github/workflows/ci.yml`
+- [x] Job 1 — Lint: ruff check sobre todo el proyecto
+- [x] Job 2 — Tests: pytest + cobertura mínima 70% + reporte XML
+- [x] Job 3 — Auditoría: pip-audit sobre requirements.txt
+- [x] Verificación de migraciones pendientes antes de tests
+- [x] Ejecutar en push a main/develop y en Pull Requests a main
+
+**Archivos creados:**
+- `.github/workflows/ci.yml`
+
+### 3.3 Pre-commit hooks ✅ COMPLETADO
+- [x] Instalar `pre-commit` + `detect-secrets`
+- [x] Configurar hooks: ruff (lint + format), trailing whitespace, end-of-file, merge conflicts, archivos grandes, secretos
+- [x] Crear `.pre-commit-config.yaml`
+- [x] Generar `.secrets.baseline` con estado inicial del proyecto
+- [x] Ejecutar en todos los archivos → 0 errores
+
+---
+
+## FASE 4: Containerización con Docker
+**Prioridad: ALTA | Impacto: deploy reproducible y sin errores de entorno**
+
+### 4.1 Dockerizar la aplicación ✅ COMPLETADO
+- [x] Crear `Dockerfile` para el servicio web (Python 3.12 slim + Gunicorn)
+- [x] Crear `docker-compose.yml` con servicios:
+  - `web` → Django + Gunicorn
+  - `db` → PostgreSQL 15
+  - `redis` → para Celery + Channels
+  - `celery` → worker de tareas
+  - `nginx` → proxy reverso (producción)
+- [x] Crear `docker-compose.dev.yml` simplificado (solo db + redis para desarrollo local)
+- [x] Agregar `.dockerignore`
+- [x] Crear `nginx/nginx.conf` con proxy reverso y caché de estáticos
+
+**Archivos creados:**
+- `Dockerfile`
+- `docker-compose.yml`
+- `docker-compose.dev.yml`
+- `.dockerignore`
+- `entrypoint.sh`
+- `nginx/nginx.conf`
+
+### 4.2 Configuración de producción ✅ COMPLETADO
+- [x] Actualizar `.env.example` con todas las variables del proyecto (DB, email, VAPID, Redis, Sentry)
+- [x] Separación base/dev/production omitida — settings.py ya usa decouple con if not DEBUG, suficiente por ahora
+
+---
+
+## FASE 5: Monitoreo y Auditoría
+**Prioridad: MEDIA | Impacto: visibilidad de errores y trazabilidad legal**
+
+### 5.1 Monitoreo de errores con Sentry ✅ COMPLETADO
+- [x] Instalar `sentry-sdk`
+- [x] Configurar en `settings.py` con DSN desde variable de entorno (solo activa si SENTRY_DSN está en .env)
+- [x] Ambiente automático: development/production según DEBUG
+- [x] No envía datos sensibles (send_default_pii=False)
+
+**Pendiente del usuario:** crear cuenta en sentry.io y pegar el DSN en `.env`
+
+### 5.2 Auditoría de cambios en modelos críticos ✅ COMPLETADO
+- [x] Instalar `django-auditlog`
+- [x] Registrar modelos: `Emergencia`, `BrigadaEmergencia`, `RegistroAcceso`, `ConfiguracionAforo`, `Geocerca`, `Usuario`, `Incidente`
+- [x] Usuario excluye `last_login` y `password` (no aportan trazabilidad)
+- [x] Panel de auditoría en Django Admin (solo lectura, solo superuser puede borrar)
+- [x] 135/135 tests pasando tras los cambios
+
+### 5.3 Logging de seguridad mejorado ✅ YA IMPLEMENTADO (Fase 1)
+- Intentos de login fallidos → `logs/seguridad.log`
+- Login exitoso → `logs/auditoria.log`
+- Cuentas bloqueadas por axes → log de seguridad
+
+---
+
+## FASE 6: Caché y Rendimiento
+**Prioridad: MEDIA | Impacto: velocidad en hora pico**
+
+### 6.1 Activar caché con Redis ✅ COMPLETADO
+- [x] Configurar `django.core.cache` con backend Redis en `settings.py`
+- [x] Cachear `aforo_actual` con TTL de 30 segundos
+- [x] Cachear estadísticas de dashboard con TTL de 5 minutos
+- [x] Cachear `TipoEmergencia` (catálogo estático) con TTL de 1 hora
+- [x] Invalidar caché via señal `post_save` en `RegistroAcceso`
+- [x] Tests usan `LocMemCache` automáticamente (sin Redis real)
+
+### 6.2 Optimización de queries N+1 ✅ COMPLETADO
+- [x] `EmergenciaViewSet` → `select_related("tipo", "reportada_por", "edificio")` + `prefetch_related("atendida_por")`
+- [x] `RegistroAccesoViewSet` → `select_related("usuario")`
+
+### 6.3 Índices de base de datos ✅ COMPLETADO
+- [x] Índice compuesto `RegistroAcceso(usuario, fecha_hora_ingreso)` — ya tenía índices individuales
+- [x] Índice compuesto `Emergencia(estado, fecha_hora_reporte)` — nuevo
+- [x] `Notificacion(destinatario, leida)` y `(destinatario, fecha_creacion)` — ya existían
+
+---
+
+## FASE 7: Notificaciones en Tiempo Real (WebSocket) ✅ COMPLETADO
+**Prioridad: MEDIA | Impacto: UX en emergencias — de 30s de delay a instantáneo**
+
+### 7.1 Implementar WebSocket consumer ✅ COMPLETADO
+- [x] Crear `usuarios/consumers.py` — `NotificacionConsumer`
+- [x] Grupos por usuario: `notif_user_{id}` y por rol: `notif_rol_{ROL}`
+- [x] Autenticación via sesión (cierra con 4001 si no autenticado)
+- [x] Actualizar `asgi.py` con ProtocolTypeRouter HTTP + WebSocket
+- [x] `AllowedHostsOriginValidator` + `AuthMiddlewareStack` para seguridad WS
+
+**Archivos creados/modificados:**
+- `usuarios/consumers.py`
+- `sst_proyecto/asgi.py`
+- `sst_proyecto/routing.py`
+- `sst_proyecto/settings.py` → `channels` en INSTALLED_APPS + `CHANNEL_LAYERS`
+
+### 7.2 Integrar con el servicio de notificaciones ✅ COMPLETADO
+- [x] Helpers `_ws_dispatch_roles` y `_ws_dispatch_usuario` en `services.py`
+- [x] Dispatch en `notificar_emergencia_creada` → BRIGADA, ADMINISTRATIVO, VIGILANCIA
+- [x] Dispatch en `notificar_incidente_critico` → ADMINISTRATIVO, INSTRUCTOR
+- [x] Dispatch en `notificar_aforo_critico` → VIGILANCIA, ADMINISTRATIVO
+- [x] Reemplazar polling 30s por WebSocket en `base.html` con fallback automático
+- [x] Toast flotante para notificaciones ALTA/EMERGENCIA recibidas por WS
+- [x] Reconexión automática con backoff exponencial (2s → 30s)
+- [x] Tests usan `InMemoryChannelLayer` (sin Redis real) — 135/135 pasando
+
+**Archivos afectados:**
+- `usuarios/services.py`
+- `templates/base.html`
+- `conftest.py` → override `CHANNEL_LAYERS` para tests
+
+---
+
+## FASE 8: Madurez de API ✅ COMPLETADO
+**Prioridad: BAJA | Impacto: mantenibilidad y escalabilidad futura**
+
+### 8.1 Documentación automática con Swagger ✅ COMPLETADO
+- [x] Instalar `drf-spectacular==0.29.0`
+- [x] Configurar `SPECTACULAR_SETTINGS` en settings.py (título, descripción, tags, solo staff)
+- [x] `DEFAULT_SCHEMA_CLASS` → `drf_spectacular.openapi.AutoSchema`
+- [x] `@extend_schema` en: `boton_panico`, `atender`, `resolver` (emergencias); `login`, `logout`, `perfil` (usuarios); `auto_registro`, `aforo_actual` (control_acceso)
+- [x] `/api/schema/` (YAML), `/api/schema/swagger/` (Swagger UI), `/api/schema/redoc/` — solo staff
 
 **Archivos modificados:**
-- `templates/dashboard/vigilancia.html` - Auto-refresh con setInterval
-- `templates/dashboard/brigada.html` - Auto-refresh con setInterval
-- `emergencias/serializers.py` - Campos adicionales tipo_nombre, usuario_nombre
+- `sst_proyecto/settings.py` → SPECTACULAR_SETTINGS + DEFAULT_SCHEMA_CLASS
+- `emergencias/views.py`, `usuarios/views.py`, `control_acceso/views.py` → decoradores
 
-### 2.2 Indicadores en Tiempo Real
-- [x] Contador de aforo actualizado cada 15 segundos
-- [x] Estado de emergencia global (card dinamico)
-- [x] Disponibilidad de brigadistas (lista dinamica)
-- [x] Estado de equipos por tipo (barras de progreso dinamicas)
-- [x] Indicador de ultima actualizacion en header
-- [x] Badges "EN VIVO" en secciones criticas
+### 8.2 Versionado de API ✅ COMPLETADO
+- [x] Rutas `/api/v1/auth/`, `/api/v1/acceso/`, `/api/v1/mapas/`, `/api/v1/emergencias/` (canónicas)
+- [x] Rutas `/api/` mantenidas como alias (backwards compatibility — templates sin cambios)
 
-### 2.3 Botón de Activación de Emergencia
-- [x] Modal completo con formulario de emergencia
-- [x] Seleccion de tipo de emergencia desde API
-- [x] Captura de geolocalizacion automatica
-- [x] Campos: descripcion, ubicacion, personas afectadas, requiere evacuacion
-- [x] Usa endpoint existente `/api/emergencias/emergencias/`
-- [x] Notifica a brigada automaticamente via modelo NotificacionEmergencia
+### 8.3 Manejo global de errores ✅ COMPLETADO
+- [x] `handler404` y `handler500` en urls.py → `sst_proyecto.error_views`
+- [x] JSON para peticiones API, HTML para navegador (detección automática por path/headers)
+- [x] Templates `errors/404.html` y `errors/500.html` con diseño SENA
+- [x] DRF `sst_exception_handler`: respuestas uniformes `{error, detail, status}` + log de advertencia
 
----
-
-## FASE 3: Sistema de Notificaciones Centralizado (COMPLETADA)
-**Prioridad: MEDIA | Impacto: Todos los roles**
-
-### 3.1 Modulo de Notificaciones (integrado en app usuarios)
-```
-usuarios/
-├── models.py      # Modelo Notificacion con tipos y prioridades
-├── views.py       # NotificacionViewSet (CRUD, no_leidas, marcar_leida)
-├── serializers.py # NotificacionSerializer con tiempo_transcurrido
-└── services.py    # NotificacionService - Logica centralizada de envio
-```
-
-### 3.2 Tipos de Notificaciones Implementados
-- [x] Emergencia reportada → Brigada, Admin (emergencias/views.py)
-- [x] Incidente critico → Admin, Instructor (reportes/views_incidentes.py)
-- [x] Aprendiz sin registro de acceso → Instructor (servicio disponible)
-- [x] Equipo requiere revision → Brigada (mapas/views.py)
-- [x] Visitante excede tiempo → Vigilancia (servicio disponible para cron)
-- [x] Aforo critico → Vigilancia, Admin (control_acceso/views.py)
-
-### 3.3 Canales de Notificación
-- [x] In-app (badge en navbar con polling cada 30s)
-- [ ] Email (opcional, configurar SMTP)
-- [ ] Push notification (futuro - PWA)
+**Archivos creados:**
+- `sst_proyecto/error_views.py`
+- `sst_proyecto/exception_handler.py`
+- `templates/errors/404.html`
+- `templates/errors/500.html`
 
 ---
 
-## FASE 4: Mejoras de Dashboard por Rol (EN PROGRESO)
-**Prioridad: MEDIA | Impacto: UX de cada rol**
+## Cronograma
 
-### 4.1 Dashboard Aprendiz
-- [x] Agregar gráfica de asistencia mensual (Chart.js)
-- [ ] Mostrar próximas capacitaciones SST
-- [x] Widget de contactos de emergencia
-- [x] Acceso rápido a reportar incidente
-
-### 4.2 Dashboard Instructor
-- [x] Gráfica de asistencia por ficha (barras de progreso dinamicas)
-- [x] Lista de aprendices con estado (presente/ausente hoy)
-- [ ] Alertas de aprendices con inasistencias frecuentes
-- [ ] Exportar lista de asistencia a Excel
-
-### 4.3 Dashboard Administrativo
-- [ ] Panel de estadísticas globales
-- [ ] Gráficas de tendencias (incidentes, accesos, emergencias)
-- [ ] Reportes automatizados
-- [ ] Configuración completa del sistema
-
-### 4.4 Dashboard Vigilancia
-- [x] Mapa con personas en tiempo real (markers por rol)
-- [x] Alertas de aforo (visual + sonido al superar 90%)
-- [x] Registro rápido de visitantes (tabla con acciones)
-- [x] Historial de accesos con auto-refresh
-
-### 4.5 Dashboard Brigada
-- [x] Panel de emergencia con timeline interactivo
-- [x] Timeline con filtros (todas/activas/resueltas)
-- [x] Acciones rapidas (Atender/Resolver) desde timeline
-- [x] Estadisticas del mes (activas, resueltas, tasa resolucion)
-- [x] Tiempos de respuesta (promedio, mejor, meta)
-- [ ] Checklist de equipos por zona
-- [ ] Comunicación entre brigadistas
+| Fase | Descripción | Estado | Prioridad |
+|------|-------------|--------|-----------|
+| **1** | Seguridad inmediata | ✅ Completado | CRÍTICA |
+| **2** | Suite de tests | ✅ Completado (135 tests, 75% cobertura) | ALTA |
+| **3** | CI/CD GitHub Actions | ✅ Completado (lint + tests + audit + pre-commit) | ALTA |
+| **4** | Docker + deploy | ✅ Completado | ALTA |
+| **5** | Sentry + Auditoría | ✅ Completado | MEDIA |
+| **6** | Caché + rendimiento | ✅ Completado | MEDIA |
+| **7** | WebSocket real | ✅ Completado (WS + toast + fallback polling) | MEDIA |
+| **8** | Madurez de API | ✅ Completado (Swagger + v1 + error handlers) | BAJA |
 
 ---
 
-## FASE 5: APIs y Backend Pendientes (EN PROGRESO)
-**Prioridad: MEDIA | Impacto: Escalabilidad**
+## Dependencias a instalar por fase
 
-### 5.1 Reactivar Funcionalidad QR (Opcional)
-- [ ] Descomentar métodos `generar_qr()` y `mi_qr()` en `usuarios/views.py`
-- [ ] Descomentar `escanear_qr()` en `control_acceso/views.py`
-- [ ] Implementar lector QR con cámara (JavaScript)
-- [ ] Validar QR y registrar acceso automático
+```bash
+# Fase 1
+pip install django-ratelimit django-axes
 
-### 5.2 APIs Faltantes
-- [x] `GET /api/auth/estadisticas/dashboard/` - Estadísticas consolidadas
-- [x] `GET /api/auth/estadisticas/asistencia-por-ficha/` - Asistencia por ficha
-- [x] `GET /api/auth/estadisticas/asistencia-aprendices/` - Lista aprendices con estado
-- [x] `POST /api/emergencias/brigada/mi-disponibilidad/` - Toggle disponibilidad
-- [x] `GET /api/emergencias/brigada/estadisticas/` - Estadísticas de brigada
-- [ ] `GET /api/reportes/exportar/{formato}/` - Exportar a PDF/Excel
+# Fase 2
+pip install pytest-django factory_boy coverage faker
 
-### 5.3 Validaciones y Seguridad
-- [x] Permisos específicos por acción en EstadisticasViewSet
-- [x] Permisos específicos por acción en EmergenciaViewSet
-- [x] Clases de permisos: EsBrigadaOAdministrativo, EsVigilanciaOAdministrativo
-- [ ] Sanitizar inputs en formularios
-- [ ] Rate limiting en APIs críticas
-- [ ] Logs de auditoría para acciones sensibles
+# Fase 3
+pip install ruff mypy django-stubs pre-commit pip-audit
 
----
+# Fase 4
+# Docker Desktop (no pip)
 
-## FASE 6: Reportes y Exportación (COMPLETADA)
-**Prioridad: BAJA | Impacto: Admin, Instructor**
+# Fase 5
+pip install sentry-sdk django-auditlog
 
-### 6.1 Generación de Reportes
-- [x] Reporte de aforo diario/semanal/mensual
-- [x] Reporte de incidentes por período
-- [x] Reporte de asistencia por programa/ficha
-- [x] Reporte de emergencias y tiempos de respuesta
+# Fase 6
+# Redis ya instalado. Agregar django-debug-toolbar para auditoría
+pip install django-debug-toolbar
 
-### 6.2 Formatos de Exportación
-- [x] PDF con ReportLab (existente, mejorado)
-- [x] Excel con openpyxl (nuevo: excel_generator.py)
-- [x] CSV para datos crudos (nuevo: csv_generator.py)
+# Fase 7
+# Django Channels ya instalado
 
-### 6.3 Programación de Reportes
-- [x] Usar modelo `ConfiguracionReporte` existente
-- [x] Implementar Celery para tareas programadas (tasks.py)
-- [x] Comando manage.py generar_reportes para cron
-- [x] Envío automático por email (configurado en tasks.py)
-
----
-
-## FASE 7: Optimización y Escalabilidad
-**Prioridad: BAJA | Impacto: Rendimiento**
-
-### 7.1 Base de Datos
-- [ ] Agregar índices en campos frecuentemente consultados
-- [ ] Optimizar queries con `select_related` y `prefetch_related`
-- [ ] Implementar paginación en listados grandes
-
-### 7.2 Caché
-- [ ] Cachear estadísticas del dashboard (Redis)
-- [ ] Cachear configuración de aforo
-- [ ] Invalidar caché en cambios relevantes
-
-### 7.3 Frontend
-- [ ] Minificar CSS/JS
-- [ ] Lazy loading de imágenes
-- [ ] Compresión de respuestas (gzip)
-
----
-
-## FASE 8: Funcionalidades Futuras
-**Prioridad: FUTURA | Impacto: Expansión**
-
-### 8.1 App Móvil / PWA
-- [ ] Convertir a Progressive Web App
-- [ ] Notificaciones push
-- [ ] Modo offline básico
-
-### 8.2 Integración Externa
-- [ ] API de SENA para validar documentos
-- [ ] Integración con bomberos/ambulancia
-- [ ] Sistema de cámaras (CCTV)
-
-### 8.3 Machine Learning
-- [ ] Predicción de incidentes por patrones
-- [ ] Detección de anomalías en accesos
-- [ ] Optimización de rutas de evacuación
-
----
-
-## Cronograma Sugerido
-
-| Fase | Descripción | Dependencias |
-|------|-------------|--------------|
-| **1** | Corrección Funcionalidades Críticas | Ninguna |
-| **2** | Integración Tiempo Real | Fase 1 |
-| **3** | Sistema Notificaciones | Fase 1, 2 |
-| **4** | Mejoras Dashboard | Fase 1, 2, 3 |
-| **5** | APIs Backend | Fase 1 |
-| **6** | Reportes y Exportación | Fase 4, 5 |
-| **7** | Optimización | Fase 1-6 |
-| **8** | Funcionalidades Futuras | Fase 1-7 |
-
----
-
-## Resumen de Archivos a Crear
-
-```
-sst_proyecto/
-├── notificaciones/           # NUEVA APP
-│   ├── __init__.py
-│   ├── models.py
-│   ├── views.py
-│   ├── serializers.py
-│   ├── urls.py
-│   └── services.py
-│
-├── templates/
-│   ├── components/           # WIDGETS REUTILIZABLES
-│   │   ├── widget_aforo.html
-│   │   ├── widget_accesos.html
-│   │   ├── widget_emergencias.html
-│   │   └── widget_mapa_mini.html
-│   │
-│   └── notificaciones/
-│       └── lista.html
-│
-└── static/
-    └── js/
-        ├── realtime.js       # Actualización en tiempo real
-        ├── emergencia.js     # Activación de emergencia
-        └── notificaciones.js # Manejo de notificaciones
+# Fase 8
+pip install drf-spectacular
 ```
 
 ---
 
-## Resumen de APIs a Crear
+## Notas de trabajo
 
-| Endpoint | Método | Descripción |
-|----------|--------|-------------|
-| `/api/notificaciones/` | GET | Listar notificaciones del usuario |
-| `/api/notificaciones/{id}/leer/` | POST | Marcar como leída |
-| `/api/brigada/equipos/` | GET, PUT | CRUD equipamiento |
-| `/api/brigada/disponibilidad/` | POST | Toggle disponibilidad |
-| `/api/emergencias/activar/` | POST | Activar emergencia |
-| `/api/instructor/asistencia/` | GET, POST | Gestión asistencia |
-| `/api/estadisticas/global/` | GET | Estadísticas consolidadas |
-| `/api/reportes/exportar/` | GET | Generar reporte |
-
----
-
-## Notas Importantes
-
-1. **Priorizar Fase 1 y 2** - Son las que tienen mayor impacto en la usabilidad
-2. **Mantener compatibilidad** - No romper funcionalidades existentes
-3. **Documentar cambios** - Actualizar este plan conforme se avance
-4. **Testing** - Crear tests para cada nueva funcionalidad
-5. **Git** - Hacer commits pequeños y descriptivos por cada tarea completada
-
----
-
-*Última actualización: Febrero 2026*
+- Cada fase puede implementarse independientemente
+- Las fases 1–4 son prerequisito para desplegar en producción con confianza
+- Los tests (Fase 2) deben escribirse **antes** de tocar código existente en fases posteriores
+- Priorizar siempre seguridad > funcionalidad > rendimiento

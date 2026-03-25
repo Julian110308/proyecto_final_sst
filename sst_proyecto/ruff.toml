@@ -1,0 +1,26 @@
+# Configuración de Ruff — linter y formateador para el proyecto SST
+line-length = 120
+target-version = "py312"
+
+exclude = [
+    "*/migrations/*",
+    "venv",
+    "htmlcov",
+    ".git",
+    "poblar_db.py",
+]
+
+[lint]
+select = ["E", "F", "W"]
+ignore = [
+    # Imports dentro de funciones son un patrón intencional en Django
+    # (evita imports circulares entre apps)
+    "E402",
+    # Líneas largas en comentarios / strings largos son aceptables
+    "E501",
+]
+
+[lint.per-file-ignores]
+# En tests se permiten imports no usados (fixtures de conftest)
+"*/tests/*" = ["F401", "F811"]
+"conftest.py"  = ["F401"]

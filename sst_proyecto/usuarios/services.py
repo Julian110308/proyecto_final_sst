@@ -4,6 +4,7 @@ Servicio centralizado de notificaciones para el sistema SST.
 Este módulo contiene funciones para enviar notificaciones automáticas
 cuando ocurren eventos importantes en el sistema.
 """
+
 import json
 import logging
 from django.conf import settings
@@ -19,7 +20,7 @@ class WebPushService:
     """
 
     @staticmethod
-    def enviar_a_usuario(usuario, titulo, cuerpo, url='/emergencias/', icono='/static/icons/icon-192.png'):
+    def enviar_a_usuario(usuario, titulo, cuerpo, url="/emergencias/", icono="/static/icons/icon-192.png"):
         """
         Envía una notificación push a todas las suscripciones activas de un usuario.
         Si falla una suscripción caducada, la desactiva automáticamente.
@@ -28,44 +29,99 @@ class WebPushService:
             return
 
         try:
-            from pywebpush import webpush, WebPushException
+            from pywebpush import webpush
         except ImportError:
-            logger.warning('pywebpush no instalado. Notificaciones push desactivadas.')
+            logger.warning("pywebpush no instalado. Notificaciones push desactivadas.")
             return
 
         subscripciones = PushSubscripcion.objects.filter(usuario=usuario, activo=True)
-        payload = json.dumps({
-            'title': titulo,
-            'body': cuerpo,
-            'icon': icono,
-            'url': url,
-            'badge': '/static/icons/icon-192.png',
-        })
-        vapid_claims = {'sub': f'mailto:{settings.VAPID_ADMIN_EMAIL}'}
+        payload = json.dumps(
+            {
+                "title": titulo,
+                "body": cuerpo,
+                "icon": icono,
+                "url": url,
+                "badge": "/static/icons/icon-192.png",
+            }
+        )
+        vapid_claims = {"sub": f"mailto:{settings.VAPID_ADMIN_EMAIL}"}
 
         for sub in subscripciones:
             try:
                 webpush(
                     subscription_info={
-                        'endpoint': sub.endpoint,
-                        'keys': {'p256dh': sub.p256dh, 'auth': sub.auth},
+                        "endpoint": sub.endpoint,
+                        "keys": {"p256dh": sub.p256dh, "auth": sub.auth},
                     },
                     data=payload,
                     vapid_private_key=settings.VAPID_PRIVATE_KEY,
                     vapid_claims=vapid_claims,
                 )
             except Exception as e:
-                logger.warning(f'Push fallido para {usuario.username}: {e}')
+                logger.warning(f"Push fallido para {usuario.username}: {e}")
                 # Suscripción caducada o inválida → desactivar
                 sub.activo = False
-                sub.save(update_fields=['activo'])
+                sub.save(update_fields=["activo"])
 
     @staticmethod
-    def enviar_a_roles(roles, titulo, cuerpo, url='/emergencias/', icono='/static/icons/icon-192.png'):
+    def enviar_a_roles(roles, titulo, cuerpo, url="/emergencias/", icono="/static/icons/icon-192.png"):
         """Envía notificación push a todos los usuarios activos de los roles indicados."""
         usuarios = Usuario.objects.filter(rol__in=roles, activo=True)
         for usuario in usuarios:
             WebPushService.enviar_a_usuario(usuario, titulo, cuerpo, url, icono)
+
+
+def _ws_dispatch_roles(roles, tipo, titulo, mensaje, prioridad="NORMAL", url="/"):
+    """
+    Envía un evento WebSocket al grupo de canal de cada rol indicado.
+    Si el channel layer no está disponible (tests sin Redis, dev sin Redis)
+    falla silenciosamente para no bloquear el flujo principal.
+    """
+    try:
+        from asgiref.sync import async_to_sync
+        from channels.layers import get_channel_layer
+
+        channel_layer = get_channel_layer()
+        if channel_layer is None:
+            return
+        data = {
+            "tipo": tipo,
+            "titulo": titulo,
+            "mensaje": mensaje[:120],
+            "prioridad": prioridad,
+            "url": url,
+        }
+        for rol in roles:
+            async_to_sync(channel_layer.group_send)(
+                f"notif_rol_{rol}",
+                {"type": "notification", "data": data},
+            )
+    except Exception as e:
+        logger.warning("WS dispatch error: %s", e)
+
+
+def _ws_dispatch_usuario(usuario_id, tipo, titulo, mensaje, prioridad="NORMAL", url="/"):
+    """Envía un evento WebSocket al grupo personal de un usuario."""
+    try:
+        from asgiref.sync import async_to_sync
+        from channels.layers import get_channel_layer
+
+        channel_layer = get_channel_layer()
+        if channel_layer is None:
+            return
+        data = {
+            "tipo": tipo,
+            "titulo": titulo,
+            "mensaje": mensaje[:120],
+            "prioridad": prioridad,
+            "url": url,
+        }
+        async_to_sync(channel_layer.group_send)(
+            f"notif_user_{usuario_id}",
+            {"type": "notification", "data": data},
+        )
+    except Exception as e:
+        logger.warning("WS dispatch error: %s", e)
 
 
 class NotificacionService:
@@ -93,35 +149,44 @@ class NotificacionService:
             f"Reportada por: {emergencia.reportada_por.get_full_name() if emergencia.reportada_por else 'Anónimo'}"
         )
 
-        url = f"/emergencias/"
+        url = "/emergencias/"
 
         # Notificar a Brigada, Administrativos y Vigilancia
         notificaciones = []
-        usuarios = Usuario.objects.filter(
-            rol__in=['BRIGADA', 'ADMINISTRATIVO', 'VIGILANCIA'],
-            activo=True
-        )
+        usuarios = Usuario.objects.filter(rol__in=["BRIGADA", "ADMINISTRATIVO", "VIGILANCIA"], activo=True)
 
         for usuario in usuarios:
-            notificaciones.append(Notificacion(
-                destinatario=usuario,
-                titulo=titulo,
-                mensaje=mensaje,
-                tipo='EMERGENCIA',
-                prioridad='ALTA',
-                url_relacionada=url
-            ))
+            notificaciones.append(
+                Notificacion(
+                    destinatario=usuario,
+                    titulo=titulo,
+                    mensaje=mensaje,
+                    tipo="EMERGENCIA",
+                    prioridad="ALTA",
+                    url_relacionada=url,
+                )
+            )
 
         if notificaciones:
             Notificacion.objects.bulk_create(notificaciones)
 
+        # WebSocket — notificación instantánea en el navegador
+        _ws_dispatch_roles(
+            roles=["BRIGADA", "ADMINISTRATIVO", "VIGILANCIA"],
+            tipo="EMERGENCIA",
+            titulo=titulo,
+            mensaje=mensaje,
+            prioridad="ALTA",
+            url="/emergencias/",
+        )
+
         # Enviar también Web Push a los dispositivos móviles
-        tipo_nombre = emergencia.tipo.nombre if emergencia.tipo else 'Emergencia'
+        tipo_nombre = emergencia.tipo.nombre if emergencia.tipo else "Emergencia"
         WebPushService.enviar_a_roles(
-            roles=['BRIGADA', 'ADMINISTRATIVO', 'VIGILANCIA'],
-            titulo=f'EMERGENCIA: {tipo_nombre}',
-            cuerpo=f'{emergencia.descripcion[:80]} — Reportado por {emergencia.reportada_por.get_full_name() if emergencia.reportada_por else "Anonimo"}',
-            url='/emergencias/',
+            roles=["BRIGADA", "ADMINISTRATIVO", "VIGILANCIA"],
+            titulo=f"EMERGENCIA: {tipo_nombre}",
+            cuerpo=f"{emergencia.descripcion[:80]} — Reportado por {emergencia.reportada_por.get_full_name() if emergencia.reportada_por else 'Anonimo'}",
+            url="/emergencias/",
         )
 
         return len(notificaciones)
@@ -144,17 +209,17 @@ class NotificacionService:
         # Notificar al usuario que reportó (si existe)
         if emergencia.reportada_por:
             # Usar dashboard para roles sin acceso a emergencias
-            url_reportante = '/dashboard/'
-            if emergencia.reportada_por.rol in ['BRIGADA', 'ADMINISTRATIVO', 'VIGILANCIA', 'INSTRUCTOR']:
-                url_reportante = '/emergencias/'
+            url_reportante = "/dashboard/"
+            if emergencia.reportada_por.rol in ["BRIGADA", "ADMINISTRATIVO", "VIGILANCIA", "INSTRUCTOR"]:
+                url_reportante = "/emergencias/"
 
             Notificacion.crear_notificacion(
                 destinatario=emergencia.reportada_por,
                 titulo=titulo,
                 mensaje=mensaje,
-                tipo='EMERGENCIA',
-                prioridad='ALTA',
-                url=url_reportante
+                tipo="EMERGENCIA",
+                prioridad="ALTA",
+                url=url_reportante,
             )
 
     @staticmethod
@@ -172,35 +237,36 @@ class NotificacionService:
         )
 
         # Notificar a administrativos
-        administradores = list(Usuario.objects.filter(
-            rol='ADMINISTRATIVO',
-            activo=True
-        ))
+        administradores = list(Usuario.objects.filter(rol="ADMINISTRATIVO", activo=True))
 
         notificaciones = []
         for admin in administradores:
-            notificaciones.append(Notificacion(
-                destinatario=admin,
-                titulo=titulo,
-                mensaje=mensaje,
-                tipo='EMERGENCIA',
-                prioridad='MEDIA',
-                url_relacionada='/emergencias/'
-            ))
+            notificaciones.append(
+                Notificacion(
+                    destinatario=admin,
+                    titulo=titulo,
+                    mensaje=mensaje,
+                    tipo="EMERGENCIA",
+                    prioridad="MEDIA",
+                    url_relacionada="/emergencias/",
+                )
+            )
 
         # Notificar al reportante con URL según su rol
         if emergencia.reportada_por and emergencia.reportada_por not in administradores:
-            url_reportante = '/dashboard/'
-            if emergencia.reportada_por.rol in ['BRIGADA', 'ADMINISTRATIVO', 'VIGILANCIA', 'INSTRUCTOR']:
-                url_reportante = '/emergencias/'
-            notificaciones.append(Notificacion(
-                destinatario=emergencia.reportada_por,
-                titulo=titulo,
-                mensaje=mensaje,
-                tipo='EMERGENCIA',
-                prioridad='MEDIA',
-                url_relacionada=url_reportante
-            ))
+            url_reportante = "/dashboard/"
+            if emergencia.reportada_por.rol in ["BRIGADA", "ADMINISTRATIVO", "VIGILANCIA", "INSTRUCTOR"]:
+                url_reportante = "/emergencias/"
+            notificaciones.append(
+                Notificacion(
+                    destinatario=emergencia.reportada_por,
+                    titulo=titulo,
+                    mensaje=mensaje,
+                    tipo="EMERGENCIA",
+                    prioridad="MEDIA",
+                    url_relacionada=url_reportante,
+                )
+            )
 
         if notificaciones:
             Notificacion.objects.bulk_create(notificaciones)
@@ -211,24 +277,24 @@ class NotificacionService:
         Notifica cuando una emergencia es marcada como falsa alarma.
         Notifica al usuario que reportó y a los administrativos.
         """
-        nombre_reportante = emergencia.reportada_por.get_full_name() if emergencia.reportada_por else 'Desconocido'
-        documento = getattr(emergencia.reportada_por, 'numero_documento', 'N/A') if emergencia.reportada_por else 'N/A'
+        nombre_reportante = emergencia.reportada_por.get_full_name() if emergencia.reportada_por else "Desconocido"
+        documento = getattr(emergencia.reportada_por, "numero_documento", "N/A") if emergencia.reportada_por else "N/A"
 
         # Contar falsas alarmas del usuario
         total_falsas = 0
         if emergencia.reportada_por:
             from emergencias.models import Emergencia as EmergenciaModel
+
             total_falsas = EmergenciaModel.objects.filter(
-                reportada_por=emergencia.reportada_por,
-                estado='FALSA_ALARMA'
+                reportada_por=emergencia.reportada_por, estado="FALSA_ALARMA"
             ).count()
 
         # Notificar al usuario que reportó la falsa alarma
         if emergencia.reportada_por:
             # Usar dashboard como URL para roles sin acceso a emergencias
-            url_reportante = '/dashboard/'
-            if emergencia.reportada_por.rol in ['BRIGADA', 'ADMINISTRATIVO', 'VIGILANCIA', 'INSTRUCTOR']:
-                url_reportante = '/emergencias/'
+            url_reportante = "/dashboard/"
+            if emergencia.reportada_por.rol in ["BRIGADA", "ADMINISTRATIVO", "VIGILANCIA", "INSTRUCTOR"]:
+                url_reportante = "/emergencias/"
 
             Notificacion.crear_notificacion(
                 destinatario=emergencia.reportada_por,
@@ -240,33 +306,35 @@ class NotificacionService:
                     f"Llevas {total_falsas} falsa(s) alarma(s) registrada(s). "
                     f"El uso indebido del sistema de emergencias puede tener consecuencias."
                 ),
-                tipo='EMERGENCIA',
-                prioridad='ALTA',
-                url=url_reportante
+                tipo="EMERGENCIA",
+                prioridad="ALTA",
+                url=url_reportante,
             )
 
         # Notificar a administrativos con datos del responsable
         reincidente_texto = f" (REINCIDENTE: {total_falsas} falsas alarmas)" if total_falsas > 1 else ""
         notificaciones = []
-        administradores = Usuario.objects.filter(rol='ADMINISTRATIVO', activo=True)
+        administradores = Usuario.objects.filter(rol="ADMINISTRATIVO", activo=True)
 
         for admin in administradores:
-            notificaciones.append(Notificacion(
-                destinatario=admin,
-                titulo=f"Falsa Alarma Identificada{reincidente_texto}",
-                mensaje=(
-                    f"Se identifico una falsa alarma.\n"
-                    f"Reportada por: {nombre_reportante}\n"
-                    f"Documento: {documento}\n"
-                    f"Tipo de emergencia: {emergencia.tipo.nombre if hasattr(emergencia.tipo, 'nombre') else emergencia.tipo}\n"
-                    f"Motivo: {emergencia.motivo_falsa_alarma}\n"
-                    f"Marcada por: {marcada_por.get_full_name()}\n"
-                    f"Total falsas alarmas de este usuario: {total_falsas}"
-                ),
-                tipo='EMERGENCIA',
-                prioridad='ALTA',
-                url_relacionada='/emergencias/'
-            ))
+            notificaciones.append(
+                Notificacion(
+                    destinatario=admin,
+                    titulo=f"Falsa Alarma Identificada{reincidente_texto}",
+                    mensaje=(
+                        f"Se identifico una falsa alarma.\n"
+                        f"Reportada por: {nombre_reportante}\n"
+                        f"Documento: {documento}\n"
+                        f"Tipo de emergencia: {emergencia.tipo.nombre if hasattr(emergencia.tipo, 'nombre') else emergencia.tipo}\n"
+                        f"Motivo: {emergencia.motivo_falsa_alarma}\n"
+                        f"Marcada por: {marcada_por.get_full_name()}\n"
+                        f"Total falsas alarmas de este usuario: {total_falsas}"
+                    ),
+                    tipo="EMERGENCIA",
+                    prioridad="ALTA",
+                    url_relacionada="/emergencias/",
+                )
+            )
 
         if notificaciones:
             Notificacion.objects.bulk_create(notificaciones)
@@ -284,13 +352,13 @@ class NotificacionService:
             incidente: Instancia del modelo Incidente
         """
         # Determinar nivel de criticidad
-        gravedad = getattr(incidente, 'gravedad', 'MEDIA')
+        gravedad = getattr(incidente, "gravedad", "MEDIA")
 
-        if gravedad not in ['ALTA', 'CRITICA']:
+        if gravedad not in ["ALTA", "CRITICA"]:
             return 0  # Solo notificar incidentes críticos
 
         titulo = f"Incidente {gravedad}: {incidente.titulo if hasattr(incidente, 'titulo') else 'Reportado'}"
-        descripcion_texto = str(incidente.descripcion) if incidente.descripcion else ''
+        descripcion_texto = str(incidente.descripcion) if incidente.descripcion else ""
         mensaje = (
             f"Se ha reportado un incidente de gravedad {gravedad}.\n"
             f"Tipo: {incidente.get_tipo_display() if hasattr(incidente, 'get_tipo_display') else incidente.tipo}\n"
@@ -303,23 +371,32 @@ class NotificacionService:
 
         # Notificar a Administrativos e Instructores
         notificaciones = []
-        usuarios = Usuario.objects.filter(
-            rol__in=['ADMINISTRATIVO', 'INSTRUCTOR'],
-            activo=True
-        )
+        usuarios = Usuario.objects.filter(rol__in=["ADMINISTRATIVO", "INSTRUCTOR"], activo=True)
 
         for usuario in usuarios:
-            notificaciones.append(Notificacion(
-                destinatario=usuario,
-                titulo=titulo,
-                mensaje=mensaje,
-                tipo='INCIDENTE',
-                prioridad='ALTA',
-                url_relacionada=url
-            ))
+            notificaciones.append(
+                Notificacion(
+                    destinatario=usuario,
+                    titulo=titulo,
+                    mensaje=mensaje,
+                    tipo="INCIDENTE",
+                    prioridad="ALTA",
+                    url_relacionada=url,
+                )
+            )
 
         if notificaciones:
             Notificacion.objects.bulk_create(notificaciones)
+
+        # WebSocket — incidente crítico visible al instante
+        _ws_dispatch_roles(
+            roles=["ADMINISTRATIVO", "INSTRUCTOR"],
+            tipo="INCIDENTE",
+            titulo=titulo,
+            mensaje=mensaje,
+            prioridad="ALTA",
+            url=url,
+        )
 
         return len(notificaciones)
 
@@ -332,22 +409,22 @@ class NotificacionService:
         Args:
             incidente: Instancia del modelo Incidente
         """
-        gravedad = getattr(incidente, 'gravedad', 'MEDIA')
-        prioridad_notif = 'ALTA' if gravedad in ['ALTA', 'CRITICA'] else 'MEDIA'
+        gravedad = getattr(incidente, "gravedad", "MEDIA")
+        prioridad_notif = "ALTA" if gravedad in ["ALTA", "CRITICA"] else "MEDIA"
 
         titulo = f"Nuevo incidente: {incidente.titulo if hasattr(incidente, 'titulo') else 'Reportado'}"
-        descripcion_texto = str(incidente.descripcion) if incidente.descripcion else ''
+        descripcion_texto = str(incidente.descripcion) if incidente.descripcion else ""
 
         # Construir informacion de ubicacion
-        ubicacion_info = incidente.ubicacion or 'No especificada'
-        area_info = ''
-        if hasattr(incidente, 'get_area_incidente_display') and incidente.area_incidente:
+        ubicacion_info = incidente.ubicacion or "No especificada"
+        area_info = ""
+        if hasattr(incidente, "get_area_incidente_display") and incidente.area_incidente:
             area_info = f"\nArea: {incidente.get_area_incidente_display()}"
-        lugar_info = ''
-        if hasattr(incidente, 'lugar_exacto') and incidente.lugar_exacto:
+        lugar_info = ""
+        if hasattr(incidente, "lugar_exacto") and incidente.lugar_exacto:
             lugar_info = f"\nLugar exacto: {incidente.lugar_exacto}"
-        persona_info = ''
-        if hasattr(incidente, 'persona_afectada') and incidente.persona_afectada:
+        persona_info = ""
+        if hasattr(incidente, "persona_afectada") and incidente.persona_afectada:
             persona_info = f"\nPersona afectada: {incidente.persona_afectada}"
 
         mensaje = (
@@ -362,23 +439,25 @@ class NotificacionService:
         url = "/reportes/incidentes/"
 
         # Brigada siempre recibe la notificacion; Instructores solo en incidentes graves
-        if gravedad in ['ALTA', 'CRITICA']:
-            roles = ['ADMINISTRATIVO', 'INSTRUCTOR', 'BRIGADA']
+        if gravedad in ["ALTA", "CRITICA"]:
+            roles = ["ADMINISTRATIVO", "INSTRUCTOR", "BRIGADA"]
         else:
-            roles = ['ADMINISTRATIVO', 'BRIGADA']
+            roles = ["ADMINISTRATIVO", "BRIGADA"]
 
         notificaciones = []
         usuarios = Usuario.objects.filter(rol__in=roles, activo=True)
 
         for usuario in usuarios:
-            notificaciones.append(Notificacion(
-                destinatario=usuario,
-                titulo=titulo,
-                mensaje=mensaje,
-                tipo='INCIDENTE',
-                prioridad=prioridad_notif,
-                url_relacionada=url
-            ))
+            notificaciones.append(
+                Notificacion(
+                    destinatario=usuario,
+                    titulo=titulo,
+                    mensaje=mensaje,
+                    tipo="INCIDENTE",
+                    prioridad=prioridad_notif,
+                    url_relacionada=url,
+                )
+            )
 
         if notificaciones:
             Notificacion.objects.bulk_create(notificaciones)
@@ -394,11 +473,11 @@ class NotificacionService:
         Args:
             incidente: Instancia del modelo Incidente
         """
-        gravedad = getattr(incidente, 'gravedad', 'MEDIA')
+        gravedad = getattr(incidente, "gravedad", "MEDIA")
 
-        ubicacion_info = incidente.ubicacion or 'No especificada'
-        area_info = ''
-        if hasattr(incidente, 'get_area_incidente_display') and incidente.area_incidente:
+        ubicacion_info = incidente.ubicacion or "No especificada"
+        area_info = ""
+        if hasattr(incidente, "get_area_incidente_display") and incidente.area_incidente:
             area_info = f" - {incidente.get_area_incidente_display()}"
 
         titulo = f"ALARMA - Incidente {gravedad}: {incidente.titulo}"
@@ -413,20 +492,19 @@ class NotificacionService:
         url = "/reportes/incidentes/"
 
         notificaciones = []
-        usuarios = Usuario.objects.filter(
-            rol__in=['BRIGADA', 'INSTRUCTOR'],
-            activo=True
-        )
+        usuarios = Usuario.objects.filter(rol__in=["BRIGADA", "INSTRUCTOR"], activo=True)
 
         for usuario in usuarios:
-            notificaciones.append(Notificacion(
-                destinatario=usuario,
-                titulo=titulo,
-                mensaje=mensaje,
-                tipo='INCIDENTE',
-                prioridad='ALTA',
-                url_relacionada=url
-            ))
+            notificaciones.append(
+                Notificacion(
+                    destinatario=usuario,
+                    titulo=titulo,
+                    mensaje=mensaje,
+                    tipo="INCIDENTE",
+                    prioridad="ALTA",
+                    url_relacionada=url,
+                )
+            )
 
         if notificaciones:
             Notificacion.objects.bulk_create(notificaciones)
@@ -447,7 +525,7 @@ class NotificacionService:
         """
         titulo = f"Equipo requiere revision: {equipo.nombre}"
         # Obtener nombre del edificio si existe
-        ubicacion = equipo.edificio.nombre if equipo.edificio else 'No especificada'
+        ubicacion = equipo.edificio.nombre if equipo.edificio else "No especificada"
         mensaje = (
             f"El equipo '{equipo.nombre}' necesita revision.\n"
             f"Tipo: {equipo.get_tipo_display() if hasattr(equipo, 'get_tipo_display') else equipo.tipo}\n"
@@ -456,15 +534,9 @@ class NotificacionService:
             f"Estado actual: {equipo.get_estado_display() if hasattr(equipo, 'get_estado_display') else equipo.estado}"
         )
 
-        url = "/dashboard/brigada/equipos/"
-
         # Notificar a Brigada
         Notificacion.notificar_usuarios_por_rol(
-            rol='BRIGADA',
-            titulo=titulo,
-            mensaje=mensaje,
-            tipo='RECORDATORIO',
-            prioridad='MEDIA'
+            rol="BRIGADA", titulo=titulo, mensaje=mensaje, tipo="RECORDATORIO", prioridad="MEDIA"
         )
 
     @staticmethod
@@ -479,27 +551,25 @@ class NotificacionService:
 
         fecha_limite = timezone.now() + timedelta(days=7)
 
-        equipos = EquipamientoSeguridad.objects.filter(
-            proxima_revision__lte=fecha_limite,
-            activo=True
-        )
+        equipos = EquipamientoSeguridad.objects.filter(proxima_revision__lte=fecha_limite, activo=True)
 
         if not equipos.exists():
             return 0
 
         titulo = f"{equipos.count()} equipo(s) requieren revision esta semana"
         mensaje = "Los siguientes equipos tienen revision programada proximamente:\n"
-        mensaje += "\n".join([f"- {e.nombre} ({e.codigo}) - {e.proxima_revision.strftime('%d/%m/%Y') if e.proxima_revision else 'Sin fecha'}" for e in equipos[:5]])
+        mensaje += "\n".join(
+            [
+                f"- {e.nombre} ({e.codigo}) - {e.proxima_revision.strftime('%d/%m/%Y') if e.proxima_revision else 'Sin fecha'}"
+                for e in equipos[:5]
+            ]
+        )
 
         if equipos.count() > 5:
             mensaje += f"\n... y {equipos.count() - 5} mas"
 
         return Notificacion.notificar_usuarios_por_rol(
-            rol='BRIGADA',
-            titulo=titulo,
-            mensaje=mensaje,
-            tipo='RECORDATORIO',
-            prioridad='MEDIA'
+            rol="BRIGADA", titulo=titulo, mensaje=mensaje, tipo="RECORDATORIO", prioridad="MEDIA"
         )
 
     # ============================================================
@@ -516,7 +586,7 @@ class NotificacionService:
             tiempo_limite_horas: Tiempo límite en horas (default: 4)
         """
         from django.utils import timezone
-        from datetime import datetime, timedelta
+        from datetime import datetime
 
         # Calcular tiempo en el centro
         entrada = datetime.combine(visitante.fecha_visita, visitante.hora_ingreso)
@@ -540,11 +610,7 @@ class NotificacionService:
 
         # Notificar a Vigilancia
         Notificacion.notificar_usuarios_por_rol(
-            rol='VIGILANCIA',
-            titulo=titulo,
-            mensaje=mensaje,
-            tipo='RECORDATORIO',
-            prioridad='MEDIA'
+            rol="VIGILANCIA", titulo=titulo, mensaje=mensaje, tipo="RECORDATORIO", prioridad="MEDIA"
         )
 
     @staticmethod
@@ -561,7 +627,7 @@ class NotificacionService:
 
         visitantes_excedidos = Visitante.objects.filter(
             hora_salida__isnull=True,  # Aún en el centro
-            activo=True
+            activo=True,
         )
 
         count = 0
@@ -570,10 +636,7 @@ class NotificacionService:
             entrada = timezone.make_aware(entrada) if timezone.is_naive(entrada) else entrada
 
             if entrada < limite:
-                NotificacionService.notificar_visitante_excede_tiempo(
-                    visitante,
-                    tiempo_limite_horas
-                )
+                NotificacionService.notificar_visitante_excede_tiempo(visitante, tiempo_limite_horas)
                 count += 1
 
         return count
@@ -600,13 +663,13 @@ class NotificacionService:
         # Determinar nivel de alerta
         if porcentaje_ocupacion >= 100:
             titulo = "🚫 AFORO MÁXIMO ALCANZADO"
-            prioridad = 'ALTA'
+            prioridad = "ALTA"
         elif porcentaje_ocupacion >= 95:
             titulo = "⚠️ Aforo crítico (>95%)"
-            prioridad = 'ALTA'
+            prioridad = "ALTA"
         else:
             titulo = f"📊 Alerta de aforo ({int(porcentaje_ocupacion)}%)"
-            prioridad = 'MEDIA'
+            prioridad = "MEDIA"
 
         mensaje = (
             f"El centro se encuentra al {porcentaje_ocupacion:.1f}% de su capacidad.\n"
@@ -617,23 +680,32 @@ class NotificacionService:
 
         # Notificar a Vigilancia y Administrativos
         notificaciones = []
-        usuarios = Usuario.objects.filter(
-            rol__in=['VIGILANCIA', 'ADMINISTRATIVO'],
-            activo=True
-        )
+        usuarios = Usuario.objects.filter(rol__in=["VIGILANCIA", "ADMINISTRATIVO"], activo=True)
 
         for usuario in usuarios:
-            notificaciones.append(Notificacion(
-                destinatario=usuario,
-                titulo=titulo,
-                mensaje=mensaje,
-                tipo='SISTEMA',
-                prioridad=prioridad,
-                url_relacionada='/acceso/'
-            ))
+            notificaciones.append(
+                Notificacion(
+                    destinatario=usuario,
+                    titulo=titulo,
+                    mensaje=mensaje,
+                    tipo="SISTEMA",
+                    prioridad=prioridad,
+                    url_relacionada="/acceso/",
+                )
+            )
 
         if notificaciones:
             Notificacion.objects.bulk_create(notificaciones)
+
+        # WebSocket — alerta de aforo al instante en la pantalla de vigilancia
+        _ws_dispatch_roles(
+            roles=["VIGILANCIA", "ADMINISTRATIVO"],
+            tipo="SISTEMA",
+            titulo=titulo,
+            mensaje=mensaje,
+            prioridad=prioridad,
+            url="/acceso/",
+        )
 
         return len(notificaciones)
 
@@ -658,11 +730,7 @@ class NotificacionService:
         )
 
         Notificacion.crear_notificacion(
-            destinatario=instructor,
-            titulo=titulo,
-            mensaje=mensaje,
-            tipo='ASISTENCIA',
-            prioridad='BAJA'
+            destinatario=instructor, titulo=titulo, mensaje=mensaje, tipo="ASISTENCIA", prioridad="BAJA"
         )
 
     # ============================================================
@@ -670,7 +738,7 @@ class NotificacionService:
     # ============================================================
 
     @staticmethod
-    def notificar_sistema(destinatarios, titulo, mensaje, prioridad='MEDIA'):
+    def notificar_sistema(destinatarios, titulo, mensaje, prioridad="MEDIA"):
         """
         Envía una notificación de sistema a múltiples destinatarios.
 
@@ -684,21 +752,14 @@ class NotificacionService:
 
         # Si destinatarios es una lista de strings (roles), obtener usuarios
         if destinatarios and isinstance(destinatarios[0], str):
-            usuarios = Usuario.objects.filter(
-                rol__in=destinatarios,
-                activo=True
-            )
+            usuarios = Usuario.objects.filter(rol__in=destinatarios, activo=True)
         else:
             usuarios = destinatarios
 
         for usuario in usuarios:
-            notificaciones.append(Notificacion(
-                destinatario=usuario,
-                titulo=titulo,
-                mensaje=mensaje,
-                tipo='SISTEMA',
-                prioridad=prioridad
-            ))
+            notificaciones.append(
+                Notificacion(destinatario=usuario, titulo=titulo, mensaje=mensaje, tipo="SISTEMA", prioridad=prioridad)
+            )
 
         if notificaciones:
             Notificacion.objects.bulk_create(notificaciones)
@@ -718,21 +779,16 @@ class NotificacionService:
         """
         titulo = f"📚 Capacitación: {titulo_capacitacion}"
         mensaje = (
-            f"Se ha programado una capacitación.\n"
-            f"Tema: {titulo_capacitacion}\n"
-            f"Fecha: {fecha}\n"
-            f"Ubicación: {ubicacion}"
+            f"Se ha programado una capacitación.\nTema: {titulo_capacitacion}\nFecha: {fecha}\nUbicación: {ubicacion}"
         )
 
         notificaciones = []
         for usuario in destinatarios:
-            notificaciones.append(Notificacion(
-                destinatario=usuario,
-                titulo=titulo,
-                mensaje=mensaje,
-                tipo='CAPACITACION',
-                prioridad='MEDIA'
-            ))
+            notificaciones.append(
+                Notificacion(
+                    destinatario=usuario, titulo=titulo, mensaje=mensaje, tipo="CAPACITACION", prioridad="MEDIA"
+                )
+            )
 
         if notificaciones:
             Notificacion.objects.bulk_create(notificaciones)
@@ -744,21 +800,26 @@ class NotificacionService:
 # FUNCIONES DE CONVENIENCIA (para usar sin instanciar la clase)
 # ============================================================
 
+
 def notificar_emergencia(emergencia):
     """Atajo para notificar nueva emergencia"""
     return NotificacionService.notificar_emergencia_creada(emergencia)
+
 
 def notificar_incidente(incidente):
     """Atajo para notificar incidente crítico"""
     return NotificacionService.notificar_incidente_critico(incidente)
 
+
 def notificar_aforo(aforo_actual, aforo_maximo, umbral=90):
     """Atajo para notificar aforo crítico"""
     return NotificacionService.notificar_aforo_critico(aforo_actual, aforo_maximo, umbral)
 
+
 def verificar_visitantes():
     """Atajo para verificar visitantes que exceden tiempo"""
     return NotificacionService.verificar_visitantes_exceden_tiempo()
+
 
 def verificar_equipos():
     """Atajo para verificar equipos próximos a vencer"""

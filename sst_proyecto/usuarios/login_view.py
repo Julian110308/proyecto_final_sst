@@ -1,22 +1,41 @@
 """
 Vista personalizada de login — autenticación por correo electrónico
 """
+
 import logging
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
 from django.contrib import messages
+from django_ratelimit.decorators import ratelimit
 from .models import Usuario
 
-logger = logging.getLogger('usuarios')
+logger = logging.getLogger("usuarios")
 
 
+@ratelimit(key="ip", rate="10/m", method="POST", block=False)
 def custom_login_view(request):
     """Vista de login: el usuario ingresa su correo, se busca el username interno
     y se autentica con él."""
 
-    if request.method == 'POST':
-        email = request.POST.get('username', '').strip()   # el campo HTML sigue llamándose 'username'
-        password = request.POST.get('password', '')
+    # axes redirige aquí con ?bloqueado=1 cuando supera el límite de intentos fallidos
+    if request.GET.get("bloqueado"):
+        ip = request.META.get("REMOTE_ADDR", "")
+        logger.warning(f"Cuenta bloqueada por intentos fallidos desde IP: {ip}")
+        messages.error(
+            request,
+            "Tu acceso ha sido bloqueado temporalmente por múltiples intentos fallidos. "
+            "Espera 15 minutos e intenta de nuevo, o contacta al Coordinador SST.",
+        )
+        return render(request, "login.html")
+
+    if getattr(request, "limited", False):
+        logger.warning(f"Rate limit excedido en login desde IP: {request.META.get('REMOTE_ADDR')}")
+        messages.error(request, "Demasiados intentos de acceso. Espera 1 minuto e intenta de nuevo.")
+        return render(request, "login.html")
+
+    if request.method == "POST":
+        email = request.POST.get("username", "").strip()  # el campo HTML sigue llamándose 'username'
+        password = request.POST.get("password", "")
 
         user = None
 
@@ -30,18 +49,18 @@ def custom_login_view(request):
         # Verificar estado de cuenta antes de autenticar (PENDIENTE no tiene is_active=True)
         try:
             usuario_obj_check = Usuario.objects.get(email__iexact=email)
-            if usuario_obj_check.estado_cuenta == 'PENDIENTE':
+            if usuario_obj_check.estado_cuenta == "PENDIENTE":
                 logger.warning(f"Intento de login con cuenta pendiente: {email}")
                 messages.warning(
                     request,
-                    'Tu cuenta está pendiente de aprobación por el Coordinador SST. '
-                    'Recibirás acceso una vez sea revisada tu solicitud.'
+                    "Tu cuenta está pendiente de aprobación por el Coordinador SST. "
+                    "Recibirás acceso una vez sea revisada tu solicitud.",
                 )
-                return render(request, 'login.html')
-            elif usuario_obj_check.estado_cuenta == 'BLOQUEADO':
+                return render(request, "login.html")
+            elif usuario_obj_check.estado_cuenta == "BLOQUEADO":
                 logger.warning(f"Intento de login con cuenta bloqueada: {email}")
-                messages.error(request, 'Tu cuenta ha sido bloqueada. Contacta al Coordinador SST.')
-                return render(request, 'login.html')
+                messages.error(request, "Tu cuenta ha sido bloqueada. Contacta al Coordinador SST.")
+                return render(request, "login.html")
         except Usuario.DoesNotExist:
             pass
 
@@ -49,13 +68,13 @@ def custom_login_view(request):
             if user.activo:
                 login(request, user)
                 logger.info(f"Login exitoso: {user.username} ({user.rol})")
-                next_url = request.GET.get('next', '/')
+                next_url = request.GET.get("next", "/")
                 return redirect(next_url)
             else:
                 logger.warning(f"Intento de login con usuario inactivo: {email}")
-                messages.error(request, 'Tu cuenta está inactiva. Contacta al administrador.')
+                messages.error(request, "Tu cuenta está inactiva. Contacta al administrador.")
         else:
             logger.warning(f"Login fallido para: {email}")
-            messages.error(request, 'Correo o contraseña incorrectos.')
+            messages.error(request, "Correo o contraseña incorrectos.")
 
-    return render(request, 'login.html')
+    return render(request, "login.html")

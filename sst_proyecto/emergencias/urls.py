@@ -9,12 +9,12 @@ from .views import (
 )
 
 router = DefaultRouter()
-router.register('tipos', TipoEmergenciaViewSet)
-router.register('emergencias', EmergenciaViewSet)
-router.register('brigada', BrigadaEmergenciaViewSet)
-router.register('notificaciones', NotificacionEmergenciaViewSet)
-router.register('contactos', ContactoExternoViewSet)
+router.register("tipos", TipoEmergenciaViewSet)
+router.register("emergencias", EmergenciaViewSet)
+router.register("brigada", BrigadaEmergenciaViewSet)
+router.register("notificaciones", NotificacionEmergenciaViewSet)
+router.register("contactos", ContactoExternoViewSet)
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path("", include(router.urls)),
 ]

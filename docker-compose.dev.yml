@@ -1,0 +1,26 @@
+services:
+  # ── Base de datos PostgreSQL ────────────────────────────────
+  db:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: sst_db
+      POSTGRES_USER: sst_user
+      POSTGRES_PASSWORD: sst_pass
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sst_user -d sst_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis ──────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5

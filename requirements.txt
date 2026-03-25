@@ -12,3 +12,17 @@ redis==5.0.1
 reportlab==4.0.7
 openpyxl==3.1.2
 pandas==2.1.4
+
+# Seguridad — Fase 1.2
+django-ratelimit==4.1.0
+django-axes==6.4.0
+
+# Monitoreo y auditoría — Fase 5
+sentry-sdk==2.55.0
+django-auditlog==3.4.1
+
+# WebSocket — Fase 7
+daphne==4.2.1  # servidor ASGI para WebSocket en desarrollo
+
+# Documentación de API — Fase 8
+drf-spectacular==0.29.0

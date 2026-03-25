@@ -647,7 +647,7 @@ function cuandoObtengoUbicacion(posicion) {
 
         miMarcador = L.marker(
             [miLatitud, miLongitud],
-            { 
+            {
                 icon: iconoMiUbicacion,
                 title: 'Mi ubicación actual'
             }
@@ -1288,7 +1288,7 @@ function centrarEnResultado(indice) {
 function mostrarDetallesPunto(puntoId) {
     const punto = puntosEncuentroData.find(p => p.id === puntoId);
     if (!punto) return;
-    
+
     document.getElementById('infoSeleccionada').innerHTML = `
         <h6 class="text-success">
             <i class="bi bi-signpost"></i> ${punto.nombre}
@@ -1339,7 +1339,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 5. Configurar controles
     inicializarControles();
-    
+
     // 5. Configurar eventos del mapa
     mapa.on('click', function(e) {
         document.getElementById('infoSeleccionada').innerHTML = `
@@ -1353,7 +1353,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </p>
         `;
     });
-    
+
     console.log('✅ Mapa interactivo inicializado correctamente');
     console.log(`📊 Puntos de encuentro: ${puntosEncuentroData.length}`);
     console.log(`📊 Equipamiento: ${equipamientoData.length}`);
@@ -1442,7 +1442,7 @@ document.addEventListener('fullscreenchange', function() {
         padding: 8px !important;
         font-size: 11px !important;
     }
-    
+
     .leyenda-color {
         width: 12px !important;
         height: 12px !important;

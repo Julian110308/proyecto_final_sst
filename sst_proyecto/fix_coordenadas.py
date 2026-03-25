@@ -10,7 +10,7 @@ import sys
 import django
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sst_proyecto.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "sst_proyecto.settings")
 django.setup()
 
 from mapas.models import EdificioBloque, PuntoEncuentro, EquipamientoSeguridad
@@ -18,19 +18,20 @@ from mapas.models import EdificioBloque, PuntoEncuentro, EquipamientoSeguridad
 # Coordenadas correctas dentro de la geocerca del Centro Minero
 # Geocerca centro: 5.7303596, -72.8943613
 
+
 def fix_edificios():
     """Actualiza coordenadas de edificios para que estén dentro de la geocerca"""
     print("\n== Corrigiendo EdificioBloque ==")
 
     # Coordenadas correctas para cada edificio dentro de la geocerca
     coordenadas_edificios = {
-        'Edificio Administrativo Principal': (5.73036, -72.89436),
-        'Bloque de Aulas': (5.73070, -72.89460),
-        'Talleres de Minería': (5.73000, -72.89410),
-        'Mina Didáctica': (5.72970, -72.89430),
-        'Laboratorios': (5.73090, -72.89420),
-        'Cafetería': (5.73050, -72.89480),
-        'Parqueadero': (5.73120, -72.89510),
+        "Edificio Administrativo Principal": (5.73036, -72.89436),
+        "Bloque de Aulas": (5.73070, -72.89460),
+        "Talleres de Minería": (5.73000, -72.89410),
+        "Mina Didáctica": (5.72970, -72.89430),
+        "Laboratorios": (5.73090, -72.89420),
+        "Cafetería": (5.73050, -72.89480),
+        "Parqueadero": (5.73120, -72.89510),
     }
 
     edificios = EdificioBloque.objects.all()
@@ -66,13 +67,13 @@ def fix_puntos_encuentro():
     print("\n== Corrigiendo PuntoEncuentro ==")
 
     coordenadas_puntos = {
-        'Cancha': (5.73040, -72.89430),
-        'Principal': (5.73040, -72.89430),
-        'Parqueadero': (5.73130, -72.89510),
-        'Secundario': (5.73130, -72.89510),
-        'Entrada': (5.73150, -72.89460),
-        'Alterno': (5.73150, -72.89460),
-        'Sur': (5.72960, -72.89410),
+        "Cancha": (5.73040, -72.89430),
+        "Principal": (5.73040, -72.89430),
+        "Parqueadero": (5.73130, -72.89510),
+        "Secundario": (5.73130, -72.89510),
+        "Entrada": (5.73150, -72.89460),
+        "Alterno": (5.73150, -72.89460),
+        "Sur": (5.72960, -72.89410),
     }
 
     puntos = PuntoEncuentro.objects.all()
@@ -106,24 +107,24 @@ def fix_equipamiento():
 
     # Asignar coordenadas según tipo
     coordenadas_por_tipo = {
-        'EXTINTOR': [
+        "EXTINTOR": [
             (5.73036, -72.89436),  # Entrada admin
             (5.72970, -72.89430),  # Mina didáctica
             (5.73070, -72.89460),  # Aulas
             (5.73000, -72.89410),  # Talleres
             (5.73050, -72.89480),  # Cafetería
         ],
-        'BOTIQUIN': [
+        "BOTIQUIN": [
             (5.73070, -72.89460),  # Aulas
             (5.73000, -72.89410),  # Talleres
             (5.73036, -72.89436),  # Admin
             (5.73090, -72.89420),  # Laboratorios
         ],
-        'ALARMA': [
+        "ALARMA": [
             (5.73036, -72.89436),
             (5.73070, -72.89460),
         ],
-        'CAMILLA': [
+        "CAMILLA": [
             (5.73036, -72.89436),
             (5.73000, -72.89410),
         ],
@@ -148,7 +149,9 @@ def fix_equipamiento():
             equipo.latitud = nueva_coord[0]
             equipo.longitud = nueva_coord[1]
             equipo.save()
-            print(f"  OK: {equipo.tipo} {equipo.codigo}: ({old_lat}, {old_lng}) -> ({nueva_coord[0]}, {nueva_coord[1]})")
+            print(
+                f"  OK: {equipo.tipo} {equipo.codigo}: ({old_lat}, {old_lng}) -> ({nueva_coord[0]}, {nueva_coord[1]})"
+            )
         else:
             print(f"  Ya OK: {equipo.tipo} {equipo.codigo}: ({old_lat}, {old_lng})")
 
@@ -171,7 +174,7 @@ def fix_geocerca():
             print(f"  Ya OK: {g.nombre}: ({old_lat}, {old_lng})")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print("=" * 60)
     print("CORRIGIENDO COORDENADAS DE PUNTOS DE SEGURIDAD")
     print("Centro de geocerca: 5.7303596, -72.8943613")

@@ -1,0 +1,41 @@
+# Entornos virtuales
+venv/
+.venv/
+
+# Caché Python
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+
+# Base de datos local
+*.sqlite3
+
+# Variables de entorno
+.env
+
+# Archivos de cobertura y tests
+htmlcov/
+.coverage
+.coveragerc
+
+# Archivos de pre-commit y desarrollo
+.pre-commit-config.yaml
+.secrets.baseline
+
+# Logs
+logs/
+*.log
+
+# Media (se monta como volumen)
+sst_proyecto/media/
+
+# Archivos estáticos ya recolectados
+sst_proyecto/staticfiles/
+
+# Git
+.git/
+.gitignore
+
+# Documentación
+*.md
+PLAN_DE_TRABAJO.md

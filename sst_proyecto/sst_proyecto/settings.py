@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
+
 import os
 from pathlib import Path
 from decouple import config
@@ -21,96 +22,97 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY')
+SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=False, cast=bool)
+DEBUG = config("DEBUG", default=False, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
-CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost:8000,http://127.0.0.1:8000').split(',')
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1").split(",")
+CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", default="http://localhost:8000,http://127.0.0.1:8000").split(",")
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
     # Apps de terceros
-    'rest_framework',
-    'rest_framework.authtoken',
-    'corsheaders',
-    'django_filters',
-
+    "rest_framework",
+    "rest_framework.authtoken",
+    "drf_spectacular",
+    "corsheaders",
+    "django_filters",
+    "axes",
+    "auditlog",
+    "channels",
     # Apps del proyecto
-    'usuarios',
-    'control_acceso',
-    'mapas',
-    'emergencias',
-    'reportes',
+    "usuarios",
+    "control_acceso",
+    "mapas",
+    "emergencias",
+    "reportes",
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "axes.middleware.AxesMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
 # Configuración de CORS para API móvil de los módulos
-CORS_ALLOWED_ORIGINS = config(
-    'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:8000,http://127.0.0.1:8000'
-).split(',')
+CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS", default="http://localhost:8000,http://127.0.0.1:8000").split(",")
 CORS_ALLOW_CREDENTIALS = True
 
-ROOT_URLCONF = 'sst_proyecto.urls'
+ROOT_URLCONF = "sst_proyecto.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR,'templates')],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [os.path.join(BASE_DIR, "templates")],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'sst_proyecto.wsgi.application'
+WSGI_APPLICATION = "sst_proyecto.wsgi.application"
 
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': config('DB_ENGINE', default='django.db.backends.sqlite3'),
-        'NAME': config('DB_NAME', default=str(BASE_DIR / 'db.sqlite3')),
-        'USER': config('DB_USER', default=''),
-        'PASSWORD': config('DB_PASSWORD', default=''),
-        'HOST': config('DB_HOST', default=''),
-        'PORT': config('DB_PORT', default=''),
+    "default": {
+        "ENGINE": config("DB_ENGINE", default="django.db.backends.sqlite3"),
+        "NAME": config("DB_NAME", default=str(BASE_DIR / "db.sqlite3")),
+        "USER": config("DB_USER", default=""),
+        "PASSWORD": config("DB_PASSWORD", default=""),
+        "HOST": config("DB_HOST", default=""),
+        "PORT": config("DB_PORT", default=""),
     }
 }
 
 
 # Authentication Backends
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
+    "axes.backends.AxesStandaloneBackend",  # Debe ir primero para bloquear IPs
+    "django.contrib.auth.backends.ModelBackend",
 ]
 
 # Password validation
@@ -118,16 +120,16 @@ AUTHENTICATION_BACKENDS = [
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
@@ -135,8 +137,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = 'es-co'
-TIME_ZONE = 'America/Bogota'
+LANGUAGE_CODE = "es-co"
+TIME_ZONE = "America/Bogota"
 USE_I18N = True
 USE_TZ = True
 
@@ -147,61 +149,86 @@ USE_TZ = True
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# ====================================================================
+# DOCUMENTACIÓN DE API — drf-spectacular (Swagger / ReDoc)
+# ====================================================================
+SPECTACULAR_SETTINGS = {
+    "TITLE": "SST Centro Minero SENA — API v1",
+    "DESCRIPTION": (
+        "API REST del Sistema de Seguridad y Salud en el Trabajo del Centro Minero SENA. "
+        "Gestiona acceso, emergencias, mapas, reportes e incidentes."
+    ),
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    # Solo exponer en DEBUG o cuando el usuario es staff
+    "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAdminUser"],
+    "COMPONENT_SPLIT_REQUEST": True,
+    "TAGS": [
+        {"name": "auth", "description": "Autenticación, usuarios y notificaciones"},
+        {"name": "acceso", "description": "Control de acceso y aforo"},
+        {"name": "emergencias", "description": "Gestión de emergencias y brigada"},
+        {"name": "mapas", "description": "Mapa, edificios y equipamiento de seguridad"},
+        {"name": "reportes", "description": "Reportes e incidentes SST"},
+    ],
+}
 
 # Configuración REST Framework
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "EXCEPTION_HANDLER": "sst_proyecto.exception_handler.sst_exception_handler",
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
     ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
     ],
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'PAGE_SIZE': 50,
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
+    "PAGE_SIZE": 50,
 }
 
 # Configuracion de archivos estaticos
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),  # IMPORTANTE!
+    os.path.join(BASE_DIR, "static"),  # IMPORTANTE!
 ]
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 # Configuración de Leaflet (Mapas)
 LEAFLET_CONFIG = {
-    'DEFAULT_CENTER': (5.7303596, -72.8943613),
-    'DEFAULT_ZOOM': 16,
-    'MIN_ZOOM': 14,
-    'MAX_ZOOM': 19,
-    'TILES': 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    'ATTRUBTION_PREFIX': 'SENA Centro Minero SST',
+    "DEFAULT_CENTER": (5.7303596, -72.8943613),
+    "DEFAULT_ZOOM": 16,
+    "MIN_ZOOM": 14,
+    "MAX_ZOOM": 19,
+    "TILES": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    "ATTRUBTION_PREFIX": "SENA Centro Minero SST",
 }
 
 # Modelo de usuario
-AUTH_USER_MODEL = 'usuarios.Usuario'
+AUTH_USER_MODEL = "usuarios.Usuario"
 
 # URL de login
-LOGIN_URL = '/accounts/login/'
+LOGIN_URL = "/accounts/login/"
 
 # Después de login exitoso, redirigir al dashboard principal
-LOGIN_REDIRECT_URL = '/'  # Esto apunta a tu dashboard_view
+LOGIN_REDIRECT_URL = "/"  # Esto apunta a tu dashboard_view
 
 # Después de logout, redirigir al login
-LOGOUT_REDIRECT_URL = '/accounts/login/'
+LOGOUT_REDIRECT_URL = "/accounts/login/"
 
 # Configuración de mensajes de Django
 from django.contrib.messages import constants as messages_constants
 
 MESSAGE_TAGS = {
-    messages_constants.DEBUG: 'secondary',
-    messages_constants.INFO: 'info',
-    messages_constants.SUCCESS: 'success',
-    messages_constants.WARNING: 'warning',
-    messages_constants.ERROR: 'danger',
+    messages_constants.DEBUG: "secondary",
+    messages_constants.INFO: "info",
+    messages_constants.SUCCESS: "success",
+    messages_constants.WARNING: "warning",
+    messages_constants.ERROR: "danger",
 }
 
 # ====================================================================
@@ -209,28 +236,28 @@ MESSAGE_TAGS = {
 # ====================================================================
 
 # Configuración de email desde variables de entorno
-EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
 
 # Si no hay credenciales configuradas, usar backend de consola para desarrollo
 if not EMAIL_HOST_USER or not EMAIL_HOST_PASSWORD:
     # Backend de consola - Los emails se muestran en la terminal (modo desarrollo)
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 else:
     # Backend SMTP - Envío real de emails
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
-    EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
-    EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_HOST = config("EMAIL_HOST", default="smtp.gmail.com")
+    EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
+    EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
 
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='SST Centro Minero <noreply@centrominerosst.com>')
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="SST Centro Minero <noreply@centrominerosst.com>")
 
 # ====================================================================
 # CONFIGURACIÓN WEB PUSH (VAPID)
 # ====================================================================
-VAPID_PUBLIC_KEY = config('VAPID_PUBLIC_KEY', default='')
-VAPID_PRIVATE_KEY = config('VAPID_PRIVATE_KEY', default='')
-VAPID_ADMIN_EMAIL = config('VAPID_ADMIN_EMAIL', default='admin@centrominerosena.edu.co')
+VAPID_PUBLIC_KEY = config("VAPID_PUBLIC_KEY", default="")
+VAPID_PRIVATE_KEY = config("VAPID_PRIVATE_KEY", default="")
+VAPID_ADMIN_EMAIL = config("VAPID_ADMIN_EMAIL", default="admin@centrominerosena.edu.co")
 
 # Configuración para recuperación de contraseña
 PASSWORD_RESET_TIMEOUT = 3600  # 1 hora (en segundos)
@@ -240,78 +267,78 @@ PASSWORD_RESET_TIMEOUT = 3600  # 1 hora (en segundos)
 # ====================================================================
 
 # Directorio para archivos de log
-LOG_DIR = BASE_DIR / 'logs'
+LOG_DIR = BASE_DIR / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '[{asctime}] {levelname} {name} {message}',
-            'style': '{',
-            'datefmt': '%Y-%m-%d %H:%M:%S',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "[{asctime}] {levelname} {name} {message}",
+            "style": "{",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
         },
-        'auditoria': {
-            'format': '[{asctime}] [{levelname}] {message}',
-            'style': '{',
-            'datefmt': '%Y-%m-%d %H:%M:%S',
-        },
-    },
-    'handlers': {
-        'console': {
-            'level': 'INFO',
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
-        },
-        'file_auditoria': {
-            'level': 'INFO',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': LOG_DIR / 'auditoria.log',
-            'maxBytes': 10 * 1024 * 1024,  # 10 MB
-            'backupCount': 5,
-            'formatter': 'auditoria',
-            'encoding': 'utf-8',
-        },
-        'file_seguridad': {
-            'level': 'WARNING',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': LOG_DIR / 'seguridad.log',
-            'maxBytes': 10 * 1024 * 1024,  # 10 MB
-            'backupCount': 10,
-            'formatter': 'auditoria',
-            'encoding': 'utf-8',
-        },
-        'file_errores': {
-            'level': 'ERROR',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': LOG_DIR / 'errores.log',
-            'maxBytes': 10 * 1024 * 1024,  # 10 MB
-            'backupCount': 5,
-            'formatter': 'verbose',
-            'encoding': 'utf-8',
+        "auditoria": {
+            "format": "[{asctime}] [{levelname}] {message}",
+            "style": "{",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
         },
     },
-    'loggers': {
-        'auditoria': {
-            'handlers': ['file_auditoria', 'console'],
-            'level': 'INFO',
-            'propagate': False,
+    "handlers": {
+        "console": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
         },
-        'seguridad': {
-            'handlers': ['file_seguridad', 'console'],
-            'level': 'WARNING',
-            'propagate': False,
+        "file_auditoria": {
+            "level": "INFO",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": LOG_DIR / "auditoria.log",
+            "maxBytes": 10 * 1024 * 1024,  # 10 MB
+            "backupCount": 5,
+            "formatter": "auditoria",
+            "encoding": "utf-8",
         },
-        'django': {
-            'handlers': ['console', 'file_errores'],
-            'level': 'INFO',
-            'propagate': True,
+        "file_seguridad": {
+            "level": "WARNING",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": LOG_DIR / "seguridad.log",
+            "maxBytes": 10 * 1024 * 1024,  # 10 MB
+            "backupCount": 10,
+            "formatter": "auditoria",
+            "encoding": "utf-8",
         },
-        'django.request': {
-            'handlers': ['file_errores'],
-            'level': 'ERROR',
-            'propagate': False,
+        "file_errores": {
+            "level": "ERROR",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": LOG_DIR / "errores.log",
+            "maxBytes": 10 * 1024 * 1024,  # 10 MB
+            "backupCount": 5,
+            "formatter": "verbose",
+            "encoding": "utf-8",
+        },
+    },
+    "loggers": {
+        "auditoria": {
+            "handlers": ["file_auditoria", "console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "seguridad": {
+            "handlers": ["file_seguridad", "console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        "django": {
+            "handlers": ["console", "file_errores"],
+            "level": "INFO",
+            "propagate": True,
+        },
+        "django.request": {
+            "handlers": ["file_errores"],
+            "level": "ERROR",
+            "propagate": False,
         },
     },
 }
@@ -329,8 +356,114 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000  # 1 año
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-    X_FRAME_OPTIONS = 'DENY'
+    X_FRAME_OPTIONS = "DENY"
 
 # Tiempo de expiración de sesión (30 minutos de inactividad)
 SESSION_COOKIE_AGE = 1800
 SESSION_SAVE_EVERY_REQUEST = True
+
+# ====================================================================
+# CONFIGURACIÓN DE DJANGO-AXES — Protección contra fuerza bruta
+# ====================================================================
+AXES_ENABLED = True
+AXES_FAILURE_LIMIT = 5  # Bloquear tras 5 intentos fallidos consecutivos
+AXES_COOLOFF_TIME = 0.25  # Desbloquear después de 15 minutos (en horas)
+# Lista de listas: bloquea solo cuando se cumple AMBAS condiciones (IP + usuario concreto)
+# Esto evita que fallos con un usuario inexistente bloqueen toda la IP
+AXES_LOCKOUT_PARAMETERS = [["ip_address", "username"]]
+AXES_RESET_ON_SUCCESS = True  # Reiniciar contador tras login exitoso
+AXES_VERBOSE = False  # No llenar logs con info innecesaria
+AXES_HANDLER = "axes.handlers.database.AxesDatabaseHandler"
+# Redirigir al login con parámetro cuando axes bloquea, en lugar de mostrar 403 genérico
+AXES_LOCKOUT_URL = "/accounts/login/?bloqueado=1"
+
+# ====================================================================
+# CACHÉ — Redis
+# ====================================================================
+REDIS_URL = config("REDIS_URL", default="redis://localhost:6379/0")
+
+
+# Detectar si Redis está disponible (intento de conexión rápido al arrancar)
+def _redis_disponible(url):
+    try:
+        import redis as _redis
+
+        client = _redis.from_url(url, socket_connect_timeout=1)
+        client.ping()
+        return True
+    except Exception:
+        return False
+
+
+_REDIS_OK = _redis_disponible(REDIS_URL)
+
+if _REDIS_OK:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": REDIS_URL,
+            "OPTIONS": {
+                "socket_connect_timeout": 5,
+                "socket_timeout": 5,
+            },
+            "KEY_PREFIX": "sst",
+        }
+    }
+else:
+    import logging as _logging
+
+    _logging.getLogger(__name__).warning("Redis no disponible — usando caché en memoria (solo para desarrollo)")
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        }
+    }
+
+# TTL de caché por tipo de dato
+CACHE_TTL_AFORO = 30  # segundos — aforo cambia con cada acceso
+CACHE_TTL_ESTADISTICAS = 300  # 5 minutos — estadísticas del dashboard
+CACHE_TTL_CATALOGOS = 3600  # 1 hora — catálogos estáticos (tipos de emergencia)
+
+# ====================================================================
+# SENTRY — Monitoreo de errores en producción
+# ====================================================================
+import sentry_sdk
+
+SENTRY_DSN = config("SENTRY_DSN", default="")
+
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        # Captura el 100% de transacciones en producción
+        traces_sample_rate=1.0,
+        # No enviar datos sensibles (contraseñas, tokens)
+        send_default_pii=False,
+        # Ambiente según DEBUG
+        environment="development" if DEBUG else "production",
+    )
+
+# ====================================================================
+# DJANGO CHANNELS — WebSocket en tiempo real
+# ====================================================================
+# RedisChannelLayer en producción; InMemoryChannelLayer si Redis no está disponible.
+if _REDIS_OK:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [REDIS_URL],
+            },
+        }
+    }
+else:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        }
+    }
+
+# ====================================================================
+# AUDITLOG — Trazabilidad de cambios en modelos críticos
+# ====================================================================
+# Los modelos se registran en cada apps/apps.py con register()
+AUDITLOG_INCLUDE_ALL_MODELS = False  # Solo registramos los modelos explícitos

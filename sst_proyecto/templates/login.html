@@ -758,7 +758,7 @@
                 grid-template-columns: 1fr;
                 gap: 20px;
             }
-            
+
             .sena-logo {
                 width: 80px;
                 height: 80px;
@@ -826,7 +826,7 @@
                 <div class="logo-section">
                     <!-- Logo del SENA -->
                     <div class="sena-logo">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Sena_Colombia_logo.svg/1200px-Sena_Colombia_logo.svg.png" 
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Sena_Colombia_logo.svg/1200px-Sena_Colombia_logo.svg.png"
                              alt="Logo SENA">
                     </div>
                     <h1>Iniciar Sesión</h1>
@@ -852,7 +852,7 @@
 
                 <form method="post" id="loginForm">
                     {% csrf_token %}
-                    
+
                     <div class="form-group">
                         <label for="id_username">
                             Correo electrónico <span class="required">*</span>
@@ -883,12 +883,12 @@
                             <span class="input-icon-left">
                                 <i class="bi bi-lock"></i>
                             </span>
-                            <input 
-                                type="password" 
-                                name="password" 
-                                id="id_password" 
+                            <input
+                                type="password"
+                                name="password"
+                                id="id_password"
                                 class="password-input"
-                                placeholder="••••••••" 
+                                placeholder="••••••••"
                                 required
                             >
                             <button type="button" class="toggle-password" onclick="togglePassword('id_password')">
@@ -950,7 +950,7 @@
                 <div class="logo-section">
                     <!-- Logo del SENA -->
                     <div class="sena-logo">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Sena_Colombia_logo.svg/1200px-Sena_Colombia_logo.svg.png" 
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Sena_Colombia_logo.svg/1200px-Sena_Colombia_logo.svg.png"
                              alt="Logo SENA">
                     </div>
                     <h1>Crear Cuenta</h1>
@@ -1237,7 +1237,7 @@
                     </button>
 
                     <div class="switch-text">
-                        ¿Ya tienes cuenta? 
+                        ¿Ya tienes cuenta?
                         <button type="button" class="switch-btn" onclick="switchToLogin()">Inicia sesión aquí</button>
                     </div>
                 </form>
@@ -1297,7 +1297,7 @@
             const input = document.getElementById(inputId);
             const button = input.nextElementSibling;
             const icon = button.querySelector('i');
-            
+
             if (input.type === 'password') {
                 input.type = 'text';
                 icon.className = 'bi bi-eye-slash';
@@ -1307,7 +1307,7 @@
                 icon.className = 'bi bi-eye';
                 button.setAttribute('aria-label', 'Mostrar contraseña');
             }
-            
+
             button.style.transform = 'translateY(-50%) scale(1.1)';
             setTimeout(() => {
                 button.style.transform = 'translateY(-50%) scale(1)';

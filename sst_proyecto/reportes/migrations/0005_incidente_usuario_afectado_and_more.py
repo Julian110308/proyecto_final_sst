@@ -13,11 +13,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='incidente',
-            name='usuario_afectado',
-            field=models.ForeignKey(blank=True, help_text='Si la persona afectada es usuario del sistema, seleccionarlo aquí', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='incidentes_como_afectado', to=settings.AUTH_USER_MODEL),
-        ),
+        # usuario_afectado ya fue agregado por 0004_incidente_area_incidente_and_more
         migrations.AlterField(
             model_name='incidente',
             name='persona_afectada',

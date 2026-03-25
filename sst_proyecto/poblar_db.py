@@ -15,7 +15,7 @@ django.setup()
 
 from usuarios.models import Usuario, Visitante
 from control_acceso.models import Geocerca, RegistroAcceso, ConfiguracionAforo
-from mapas.models import EdificioBloque, PuntoEncuentro, EquipamientoSeguridad, RutaEvacuacion
+from mapas.models import EdificioBloque, PuntoEncuentro, EquipamientoSeguridad
 from django.utils import timezone
 from datetime import timedelta
 
@@ -162,7 +162,7 @@ def crear_configuracion_aforo():
 
     if ConfiguracionAforo.objects.exists():
         config = ConfiguracionAforo.objects.first()
-        print(f"   ✓ Configuración de aforo ya existe")
+        print("   ✓ Configuración de aforo ya existe")
     else:
         config = ConfiguracionAforo.objects.create(
             aforo_maximo=2000,

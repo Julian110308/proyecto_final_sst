@@ -6,16 +6,16 @@ Sistema SST - Centro Minero SENA
 import re
 import logging
 from django.utils.html import strip_tags
-from django.utils import timezone
 from functools import wraps
 
 # Logger para auditoría
-audit_logger = logging.getLogger('auditoria')
+audit_logger = logging.getLogger("auditoria")
 
 
 # ============================================================
 # FUNCIONES DE SANITIZACIÓN
 # ============================================================
+
 
 def sanitizar_texto(texto, max_length=None):
     """
@@ -35,10 +35,10 @@ def sanitizar_texto(texto, max_length=None):
     texto = strip_tags(str(texto))
 
     # Eliminar caracteres de control (excepto saltos de línea y tabs)
-    texto = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', texto)
+    texto = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", texto)
 
     # Eliminar espacios múltiples
-    texto = re.sub(r' +', ' ', texto)
+    texto = re.sub(r" +", " ", texto)
 
     # Trim
     texto = texto.strip()
@@ -61,7 +61,7 @@ def sanitizar_nombre(nombre):
     nombre = sanitizar_texto(nombre, max_length=100)
 
     # Solo permitir caracteres válidos para nombres
-    nombre = re.sub(r'[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s\-]', '', nombre)
+    nombre = re.sub(r"[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s\-]", "", nombre)
 
     return nombre.title()
 
@@ -77,7 +77,7 @@ def sanitizar_numero_documento(documento):
     documento = str(documento).strip()
 
     # Solo permitir alfanuméricos
-    documento = re.sub(r'[^a-zA-Z0-9]', '', documento)
+    documento = re.sub(r"[^a-zA-Z0-9]", "", documento)
 
     return documento.upper()
 
@@ -93,10 +93,10 @@ def sanitizar_telefono(telefono):
     telefono = str(telefono).strip()
 
     # Solo permitir caracteres válidos para teléfonos
-    telefono = re.sub(r'[^0-9\s\-\+]', '', telefono)
+    telefono = re.sub(r"[^0-9\s\-\+]", "", telefono)
 
     # Eliminar espacios múltiples
-    telefono = re.sub(r'\s+', ' ', telefono)
+    telefono = re.sub(r"\s+", " ", telefono)
 
     return telefono
 
@@ -111,13 +111,14 @@ def validar_email(email):
     if not email:
         return False
 
-    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
     return bool(re.match(pattern, str(email)))
 
 
 # ============================================================
 # LOGGING DE AUDITORÍA
 # ============================================================
+
 
 def log_accion_usuario(usuario, accion, detalle=None, ip=None, exito=True):
     """
@@ -130,8 +131,8 @@ def log_accion_usuario(usuario, accion, detalle=None, ip=None, exito=True):
         ip: Dirección IP del cliente
         exito: Si la acción fue exitosa
     """
-    username = getattr(usuario, 'username', str(usuario))
-    rol = getattr(usuario, 'rol', 'N/A')
+    username = getattr(usuario, "username", str(usuario))
+    rol = getattr(usuario, "rol", "N/A")
 
     mensaje = f"[{accion}] Usuario: {username} | Rol: {rol}"
 
@@ -154,12 +155,12 @@ def obtener_ip_cliente(request):
     Obtiene la IP del cliente desde el request.
     Considera headers de proxy como X-Forwarded-For.
     """
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
 
     if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0].strip()
+        ip = x_forwarded_for.split(",")[0].strip()
     else:
-        ip = request.META.get('REMOTE_ADDR', 'N/A')
+        ip = request.META.get("REMOTE_ADDR", "N/A")
 
     return ip
 
@@ -173,38 +174,30 @@ def auditar_vista(accion):
         def crear_incidente(request):
             ...
     """
+
     def decorator(view_func):
         @wraps(view_func)
         def wrapper(request, *args, **kwargs):
             ip = obtener_ip_cliente(request)
-            usuario = request.user if request.user.is_authenticated else 'Anónimo'
+            usuario = request.user if request.user.is_authenticated else "Anónimo"
 
             try:
                 response = view_func(request, *args, **kwargs)
-                log_accion_usuario(
-                    usuario=usuario,
-                    accion=accion,
-                    ip=ip,
-                    exito=True
-                )
+                log_accion_usuario(usuario=usuario, accion=accion, ip=ip, exito=True)
                 return response
             except Exception as e:
-                log_accion_usuario(
-                    usuario=usuario,
-                    accion=accion,
-                    detalle=f"Error: {str(e)}",
-                    ip=ip,
-                    exito=False
-                )
+                log_accion_usuario(usuario=usuario, accion=accion, detalle=f"Error: {str(e)}", ip=ip, exito=False)
                 raise
 
         return wrapper
+
     return decorator
 
 
 # ============================================================
 # VALIDADORES PARA MODELOS
 # ============================================================
+
 
 def validar_coordenadas(latitud, longitud):
     """
@@ -251,14 +244,14 @@ def validar_imagen(archivo, max_size_mb=5):
         return False, f"El archivo excede el tamaño máximo de {max_size_mb}MB"
 
     # Validar extensión
-    ext = archivo.name.split('.')[-1].lower()
-    extensiones_permitidas = ['jpg', 'jpeg', 'png', 'gif', 'webp']
+    ext = archivo.name.split(".")[-1].lower()
+    extensiones_permitidas = ["jpg", "jpeg", "png", "gif", "webp"]
     if ext not in extensiones_permitidas:
         return False, f"Extensión no permitida. Use: {', '.join(extensiones_permitidas)}"
 
     # Validar tipo MIME
-    tipos_permitidos = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-    content_type = getattr(archivo, 'content_type', None)
+    tipos_permitidos = ["image/jpeg", "image/png", "image/gif", "image/webp"]
+    content_type = getattr(archivo, "content_type", None)
     if content_type and content_type not in tipos_permitidos:
         return False, "El archivo no es una imagen válida"
 
@@ -269,34 +262,36 @@ def validar_imagen(archivo, max_size_mb=5):
 # ACCIONES DE AUDITORÍA PREDEFINIDAS
 # ============================================================
 
+
 class AccionAuditoria:
     """Constantes para tipos de acciones de auditoría"""
-    LOGIN = 'LOGIN'
-    LOGOUT = 'LOGOUT'
-    LOGIN_FALLIDO = 'LOGIN_FALLIDO'
-    REGISTRO = 'REGISTRO'
+
+    LOGIN = "LOGIN"
+    LOGOUT = "LOGOUT"
+    LOGIN_FALLIDO = "LOGIN_FALLIDO"
+    REGISTRO = "REGISTRO"
 
     # Emergencias
-    EMERGENCIA_CREAR = 'EMERGENCIA_CREAR'
-    EMERGENCIA_ATENDER = 'EMERGENCIA_ATENDER'
-    EMERGENCIA_RESOLVER = 'EMERGENCIA_RESOLVER'
+    EMERGENCIA_CREAR = "EMERGENCIA_CREAR"
+    EMERGENCIA_ATENDER = "EMERGENCIA_ATENDER"
+    EMERGENCIA_RESOLVER = "EMERGENCIA_RESOLVER"
 
     # Incidentes
-    INCIDENTE_CREAR = 'INCIDENTE_CREAR'
-    INCIDENTE_ACTUALIZAR = 'INCIDENTE_ACTUALIZAR'
+    INCIDENTE_CREAR = "INCIDENTE_CREAR"
+    INCIDENTE_ACTUALIZAR = "INCIDENTE_ACTUALIZAR"
 
     # Control de acceso
-    ACCESO_REGISTRAR = 'ACCESO_REGISTRAR'
-    ACCESO_EGRESO = 'ACCESO_EGRESO'
+    ACCESO_REGISTRAR = "ACCESO_REGISTRAR"
+    ACCESO_EGRESO = "ACCESO_EGRESO"
 
     # Usuarios
-    USUARIO_CREAR = 'USUARIO_CREAR'
-    USUARIO_MODIFICAR = 'USUARIO_MODIFICAR'
-    USUARIO_ELIMINAR = 'USUARIO_ELIMINAR'
+    USUARIO_CREAR = "USUARIO_CREAR"
+    USUARIO_MODIFICAR = "USUARIO_MODIFICAR"
+    USUARIO_ELIMINAR = "USUARIO_ELIMINAR"
 
     # Visitantes
-    VISITANTE_REGISTRAR = 'VISITANTE_REGISTRAR'
-    VISITANTE_SALIDA = 'VISITANTE_SALIDA'
+    VISITANTE_REGISTRAR = "VISITANTE_REGISTRAR"
+    VISITANTE_SALIDA = "VISITANTE_SALIDA"
 
     # Equipamiento
-    EQUIPO_ACTUALIZAR = 'EQUIPO_ACTUALIZAR'
+    EQUIPO_ACTUALIZAR = "EQUIPO_ACTUALIZAR"

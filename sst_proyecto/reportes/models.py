@@ -2,63 +2,55 @@ from django.db import models
 from usuarios.models import Usuario
 from django.utils import timezone
 
-class ConfiguracionReporte(models.Model):
 
+class ConfiguracionReporte(models.Model):
     FRECUENCIA = [
-        ('DIARIO', 'Diario'),
-        ('SEMANAL', 'Semanal'),
-        ('MENSUAL', 'Mensual'),
+        ("DIARIO", "Diario"),
+        ("SEMANAL", "Semanal"),
+        ("MENSUAL", "Mensual"),
     ]
 
     TIPO_REPORTE = [
-        ('AFORO', 'Reporte de Aforo'),
-        ('ASISTENCIA', 'Reporte de Asistencia'),
-        ('INCIDENTES', 'Reporte de Incidentes'),
-        ('EQUIPAMIENTO', 'Estado de Equipamiento'),
-        ('SEGURIDAD', 'Reporte de Seguridad'),
+        ("AFORO", "Reporte de Aforo"),
+        ("ASISTENCIA", "Reporte de Asistencia"),
+        ("INCIDENTES", "Reporte de Incidentes"),
+        ("EQUIPAMIENTO", "Estado de Equipamiento"),
+        ("SEGURIDAD", "Reporte de Seguridad"),
     ]
 
     nombre = models.CharField(max_length=200)
     tipo_reporte = models.CharField(max_length=50, choices=TIPO_REPORTE)
     frecuencia = models.CharField(max_length=10, choices=FRECUENCIA)
     hora_generacion = models.TimeField()
-    destinatarios = models.ManyToManyField(Usuario, related_name='reportes_suscritos')
+    destinatarios = models.ManyToManyField(Usuario, related_name="reportes_suscritos")
     activo = models.BooleanField(default=True)
     ultima_generacion = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        verbose_name = 'Configuración de Reporte'
-        verbose_name_plural = 'Configuraciones de Reportes'
+        verbose_name = "Configuración de Reporte"
+        verbose_name_plural = "Configuraciones de Reportes"
 
     def __str__(self):
-        return f'{self.nombre} - {self.get_frecuencia_display()}'
-    
+        return f"{self.nombre} - {self.get_frecuencia_display()}"
+
+
 class ReporteGenerado(models.Model):
-    configuracion = models.ForeignKey(
-        ConfiguracionReporte,
-        on_delete=models.CASCADE,
-        related_name='reportes'
-    )
+    configuracion = models.ForeignKey(ConfiguracionReporte, on_delete=models.CASCADE, related_name="reportes")
     fecha_generacion = models.DateTimeField(auto_now_add=True)
     periodo_inicio = models.DateField()
     periodo_fin = models.DateField()
-    archivo_pdf = models.FileField(upload_to='reportes/pdf/', null=True, blank=True)
-    archivo_excel = models.FileField(upload_to='reportes/excel/', null=True, blank=True)
+    archivo_pdf = models.FileField(upload_to="reportes/pdf/", null=True, blank=True)
+    archivo_excel = models.FileField(upload_to="reportes/excel/", null=True, blank=True)
     datos_json = models.JSONField(default=dict)
-    generado_por = models.ForeignKey(
-        Usuario,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='reportes_generados'
-    )
+    generado_por = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, related_name="reportes_generados")
 
     class Meta:
-        verbose_name = 'Reporte generado'
-        verbose_name_plural = 'Reportes generados'
-        ordering = ['-fecha_generacion']
-    
+        verbose_name = "Reporte generado"
+        verbose_name_plural = "Reportes generados"
+        ordering = ["-fecha_generacion"]
+
     def __str__(self):
-        return f'{self.configuracion.nombre} - {self.fecha_generacion}'
+        return f"{self.configuracion.nombre} - {self.fecha_generacion}"
 
 
 # MODELO SIMPLE PARA REPORTAR INCIDENTES/ACCIDENTES
@@ -70,74 +62,75 @@ class Incidente(models.Model):
 
     # Tipos de incidente (BÁSICO)
     TIPO_CHOICES = [
-        ('ACCIDENTE', 'Accidente'),
-        ('CASI_ACCIDENTE', 'Casi Accidente'),
-        ('CONDICION_INSEGURA', 'Condición Insegura'),
-        ('ACTO_INSEGURO', 'Acto Inseguro'),
-        ('DAÑO_EQUIPO', 'Daño a Equipo'),
-        ('OTRO', 'Otro'),
+        ("ACCIDENTE", "Accidente"),
+        ("CASI_ACCIDENTE", "Casi Accidente"),
+        ("CONDICION_INSEGURA", "Condición Insegura"),
+        ("ACTO_INSEGURO", "Acto Inseguro"),
+        ("DAÑO_EQUIPO", "Daño a Equipo"),
+        ("OTRO", "Otro"),
     ]
 
     # Gravedad (BÁSICO)
     GRAVEDAD_CHOICES = [
-        ('BAJA', 'Baja'),
-        ('MEDIA', 'Media'),
-        ('ALTA', 'Alta'),
-        ('CRITICA', 'Crítica'),
+        ("BAJA", "Baja"),
+        ("MEDIA", "Media"),
+        ("ALTA", "Alta"),
+        ("CRITICA", "Crítica"),
     ]
 
     # Estado (BÁSICO)
     ESTADO_CHOICES = [
-        ('REPORTADO', 'Reportado'),
-        ('EN_REVISION', 'En Revisión'),
-        ('EN_PROCESO', 'En Proceso'),
-        ('RESUELTO', 'Resuelto'),
-        ('CERRADO', 'Cerrado'),
+        ("REPORTADO", "Reportado"),
+        ("EN_REVISION", "En Revisión"),
+        ("EN_PROCESO", "En Proceso"),
+        ("RESUELTO", "Resuelto"),
+        ("CERRADO", "Cerrado"),
     ]
 
     # Datos básicos del incidente
-    titulo = models.CharField(max_length=200, help_text='Título breve del incidente')
-    descripcion = models.TextField(help_text='Describe qué pasó')
-    tipo = models.CharField(max_length=50, choices=TIPO_CHOICES, default='OTRO')
-    gravedad = models.CharField(max_length=20, choices=GRAVEDAD_CHOICES, default='MEDIA')
-    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='REPORTADO')
+    titulo = models.CharField(max_length=200, help_text="Título breve del incidente")
+    descripcion = models.TextField(help_text="Describe qué pasó")
+    tipo = models.CharField(max_length=50, choices=TIPO_CHOICES, default="OTRO")
+    gravedad = models.CharField(max_length=20, choices=GRAVEDAD_CHOICES, default="MEDIA")
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default="REPORTADO")
 
     # Área del incidente
     AREA_CHOICES = [
-        ('TALLER', 'Taller'),
-        ('LABORATORIO', 'Laboratorio'),
-        ('AULAS', 'Aulas'),
-        ('ADMINISTRATIVO', 'Área Administrativa'),
-        ('CAFETERIA', 'Cafetería'),
-        ('PARQUEADERO', 'Parqueadero'),
-        ('MINA_DIDACTICA', 'Mina Didáctica'),
-        ('ZONA_VERDE', 'Zona Verde'),
-        ('CANCHA', 'Cancha Deportiva'),
-        ('PASILLO', 'Pasillo / Corredor'),
-        ('OTRO', 'Otro'),
+        ("TALLER", "Taller"),
+        ("LABORATORIO", "Laboratorio"),
+        ("AULAS", "Aulas"),
+        ("ADMINISTRATIVO", "Área Administrativa"),
+        ("CAFETERIA", "Cafetería"),
+        ("PARQUEADERO", "Parqueadero"),
+        ("MINA_DIDACTICA", "Mina Didáctica"),
+        ("ZONA_VERDE", "Zona Verde"),
+        ("CANCHA", "Cancha Deportiva"),
+        ("PASILLO", "Pasillo / Corredor"),
+        ("OTRO", "Otro"),
     ]
 
     # Ubicación y área
-    ubicacion = models.CharField(max_length=200, blank=True, help_text='Dónde ocurrió')
-    lugar_exacto = models.CharField(max_length=300, blank=True, help_text='Lugar preciso dentro del centro')
-    area_incidente = models.CharField(max_length=50, choices=AREA_CHOICES, default='OTRO', help_text='Área donde ocurrió el incidente')
-    latitud = models.FloatField(null=True, blank=True, help_text='Latitud de la ubicación del incidente')
-    longitud = models.FloatField(null=True, blank=True, help_text='Longitud de la ubicación del incidente')
+    ubicacion = models.CharField(max_length=200, blank=True, help_text="Dónde ocurrió")
+    lugar_exacto = models.CharField(max_length=300, blank=True, help_text="Lugar preciso dentro del centro")
+    area_incidente = models.CharField(
+        max_length=50, choices=AREA_CHOICES, default="OTRO", help_text="Área donde ocurrió el incidente"
+    )
+    latitud = models.FloatField(null=True, blank=True, help_text="Latitud de la ubicación del incidente")
+    longitud = models.FloatField(null=True, blank=True, help_text="Longitud de la ubicación del incidente")
 
     # Riesgos identificados en el área
-    riesgos_identificados = models.TextField(blank=True, help_text='Riesgos potenciales identificados en el área del incidente')
+    riesgos_identificados = models.TextField(
+        blank=True, help_text="Riesgos potenciales identificados en el área del incidente"
+    )
 
     # Fechas
-    fecha_incidente = models.DateTimeField(default=timezone.now, help_text='Cuándo ocurrió')
-    fecha_reporte = models.DateTimeField(auto_now_add=True, help_text='Cuándo se reportó')
+    fecha_incidente = models.DateTimeField(default=timezone.now, help_text="Cuándo ocurrió")
+    fecha_reporte = models.DateTimeField(auto_now_add=True, help_text="Cuándo se reportó")
     fecha_resolucion = models.DateTimeField(null=True, blank=True)
 
     # Personas involucradas
     reportado_por = models.ForeignKey(
-        Usuario,
-        on_delete=models.CASCADE,
-        related_name='incidentes_reportados',
-        help_text='Quién reportó el incidente'
+        Usuario, on_delete=models.CASCADE, related_name="incidentes_reportados", help_text="Quién reportó el incidente"
     )
 
     asignado_a = models.ForeignKey(
@@ -145,36 +138,41 @@ class Incidente(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='incidentes_asignados',
-        help_text='Quién está a cargo de resolverlo'
+        related_name="incidentes_asignados",
+        help_text="Quién está a cargo de resolverlo",
     )
 
     # Persona afectada
     usuario_afectado = models.ForeignKey(
-        Usuario, on_delete=models.SET_NULL, null=True, blank=True,
-        related_name='incidentes_como_afectado',
-        help_text='Usuario del sistema que fue afectado (si aplica)'
+        Usuario,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="incidentes_como_afectado",
+        help_text="Usuario del sistema que fue afectado (si aplica)",
     )
-    persona_afectada = models.CharField(max_length=200, blank=True, help_text='Nombre de la persona afectada')
-    documento_afectado = models.CharField(max_length=20, blank=True, help_text='Documento de la persona afectada')
-    rol_afectado = models.CharField(max_length=50, blank=True, help_text='Rol de la persona afectada')
+    persona_afectada = models.CharField(max_length=200, blank=True, help_text="Nombre de la persona afectada")
+    documento_afectado = models.CharField(max_length=20, blank=True, help_text="Documento de la persona afectada")
+    rol_afectado = models.CharField(max_length=50, blank=True, help_text="Rol de la persona afectada")
 
     # Versión del accidente
-    version_accidente = models.TextField(blank=True, help_text='Relato detallado del accidente según testigos o involucrados')
+    version_accidente = models.TextField(
+        blank=True, help_text="Relato detallado del accidente según testigos o involucrados"
+    )
 
     # Testigos
-    testigos = models.TextField(blank=True, help_text='Nombres y datos de contacto de los testigos')
+    testigos = models.TextField(blank=True, help_text="Nombres y datos de contacto de los testigos")
 
     # Foto de evidencia (obligatoria en formulario)
-    foto = models.ImageField(upload_to='incidentes/fotos/', null=True, blank=True)
+    foto = models.ImageField(upload_to="incidentes/fotos/", null=True, blank=True)
 
     # Acciones tomadas
-    acciones_tomadas = models.TextField(blank=True, help_text='Qué se hizo para resolver')
+    acciones_tomadas = models.TextField(blank=True, help_text="Qué se hizo para resolver")
 
     class Meta:
-        verbose_name = 'Incidente'
-        verbose_name_plural = 'Incidentes'
-        ordering = ['-fecha_reporte']  # Más recientes primero
+        verbose_name = "Incidente"
+        verbose_name_plural = "Incidentes"
+        ordering = ["-fecha_reporte"]  # Más recientes primero
 
     def __str__(self):
-        return f'{self.get_tipo_display()} - {self.titulo}'
+        return f"{self.get_tipo_display()} - {self.titulo}"
