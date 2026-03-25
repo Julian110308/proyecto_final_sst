@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python manage.py shell -c \":*)",
+      "Bash(git add templates/reportes/incidente_form.html)",
+      "Bash(git commit:*)",
+      "Bash(git push origin main)"
+    ]
+  }
+}

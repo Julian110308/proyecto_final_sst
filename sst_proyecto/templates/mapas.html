@@ -940,9 +940,7 @@ function inicializarControles() {
     document.getElementById('btnPantallaCompleta').addEventListener('click', function() {
         const mapaElement = document.getElementById('mapaPrincipal');
         if (!document.fullscreenElement) {
-            mapaElement.requestFullscreen().catch(err => {
-                console.log(`Error al activar pantalla completa: ${err.message}`);
-            });
+            mapaElement.requestFullscreen().catch(err => {});
         } else {
             document.exitFullscreen();
         }

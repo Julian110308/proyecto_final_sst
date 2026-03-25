@@ -1772,7 +1772,7 @@
         // ===== Registro del Service Worker =====
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js')
-                .catch(function(err) { console.log('SW registro fallido:', err); });
+                .catch(function(err) {});
         }
 
         // ===== PWA Install =====
