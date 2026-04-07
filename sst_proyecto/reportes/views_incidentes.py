@@ -189,10 +189,18 @@ def detalle_incidente(request, pk):
     horas_transcurridas = delta.total_seconds() / 3600
     sla_estado = _calcular_sla(incidente)
 
+    # Historial de modificaciones y notificaciones
+    from reportes.models import HistorialModificacionIncidente
+    from usuarios.models import Notificacion
+    historial = HistorialModificacionIncidente.objects.filter(incidente=incidente).select_related("modificado_por")
+    notificaciones = Notificacion.objects.filter(url_relacionada=f"/reportes/incidentes/{incidente.pk}/").select_related("destinatario").order_by("-fecha_creacion")
+
     context = {
         "incidente": incidente,
         "horas_transcurridas": round(horas_transcurridas, 1),
         "sla_estado": sla_estado,
+        "historial": historial,
+        "notificaciones": notificaciones,
     }
 
     return render(request, "reportes/incidente_detalle.html", context)

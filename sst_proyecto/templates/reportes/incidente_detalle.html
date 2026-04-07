@@ -289,6 +289,72 @@
             </div>
         </div>
 
+        <!-- Historial de Notificaciones -->
+        <div class="card mb-3">
+            <div class="card-header" style="background: rgba(13,110,253,0.08);">
+                <h6 class="mb-0"><i class="bi bi-bell-fill text-primary me-2"></i>Historial de Notificaciones</h6>
+            </div>
+            <div class="card-body p-0">
+                {% if notificaciones %}
+                <ul class="list-group list-group-flush">
+                    {% for n in notificaciones %}
+                    <li class="list-group-item px-3 py-2">
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi bi-person-fill text-muted mt-1" style="font-size:0.8rem;"></i>
+                            <div style="font-size:0.82rem;">
+                                <strong>{{ n.destinatario.get_full_name|default:n.destinatario.username }}</strong>
+                                <span class="text-muted"> — {{ n.titulo }}</span>
+                                <br>
+                                <small class="text-muted">{{ n.fecha_creacion|date:"d/m/Y H:i" }}</small>
+                                {% if n.leida %}
+                                <span class="badge bg-success ms-1" style="font-size:0.7rem;">Leída</span>
+                                {% else %}
+                                <span class="badge bg-warning ms-1" style="font-size:0.7rem;">No leída</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted text-center py-3 mb-0" style="font-size:0.85rem;">Sin notificaciones registradas</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Historial de Modificaciones -->
+        <div class="card mb-3">
+            <div class="card-header" style="background: rgba(108,117,125,0.08);">
+                <h6 class="mb-0"><i class="bi bi-clock-history text-secondary me-2"></i>Historial de Modificaciones</h6>
+            </div>
+            <div class="card-body p-0">
+                {% if historial %}
+                <ul class="list-group list-group-flush">
+                    {% for h in historial %}
+                    <li class="list-group-item px-3 py-2">
+                        <div style="font-size:0.82rem;">
+                            <strong>{{ h.modificado_por.get_full_name|default:h.modificado_por.username }}</strong>
+                            modificó <span class="badge bg-secondary">{{ h.campo_modificado }}</span>
+                            <br>
+                            <small class="text-muted">
+                                <i class="bi bi-arrow-right me-1"></i>
+                                {% if h.valor_anterior %}<span class="text-danger">{{ h.valor_anterior }}</span> → {% endif %}
+                                <span class="text-success">{{ h.valor_nuevo }}</span>
+                            </small>
+                            {% if h.observacion %}
+                            <br><small class="text-muted fst-italic">{{ h.observacion }}</small>
+                            {% endif %}
+                            <br><small class="text-muted">{{ h.fecha_modificacion|date:"d/m/Y H:i" }}</small>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted text-center py-3 mb-0" style="font-size:0.85rem;">Sin modificaciones registradas</p>
+                {% endif %}
+            </div>
+        </div>
+
         <!-- Responsables -->
         <div class="card">
             <div class="card-body">
