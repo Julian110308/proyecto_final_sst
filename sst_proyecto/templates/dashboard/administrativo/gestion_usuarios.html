@@ -220,7 +220,7 @@
                         <!-- Tipo y Número de Documento -->
                         <div class="col-md-4">
                             <label for="nuevo_tipo_documento" class="form-label form-label-required">Tipo Documento</label>
-                            <select class="form-select" id="nuevo_tipo_documento" name="tipo_documento" required>
+                            <select class="form-select" id="nuevo_tipo_documento" name="tipo_documento" required onchange="actualizarValidacionDocumento()">
                                 <option value="">Selecciona...</option>
                                 <option value="CC">Cédula de Ciudadanía</option>
                                 <option value="CE">Cédula de Extranjería</option>
@@ -230,7 +230,9 @@
                         </div>
                         <div class="col-md-4">
                             <label for="nuevo_numero_documento" class="form-label form-label-required">N° Documento</label>
-                            <input type="text" class="form-control" id="nuevo_numero_documento" name="numero_documento" required>
+                            <input type="text" class="form-control" id="nuevo_numero_documento" name="numero_documento" required
+                                maxlength="10" pattern="[0-9]{8,10}" title="Ingrese entre 8 y 10 dígitos numéricos">
+                            <div class="form-text" id="doc_hint">Cédula de Ciudadanía: 8-10 dígitos numéricos</div>
                         </div>
 
                         <!-- Rol -->
@@ -422,6 +424,24 @@
 
 {% block extra_js %}
 <script>
+    // Validación dinámica del número de documento según tipo
+    function actualizarValidacionDocumento() {
+        const tipo = document.getElementById('nuevo_tipo_documento').value;
+        const input = document.getElementById('nuevo_numero_documento');
+        const hint = document.getElementById('doc_hint');
+        const reglas = {
+            'CC':  { max: 10, min: 8, pattern: '[0-9]{8,10}', hint: 'Cédula de Ciudadanía: 8-10 dígitos numéricos' },
+            'TI':  { max: 10, min: 8, pattern: '[0-9]{8,10}', hint: 'Tarjeta de Identidad: 8-10 dígitos numéricos' },
+            'CE':  { max: 12, min: 6, pattern: '[A-Za-z0-9]{6,12}', hint: 'Cédula de Extranjería: 6-12 caracteres' },
+            'PAS': { max: 20, min: 5, pattern: '[A-Za-z0-9]{5,20}', hint: 'Pasaporte: 5-20 caracteres alfanuméricos' },
+        };
+        const r = reglas[tipo] || { max: 20, min: 1, pattern: '.+', hint: '' };
+        input.maxLength = r.max;
+        input.pattern = r.pattern;
+        input.title = r.hint;
+        if (hint) hint.textContent = r.hint;
+    }
+
     // Mostrar/ocultar campos de aprendiz
     function toggleCamposAprendiz() {
         const rol = document.getElementById('nuevo_rol').value;

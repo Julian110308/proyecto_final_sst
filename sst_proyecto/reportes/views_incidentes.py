@@ -214,18 +214,24 @@ def actualizar_incidente(request, pk):
     if request.method == "POST":
         # Guardar estado anterior para detectar cambios
         estado_anterior = incidente.estado
+        acciones_anterior = incidente.acciones_tomadas
 
         # Actualizar estado
         estado = request.POST.get("estado")
         acciones = request.POST.get("acciones_tomadas")
         asignado_a_id = request.POST.get("asignado_a")
         marcar_resuelto = request.POST.get("marcar_resuelto")
+        observacion_mod = request.POST.get("observacion_modificacion", "")
 
         if estado:
             incidente.estado = estado
 
         if acciones:
             incidente.acciones_tomadas = acciones
+
+        # Registrar fecha y autor de la modificación
+        incidente.fecha_modificacion = timezone.now()
+        incidente.modificado_por = request.user
 
         # Asignar a usuario (solo ADMINISTRATIVO puede reasignar)
         if request.user.rol == "ADMINISTRATIVO":
@@ -241,6 +247,27 @@ def actualizar_incidente(request, pk):
             incidente.fecha_resolucion = timezone.now()
 
         incidente.save()
+
+        # Guardar historial de modificaciones
+        from reportes.models import HistorialModificacionIncidente
+        if estado and estado_anterior != incidente.estado:
+            HistorialModificacionIncidente.objects.create(
+                incidente=incidente,
+                modificado_por=request.user,
+                campo_modificado="estado",
+                valor_anterior=estado_anterior,
+                valor_nuevo=incidente.estado,
+                observacion=observacion_mod,
+            )
+        if acciones and acciones_anterior != acciones:
+            HistorialModificacionIncidente.objects.create(
+                incidente=incidente,
+                modificado_por=request.user,
+                campo_modificado="acciones_tomadas",
+                valor_anterior=acciones_anterior[:200] if acciones_anterior else "",
+                valor_nuevo=acciones[:200],
+                observacion=observacion_mod,
+            )
 
         # Notificar al reportador si el estado cambió
         if estado and estado_anterior != incidente.estado and incidente.reportado_por:

@@ -51,7 +51,7 @@
     <div class="col-6 col-md-3">
         <div class="card card-coord h-100 shadow-sm">
             <div class="card-body text-center">
-                <div class="fs-2 fw-bold" style="color:#39A900;">{{ total_activos }}</div>
+                <div class="fs-2 fw-bold" id="card-activos" style="color:#39A900;">{{ total_activos }}</div>
                 <div class="small text-muted"><i class="bi bi-person-check-fill me-1" style="color:#39A900;"></i>Usuarios activos</div>
             </div>
         </div>
@@ -59,7 +59,7 @@
     <div class="col-6 col-md-3">
         <div class="card h-100 shadow-sm border-start border-4" style="border-color:#6c757d !important;">
             <div class="card-body text-center">
-                <div class="fs-2 fw-bold text-secondary">{{ pendientes }}</div>
+                <div class="fs-2 fw-bold text-secondary" id="card-pendientes">{{ pendientes }}</div>
                 <div class="small text-muted"><i class="bi bi-hourglass-split me-1 text-secondary"></i>Pendientes de aprobación</div>
             </div>
         </div>
@@ -67,7 +67,7 @@
     <div class="col-6 col-md-3">
         <div class="card h-100 shadow-sm border-start border-4" style="border-color:#6c757d !important;">
             <div class="card-body text-center">
-                <div class="fs-2 fw-bold text-secondary">{{ total_bloqueados }}</div>
+                <div class="fs-2 fw-bold text-secondary" id="card-bloqueados">{{ total_bloqueados }}</div>
                 <div class="small text-muted"><i class="bi bi-slash-circle-fill me-1 text-secondary"></i>Bloqueados</div>
             </div>
         </div>
@@ -75,7 +75,7 @@
     <div class="col-6 col-md-3">
         <div class="card h-100 shadow-sm border-start border-4" style="border-color:#212529 !important;">
             <div class="card-body text-center">
-                <div class="fs-2 fw-bold" style="color:#212529;">{{ brigada_activa }}</div>
+                <div class="fs-2 fw-bold" id="card-brigada" style="color:#212529;">{{ brigada_activa }}</div>
                 <div class="small text-muted"><i class="bi bi-shield-fill me-1" style="color:#212529;"></i>Miembros de brigada</div>
             </div>
         </div>
@@ -490,6 +490,25 @@ function cargarBrigada() {
     });
 }
 
+// ── Auto-actualización de tarjetas del dashboard ─────────────────────────
+async function actualizarTarjetas() {
+    try {
+        const r = await fetch('/api/estadisticas/dashboard/', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        if (!r.ok) return;
+        const data = await r.json();
+        const mapa = {
+            'card-activos':    data.total_usuarios_activos ?? null,
+            'card-pendientes': data.usuarios_pendientes ?? null,
+            'card-bloqueados': data.usuarios_bloqueados ?? null,
+            'card-brigada':    data.brigada_activa ?? null,
+        };
+        Object.entries(mapa).forEach(([id, val]) => {
+            const el = document.getElementById(id);
+            if (el && val !== null) el.textContent = val;
+        });
+    } catch (_) {}
+}
+
 // ── Inicialización ────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     cargarPendientes();
@@ -501,6 +520,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (target === '#tab-brigada') cargarBrigada();
         });
     });
+
+    // Actualizar tarjetas cada 30 segundos
+    setInterval(actualizarTarjetas, 30000);
 });
 </script>
 {% endblock %}

@@ -169,6 +169,17 @@ class Incidente(models.Model):
     # Acciones tomadas
     acciones_tomadas = models.TextField(blank=True, help_text="Qué se hizo para resolver")
 
+    # Historial de modificaciones
+    fecha_modificacion = models.DateTimeField(null=True, blank=True, help_text="Última vez que fue modificado")
+    modificado_por = models.ForeignKey(
+        Usuario,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="incidentes_modificados",
+        help_text="Último usuario que modificó el incidente",
+    )
+
     class Meta:
         verbose_name = "Incidente"
         verbose_name_plural = "Incidentes"
@@ -176,3 +187,22 @@ class Incidente(models.Model):
 
     def __str__(self):
         return f"{self.get_tipo_display()} - {self.titulo}"
+
+
+class HistorialModificacionIncidente(models.Model):
+    """Registra cada modificación realizada a un incidente con fecha, usuario y cambios."""
+    incidente = models.ForeignKey(Incidente, on_delete=models.CASCADE, related_name="historial_modificaciones")
+    modificado_por = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, related_name="historial_cambios")
+    fecha_modificacion = models.DateTimeField(auto_now_add=True)
+    campo_modificado = models.CharField(max_length=100, help_text="Campo que fue modificado")
+    valor_anterior = models.TextField(blank=True, help_text="Valor antes del cambio")
+    valor_nuevo = models.TextField(blank=True, help_text="Valor después del cambio")
+    observacion = models.TextField(blank=True, help_text="Nota del modificador")
+
+    class Meta:
+        verbose_name = "Historial de modificación"
+        verbose_name_plural = "Historial de modificaciones"
+        ordering = ["-fecha_modificacion"]
+
+    def __str__(self):
+        return f"Modificación de '{self.campo_modificado}' en incidente #{self.incidente_id} por {self.modificado_por}"
