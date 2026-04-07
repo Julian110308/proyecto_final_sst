@@ -11,6 +11,8 @@ from .models import (
     EquipamientoSeguridad,
     EstadoEdificio,
     HistorialEstadoEdificio,
+    NodoCamino,
+    TramoCamino,
 )
 from .serializers import (
     EdificioBloqueSerializer,
@@ -726,3 +728,170 @@ class EquipamientoSeguridadViewSet(viewsets.ModelViewSet):
             )
         except Exception as e:
             return Response({"success": False, "error": str(e)}, status=400)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# RUTEO Y GRAFO DE CAMINOS PEATONALES
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def calcular_ruta_evacuacion(request):
+    """
+    Calcula la ruta peatonal más corta desde la posición del usuario
+    hasta un punto de encuentro específico o el más cercano.
+
+    GET /mapas/api/ruta/?lat=5.730&lng=-72.894&punto_id=1
+    GET /mapas/api/ruta/?lat=5.730&lng=-72.894  (punto más cercano automáticamente)
+    """
+    from .routing import calcular_ruta, calcular_ruta_mas_corta
+
+    lat = request.query_params.get("lat")
+    lng = request.query_params.get("lng")
+    punto_id = request.query_params.get("punto_id")
+
+    if not lat or not lng:
+        return Response({"error": "Se requieren los parámetros lat y lng."}, status=400)
+
+    try:
+        lat, lng = float(lat), float(lng)
+    except ValueError:
+        return Response({"error": "lat y lng deben ser números."}, status=400)
+
+    if punto_id:
+        resultado = calcular_ruta(lat, lng, int(punto_id))
+    else:
+        resultado = calcular_ruta_mas_corta(lat, lng)
+
+    return Response(resultado)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def grafo_caminos(request):
+    """Exporta todos los nodos y tramos del grafo para el editor visual."""
+    from .routing import grafo_como_json
+
+    return Response(grafo_como_json())
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def guardar_nodo(request):
+    """Crea o actualiza un nodo del grafo."""
+    if request.user.rol not in ("ADMINISTRATIVO", "COORDINADOR_SST"):
+        return Response({"error": "Solo administradores pueden editar el grafo."}, status=403)
+
+    data = request.data
+    nodo_id = data.get("id")
+
+    try:
+        nodo = NodoCamino.objects.get(id=nodo_id) if nodo_id else NodoCamino()
+        nodo.nombre = data.get("nombre", "")
+        nodo.latitud = float(data["latitud"])
+        nodo.longitud = float(data["longitud"])
+        nodo.tipo = data.get("tipo", "INTERSECCION")
+        nodo.edificio_id = data.get("edificio_id") or None
+        nodo.punto_encuentro_id = data.get("punto_encuentro_id") or None
+        nodo.save()
+        return Response({"id": nodo.id, "nombre": str(nodo), "latitud": nodo.latitud, "longitud": nodo.longitud})
+    except (KeyError, ValueError) as e:
+        return Response({"error": f"Datos inválidos: {e}"}, status=400)
+
+
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def eliminar_nodo(request, nodo_id):
+    """Elimina un nodo del grafo."""
+    if request.user.rol not in ("ADMINISTRATIVO", "COORDINADOR_SST"):
+        return Response({"error": "Sin permiso."}, status=403)
+    nodo = get_object_or_404(NodoCamino, id=nodo_id)
+    nodo.delete()
+    return Response({"ok": True})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def guardar_tramo(request):
+    """Crea un tramo entre dos nodos existentes."""
+    if request.user.rol not in ("ADMINISTRATIVO", "COORDINADOR_SST"):
+        return Response({"error": "Solo administradores pueden editar el grafo."}, status=403)
+
+    data = request.data
+    try:
+        origen = NodoCamino.objects.get(id=data["nodo_origen_id"])
+        destino = NodoCamino.objects.get(id=data["nodo_destino_id"])
+    except NodoCamino.DoesNotExist:
+        return Response({"error": "Nodo no encontrado."}, status=404)
+
+    tramo, created = TramoCamino.objects.get_or_create(
+        nodo_origen=origen,
+        nodo_destino=destino,
+        defaults={
+            "tipo": data.get("tipo", "VIA_INTERNA"),
+            "bidireccional": data.get("bidireccional", True),
+            "distancia_metros": 0,
+        },
+    )
+
+    return Response(
+        {
+            "id": tramo.id,
+            "nodo_origen_id": origen.id,
+            "nodo_destino_id": destino.id,
+            "distancia_metros": tramo.distancia_metros,
+            "created": created,
+        }
+    )
+
+
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def eliminar_tramo(request, tramo_id):
+    """Elimina un tramo del grafo."""
+    if request.user.rol not in ("ADMINISTRATIVO", "COORDINADOR_SST"):
+        return Response({"error": "Sin permiso."}, status=403)
+    tramo = get_object_or_404(TramoCamino, id=tramo_id)
+    tramo.delete()
+    return Response({"ok": True})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def guardar_poligono_edificio(request, edificio_id):
+    """Guarda el polígono de un edificio desde el editor visual."""
+    if request.user.rol not in ("ADMINISTRATIVO", "COORDINADOR_SST"):
+        return Response({"error": "Sin permiso."}, status=403)
+
+    edificio = get_object_or_404(EdificioBloque, id=edificio_id)
+    poligono = request.data.get("poligono", [])
+
+    if not isinstance(poligono, list) or len(poligono) < 3:
+        return Response({"error": "El polígono debe tener al menos 3 puntos."}, status=400)
+
+    edificio.poligono = poligono
+    edificio.save(update_fields=["poligono"])
+    return Response({"ok": True, "edificio": edificio.nombre, "puntos": len(poligono)})
+
+
+@login_required
+def editor_mapa(request):
+    """Editor visual del campus — solo administrativos/coordinadores."""
+    if request.user.rol not in ("ADMINISTRATIVO", "COORDINADOR_SST"):
+        from django.shortcuts import redirect
+
+        return redirect("mapa_interactivo")
+
+    import json
+
+    edificios = list(
+        EdificioBloque.objects.filter(activo=True).values("id", "nombre", "tipo", "latitud", "longitud", "poligono")
+    )
+    puntos = list(PuntoEncuentro.objects.filter(activo=True).values("id", "nombre", "latitud", "longitud", "prioridad"))
+
+    context = {
+        "edificios_json": json.dumps(edificios),
+        "puntos_json": json.dumps(puntos),
+    }
+    return render(request, "mapas/editor_mapa.html", context)

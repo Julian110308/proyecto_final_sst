@@ -9,83 +9,88 @@
 {% endblock %}
 
 {% block content %}
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+<!-- Header -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
     <div>
-        <h1 class="h3 fw-bold text-dark mb-1"><i class="bi bi-exclamation-triangle-fill me-2"></i>Gestion de Emergencias</h1>
-        <p class="text-muted mb-0">Sistema de respuesta y alertas tempranas</p>
+        <h1 class="h3 fw-bold text-dark mb-1">
+            <i class="bi bi-shield-exclamation text-danger me-2"></i>Gestión de Emergencias
+        </h1>
+        <p class="text-muted mb-0 small">Sistema de respuesta y alertas tempranas</p>
     </div>
-    <div class="d-flex gap-2 flex-shrink-0 flex-wrap">
+    <div class="d-flex gap-2 align-items-center flex-wrap">
+        <a href="/mapas/" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-map me-1"></i>Mapa de Evacuación
+        </a>
         <button class="btn btn-outline-secondary btn-sm" onclick="cargarTodo()">
-            <i class="bi bi-arrow-clockwise me-1"></i> Actualizar
+            <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
         </button>
         <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modalEmergencia">
-            <i class="bi bi-exclamation-triangle me-1"></i>
-            Reportar Emergencia
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>Reportar Emergencia
         </button>
     </div>
 </div>
 
 <!-- Métricas -->
 <div class="row g-3 mb-4">
-    <div class="col-xl-3 col-md-6">
+    <div class="col-6 col-xl-3">
         <div class="card card-modern border-0 border-start border-4 border-danger">
-            <div class="card-body p-4">
+            <div class="card-body p-3">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Activas Ahora</h6>
-                        <h3 class="fw-bold text-dark mb-0" id="metricaActivas">--</h3>
-                        <small class="text-danger"><i class="bi bi-exclamation-circle"></i> Requieren atención</small>
+                        <p class="text-muted mb-1 small">Activas Ahora</p>
+                        <h3 class="fw-bold mb-0" id="metricaActivas">--</h3>
+                        <small class="text-danger">Requieren atención</small>
                     </div>
-                    <div class="bg-light-danger rounded-3 p-3">
-                        <i class="bi bi-fire fs-2 text-danger"></i>
+                    <div class="rounded-3 p-2 bg-danger bg-opacity-10">
+                        <i class="bi bi-fire fs-4 text-danger"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-xl-3 col-md-6">
-        <div class="card card-modern border-0 border-start border-4 border-secondary">
-            <div class="card-body p-4">
+    <div class="col-6 col-xl-3">
+        <div class="card card-modern border-0 border-start border-4 border-warning">
+            <div class="card-body p-3">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">En Atención</h6>
-                        <h3 class="fw-bold text-dark mb-0" id="metricaAtencion">--</h3>
-                        <small class="text-muted"><i class="bi bi-hand-index"></i> Siendo atendidas</small>
+                        <p class="text-muted mb-1 small">En Atención</p>
+                        <h3 class="fw-bold mb-0" id="metricaAtencion">--</h3>
+                        <small class="text-warning">Siendo atendidas</small>
                     </div>
-                    <div class="bg-light rounded-3 p-3">
-                        <i class="bi bi-person-raised-hand fs-2 text-secondary"></i>
+                    <div class="rounded-3 p-2 bg-warning bg-opacity-10">
+                        <i class="bi bi-person-raised-hand fs-4 text-warning"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-xl-3 col-md-6">
-        <div class="card card-modern border-0 border-start border-4 border-secondary">
-            <div class="card-body p-4">
+    <div class="col-6 col-xl-3">
+        <div class="card card-modern border-0 border-start border-4 border-success">
+            <div class="card-body p-3">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Resueltas Hoy</h6>
-                        <h3 class="fw-bold text-dark mb-0" id="metricaResueltas">--</h3>
-                        <small class="text-muted"><i class="bi bi-check-circle"></i> Cerradas hoy</small>
+                        <p class="text-muted mb-1 small">Resueltas Hoy</p>
+                        <h3 class="fw-bold mb-0" id="metricaResueltas">--</h3>
+                        <small class="text-success">Cerradas hoy</small>
                     </div>
-                    <div class="bg-light rounded-3 p-3">
-                        <i class="bi bi-check-circle-fill fs-2 text-secondary"></i>
+                    <div class="rounded-3 p-2 bg-success bg-opacity-10">
+                        <i class="bi bi-check-circle-fill fs-4 text-success"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-xl-3 col-md-6">
-        <div class="card card-modern border-0 border-start border-4 border-secondary">
-            <div class="card-body p-4">
+    <div class="col-6 col-xl-3">
+        <div class="card card-modern border-0 border-start border-4 border-info">
+            <div class="card-body p-3">
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Total del Mes</h6>
-                        <h3 class="fw-bold text-dark mb-0" id="metricaMes">--</h3>
-                        <small class="text-muted"><i class="bi bi-calendar"></i> Este mes</small>
+                        <p class="text-muted mb-1 small">Total del Mes</p>
+                        <h3 class="fw-bold mb-0" id="metricaMes">--</h3>
+                        <small class="text-muted">Este mes</small>
                     </div>
-                    <div class="bg-light rounded-3 p-3">
-                        <i class="bi bi-clipboard-data fs-2 text-secondary"></i>
+                    <div class="rounded-3 p-2 bg-info bg-opacity-10">
+                        <i class="bi bi-clipboard-data fs-4 text-info"></i>
                     </div>
                 </div>
             </div>
@@ -93,95 +98,44 @@
     </div>
 </div>
 
+<!-- Contenido principal -->
 <div class="row g-4">
-    <!-- Panel de Control Emergencias -->
-    <div class="col-lg-4">
-        <div class="card card-modern mb-4">
-            <div class="card-header-modern">
-                <h6 class="m-0 fw-bold">
-                    <i class="bi bi-megaphone me-2"></i>
-                    Acciones Rapidas
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <button class="btn btn-outline-secondary btn-sm" onclick="notificarBrigada()">
-                        <i class="bi bi-bell me-1"></i>
-                        Notificar Brigada
-                    </button>
-                    <button class="btn btn-outline-secondary btn-sm" onclick="document.getElementById('contactosSection').scrollIntoView({behavior:'smooth'})">
-                        <i class="bi bi-telephone me-1"></i>
-                        Contactar Emergencias
-                    </button>
-                    <button class="btn btn-outline-secondary btn-sm" onclick="window.location.href='/mapas/'">
-                        <i class="bi bi-map me-1"></i>
-                        Ver Mapa de Evacuacion
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Brigada Disponible -->
-        <div class="card card-modern mb-4">
-            <div class="card-header-modern">
-                <h6 class="m-0 fw-bold">
-                    <i class="bi bi-people-fill me-2"></i>Brigada de Emergencia
-                </h6>
-            </div>
-            <div class="card-body p-0" id="brigadaList">
-                <div class="text-center text-muted py-3">
-                    <div class="spinner-border spinner-border-sm" role="status"></div>
-                    <p class="small mb-0 mt-1">Cargando brigada...</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Contactos de Emergencia -->
-        <div class="card card-modern" id="contactosSection">
-            <div class="card-header-modern">
-                <h6 class="m-0 fw-bold">
-                    <i class="bi bi-telephone-fill me-2"></i>Contactos de Emergencia
-                </h6>
-            </div>
-            <div class="card-body p-0" id="contactosList">
-                <div class="text-center text-muted py-3">
-                    <div class="spinner-border spinner-border-sm" role="status"></div>
-                    <p class="small mb-0 mt-1">Cargando contactos...</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Lista de Emergencias -->
+    <!-- Columna principal: emergencias -->
     <div class="col-lg-8">
+
         <!-- Emergencias Activas -->
         <div class="card card-modern mb-4">
-            <div class="card-header-modern d-flex justify-content-between align-items-center">
-                <h6 class="m-0 fw-bold text-danger">
-                    <i class="bi bi-exclamation-circle me-2"></i>Emergencias Activas
+            <div class="card-header-modern d-flex justify-content-between align-items-center"
+                 style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#collapseEmergenciasActivas">
+                <h6 class="m-0 fw-bold">
+                    <i class="bi bi-exclamation-octagon-fill text-danger me-2"></i>Emergencias Activas
                 </h6>
-                <span class="badge bg-secondary" id="badgeActivas">0 activas</span>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-secondary" id="badgeActivas">0 activas</span>
+                    <i class="bi bi-chevron-up text-muted small" id="chevronActivas"></i>
+                </div>
             </div>
-            <div class="card-body" id="emergenciasActivas">
-                <div class="text-center text-muted py-4">
-                    <i class="bi bi-check-circle fs-1 mb-2 d-block text-success"></i>
-                    No hay emergencias activas en este momento
+            <div class="collapse show" id="collapseEmergenciasActivas">
+                <div id="emergenciasActivas" class="p-3">
+                    <div class="text-center text-muted py-5">
+                        <div class="spinner-border spinner-border-sm me-2"></div>Cargando...
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Falsas Alarmas - Reincidentes -->
+        <!-- Falsas Alarmas -->
         <div class="card card-modern mb-4" id="seccionFalsasAlarmas" style="display:none;">
             <div class="card-header-modern d-flex justify-content-between align-items-center">
                 <h6 class="m-0 fw-bold text-danger">
-                    <i class="bi bi-shield-exclamation me-2"></i>Falsas Alarmas - Usuarios Identificados
+                    <i class="bi bi-shield-exclamation me-2"></i>Usuarios con Falsas Alarmas
                 </h6>
                 <span class="badge bg-danger" id="badgeFalsas">0</span>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-light">
+                        <thead class="table-light">
                             <tr>
                                 <th class="ps-3">Usuario</th>
                                 <th>Documento</th>
@@ -196,38 +150,76 @@
             </div>
         </div>
 
-        <!-- Historial de Emergencias -->
+        <!-- Historial (solo resueltas/cerradas) -->
         <div class="card card-modern">
-            <div class="card-header-modern">
+            <div class="card-header-modern d-flex justify-content-between align-items-center" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#collapseHistorial">
                 <h6 class="m-0 fw-bold">
-                    <i class="bi bi-clock-history me-2"></i>Historial de Emergencias
+                    <i class="bi bi-clock-history me-2 text-secondary"></i>Historial de Emergencias
                 </h6>
+                <i class="bi bi-chevron-down"></i>
             </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-light">
-                            <tr>
-                                <th class="ps-3">Tipo</th>
-                                <th>Descripcion</th>
-                                <th>Reportado por</th>
-                                <th>Estado</th>
-                                <th>Fecha</th>
-                                <th class="pe-3">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaEmergencias">
-                            <tr>
-                                <td colspan="6" class="text-center text-muted py-4">
-                                    <div class="spinner-border spinner-border-sm" role="status"></div>
-                                    <p class="small mb-0 mt-1">Cargando emergencias...</p>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <div class="collapse show" id="collapseHistorial">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Tipo</th>
+                                    <th>Reportado por</th>
+                                    <th>Ubicación</th>
+                                    <th>Estado</th>
+                                    <th>Fecha</th>
+                                    <th class="pe-3 text-end">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaEmergencias">
+                                <tr><td colspan="6" class="text-center text-muted py-4">
+                                    <div class="spinner-border spinner-border-sm me-2"></div>Cargando...
+                                </td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Sidebar: Brigada + Contactos -->
+    <div class="col-lg-4 d-flex flex-column gap-3">
+
+        <!-- Brigada de Emergencia -->
+        <div class="card card-modern">
+            <div class="card-header-modern d-flex justify-content-between align-items-center">
+                <h6 class="m-0 fw-bold">
+                    <i class="bi bi-people-fill me-2 text-success"></i>Brigada de Emergencia
+                </h6>
+                <a href="{% url 'mi_brigada' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-up-right-square"></i>
+                </a>
+            </div>
+            <div class="card-body p-0" id="brigadaList">
+                <div class="text-center text-muted py-3">
+                    <div class="spinner-border spinner-border-sm"></div>
+                    <p class="small mb-0 mt-1">Cargando brigada...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contactos de Emergencia -->
+        <div class="card card-modern" id="contactosSection">
+            <div class="card-header-modern">
+                <h6 class="m-0 fw-bold">
+                    <i class="bi bi-telephone-fill me-2 text-danger"></i>Contactos de Emergencia
+                </h6>
+            </div>
+            <div class="card-body p-0" id="contactosList">
+                <div class="text-center text-muted py-3">
+                    <div class="spinner-border spinner-border-sm"></div>
+                    <p class="small mb-0 mt-1">Cargando contactos...</p>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 
@@ -410,7 +402,25 @@
     </div>
 </div>
 
+<!-- Toast de Feedback -->
+<div class="position-fixed end-0 p-3" style="z-index: 1090; bottom: 5rem;">
+    <div id="toastFeedback" class="toast align-items-center border-0 text-white bg-success" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="toastMensaje"></div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+
 <script>
+function mostrarToast(mensaje, tipo = 'success') {
+    const toast = document.getElementById('toastFeedback');
+    const body = document.getElementById('toastMensaje');
+    toast.className = `toast align-items-center border-0 text-white bg-${tipo}`;
+    body.textContent = mensaje;
+    new bootstrap.Toast(toast, { delay: 2500 }).show();
+}
+
 function getCookie(name) {
     let v = null;
     document.cookie.split(';').forEach(c => {
@@ -473,83 +483,101 @@ async function cargarEmergencias() {
         const divActivas = document.getElementById('emergenciasActivas');
         if (activas.length === 0) {
             divActivas.innerHTML = `
-                <div class="text-center text-muted py-4">
-                    <i class="bi bi-check-circle fs-1 mb-2 d-block text-success"></i>
-                    No hay emergencias activas en este momento
+                <div class="text-center text-muted py-5">
+                    <i class="bi bi-shield-check fs-1 mb-2 d-block text-success"></i>
+                    <strong class="d-block">Sin emergencias activas</strong>
+                    <span class="small">El sistema está operando con normalidad</span>
                 </div>`;
         } else {
+            const borderCol = { REPORTADA: 'danger', EN_ATENCION: 'warning' };
+            const badgeCol  = { REPORTADA: 'danger', EN_ATENCION: 'warning' };
+            const badgeTxt  = { REPORTADA: 'Reportada', EN_ATENCION: 'En Atención' };
+
             divActivas.innerHTML = activas.map(e => {
                 const fechaReporte = new Date(e.fecha_hora_reporte);
-                const ahora = new Date();
-                const minutos = Math.floor((ahora - fechaReporte) / 60000);
-                const tiempoStr = minutos < 60
-                    ? `${minutos} min`
-                    : `${Math.floor(minutos/60)}h ${minutos%60}m`;
+                const minutos = Math.floor((new Date() - fechaReporte) / 60000);
+                const tiempoStr = minutos < 60 ? `${minutos} min` : `${Math.floor(minutos/60)}h ${minutos%60}m`;
                 const urgente = minutos > 30;
+                const bc = borderCol[e.estado] || 'secondary';
 
-                // Mini timeline
+                const nombre = e.reportada_por_detalle
+                    ? `${e.reportada_por_detalle.first_name || ''} ${e.reportada_por_detalle.last_name || ''}`.trim()
+                    : 'Usuario desconocido';
+                const documento = e.reportada_por_detalle?.numero_documento
+                    ? `<span class="text-muted ms-1">· Doc: ${e.reportada_por_detalle.numero_documento}</span>` : '';
+                const horaReporte = fechaReporte.toLocaleString('es-CO', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'});
+
+                // Timeline compacto (solo estado actual)
                 const pasos = [
-                    { estado: 'REPORTADA', label: 'Reportada', icon: 'bi-flag-fill', color: '#F9A825',
-                      hora: new Date(e.fecha_hora_reporte).toLocaleTimeString('es-CO', {hour:'2-digit',minute:'2-digit'}) },
-                    { estado: 'EN_ATENCION', label: 'En atención', icon: 'bi-gear-fill', color: '#2196F3',
-                      hora: e.fecha_hora_atencion ? new Date(e.fecha_hora_atencion).toLocaleTimeString('es-CO', {hour:'2-digit',minute:'2-digit'}) : null },
-                    { estado: 'RESUELTA', label: 'Resuelta', icon: 'bi-check-circle-fill', color: '#4CAF50', hora: null },
+                    { key: 'REPORTADA',   label: 'Reportada',   icon: 'bi-flag-fill',         color: '#F9A825' },
+                    { key: 'EN_ATENCION', label: 'En atención', icon: 'bi-gear-fill',          color: '#2196F3' },
+                    { key: 'RESUELTA',    label: 'Resuelta',    icon: 'bi-check-circle-fill',  color: '#4CAF50' },
                 ];
-                const estadosOrden = ['REPORTADA','EN_ATENCION','CONTROLADA','RESUELTA'];
-                const idxActual = estadosOrden.indexOf(e.estado);
-
-                const timelineHtml = pasos.map((paso, idx) => {
-                    const activo = idx <= idxActual;
-                    const esActual = estadosOrden.indexOf(paso.estado) === idxActual;
-                    return `<div class="d-flex align-items-center gap-1" style="font-size:11px;">
-                        <i class="bi ${paso.icon}" style="color:${activo ? paso.color : '#ccc'};font-size:14px;"></i>
-                        <div>
-                            <span style="color:${activo ? '#333' : '#aaa'};font-weight:${esActual?'700':'400'};">${paso.label}</span>
-                            ${paso.hora && activo ? `<br><span style="color:#888;">${paso.hora}</span>` : ''}
-                        </div>
-                        ${idx < pasos.length - 1 ? '<i class="bi bi-chevron-right text-muted mx-1"></i>' : ''}
-                    </div>`;
+                const orden = ['REPORTADA','EN_ATENCION','CONTROLADA','RESUELTA'];
+                const idxActual = orden.indexOf(e.estado);
+                const timelineHtml = pasos.map((p, i) => {
+                    const activo = i <= idxActual;
+                    const esActual = orden.indexOf(p.key) === idxActual;
+                    return `<span class="d-flex align-items-center gap-1" style="font-size:11px; color:${activo ? '#333':'#bbb'}; font-weight:${esActual?'700':'400'}">
+                        <i class="bi ${p.icon}" style="color:${activo ? p.color:'#ccc'}; font-size:13px;"></i>${p.label}
+                        ${i < pasos.length-1 ? '<i class="bi bi-chevron-right" style="font-size:9px; color:#ccc;"></i>' : ''}
+                    </span>`;
                 }).join('');
 
                 return `
-                <div class="card mb-3 border-${urgente ? 'danger' : estadoColores[e.estado] || 'warning'} border-2">
-                    <div class="card-body p-3">
-                        <div class="d-flex align-items-start justify-content-between mb-2">
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="badge bg-${estadoColores[e.estado] || 'warning'} px-2 py-1" style="font-size:12px;">
-                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>${e.estado_display || e.estado}
-                                </span>
-                                <span class="fw-bold" style="font-size:14px;">${e.tipo_detalle?.nombre || 'Emergencia'}</span>
-                                ${urgente ? '<span class="badge bg-danger ms-1" style="animation:pulse 1s infinite;">⚠ +30 min</span>' : ''}
-                            </div>
-                            <span class="text-muted small text-nowrap ms-2">
+                <div class="rounded-3 mb-3 overflow-hidden border border-2 border-${bc}">
+                    <!-- Cabecera clicable para colapsar -->
+                    <div class="d-flex justify-content-between align-items-center px-3 py-2 bg-${bc} bg-opacity-10"
+                         style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#em-${e.id}" aria-expanded="true">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span class="badge bg-${badgeCol[e.estado] || 'secondary'}">${badgeTxt[e.estado] || e.estado}</span>
+                            <span class="fw-bold">${e.tipo_detalle?.nombre || 'Emergencia'}</span>
+                            ${urgente ? `<span class="badge bg-danger" style="animation:pulse 1s infinite;">⚠ +30 min</span>` : ''}
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="text-muted small text-nowrap">
                                 <i class="bi bi-clock me-1"></i>${tiempoStr} activa
                             </span>
+                            <i class="bi bi-chevron-up text-muted small collapse-icon-${e.id}"></i>
                         </div>
-                        <p class="small text-muted mb-2">${e.descripcion || ''}${e.descripcion_ubicacion ? ` — <i class="bi bi-geo-alt"></i> ${e.descripcion_ubicacion}` : ''}</p>
-                        <!-- Timeline -->
-                        <div class="d-flex align-items-center flex-wrap gap-1 mb-2 p-2 rounded" style="background:#f8f9fa;">
-                            ${timelineHtml}
+                    </div>
+                    <!-- Cuerpo colapsable (expandido por defecto) -->
+                    <div class="collapse show" id="em-${e.id}">
+                        <!-- Quién reportó -->
+                        <div class="d-flex align-items-center px-3 py-2 border-bottom" style="background:#fef2f2;">
+                            <div class="rounded-circle bg-danger bg-opacity-15 d-flex align-items-center justify-content-center me-2 flex-shrink-0" style="width:32px;height:32px;">
+                                <i class="bi bi-person-fill text-danger"></i>
+                            </div>
+                            <div>
+                                <span class="fw-semibold">${nombre}</span>${documento}
+                                <div class="text-muted" style="font-size:0.75rem;">Reportó el ${horaReporte}</div>
+                            </div>
                         </div>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted">
-                                <i class="bi bi-person me-1"></i>
-                                ${e.reportada_por_detalle?.first_name || 'Usuario'} ${e.reportada_por_detalle?.last_name || ''}
-                                &mdash; ${fechaReporte.toLocaleString('es-CO', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}
-                            </small>
-                            <div class="d-flex gap-1">
+                        <!-- Detalles -->
+                        <div class="px-3 py-2">
+                            ${e.descripcion_ubicacion ? `<div class="small text-muted mb-1"><i class="bi bi-geo-alt me-1"></i>${e.descripcion_ubicacion}</div>` : ''}
+                            ${e.descripcion ? `<p class="small text-dark mb-0">${e.descripcion}</p>` : ''}
+                            <div class="d-flex flex-wrap gap-2 mt-1">
+                                ${e.personas_afectadas > 0 ? `<span class="badge bg-warning text-dark"><i class="bi bi-people me-1"></i>${e.personas_afectadas} afectados</span>` : ''}
+                                ${e.requiere_evacuacion ? `<span class="badge bg-danger"><i class="bi bi-sign-stop-fill me-1"></i>Evacuación requerida</span>` : ''}
+                            </div>
+                        </div>
+                        <!-- Timeline + Acciones -->
+                        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-top bg-light flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-1 flex-wrap">${timelineHtml}</div>
+                            <div class="d-flex gap-2 flex-wrap">
                                 ${e.estado === 'REPORTADA' ? `
-                                    <button class="btn btn-sm btn-warning" onclick="atenderEmergencia(${e.id})">
-                                        <i class="bi bi-hand-index me-1"></i>Atender
-                                    </button>` : ''}
+                                <button class="btn btn-sm btn-warning fw-semibold" onclick="atenderEmergencia(${e.id})">
+                                    <i class="bi bi-hand-index me-1"></i>Atender
+                                </button>` : ''}
                                 ${e.estado === 'EN_ATENCION' ? `
-                                    <button class="btn btn-sm btn-success" onclick="abrirModalResolver(${e.id})">
-                                        <i class="bi bi-check-lg me-1"></i>Resolver
-                                    </button>` : ''}
-                                ${['REPORTADA', 'EN_ATENCION'].includes(e.estado) ? `
-                                    <button class="btn btn-sm btn-outline-secondary" onclick="marcarFalsaAlarma(${e.id})">
-                                        <i class="bi bi-x-circle me-1"></i>Falsa Alarma
-                                    </button>` : ''}
+                                <button class="btn btn-sm btn-success fw-semibold" onclick="abrirModalResolver(${e.id})">
+                                    <i class="bi bi-check-circle me-1"></i>Resolver
+                                </button>` : ''}
+                                ${['REPORTADA','EN_ATENCION'].includes(e.estado) ? `
+                                <button class="btn btn-sm btn-outline-secondary" onclick="marcarFalsaAlarma(${e.id})">
+                                    <i class="bi bi-x-circle me-1"></i>Falsa Alarma
+                                </button>` : ''}
                             </div>
                         </div>
                     </div>
@@ -557,27 +585,33 @@ async function cargarEmergencias() {
             }).join('');
         }
 
-        // Tabla historial
+        // Tabla historial (solo emergencias cerradas)
         const tbody = document.getElementById('tablaEmergencias');
-        if (emergencias.length === 0) {
+        const historial = emergencias.filter(e => !['REPORTADA','EN_ATENCION'].includes(e.estado));
+        if (historial.length === 0) {
             tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">
-                <i class="bi bi-inbox fs-1 mb-2 d-block"></i>No hay emergencias registradas</td></tr>`;
+                <i class="bi bi-clock-history fs-3 mb-2 d-block"></i>Sin historial registrado</td></tr>`;
         } else {
-            tbody.innerHTML = emergencias.map(e => {
-                const nombreReportante = e.reportada_por_detalle
+            tbody.innerHTML = historial.map(e => {
+                const nombre = e.reportada_por_detalle
                     ? `${e.reportada_por_detalle.first_name || ''} ${e.reportada_por_detalle.last_name || ''}`.trim()
                     : '-';
+                const doc = e.reportada_por_detalle?.numero_documento || '';
                 return `
                 <tr>
-                    <td class="ps-3"><span class="fw-semibold">${e.tipo_detalle?.nombre || '-'}</span></td>
-                    <td class="text-truncate" style="max-width:180px;">${e.descripcion || '-'}</td>
-                    <td>${nombreReportante}</td>
+                    <td class="ps-3">
+                        <span class="fw-semibold">${e.tipo_detalle?.nombre || '-'}</span>
+                        ${e.descripcion ? `<div class="text-muted small text-truncate" style="max-width:140px;">${e.descripcion}</div>` : ''}
+                    </td>
+                    <td>
+                        <div class="fw-semibold small">${nombre}</div>
+                        ${doc ? `<div class="text-muted" style="font-size:0.72rem;">Doc: ${doc}</div>` : ''}
+                    </td>
+                    <td class="small text-muted">${e.descripcion_ubicacion || '-'}</td>
                     <td><span class="badge bg-${estadoColores[e.estado] || 'secondary'}">${e.estado_display || e.estado}</span></td>
                     <td><small>${new Date(e.fecha_hora_reporte).toLocaleString('es-CO', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</small></td>
-                    <td class="pe-3">
-                        ${e.estado === 'REPORTADA' ? `<button class="btn btn-sm btn-outline-warning me-1" onclick="atenderEmergencia(${e.id})">Atender</button>` : ''}
-                        ${e.estado === 'EN_ATENCION' ? `<button class="btn btn-sm btn-outline-success me-1" onclick="abrirModalResolver(${e.id})">Resolver</button>` : ''}
-                        ${['REPORTADA', 'EN_ATENCION'].includes(e.estado) ? `<button class="btn btn-sm btn-outline-danger" onclick="marcarFalsaAlarma(${e.id})">Falsa Alarma</button>` : ''}
+                    <td class="pe-3 text-end">
+                        ${e.estado === 'FALSA_ALARMA' ? `<span class="badge bg-secondary">Falsa alarma</span>` : '<span class="badge bg-success">Cerrada</span>'}
                     </td>
                 </tr>`;
             }).join('');
@@ -922,6 +956,27 @@ document.addEventListener('DOMContentLoaded', function() {
     cargarTiposEmergencia();
     cargarTodo();
     setInterval(cargarTodo, 30000);
+
+    // Chevron del contenedor principal de emergencias activas
+    const colActivas = document.getElementById('collapseEmergenciasActivas');
+    colActivas.addEventListener('hide.bs.collapse', () => {
+        document.getElementById('chevronActivas').classList.replace('bi-chevron-up', 'bi-chevron-down');
+    });
+    colActivas.addEventListener('show.bs.collapse', () => {
+        document.getElementById('chevronActivas').classList.replace('bi-chevron-down', 'bi-chevron-up');
+    });
+
+    // Rotar chevron al colapsar/expandir tarjetas individuales de emergencia
+    document.getElementById('emergenciasActivas').addEventListener('hide.bs.collapse', function(ev) {
+        const id = ev.target.id.replace('em-', '');
+        const icon = document.querySelector(`.collapse-icon-${id}`);
+        if (icon) { icon.classList.replace('bi-chevron-up', 'bi-chevron-down'); }
+    });
+    document.getElementById('emergenciasActivas').addEventListener('show.bs.collapse', function(ev) {
+        const id = ev.target.id.replace('em-', '');
+        const icon = document.querySelector(`.collapse-icon-${id}`);
+        if (icon) { icon.classList.replace('bi-chevron-down', 'bi-chevron-up'); }
+    });
 });
 </script>
 {% endblock %}

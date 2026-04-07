@@ -49,6 +49,13 @@ class EdificioBloque(UbicacionBase):
         verbose_name_plural = "Edificios/Bloques"
         ordering = ["nombre"]
 
+    # Polígono real del edificio para el mapa (lista de [lat, lng])
+    poligono = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Esquinas del edificio: [[lat1,lng1],[lat2,lng2],...] — se dibuja como polígono en el mapa",
+    )
+
     # Campos para representacion SVG del campus
     svg_x = models.FloatField(null=True, blank=True, help_text="Coordenada X en SVG (calculada desde GPS)")
     svg_y = models.FloatField(null=True, blank=True, help_text="Coordenada Y en SVG (calculada desde GPS)")
@@ -224,3 +231,92 @@ class HistorialEstadoEdificio(models.Model):
 
     def __str__(self):
         return f"{self.edificio.nombre}: {self.estado_anterior} -> {self.estado_nuevo}"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# GRAFO DE CAMINOS PEATONALES — para cálculo de rutas de evacuación reales
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class NodoCamino(models.Model):
+    """Punto clave en el campus: intersección, entrada de edificio, etc.
+    Los nodos son los vértices del grafo de caminos peatonales."""
+
+    TIPO_CHOICES = [
+        ("INTERSECCION", "Intersección de caminos"),
+        ("ENTRADA", "Entrada de edificio"),
+        ("PUNTO_ENCUENTRO", "Punto de encuentro"),
+        ("SALIDA_CAMPUS", "Salida del campus"),
+        ("OTRO", "Otro"),
+    ]
+
+    nombre = models.CharField(max_length=100, blank=True, help_text="Nombre descriptivo (ej: 'Entrada Bloque A')")
+    latitud = models.FloatField(validators=[MinValueValidator(-90), MaxValueValidator(90)])
+    longitud = models.FloatField(validators=[MinValueValidator(-180), MaxValueValidator(180)])
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default="INTERSECCION")
+
+    # Relaciones opcionales para contexto
+    edificio = models.ForeignKey(
+        EdificioBloque, null=True, blank=True, on_delete=models.SET_NULL, related_name="nodos_camino"
+    )
+    punto_encuentro = models.ForeignKey(
+        PuntoEncuentro, null=True, blank=True, on_delete=models.SET_NULL, related_name="nodos_camino"
+    )
+
+    activo = models.BooleanField(default=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Nodo de camino"
+        verbose_name_plural = "Nodos de camino"
+        ordering = ["tipo", "nombre"]
+        indexes = [models.Index(fields=["activo"])]
+
+    def __str__(self):
+        return self.nombre or f"Nodo #{self.pk} ({self.get_tipo_display()})"
+
+
+class TramoCamino(models.Model):
+    """Segmento de camino peatonal entre dos nodos.
+    Los tramos son las aristas del grafo de caminos."""
+
+    TIPO_CHOICES = [
+        ("VIA_INTERNA", "Vía interna"),
+        ("VIA_PRINCIPAL", "Vía principal"),
+        ("PASILLO", "Pasillo interior"),
+        ("RAMPA", "Rampa accesible"),
+        ("ESCALERA", "Escalera"),
+    ]
+
+    nodo_origen = models.ForeignKey(NodoCamino, on_delete=models.CASCADE, related_name="tramos_salida")
+    nodo_destino = models.ForeignKey(NodoCamino, on_delete=models.CASCADE, related_name="tramos_entrada")
+
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default="VIA_INTERNA")
+    distancia_metros = models.FloatField(
+        help_text="Distancia en metros — se calcula automáticamente al guardar si se deja en 0"
+    )
+    bidireccional = models.BooleanField(default=True, help_text="Si False, solo se puede transitar origen → destino")
+    activo = models.BooleanField(default=True)
+
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Tramo de camino"
+        verbose_name_plural = "Tramos de camino"
+        unique_together = [("nodo_origen", "nodo_destino")]
+        indexes = [models.Index(fields=["activo"])]
+
+    def save(self, *args, **kwargs):
+        # Calcula distancia automáticamente si no se proporcionó
+        if not self.distancia_metros:
+            import math
+
+            lat1, lng1 = math.radians(self.nodo_origen.latitud), math.radians(self.nodo_origen.longitud)
+            lat2, lng2 = math.radians(self.nodo_destino.latitud), math.radians(self.nodo_destino.longitud)
+            dlat, dlng = lat2 - lat1, lng2 - lng1
+            a = math.sin(dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlng / 2) ** 2
+            self.distancia_metros = round(6371000 * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a)), 2)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.nodo_origen} → {self.nodo_destino} ({self.distancia_metros}m)"

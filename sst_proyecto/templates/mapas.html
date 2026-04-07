@@ -61,10 +61,21 @@
             <div class="card-header-modern">
                 <div class="d-flex justify-content-between align-items-center">
                     <h6 class="mb-0">Centro Minero SENA - Boyacá</h6>
-                    <div class="d-flex gap-2">
+                    <div class="d-flex gap-2 flex-wrap">
                         <button id="btnMiUbicacion" class="btn btn-sm btn-outline-secondary">
                             <i class="bi bi-crosshair2"></i> Mi ubicación
                         </button>
+                        <button id="btnRutaEvacuacion" class="btn btn-sm btn-danger" title="Calcular ruta al punto de encuentro más cercano">
+                            <i class="bi bi-signpost-2-fill"></i> Ruta de evacuación
+                        </button>
+                        <button id="btnLimpiarRuta" class="btn btn-sm btn-outline-secondary d-none" title="Limpiar ruta">
+                            <i class="bi bi-x-circle"></i>
+                        </button>
+                        {% if user.rol in "ADMINISTRATIVO COORDINADOR_SST" %}
+                        <a href="{% url 'editor_mapa' %}" class="btn btn-sm btn-outline-warning" title="Editor del campus">
+                            <i class="bi bi-pencil-square"></i>
+                        </a>
+                        {% endif %}
                         <button id="btnPantallaCompleta" class="btn btn-sm btn-outline-secondary">
                             <i class="bi bi-arrows-fullscreen"></i>
                         </button>
@@ -82,6 +93,12 @@
                         </div>
                         <div class="col-12">
                             <small id="infoPuntoMasCercano" class="text-muted"></small>
+                        </div>
+                        <div class="col-12" id="infoRutaEvacuacion" style="display:none;">
+                            <div class="alert alert-danger py-1 px-2 mb-0 d-flex align-items-center gap-2" style="font-size:12px;">
+                                <i class="bi bi-signpost-2-fill"></i>
+                                <span id="textoRutaEvacuacion"></span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1368,6 +1385,103 @@ document.addEventListener('fullscreenchange', function() {
     } else {
         btnIcon.className = 'bi bi-arrows-fullscreen';
     }
+});
+
+// ====================================================================
+// RUTA DE EVACUACIÓN — calcula y dibuja la ruta real al punto más cercano
+// ====================================================================
+let capaRutaEvacuacion = null;
+
+document.getElementById('btnRutaEvacuacion').addEventListener('click', function () {
+    if (!navigator.geolocation) {
+        alert('Tu navegador no soporta geolocalización.');
+        return;
+    }
+
+    this.disabled = true;
+    this.innerHTML = '<i class="bi bi-hourglass-split"></i> Calculando...';
+
+    navigator.geolocation.getCurrentPosition(
+        function (pos) {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+
+            fetch(`/mapas/api/ruta/?lat=${lat}&lng=${lng}`)
+                .then(r => r.json())
+                .then(res => {
+                    // Limpiar ruta anterior
+                    if (capaRutaEvacuacion) mapa.removeLayer(capaRutaEvacuacion);
+
+                    const btn = document.getElementById('btnRutaEvacuacion');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-signpost-2-fill"></i> Ruta de evacuación';
+
+                    if (!res.waypoints || res.waypoints.length < 2) {
+                        alert('No se pudo calcular la ruta: ' + (res.mensaje || 'Sin datos'));
+                        return;
+                    }
+
+                    // Dibujar ruta — línea sólida si hay grafo, punteada si es línea directa
+                    const esSolida = res.encontrado;
+                    capaRutaEvacuacion = L.featureGroup();
+
+                    L.polyline(res.waypoints, {
+                        color: '#E53935', weight: 5, opacity: 0.95,
+                        dashArray: esSolida ? null : '10, 8',
+                    }).addTo(capaRutaEvacuacion);
+
+                    // Flecha de dirección en cada segmento
+                    for (let i = 0; i < res.waypoints.length - 1; i++) {
+                        const mid = [
+                            (res.waypoints[i][0] + res.waypoints[i + 1][0]) / 2,
+                            (res.waypoints[i][1] + res.waypoints[i + 1][1]) / 2,
+                        ];
+                        L.circleMarker(mid, { radius: 3, color: '#E53935', fillOpacity: 1 }).addTo(capaRutaEvacuacion);
+                    }
+
+                    // Marcador inicio (usuario)
+                    L.circleMarker([lat, lng], {
+                        radius: 8, color: '#E53935', fillColor: '#fff', fillOpacity: 1, weight: 3,
+                    }).bindPopup('<b>Tu posición</b>').addTo(capaRutaEvacuacion);
+
+                    // Marcador destino (punto de encuentro)
+                    if (res.punto_encuentro) {
+                        L.circleMarker([res.punto_encuentro.lat, res.punto_encuentro.lng], {
+                            radius: 10, color: '#2E7D32', fillColor: '#4CAF50', fillOpacity: 1,
+                        }).bindPopup(`<b>🟢 ${res.punto_encuentro.nombre}</b><br>Punto de encuentro`).addTo(capaRutaEvacuacion);
+                    }
+
+                    capaRutaEvacuacion.addTo(mapa);
+                    mapa.fitBounds(capaRutaEvacuacion.getBounds(), { padding: [40, 40] });
+
+                    // Mostrar info en panel
+                    const aviso = esSolida
+                        ? `🗺️ ${res.mensaje}`
+                        : `⚠️ Ruta directa (sin caminos definidos) — ${res.distancia_metros}m · ~${res.tiempo_minutos} min`;
+
+                    document.getElementById('textoRutaEvacuacion').textContent = aviso;
+                    document.getElementById('infoRutaEvacuacion').style.display = '';
+                    document.getElementById('btnLimpiarRuta').classList.remove('d-none');
+                })
+                .catch(() => {
+                    document.getElementById('btnRutaEvacuacion').disabled = false;
+                    document.getElementById('btnRutaEvacuacion').innerHTML = '<i class="bi bi-signpost-2-fill"></i> Ruta de evacuación';
+                    alert('Error al conectar con el servidor.');
+                });
+        },
+        function () {
+            document.getElementById('btnRutaEvacuacion').disabled = false;
+            document.getElementById('btnRutaEvacuacion').innerHTML = '<i class="bi bi-signpost-2-fill"></i> Ruta de evacuación';
+            alert('No se pudo obtener tu ubicación GPS.');
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+    );
+});
+
+document.getElementById('btnLimpiarRuta').addEventListener('click', function () {
+    if (capaRutaEvacuacion) { mapa.removeLayer(capaRutaEvacuacion); capaRutaEvacuacion = null; }
+    document.getElementById('infoRutaEvacuacion').style.display = 'none';
+    this.classList.add('d-none');
 });
 
 </script>

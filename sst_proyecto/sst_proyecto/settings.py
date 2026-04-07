@@ -374,6 +374,7 @@ AXES_LOCKOUT_PARAMETERS = [["ip_address", "username"]]
 AXES_RESET_ON_SUCCESS = True  # Reiniciar contador tras login exitoso
 AXES_VERBOSE = False  # No llenar logs con info innecesaria
 AXES_HANDLER = "axes.handlers.database.AxesDatabaseHandler"
+AXES_DISABLE_ACCESS_LOG = True  # Evita IntegrityError session_hash NOT NULL (axes 6.x)
 # Redirigir al login con parámetro cuando axes bloquea, en lugar de mostrar 403 genérico
 AXES_LOCKOUT_URL = "/accounts/login/?bloqueado=1"
 
