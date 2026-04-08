@@ -125,8 +125,11 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         emergencia = serializer.save(reportada_por=self.request.user)
 
-        # Notificar via sistema centralizado a Brigada y Administrativos
-        NotificacionService.notificar_emergencia_creada(emergencia)
+        # Si el tipo es de alerta masiva (ej. Sismo, Deslizamiento), notificar a TODOS
+        if emergencia.tipo.alerta_masiva:
+            NotificacionService.notificar_emergencia_masiva(emergencia)
+        else:
+            NotificacionService.notificar_emergencia_creada(emergencia)
         # También notificar vía NotificacionEmergencia (modelo específico de emergencias)
         self.notificar_brigada(emergencia)
 
