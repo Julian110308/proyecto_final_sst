@@ -811,19 +811,30 @@ async function cargarBrigadistas() {
         }
 
         const espNames = {PRIMEROS_AUXILIOS:'Primeros Auxilios', INCENDIOS:'Incendios', EVACUACION:'Evacuacion', RESCATE:'Rescate', COMUNICACIONES:'Comunicaciones', GENERAL:'General'};
+        const nivNames = {BASICO:'Básico', INTERMEDIO:'Intermedio', AVANZADO:'Avanzado'};
         cont.innerHTML = lista.map(b => {
             const color = b.disponible ? 'success' : 'secondary';
             const icon = b.disponible ? 'bi-person-check-fill' : 'bi-person-x-fill';
+            const doc = b.usuario_detalle?.numero_documento || '';
+            const tel = b.telefono_emergencia || b.usuario_detalle?.telefono || '';
+            const nivel = nivNames[b.nivel_certificacion] || b.nivel_certificacion || '';
             return `
-                <div class="d-flex align-items-center p-2 border-bottom">
-                    <div class="rounded-circle bg-${color} bg-opacity-15 text-${color} me-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px;height:32px;">
-                        <i class="bi ${icon} small"></i>
+                <div class="p-2 border-bottom">
+                    <div class="d-flex align-items-center mb-1">
+                        <div class="rounded-circle bg-${color} bg-opacity-15 text-${color} me-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px;height:32px;">
+                            <i class="bi ${icon} small"></i>
+                        </div>
+                        <div class="overflow-hidden flex-grow-1">
+                            <div class="fw-semibold small text-truncate">${b.usuario_nombre || 'Brigadista'}</div>
+                            <div class="text-muted" style="font-size:0.72rem;">${espNames[b.especializacion] || b.especializacion}</div>
+                        </div>
+                        <span class="badge bg-${color}" style="font-size:0.68rem;">${b.disponible ? 'Disponible' : 'No disp.'}</span>
                     </div>
-                    <div class="overflow-hidden flex-grow-1">
-                        <div class="fw-semibold small text-truncate">${b.usuario_nombre || 'Brigadista'}</div>
-                        <div class="text-muted" style="font-size:0.72rem;">${espNames[b.especializacion] || b.especializacion}</div>
+                    <div class="ps-5 d-flex flex-wrap gap-2" style="font-size:0.72rem; color:#6c757d;">
+                        ${doc ? `<span><i class="bi bi-person-vcard me-1"></i>${doc}</span>` : ''}
+                        ${tel ? `<span><i class="bi bi-telephone me-1"></i>${tel}</span>` : ''}
+                        ${nivel ? `<span><i class="bi bi-patch-check me-1"></i>${nivel}</span>` : ''}
                     </div>
-                    <span class="badge bg-${color} bg-opacity-${b.disponible ? '100' : '25'} text-${b.disponible ? 'white' : 'secondary'}" style="font-size:0.68rem;">${b.disponible ? 'Disponible' : 'No disp.'}</span>
                 </div>`;
         }).join('');
     } catch(e) {
