@@ -3,7 +3,7 @@
 {% block title %}Gestión de Usuarios - Sistema SST{% endblock %}
 
 {% block breadcrumb %}
-<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Inicio</a></li>
 <li class="breadcrumb-item active">Gestión de Usuarios</li>
 {% endblock %}
 
@@ -262,9 +262,9 @@
                                         <label for="nuevo_programa" class="form-label form-label-required">Programa de Formación</label>
                                         <select class="form-select" id="nuevo_programa" name="programa_formacion">
                                             <option value="">Selecciona programa...</option>
-                                            <option value="Analisis y Desarrollo de Software">Análisis y Desarrollo de Software</option>
-                                            <option value="Maquinaria Pesada">Maquinaria Pesada</option>
-                                            <option value="Seguridad y Salud en el Trabajo">Seguridad y Salud en el Trabajo</option>
+                                            {% for prog in programas %}
+                                            <option value="{{ prog }}">{{ prog }}</option>
+                                            {% endfor %}
                                         </select>
                                     </div>
                                 </div>
@@ -378,9 +378,9 @@
                                         <label class="form-label">Programa</label>
                                         <select class="form-select" id="editar_programa" name="programa_formacion">
                                             <option value="">Selecciona...</option>
-                                            <option value="Analisis y Desarrollo de Software">Análisis y Desarrollo de Software</option>
-                                            <option value="Maquinaria Pesada">Maquinaria Pesada</option>
-                                            <option value="Seguridad y Salud en el Trabajo">Seguridad y Salud en el Trabajo</option>
+                                            {% for prog in programas %}
+                                            <option value="{{ prog }}">{{ prog }}</option>
+                                            {% endfor %}
                                         </select>
                                     </div>
                                 </div>

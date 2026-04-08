@@ -2,12 +2,32 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-# Programas de formación disponibles — fuente de verdad única para registro y filtros
+# Lista estática mantenida por compatibilidad con código existente.
+# La fuente de verdad real es el modelo ProgramaFormacion en la base de datos.
 PROGRAMAS_FORMACION = [
     ("Analisis y Desarrollo de Software", "Análisis y Desarrollo de Software"),
     ("Maquinaria Pesada", "Maquinaria Pesada"),
     ("Seguridad y Salud en el Trabajo", "Seguridad y Salud en el Trabajo"),
 ]
+
+
+class ProgramaFormacion(models.Model):
+    """
+    Programas de formación gestionables por el Coordinador SST desde el dashboard.
+    Reemplaza la lista estática PROGRAMAS_FORMACION como fuente de verdad operativa.
+    """
+
+    nombre = models.CharField(max_length=200, unique=True, verbose_name="Nombre del programa")
+    activo = models.BooleanField(default=True, verbose_name="Activo")
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Programa de Formación"
+        verbose_name_plural = "Programas de Formación"
+        ordering = ["nombre"]
+
+    def __str__(self):
+        return self.nombre
 
 
 class RolePermissions:

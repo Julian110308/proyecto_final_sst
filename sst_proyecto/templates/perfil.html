@@ -303,9 +303,9 @@
                                 <label class="form-label fw-semibold small">Programa de formacion</label>
                                 <select class="form-select" name="programa_formacion" id="selectProgramaModal">
                                     <option value="">— Sin asignar —</option>
-                                    <option value="Analisis y Desarrollo de Software" {% if usuario.programa_formacion == 'Analisis y Desarrollo de Software' %}selected{% endif %}>Análisis y Desarrollo de Software</option>
-                                    <option value="Maquinaria Pesada" {% if usuario.programa_formacion == 'Maquinaria Pesada' %}selected{% endif %}>Maquinaria Pesada</option>
-                                    <option value="Seguridad y Salud en el Trabajo" {% if usuario.programa_formacion == 'Seguridad y Salud en el Trabajo' %}selected{% endif %}>Seguridad y Salud en el Trabajo</option>
+                                    {% for prog in programas %}
+                                    <option value="{{ prog }}" {% if usuario.programa_formacion == prog %}selected{% endif %}>{{ prog }}</option>
+                                    {% endfor %}
                                 </select>
                             </div>
                             <div class="col-md-6">

@@ -465,12 +465,17 @@ def mi_perfil_view(request):
         .first()
     )
 
+    from usuarios.models import ProgramaFormacion as PFModel
+
+    programas = list(PFModel.objects.filter(activo=True).values_list("nombre", flat=True))
+
     context = {
         "usuario": usuario,
         "total_accesos_mes": total_accesos_mes,
         "ultimo_acceso": ultimo_acceso,
         "en_centro": registro_activo is not None,
         "registro_activo": registro_activo,
+        "programas": programas,
     }
 
     # Para instructores: cargar fichas disponibles por programa para el selector dinámico
@@ -687,6 +692,8 @@ def gestion_usuarios_view(request):
     from usuarios.models import Usuario
     from django.core.paginator import Paginator
 
+    from usuarios.models import ProgramaFormacion as PFModel
+
     # Excluir superusuarios para seguridad básica en la vista
     usuarios = Usuario.objects.all().exclude(is_superuser=True).order_by("-fecha_registro")
 
@@ -694,7 +701,13 @@ def gestion_usuarios_view(request):
     paginator = Paginator(usuarios, 20)
     page_obj = paginator.get_page(request.GET.get("page"))
 
-    context = {"usuarios": page_obj, "page_obj": page_obj, "total_usuarios": usuarios.count()}
+    programas = list(PFModel.objects.filter(activo=True).values_list("nombre", flat=True))
+    context = {
+        "usuarios": page_obj,
+        "page_obj": page_obj,
+        "total_usuarios": usuarios.count(),
+        "programas": programas,
+    }
     return render(request, "dashboard/administrativo/gestion_usuarios.html", context)
 
 
@@ -780,22 +793,114 @@ def gestion_visitantes_view(request):
 @rol_requerido("BRIGADA")
 def equipos_brigada_view(request):
     """
-    Vista para gestión de equipos de emergencia (Brigada)
+    Vista para gestión de equipos de emergencia (Brigada + Coordinador SST).
+    GET  → lista con filtros
+    POST → CRUD (crear, editar, eliminar) — solo COORDINADOR_SST
     """
-    from mapas.models import EquipamientoSeguridad
+    from mapas.models import EquipamientoSeguridad, EdificioBloque
     from django.db.models import Q, Case, When
     from django.utils import timezone
     from datetime import timedelta
+    from django.contrib import messages as django_messages
 
-    # Obtener parámetros de filtrado
+    # ── CRUD (solo coordinador) ──────────────────────────────────────
+    if request.method == "POST":
+        if request.user.rol != "BRIGADA":
+            django_messages.error(request, "No tienes permiso para realizar esta acción.")
+            return redirect("equipos_brigada")
+
+        accion = request.POST.get("accion", "")
+
+        if accion == "crear":
+            tipo = request.POST.get("tipo", "").strip()
+            codigo = request.POST.get("codigo", "").strip()
+            descripcion = request.POST.get("descripcion", "").strip()
+            estado = request.POST.get("estado", "OPERATIVO")
+            edificio_id = request.POST.get("edificio_id") or None
+            piso = request.POST.get("piso", 1)
+            proxima_revision = request.POST.get("proxima_revision") or None
+
+            if not tipo or not codigo:
+                django_messages.error(request, "El tipo y el código son obligatorios.")
+            elif EquipamientoSeguridad.objects.filter(codigo__iexact=codigo).exists():
+                django_messages.error(request, f'Ya existe un equipo con el código "{codigo}".')
+            else:
+                edificio = None
+                if edificio_id:
+                    try:
+                        edificio = EdificioBloque.objects.get(pk=edificio_id)
+                    except EdificioBloque.DoesNotExist:
+                        pass
+                lat = edificio.latitud if edificio else 5.8520
+                lng = edificio.longitud if edificio else -73.0318
+                EquipamientoSeguridad.objects.create(
+                    tipo=tipo,
+                    codigo=codigo,
+                    nombre=descripcion or codigo,
+                    descripcion=descripcion,
+                    estado=estado,
+                    edificio=edificio,
+                    piso=int(piso),
+                    latitud=lat,
+                    longitud=lng,
+                    fecha_instalacion=timezone.now(),
+                    proxima_revision=proxima_revision or None,
+                )
+                django_messages.success(request, f'Equipo "{codigo}" registrado correctamente.')
+
+        elif accion == "editar":
+            equipo_id = request.POST.get("equipo_id")
+            try:
+                equipo = EquipamientoSeguridad.objects.get(pk=equipo_id)
+                codigo_nuevo = request.POST.get("codigo", "").strip()
+                if not codigo_nuevo:
+                    django_messages.error(request, "El código no puede estar vacío.")
+                elif EquipamientoSeguridad.objects.filter(codigo__iexact=codigo_nuevo).exclude(pk=equipo_id).exists():
+                    django_messages.error(request, f'Ya existe otro equipo con el código "{codigo_nuevo}".')
+                else:
+                    edificio_id = request.POST.get("edificio_id") or None
+                    edificio = None
+                    if edificio_id:
+                        try:
+                            edificio = EdificioBloque.objects.get(pk=edificio_id)
+                        except EdificioBloque.DoesNotExist:
+                            pass
+                    descripcion = request.POST.get("descripcion", "").strip()
+                    equipo.tipo = request.POST.get("tipo", equipo.tipo)
+                    equipo.codigo = codigo_nuevo
+                    equipo.nombre = descripcion or codigo_nuevo
+                    equipo.descripcion = descripcion
+                    equipo.estado = request.POST.get("estado", equipo.estado)
+                    equipo.edificio = edificio
+                    equipo.piso = int(request.POST.get("piso", equipo.piso))
+                    equipo.proxima_revision = request.POST.get("proxima_revision") or None
+                    if edificio:
+                        equipo.latitud = edificio.latitud
+                        equipo.longitud = edificio.longitud
+                    equipo.save()
+                    django_messages.success(request, f'Equipo "{codigo_nuevo}" actualizado.')
+            except EquipamientoSeguridad.DoesNotExist:
+                django_messages.error(request, "Equipo no encontrado.")
+
+        elif accion == "eliminar":
+            equipo_id = request.POST.get("equipo_id")
+            try:
+                equipo = EquipamientoSeguridad.objects.get(pk=equipo_id)
+                codigo = equipo.codigo
+                equipo.delete()
+                django_messages.success(request, f'Equipo "{codigo}" eliminado.')
+            except EquipamientoSeguridad.DoesNotExist:
+                django_messages.error(request, "Equipo no encontrado.")
+
+        return redirect("equipos_brigada")
+
+    # ── GET ──────────────────────────────────────────────────────────
     tipo_filtro = request.GET.get("tipo", "")
     estado_filtro = request.GET.get("estado", "")
     busqueda = request.GET.get("q", "")
 
-    # Consultar equipos reales de la BD
     equipos = EquipamientoSeguridad.objects.select_related("edificio", "responsable").all()
 
-    # Aplicar filtros
     if tipo_filtro:
         equipos = equipos.filter(tipo=tipo_filtro)
     if estado_filtro:
@@ -805,25 +910,22 @@ def equipos_brigada_view(request):
             Q(nombre__icontains=busqueda) | Q(codigo__icontains=busqueda) | Q(edificio__nombre__icontains=busqueda)
         )
 
-    # Ordenar por estado (primero los que necesitan atención)
     equipos = equipos.order_by(
         Case(When(estado="FUERA_SERVICIO", then=0), When(estado="MANTENIMIENTO", then=1), default=2), "tipo", "codigo"
     )
 
-    # Estadísticas
     total_equipos = EquipamientoSeguridad.objects.count()
     operativos = EquipamientoSeguridad.objects.filter(estado="OPERATIVO").count()
     en_mantenimiento = EquipamientoSeguridad.objects.filter(estado="MANTENIMIENTO").count()
     fuera_servicio = EquipamientoSeguridad.objects.filter(estado="FUERA_SERVICIO").count()
 
-    # Equipos que necesitan revisión pronto (próximos 30 días)
     fecha_limite = timezone.now() + timedelta(days=30)
     proximos_revision = EquipamientoSeguridad.objects.filter(
         proxima_revision__lte=fecha_limite, proxima_revision__gte=timezone.now()
     ).count()
 
-    # Tipos de equipamiento para el filtro
     tipos_equipamiento = EquipamientoSeguridad.TIPO_EQUIPAMIENTO
+    edificios = EdificioBloque.objects.filter(activo=True).order_by("nombre")
 
     context = {
         "equipos": equipos,
@@ -836,8 +938,80 @@ def equipos_brigada_view(request):
         "tipo_filtro": tipo_filtro,
         "estado_filtro": estado_filtro,
         "busqueda": busqueda,
+        "edificios": edificios,
+        "estados": [
+            ("OPERATIVO", "Operativo"),
+            ("MANTENIMIENTO", "En mantenimiento"),
+            ("FUERA_SERVICIO", "Fuera de servicio"),
+        ],
     }
     return render(request, "dashboard/brigada/equipos.html", context)
+
+
+@login_required
+@rol_requerido("COORDINADOR_SST")
+def programas_formacion_view(request):
+    """
+    CRUD de programas de formación — solo Coordinador SST.
+    GET  → lista todos los programas
+    POST → crea, edita o elimina según el campo 'accion'
+    """
+    from usuarios.models import ProgramaFormacion
+    from django.contrib import messages as django_messages
+
+    if request.method == "POST":
+        accion = request.POST.get("accion", "")
+
+        if accion == "crear":
+            nombre = request.POST.get("nombre", "").strip()
+            if not nombre:
+                django_messages.error(request, "El nombre del programa no puede estar vacío.")
+            elif ProgramaFormacion.objects.filter(nombre__iexact=nombre).exists():
+                django_messages.error(request, f'Ya existe un programa llamado "{nombre}".')
+            else:
+                ProgramaFormacion.objects.create(nombre=nombre)
+                django_messages.success(request, f'Programa "{nombre}" creado correctamente.')
+
+        elif accion == "editar":
+            programa_id = request.POST.get("programa_id")
+            nombre = request.POST.get("nombre", "").strip()
+            try:
+                prog = ProgramaFormacion.objects.get(pk=programa_id)
+                if not nombre:
+                    django_messages.error(request, "El nombre no puede estar vacío.")
+                elif ProgramaFormacion.objects.filter(nombre__iexact=nombre).exclude(pk=programa_id).exists():
+                    django_messages.error(request, f'Ya existe un programa llamado "{nombre}".')
+                else:
+                    prog.nombre = nombre
+                    prog.save()
+                    django_messages.success(request, f'Programa actualizado a "{nombre}".')
+            except ProgramaFormacion.DoesNotExist:
+                django_messages.error(request, "Programa no encontrado.")
+
+        elif accion == "eliminar":
+            programa_id = request.POST.get("programa_id")
+            try:
+                prog = ProgramaFormacion.objects.get(pk=programa_id)
+                # Verificar que no haya usuarios usando este programa
+                from usuarios.models import Usuario
+
+                en_uso = Usuario.objects.filter(programa_formacion__iexact=prog.nombre).exists()
+                if en_uso:
+                    django_messages.error(
+                        request,
+                        f'No se puede eliminar "{prog.nombre}" porque hay usuarios asignados a este programa.',
+                    )
+                else:
+                    nombre = prog.nombre
+                    prog.delete()
+                    django_messages.success(request, f'Programa "{nombre}" eliminado.')
+            except ProgramaFormacion.DoesNotExist:
+                django_messages.error(request, "Programa no encontrado.")
+
+        return redirect("programas_formacion")
+
+    programas = ProgramaFormacion.objects.all()
+    return render(request, "dashboard/coordinador/programas_formacion.html", {"programas": programas})
 
 
 @login_required
@@ -1147,6 +1321,8 @@ urlpatterns = [
     # URLs PARA ADMINISTRATIVO
     path("administrativo/usuarios/", gestion_usuarios_view, name="gestion_usuarios"),
     path("administrativo/configuracion/", configuracion_view, name="configuracion_sistema"),
+    # URLs PARA COORDINADOR SST
+    path("coordinador/programas-formacion/", programas_formacion_view, name="programas_formacion"),
     # URLs PARA VIGILANCIA
     path("vigilancia/visitantes/", gestion_visitantes_view, name="gestion_visitantes"),
     path("acceso/historial/", historial_accesos_view, name="historial_accesos"),

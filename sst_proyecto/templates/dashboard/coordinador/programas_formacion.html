@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+
+{% block title %}Programas de Formación — Coordinador SST{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Panel</a></li>
+<li class="breadcrumb-item active">Programas de Formación</li>
+{% endblock %}
+
+{% block content %}
+
+<style>
+    .card-coord { border-left: 4px solid #39A900; }
+    .btn-sena { background-color: #39A900; color: #fff; border: none; }
+    .btn-sena:hover { background-color: #2d8200; color: #fff; }
+    .table-hover tbody tr:hover { background-color: #f0faf0; }
+    .badge-activo { background-color: #39A900; }
+    .programa-row td { vertical-align: middle; }
+</style>
+
+<!-- Header -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h4 fw-bold mb-1">
+            <i class="bi bi-mortarboard-fill me-2" style="color:#39A900;"></i>Programas de Formación
+        </h1>
+        <p class="text-muted mb-0 small">Gestiona los programas de formación disponibles en el sistema.</p>
+    </div>
+    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Volver al panel
+    </a>
+</div>
+
+{% if messages %}
+    {% for msg in messages %}
+        <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show" role="alert">
+            {{ msg }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<div class="row g-4">
+    <!-- Formulario para agregar nuevo programa -->
+    <div class="col-lg-4">
+        <div class="card card-coord shadow-sm h-100">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0 fw-semibold"><i class="bi bi-plus-circle me-2" style="color:#39A900;"></i>Agregar Programa</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="formCrear">
+                    {% csrf_token %}
+                    <input type="hidden" name="accion" value="crear">
+                    <div class="mb-3">
+                        <label for="nuevoNombre" class="form-label fw-semibold">Nombre del programa <span class="text-danger">*</span></label>
+                        <input type="text"
+                               class="form-control"
+                               id="nuevoNombre"
+                               name="nombre"
+                               maxlength="200"
+                               placeholder="Ej: Técnico en Electricidad"
+                               required>
+                        <div class="form-text">Escribe el nombre exactamente como aparecerá en el registro.</div>
+                    </div>
+                    <button type="submit" class="btn btn-sena w-100">
+                        <i class="bi bi-plus-lg me-1"></i>Agregar programa
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de programas -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0 fw-semibold">
+                    <i class="bi bi-list-ul me-2" style="color:#39A900;"></i>
+                    Programas registrados
+                    <span class="badge rounded-pill ms-2" style="background:#39A900; font-size:.75rem;">{{ programas|length }}</span>
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="px-3 pt-3 pb-2">
+                    <input type="text" class="form-control" id="buscarPrograma" placeholder="Buscar programa...">
+                </div>
+                {% if programas %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="tablaProgamas">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">#</th>
+                                <th>Nombre del programa</th>
+                                <th class="text-center" style="width:160px;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for prog in programas %}
+                            <tr class="programa-row">
+                                <td class="ps-3 text-muted small">{{ forloop.counter }}</td>
+                                <td>
+                                    <span class="programa-nombre">{{ prog.nombre }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <button class="btn btn-outline-secondary btn-sm me-1"
+                                            onclick="abrirEditar({{ prog.id }}, '{{ prog.nombre|escapejs }}')"
+                                            title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm"
+                                            onclick="abrirEliminar({{ prog.id }}, '{{ prog.nombre|escapejs }}')"
+                                            title="Eliminar">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-mortarboard" style="font-size:3rem; color:#ccc;"></i>
+                    <p class="mt-3 mb-0">No hay programas registrados aún.</p>
+                    <p class="small">Usa el formulario de la izquierda para agregar el primero.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal editar -->
+<div class="modal fade" id="modalEditar" tabindex="-1" aria-labelledby="modalEditarLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" id="formEditar">
+                {% csrf_token %}
+                <input type="hidden" name="accion" value="editar">
+                <input type="hidden" name="programa_id" id="editarId">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-semibold" id="modalEditarLabel">
+                        <i class="bi bi-pencil-square me-2" style="color:#39A900;"></i>Editar Programa
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="editarNombre" class="form-label fw-semibold">Nombre del programa <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="editarNombre" name="nombre" maxlength="200" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sena">
+                        <i class="bi bi-check-lg me-1"></i>Guardar cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal eliminar -->
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-labelledby="modalEliminarLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" id="formEliminar">
+                {% csrf_token %}
+                <input type="hidden" name="accion" value="eliminar">
+                <input type="hidden" name="programa_id" id="eliminarId">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-semibold text-danger" id="modalEliminarLabel">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Eliminar Programa
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-1">¿Estás seguro de que deseas eliminar el programa:</p>
+                    <p class="fw-bold mb-3" id="eliminarNombre"></p>
+                    <div class="alert alert-warning py-2 small mb-0">
+                        <i class="bi bi-info-circle me-1"></i>
+                        No podrás eliminarlo si hay usuarios activos asignados a este programa.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i>Eliminar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function abrirEditar(id, nombre) {
+    document.getElementById('editarId').value = id;
+    document.getElementById('editarNombre').value = nombre;
+    new bootstrap.Modal(document.getElementById('modalEditar')).show();
+}
+
+function abrirEliminar(id, nombre) {
+    document.getElementById('eliminarId').value = id;
+    document.getElementById('eliminarNombre').textContent = '"' + nombre + '"';
+    new bootstrap.Modal(document.getElementById('modalEliminar')).show();
+}
+
+// Búsqueda en tiempo real
+document.getElementById('buscarPrograma').addEventListener('input', function () {
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('#tablaProgamas tbody .programa-row').forEach(function (row) {
+        const nombre = row.querySelector('.programa-nombre').textContent.toLowerCase();
+        row.style.display = nombre.includes(q) ? '' : 'none';
+    });
+});
+</script>
+
+{% endblock %}

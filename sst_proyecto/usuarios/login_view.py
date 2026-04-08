@@ -17,6 +17,12 @@ def custom_login_view(request):
     """Vista de login: el usuario ingresa su correo, se busca el username interno
     y se autentica con él."""
 
+    from .models import ProgramaFormacion
+
+    def _render_login(request):
+        programas = list(ProgramaFormacion.objects.filter(activo=True).values_list("nombre", flat=True))
+        return render(request, "login.html", {"programas": programas})
+
     # axes redirige aquí con ?bloqueado=1 cuando supera el límite de intentos fallidos
     if request.GET.get("bloqueado"):
         ip = request.META.get("REMOTE_ADDR", "")
@@ -26,12 +32,12 @@ def custom_login_view(request):
             "Tu acceso ha sido bloqueado temporalmente por múltiples intentos fallidos. "
             "Espera 15 minutos e intenta de nuevo, o contacta al Coordinador SST.",
         )
-        return render(request, "login.html")
+        return _render_login(request)
 
     if getattr(request, "limited", False):
         logger.warning(f"Rate limit excedido en login desde IP: {request.META.get('REMOTE_ADDR')}")
         messages.error(request, "Demasiados intentos de acceso. Espera 1 minuto e intenta de nuevo.")
-        return render(request, "login.html")
+        return _render_login(request)
 
     if request.method == "POST":
         email = request.POST.get("username", "").strip()  # el campo HTML sigue llamándose 'username'
@@ -56,11 +62,11 @@ def custom_login_view(request):
                     "Tu cuenta está pendiente de aprobación por el Coordinador SST. "
                     "Recibirás acceso una vez sea revisada tu solicitud.",
                 )
-                return render(request, "login.html")
+                return _render_login(request)
             elif usuario_obj_check.estado_cuenta == "BLOQUEADO":
                 logger.warning(f"Intento de login con cuenta bloqueada: {email}")
                 messages.error(request, "Tu cuenta ha sido bloqueada. Contacta al Coordinador SST.")
-                return render(request, "login.html")
+                return _render_login(request)
         except Usuario.DoesNotExist:
             pass
 
@@ -77,4 +83,4 @@ def custom_login_view(request):
             logger.warning(f"Login fallido para: {email}")
             messages.error(request, "Correo o contraseña incorrectos.")
 
-    return render(request, "login.html")
+    return _render_login(request)

@@ -3,7 +3,7 @@
 {% block title %}Gestión de Equipos - Brigada SST{% endblock %}
 
 {% block breadcrumb %}
-<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Inicio</a></li>
 <li class="breadcrumb-item active">Gestión de Equipos</li>
 {% endblock %}
 
@@ -16,10 +16,24 @@
             </h2>
             <p class="text-muted mb-0">Revisión y estado del equipamiento a cargo de la brigada.</p>
         </div>
-        <button class="btn btn-primary-custom flex-shrink-0" data-bs-toggle="modal" data-bs-target="#modalVerificacionGeneral">
-            <i class="bi bi-clipboard-check me-2"></i>Verificación General
-        </button>
+        <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-success flex-shrink-0" data-bs-toggle="modal" data-bs-target="#modalCrear">
+                <i class="bi bi-plus-lg me-1"></i>Agregar equipo
+            </button>
+            <button class="btn btn-primary-custom flex-shrink-0" data-bs-toggle="modal" data-bs-target="#modalVerificacionGeneral">
+                <i class="bi bi-clipboard-check me-2"></i>Verificación General
+            </button>
+        </div>
     </div>
+
+    {% if messages %}
+        {% for msg in messages %}
+        <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show mb-3" role="alert">
+            {{ msg }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
 
     <!-- Tarjetas de Estadísticas -->
     <div class="row g-3 mb-4">
@@ -216,6 +230,16 @@
                                             title="Cambiar estado">
                                         <i class="bi bi-pencil"></i>
                                     </button>
+                                    <button class="btn btn-sm btn-outline-dark"
+                                            onclick="abrirEditar({{ equipo.id }}, '{{ equipo.codigo|escapejs }}', '{{ equipo.tipo }}', '{{ equipo.descripcion|default:''|escapejs }}', '{{ equipo.estado }}', '{{ equipo.edificio.id|default:'' }}', {{ equipo.piso }}, '{% if equipo.proxima_revision %}{{ equipo.proxima_revision|date:"Y-m-d" }}{% endif %}')"
+                                            title="Editar equipo">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger"
+                                            onclick="abrirEliminar({{ equipo.id }}, '{{ equipo.codigo|escapejs }}')"
+                                            title="Eliminar equipo">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -244,6 +268,178 @@
     </div>
 </div>
 
+<!-- ── Modales CRUD (brigada) ── -->
+<div class="modal fade" id="modalCrear" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form method="post" action="{% url 'equipos_brigada' %}">
+                {% csrf_token %}
+                <input type="hidden" name="accion" value="crear">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-semibold">
+                        <i class="bi bi-plus-circle me-2 text-success"></i>Agregar Equipo
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Tipo <span class="text-danger">*</span></label>
+                            <select class="form-select" name="tipo" required>
+                                <option value="">Selecciona un tipo...</option>
+                                {% for val, label in tipos_equipamiento %}
+                                <option value="{{ val }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Código <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="codigo" maxlength="50" placeholder="Ej: BOT-010" required>
+                            <div class="form-text">Código único de identificación.</div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Descripción</label>
+                            <input type="text" class="form-control" name="descripcion" maxlength="200" placeholder="Ej: Botiquín tipo A con insumos completos">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Estado</label>
+                            <select class="form-select" name="estado">
+                                {% for val, label in estados %}
+                                <option value="{{ val }}" {% if val == 'OPERATIVO' %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Edificio / Bloque</label>
+                            <select class="form-select" name="edificio_id">
+                                <option value="">Sin ubicación específica</option>
+                                {% for ed in edificios %}
+                                <option value="{{ ed.id }}">{{ ed.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">Piso</label>
+                            <input type="number" class="form-control" name="piso" value="1" min="1" max="10">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Próxima revisión</label>
+                            <input type="date" class="form-control" name="proxima_revision">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-plus-lg me-1"></i>Registrar equipo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ── Modal EDITAR ── -->
+<div class="modal fade" id="modalEditar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form method="post" action="{% url 'equipos_brigada' %}">
+                {% csrf_token %}
+                <input type="hidden" name="accion" value="editar">
+                <input type="hidden" name="equipo_id" id="editarId">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-semibold">
+                        <i class="bi bi-pencil-square me-2 text-dark"></i>Editar Equipo
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Tipo <span class="text-danger">*</span></label>
+                            <select class="form-select" name="tipo" id="editarTipo" required>
+                                {% for val, label in tipos_equipamiento %}
+                                <option value="{{ val }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Código <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="codigo" id="editarCodigo" maxlength="50" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Descripción</label>
+                            <input type="text" class="form-control" name="descripcion" id="editarDescripcion" maxlength="200">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Estado</label>
+                            <select class="form-select" name="estado" id="editarEstado">
+                                {% for val, label in estados %}
+                                <option value="{{ val }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Edificio / Bloque</label>
+                            <select class="form-select" name="edificio_id" id="editarEdificio">
+                                <option value="">Sin ubicación específica</option>
+                                {% for ed in edificios %}
+                                <option value="{{ ed.id }}">{{ ed.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">Piso</label>
+                            <input type="number" class="form-control" name="piso" id="editarPiso" min="1" max="10">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Próxima revisión</label>
+                            <input type="date" class="form-control" name="proxima_revision" id="editarRevision">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-dark">
+                        <i class="bi bi-check-lg me-1"></i>Guardar cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ── Modal ELIMINAR ── -->
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="{% url 'equipos_brigada' %}">
+                {% csrf_token %}
+                <input type="hidden" name="accion" value="eliminar">
+                <input type="hidden" name="equipo_id" id="eliminarId">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-semibold text-danger">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Eliminar Equipo
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-1">¿Estás seguro de que deseas eliminar el equipo:</p>
+                    <p class="fw-bold" id="eliminarCodigo"></p>
+                    <div class="alert alert-warning py-2 small mb-0">
+                        <i class="bi bi-info-circle me-1"></i>Esta acción no se puede deshacer.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i>Eliminar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 <!-- Modal Verificación General -->
 <div class="modal fade" id="modalVerificacionGeneral" tabindex="-1">
     <div class="modal-dialog">
@@ -387,6 +583,24 @@ function guardarCambioEstado() {
         console.error('Error:', error);
         alert('Error al conectar con el servidor');
     });
+}
+
+function abrirEditar(id, codigo, tipo, descripcion, estado, edificioId, piso, revision) {
+    document.getElementById('editarId').value = id;
+    document.getElementById('editarCodigo').value = codigo;
+    document.getElementById('editarTipo').value = tipo;
+    document.getElementById('editarDescripcion').value = descripcion;
+    document.getElementById('editarEstado').value = estado;
+    document.getElementById('editarEdificio').value = edificioId;
+    document.getElementById('editarPiso').value = piso;
+    document.getElementById('editarRevision').value = revision;
+    new bootstrap.Modal(document.getElementById('modalEditar')).show();
+}
+
+function abrirEliminar(id, codigo) {
+    document.getElementById('eliminarId').value = id;
+    document.getElementById('eliminarCodigo').textContent = '"' + codigo + '"';
+    new bootstrap.Modal(document.getElementById('modalEliminar')).show();
 }
 
 function iniciarVerificacionGeneral() {

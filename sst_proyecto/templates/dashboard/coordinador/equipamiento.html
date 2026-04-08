@@ -1,0 +1,406 @@
+{% extends 'base.html' %}
+
+{% block title %}Equipamiento de Seguridad — Coordinador SST{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Inicio</a></li>
+<li class="breadcrumb-item active">Equipamiento de Seguridad</li>
+{% endblock %}
+
+{% block content %}
+<style>
+    .card-coord { border-left: 4px solid #39A900; }
+    .btn-sena { background-color: #39A900; color: #fff; border: none; }
+    .btn-sena:hover { background-color: #2d8200; color: #fff; }
+    .table-hover tbody tr:hover { background-color: #f0faf0; }
+    .badge-OPERATIVO { background-color: #39A900; }
+    .badge-MANTENIMIENTO { background-color: #fd7e14; }
+    .badge-FUERA_SERVICIO { background-color: #dc3545; }
+    .equipo-row td { vertical-align: middle; }
+</style>
+
+<!-- Header -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h4 fw-bold mb-1">
+            <i class="bi bi-heart-pulse-fill me-2" style="color:#39A900;"></i>Equipamiento de Seguridad
+        </h1>
+        <p class="text-muted mb-0 small">Gestiona botiquines, camillas y demás equipos de seguridad del centro.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Volver al panel
+        </a>
+        <button class="btn btn-sena btn-sm" data-bs-toggle="modal" data-bs-target="#modalCrear">
+            <i class="bi bi-plus-lg me-1"></i>Agregar equipo
+        </button>
+    </div>
+</div>
+
+{% if messages %}
+    {% for msg in messages %}
+        <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show" role="alert">
+            {{ msg }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<!-- Tarjetas resumen -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card card-coord h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="fs-2 fw-bold" style="color:#39A900;">{{ total }}</div>
+                <div class="small text-muted"><i class="bi bi-box-seam me-1"></i>Total equipos</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card h-100 shadow-sm border-start border-4 border-success">
+            <div class="card-body text-center">
+                <div class="fs-2 fw-bold text-success">{{ operativos }}</div>
+                <div class="small text-muted"><i class="bi bi-check-circle me-1 text-success"></i>Operativos</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card h-100 shadow-sm border-start border-4 border-warning">
+            <div class="card-body text-center">
+                <div class="fs-2 fw-bold text-warning">{{ en_mantenimiento }}</div>
+                <div class="small text-muted"><i class="bi bi-wrench me-1 text-warning"></i>En mantenimiento</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card h-100 shadow-sm border-start border-4 border-danger">
+            <div class="card-body text-center">
+                <div class="fs-2 fw-bold text-danger">{{ fuera_servicio }}</div>
+                <div class="small text-muted"><i class="bi bi-x-circle me-1 text-danger"></i>Fuera de servicio</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-sm-4">
+                <label class="form-label small fw-semibold mb-1">Buscar</label>
+                <input type="text" name="q" class="form-control form-control-sm" placeholder="Código, descripción, edificio..." value="{{ q }}">
+            </div>
+            <div class="col-sm-3">
+                <label class="form-label small fw-semibold mb-1">Tipo</label>
+                <select name="tipo" class="form-select form-select-sm">
+                    <option value="">Todos los tipos</option>
+                    {% for val, label in tipos %}
+                    <option value="{{ val }}" {% if tipo_filtro == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-sm-3">
+                <label class="form-label small fw-semibold mb-1">Estado</label>
+                <select name="estado" class="form-select form-select-sm">
+                    <option value="">Todos los estados</option>
+                    {% for val, label in estados %}
+                    <option value="{{ val }}" {% if estado_filtro == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-sm-2 d-flex gap-2">
+                <button type="submit" class="btn btn-sena btn-sm w-100">
+                    <i class="bi bi-search me-1"></i>Filtrar
+                </button>
+                <a href="{% url 'equipamiento' %}" class="btn btn-outline-secondary btn-sm" title="Limpiar filtros">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tabla de equipos -->
+<div class="card shadow-sm">
+    <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-semibold">
+            <i class="bi bi-list-ul me-2" style="color:#39A900;"></i>
+            Equipos registrados
+            <span class="badge rounded-pill ms-2" style="background:#39A900; font-size:.75rem;">{{ equipos|length }}</span>
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        {% if equipos %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Código</th>
+                        <th>Tipo</th>
+                        <th>Ubicación</th>
+                        <th>Estado</th>
+                        <th>Próx. revisión</th>
+                        <th class="text-center" style="width:130px;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for equipo in equipos %}
+                    <tr class="equipo-row">
+                        <td class="ps-3 fw-semibold">{{ equipo.codigo }}</td>
+                        <td>
+                            {% if equipo.tipo == 'BOTIQUIN' %}<i class="bi bi-bag-heart-fill text-danger me-1"></i>
+                            {% elif equipo.tipo == 'CAMILLA' %}<i class="bi bi-hospital-fill text-primary me-1"></i>
+                            {% elif equipo.tipo == 'EXTINTOR' %}<i class="bi bi-fire text-warning me-1"></i>
+                            {% elif equipo.tipo == 'ALARMA' %}<i class="bi bi-bell-fill text-danger me-1"></i>
+                            {% else %}<i class="bi bi-shield-fill text-secondary me-1"></i>{% endif %}
+                            {{ equipo.get_tipo_display }}
+                        </td>
+                        <td>
+                            {% if equipo.edificio %}
+                                <span class="small">{{ equipo.edificio.nombre }}</span>
+                                <span class="text-muted small"> · Piso {{ equipo.piso }}</span>
+                            {% else %}
+                                <span class="text-muted small">Sin ubicación</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge badge-{{ equipo.estado }}">
+                                {% if equipo.estado == 'OPERATIVO' %}✔ Operativo
+                                {% elif equipo.estado == 'MANTENIMIENTO' %}⚙ Mantenimiento
+                                {% else %}✖ Fuera de servicio{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            {% if equipo.proxima_revision %}
+                                <span class="small">{{ equipo.proxima_revision|date:"d/m/Y" }}</span>
+                            {% else %}
+                                <span class="text-muted small">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <button class="btn btn-outline-secondary btn-sm me-1"
+                                    onclick="abrirEditar({{ equipo.id }}, '{{ equipo.codigo|escapejs }}', '{{ equipo.tipo }}', '{{ equipo.descripcion|escapejs }}', '{{ equipo.estado }}', '{{ equipo.edificio.id|default:'' }}', {{ equipo.piso }}, '{% if equipo.proxima_revision %}{{ equipo.proxima_revision|date:"Y-m-d" }}{% endif %}')"
+                                    title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm"
+                                    onclick="abrirEliminar({{ equipo.id }}, '{{ equipo.codigo|escapejs }}')"
+                                    title="Eliminar">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-heart-pulse" style="font-size:3rem; color:#ccc;"></i>
+            <p class="mt-3 mb-0">No hay equipos registrados{% if q or tipo_filtro or estado_filtro %} con los filtros actuales{% endif %}.</p>
+            {% if not q and not tipo_filtro and not estado_filtro %}
+            <p class="small">Usa el botón <strong>Agregar equipo</strong> para registrar el primero.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+
+<!-- ── Modal CREAR ── -->
+<div class="modal fade" id="modalCrear" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="accion" value="crear">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-semibold">
+                        <i class="bi bi-plus-circle me-2" style="color:#39A900;"></i>Agregar Equipo
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Tipo <span class="text-danger">*</span></label>
+                            <select class="form-select" name="tipo" required>
+                                <option value="">Selecciona un tipo...</option>
+                                {% for val, label in tipos %}
+                                <option value="{{ val }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Código <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="codigo" maxlength="50" placeholder="Ej: BOT-010" required>
+                            <div class="form-text">Código único de identificación del equipo.</div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Descripción</label>
+                            <input type="text" class="form-control" name="descripcion" maxlength="200" placeholder="Ej: Botiquín tipo A con insumos completos">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Estado</label>
+                            <select class="form-select" name="estado">
+                                {% for val, label in estados %}
+                                <option value="{{ val }}" {% if val == 'OPERATIVO' %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Edificio / Bloque</label>
+                            <select class="form-select" name="edificio_id">
+                                <option value="">Sin ubicación específica</option>
+                                {% for ed in edificios %}
+                                <option value="{{ ed.id }}">{{ ed.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">Piso</label>
+                            <input type="number" class="form-control" name="piso" value="1" min="1" max="10">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Próxima revisión</label>
+                            <input type="date" class="form-control" name="proxima_revision">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sena">
+                        <i class="bi bi-plus-lg me-1"></i>Registrar equipo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- ── Modal EDITAR ── -->
+<div class="modal fade" id="modalEditar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="accion" value="editar">
+                <input type="hidden" name="equipo_id" id="editarId">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-semibold">
+                        <i class="bi bi-pencil-square me-2" style="color:#39A900;"></i>Editar Equipo
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Tipo <span class="text-danger">*</span></label>
+                            <select class="form-select" name="tipo" id="editarTipo" required>
+                                {% for val, label in tipos %}
+                                <option value="{{ val }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Código <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="codigo" id="editarCodigo" maxlength="50" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Descripción</label>
+                            <input type="text" class="form-control" name="descripcion" id="editarDescripcion" maxlength="200">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Estado</label>
+                            <select class="form-select" name="estado" id="editarEstado">
+                                {% for val, label in estados %}
+                                <option value="{{ val }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Edificio / Bloque</label>
+                            <select class="form-select" name="edificio_id" id="editarEdificio">
+                                <option value="">Sin ubicación específica</option>
+                                {% for ed in edificios %}
+                                <option value="{{ ed.id }}">{{ ed.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">Piso</label>
+                            <input type="number" class="form-control" name="piso" id="editarPiso" min="1" max="10">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Próxima revisión</label>
+                            <input type="date" class="form-control" name="proxima_revision" id="editarRevision">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sena">
+                        <i class="bi bi-check-lg me-1"></i>Guardar cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- ── Modal ELIMINAR ── -->
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="accion" value="eliminar">
+                <input type="hidden" name="equipo_id" id="eliminarId">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-semibold text-danger">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Eliminar Equipo
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-1">¿Estás seguro de que deseas eliminar el equipo:</p>
+                    <p class="fw-bold mb-3" id="eliminarCodigo"></p>
+                    <div class="alert alert-warning py-2 small mb-0">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Esta acción no se puede deshacer.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i>Eliminar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<script>
+function abrirEditar(id, codigo, tipo, descripcion, estado, edificioId, piso, revision) {
+    document.getElementById('editarId').value = id;
+    document.getElementById('editarCodigo').value = codigo;
+    document.getElementById('editarTipo').value = tipo;
+    document.getElementById('editarDescripcion').value = descripcion;
+    document.getElementById('editarEstado').value = estado;
+    document.getElementById('editarEdificio').value = edificioId;
+    document.getElementById('editarPiso').value = piso;
+    document.getElementById('editarRevision').value = revision;
+    new bootstrap.Modal(document.getElementById('modalEditar')).show();
+}
+
+function abrirEliminar(id, codigo) {
+    document.getElementById('eliminarId').value = id;
+    document.getElementById('eliminarCodigo').textContent = '"' + codigo + '"';
+    new bootstrap.Modal(document.getElementById('modalEliminar')).show();
+}
+</script>
+{% endblock %}
