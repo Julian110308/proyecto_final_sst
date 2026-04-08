@@ -52,6 +52,14 @@
                     </div>
                     <h5 class="card-title fw-bold">{{ miembro.get_full_name }}</h5>
                     <p class="card-text text-muted small">{{ miembro.email }}</p>
+                    <div class="d-flex flex-column gap-1 mb-3 text-start" style="font-size:0.82rem; color:#6c757d;">
+                        {% if miembro.numero_documento %}
+                        <span><i class="bi bi-person-vcard me-1"></i>{{ miembro.tipo_documento }} {{ miembro.numero_documento }}</span>
+                        {% endif %}
+                        {% if miembro.telefono %}
+                        <span><i class="bi bi-telephone me-1"></i>{{ miembro.telefono }}</span>
+                        {% endif %}
+                    </div>
                     <hr>
                     <div class="d-flex justify-content-around">
                         <a href="tel:{{ miembro.telefono }}" class="btn btn-outline-success btn-sm">
