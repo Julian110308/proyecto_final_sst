@@ -26,22 +26,23 @@ from .serializers import (
 from usuarios.services import NotificacionService
 
 
+ROLES_AUTORIZADOS_EMERGENCIA = {"COORDINADOR_SST", "BRIGADA", "ADMINISTRATIVO", "VIGILANCIA"}
+
+
 class TipoEmergenciaViewSet(viewsets.ModelViewSet):
-    # ViewSet para tipos de emergencia — catálogo casi estático, se cachea 1 hora
+    # ViewSet para tipos de emergencia — filtra según el rol del usuario
     queryset = TipoEmergencia.objects.all()
     serializer_class = TipoEmergenciaSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        from django.core.cache import cache
-        from django.conf import settings
+        user = self.request.user
+        es_autorizado = user.rol in ROLES_AUTORIZADOS_EMERGENCIA
 
-        cached = cache.get("tipos_emergencia")
-        if cached is not None:
-            return cached
-        qs = TipoEmergencia.objects.all()
-        ttl = getattr(settings, "CACHE_TTL_CATALOGOS", 3600)
-        cache.set("tipos_emergencia", qs, ttl)
+        # Usuarios comunes solo ven tipos que NO son de solo_autorizado
+        qs = TipoEmergencia.objects.filter(activo=True)
+        if not es_autorizado:
+            qs = qs.filter(solo_autorizado=False)
         return qs
 
 
@@ -71,10 +72,31 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
             return EmergenciaCreateSerializer
         return EmergenciaSerializer
 
+    def create(self, request, *args, **kwargs):
+        # Validar que el usuario puede reportar este tipo de emergencia
+        tipo_id = request.data.get("tipo")
+        if tipo_id:
+            try:
+                tipo = TipoEmergencia.objects.get(pk=tipo_id)
+                if tipo.solo_autorizado and request.user.rol not in ROLES_AUTORIZADOS_EMERGENCIA:
+                    return Response(
+                        {
+                            "error": "Este tipo de emergencia solo puede ser reportado por personal autorizado (Brigada, Coordinador o Administrativo)."
+                        },
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+            except TipoEmergencia.DoesNotExist:
+                pass
+        return super().create(request, *args, **kwargs)
+
     def perform_create(self, serializer):
         emergencia = serializer.save(reportada_por=self.request.user)
-        # Notificar via sistema centralizado a Brigada y Administrativos
-        NotificacionService.notificar_emergencia_creada(emergencia)
+        if emergencia.tipo.alerta_masiva:
+            # Alerta a TODOS los usuarios activos del sistema
+            NotificacionService.notificar_emergencia_masiva(emergencia)
+        else:
+            # Notificación estándar: solo Brigada, Administrativo, Vigilancia
+            NotificacionService.notificar_emergencia_creada(emergencia)
         # También notificar vía NotificacionEmergencia (modelo específico)
         self.notificar_brigada(emergencia)
 

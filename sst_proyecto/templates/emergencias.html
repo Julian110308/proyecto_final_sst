@@ -254,6 +254,12 @@
                         <select class="form-select" id="tipoEmergencia" required style="border: 1.5px solid #E5E7EB; border-radius: 8px; font-size: 0.9rem; background-color: #F9FAFB;">
                             <option value="">Cargando tipos...</option>
                         </select>
+                        <!-- Aviso alerta masiva -->
+                        <div id="avisoAlertaMasiva" class="d-none mt-2 p-2 rounded-3 d-flex align-items-start gap-2"
+                             style="background:#FFF3CD; border:1.5px solid #FFC107; font-size:0.82rem;">
+                            <i class="bi bi-megaphone-fill text-warning mt-1 flex-shrink-0"></i>
+                            <span>Este tipo de emergencia enviará una <strong>alerta a todos los usuarios</strong> del sistema.</span>
+                        </div>
                     </div>
 
                     <div class="mb-3">
@@ -721,6 +727,9 @@ async function cargarContactos() {
     }
 }
 
+// Mapa global de tipos para acceder a sus flags (alerta_masiva, solo_autorizado)
+const _tiposEmergenciaMap = {};
+
 async function cargarTiposEmergencia() {
     try {
         const resp = await fetch('/api/emergencias/tipos/', { credentials: 'same-origin' });
@@ -730,7 +739,18 @@ async function cargarTiposEmergencia() {
         const select = document.getElementById('tipoEmergencia');
         select.innerHTML = '<option value="">Seleccionar tipo...</option>';
         tipos.forEach(t => {
-            select.add(new Option(t.nombre, t.id));
+            _tiposEmergenciaMap[t.id] = t;
+            const opt = new Option(t.nombre, t.id);
+            select.add(opt);
+        });
+
+        // Mostrar/ocultar aviso de alerta masiva al cambiar el tipo
+        select.addEventListener('change', function () {
+            const tipo = _tiposEmergenciaMap[this.value];
+            const aviso = document.getElementById('avisoAlertaMasiva');
+            if (aviso) {
+                aviso.classList.toggle('d-none', !(tipo && tipo.alerta_masiva));
+            }
         });
     } catch (e) {
         console.error('Error cargando tipos:', e);

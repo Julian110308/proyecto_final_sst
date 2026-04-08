@@ -192,6 +192,56 @@ class NotificacionService:
         return len(notificaciones)
 
     @staticmethod
+    def notificar_emergencia_masiva(emergencia):
+        """
+        Alerta masiva: notifica a TODOS los usuarios activos del sistema.
+        Se usa para emergencias de causa natural (ej. sismo) donde todos deben saber.
+        """
+        tipo_nombre = emergencia.tipo.nombre if emergencia.tipo else "Emergencia"
+        titulo = f"⚠️ ALERTA GENERAL: {tipo_nombre}"
+        mensaje = (
+            f"Se ha activado una alerta general de {tipo_nombre}.\n"
+            f"{emergencia.descripcion[:150]}{'...' if len(emergencia.descripcion) > 150 else ''}\n"
+            f"Sigue las instrucciones del personal de seguridad."
+        )
+        url = "/emergencias/"
+
+        usuarios = Usuario.objects.filter(activo=True).exclude(rol="VISITANTE")
+        notificaciones = [
+            Notificacion(
+                destinatario=u,
+                titulo=titulo,
+                mensaje=mensaje,
+                tipo="EMERGENCIA",
+                prioridad="ALTA",
+                url_relacionada=url,
+            )
+            for u in usuarios
+        ]
+        if notificaciones:
+            Notificacion.objects.bulk_create(notificaciones)
+
+        # WebSocket a todos los roles activos
+        _ws_dispatch_roles(
+            roles=["COORDINADOR_SST", "BRIGADA", "ADMINISTRATIVO", "VIGILANCIA", "INSTRUCTOR", "APRENDIZ"],
+            tipo="EMERGENCIA",
+            titulo=titulo,
+            mensaje=mensaje,
+            prioridad="ALTA",
+            url=url,
+        )
+
+        # Web Push a todos
+        WebPushService.enviar_a_roles(
+            roles=["COORDINADOR_SST", "BRIGADA", "ADMINISTRATIVO", "VIGILANCIA", "INSTRUCTOR", "APRENDIZ"],
+            titulo=titulo,
+            cuerpo=mensaje[:100],
+            url=url,
+        )
+
+        return len(notificaciones)
+
+    @staticmethod
     def notificar_emergencia_atendida(emergencia, brigadista):
         """
         Notifica cuando un brigadista atiende una emergencia.

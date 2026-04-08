@@ -26,6 +26,18 @@ class TipoEmergencia(models.Model):
     protocolo = models.TextField(help_text="Pasos a seguir")
     tiempo_respuesta_minutos = models.IntegerField(default=5)
 
+    # Control de acceso y notificación
+    solo_autorizado = models.BooleanField(
+        default=False,
+        verbose_name="Solo personal autorizado",
+        help_text="Si está activo, solo Coordinador, Brigada y Administrativo pueden reportar este tipo de emergencia.",
+    )
+    alerta_masiva = models.BooleanField(
+        default=False,
+        verbose_name="Alerta masiva",
+        help_text="Si está activo, al reportarse se notifica a TODOS los usuarios del sistema, no solo a la brigada.",
+    )
+
     activo = models.BooleanField(default=True)
 
     class Meta:
