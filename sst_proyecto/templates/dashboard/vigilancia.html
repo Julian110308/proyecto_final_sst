@@ -147,7 +147,7 @@
                                 <tr>
                                     <th class="ps-3">Visitante</th>
                                     <th>Entidad</th>
-                                    <th>Visita a</th>
+                                    <th>Motivo</th>
                                     <th>Ingreso</th>
                                     <th>Acciones</th>
                                 </tr>
@@ -328,7 +328,7 @@ async function cargarVisitantes() {
             <tr>
                 <td class="ps-3"><strong class="small">${v.nombre_completo}</strong></td>
                 <td><small>${v.entidad || 'Particular'}</small></td>
-                <td><small>${v.persona_a_visitar_nombre || '-'}</small></td>
+                <td><small>${v.motivo_visita || '-'}</small></td>
                 <td><small>${v.hora_ingreso || '-'}</small></td>
                 <td>
                     <button class="btn btn-sm btn-outline-danger" onclick="registrarSalidaVisitante(${v.id}, '${v.nombre_completo.replace(/'/g, "\\'")}')">
