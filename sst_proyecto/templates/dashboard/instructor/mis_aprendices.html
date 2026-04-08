@@ -276,30 +276,31 @@ function confirmarAsistencia() {
     .then(data => {
         const modal = bootstrap.Modal.getInstance(document.getElementById('modalAsistencia'));
         if (modal) modal.hide();
-        data.success ? location.reload() : alert('Error: ' + (data.error || 'No se pudo registrar'));
+        data.success ? location.reload() : showAlert('Error: ' + (data.error || 'No se pudo registrar'), 'danger');
     })
-    .catch(() => alert('Error al conectar con el servidor'));
+    .catch(() => showAlert('Error al conectar con el servidor', 'danger'));
 }
 
 function registrarAsistenciaMasiva() {
-    if (!confirm('Va a registrar asistencia para TODOS los aprendices sin registro de hoy. Continuar?')) return;
-    const ids = [...document.querySelectorAll('#tablaAprendices tbody tr')].reduce((acc, fila) => {
-        if (fila.querySelector('button[onclick^="registrarAsistencia"]') && fila.dataset.aprendizId)
-            acc.push(parseInt(fila.dataset.aprendizId));
-        return acc;
-    }, []);
-    if (ids.length === 0) { alert('Todos los aprendices ya tienen registro de asistencia hoy.'); return; }
-    fetch('/api/acceso/registros/registrar_asistencia_masiva/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
-        body: JSON.stringify({ usuarios_ids: ids })
-    })
-    .then(r => r.json())
-    .then(data => {
-        data.success ? (alert(`Asistencia registrada para ${data.registrados} aprendiz(es)`), location.reload())
-                     : alert('Error: ' + (data.error || 'No se pudo registrar'));
-    })
-    .catch(() => alert('Error al conectar con el servidor'));
+    showConfirm('¿Registrar asistencia para TODOS los aprendices sin registro de hoy?', () => {
+        const ids = [...document.querySelectorAll('#tablaAprendices tbody tr')].reduce((acc, fila) => {
+            if (fila.querySelector('button[onclick^="registrarAsistencia"]') && fila.dataset.aprendizId)
+                acc.push(parseInt(fila.dataset.aprendizId));
+            return acc;
+        }, []);
+        if (ids.length === 0) { showAlert('Todos los aprendices ya tienen registro de asistencia hoy.', 'info'); return; }
+        fetch('/api/acceso/registros/registrar_asistencia_masiva/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+            body: JSON.stringify({ usuarios_ids: ids })
+        })
+        .then(r => r.json())
+        .then(data => {
+            data.success ? (showAlert(`Asistencia registrada para ${data.registrados} aprendiz(es)`, 'success'), location.reload())
+                         : showAlert('Error: ' + (data.error || 'No se pudo registrar'), 'danger');
+        })
+        .catch(() => showAlert('Error al conectar con el servidor', 'danger'));
+    }, { title: 'Asistencia Masiva', type: 'warning', confirmText: 'Sí, registrar' });
 }
 </script>
 {% endblock %}

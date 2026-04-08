@@ -400,26 +400,27 @@ function initMapa() {
 
 // Salida visitante
 async function registrarSalidaVisitante(id, nombre) {
-    if (!confirm(`Registrar salida de ${nombre}?`)) return;
-    try {
-        const r = await fetch(`/api/auth/visitantes/${id}/`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
-            body: JSON.stringify({hora_salida: new Date().toTimeString().split(' ')[0]})
-        });
-        if (r.ok) {
-            mostrarToast(`Salida de ${nombre} registrada`, 'success');
-            cargarVisitantes();
-        } else {
-            mostrarToast('Error al registrar salida', 'danger');
-        }
-    } catch(e) { mostrarToast('Error de conexion', 'danger'); }
+    showConfirm(`¿Registrar salida de ${nombre}?`, async () => {
+        try {
+            const r = await fetch(`/api/auth/visitantes/${id}/`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                body: JSON.stringify({hora_salida: new Date().toTimeString().split(' ')[0]})
+            });
+            if (r.ok) {
+                mostrarToast(`Salida de ${nombre} registrada`, 'success');
+                cargarVisitantes();
+            } else {
+                mostrarToast('Error al registrar salida', 'danger');
+            }
+        } catch(e) { mostrarToast('Error de conexion', 'danger'); }
+    }, { title: 'Registrar Salida', type: 'warning', confirmText: 'Sí, registrar' });
 }
 
 function alertaSeguridad() {
-    if (confirm('Desea reportar una ALERTA DE SEGURIDAD?\nEsto lo redirigira al modulo de emergencias.')) {
+    showConfirm('¿Desea reportar una ALERTA DE SEGURIDAD? Esto lo redirigirá al módulo de emergencias.', () => {
         window.location.href = '/emergencias/';
-    }
+    }, { title: 'Alerta de Seguridad', type: 'danger', confirmText: 'Sí, reportar' });
 }
 
 function refrescarTodo() {

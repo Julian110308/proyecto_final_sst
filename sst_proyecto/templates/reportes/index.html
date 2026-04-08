@@ -333,17 +333,17 @@
 
         // Validaciones
         if (!tipo) {
-            alert('Por favor seleccione un tipo de reporte');
+            showAlert('Por favor seleccione un tipo de reporte', 'warning');
             return;
         }
 
         if (!fechaInicio || !fechaFin) {
-            alert('Por favor seleccione el rango de fechas');
+            showAlert('Por favor seleccione el rango de fechas', 'warning');
             return;
         }
 
         if (tipo === 'asistencia' && !ficha) {
-            alert('Por favor ingrese el número de ficha para el reporte de asistencia');
+            showAlert('Por favor ingrese el número de ficha para el reporte de asistencia', 'warning');
             return;
         }
 

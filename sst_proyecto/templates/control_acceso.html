@@ -448,26 +448,27 @@ async function registrarAcceso(tipo) {
 }
 
 async function registrarSalida(usuarioId, btn) {
-    if (!confirm('Registrar salida de este usuario?')) return;
-    btn.disabled = true;
-    try {
-        const r = await fetch('/api/acceso/registros/registrar_egreso/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
-            body: JSON.stringify({ usuario_id: usuarioId, metodo: 'MANUAL' })
-        });
-        const data = await r.json();
-        if (r.ok) {
-            mostrarToast('Salida registrada correctamente', 'success');
-            cargarTodo();
-        } else {
-            mostrarToast(data.error || 'Error al registrar salida', 'danger');
+    showConfirm('¿Registrar salida de este usuario?', async () => {
+        btn.disabled = true;
+        try {
+            const r = await fetch('/api/acceso/registros/registrar_egreso/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                body: JSON.stringify({ usuario_id: usuarioId, metodo: 'MANUAL' })
+            });
+            const data = await r.json();
+            if (r.ok) {
+                mostrarToast('Salida registrada correctamente', 'success');
+                cargarTodo();
+            } else {
+                mostrarToast(data.error || 'Error al registrar salida', 'danger');
+                btn.disabled = false;
+            }
+        } catch(e) {
+            mostrarToast('Error de conexion', 'danger');
             btn.disabled = false;
         }
-    } catch(e) {
-        mostrarToast('Error de conexion', 'danger');
-        btn.disabled = false;
-    }
+    }, { title: 'Registrar Salida', type: 'warning' });
 }
 
 function mostrarAlerta(msg, tipo) {

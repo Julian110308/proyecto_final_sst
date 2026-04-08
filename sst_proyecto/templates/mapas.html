@@ -944,7 +944,7 @@ function inicializarControles() {
             mapa.setView(miMarcador.getLatLng(), 18);
             miMarcador.openPopup();
         } else {
-            alert('📍 Aún no se ha detectado tu ubicación. Por favor espera un momento o verifica los permisos del navegador.');
+            showAlert('Aún no se ha detectado tu ubicación. Por favor espera un momento o verifica los permisos del navegador.', 'warning');
         }
     });
 
@@ -1394,7 +1394,7 @@ let capaRutaEvacuacion = null;
 
 document.getElementById('btnRutaEvacuacion').addEventListener('click', function () {
     if (!navigator.geolocation) {
-        alert('Tu navegador no soporta geolocalización.');
+        showAlert('Tu navegador no soporta geolocalización.', 'warning');
         return;
     }
 
@@ -1417,7 +1417,7 @@ document.getElementById('btnRutaEvacuacion').addEventListener('click', function 
                     btn.innerHTML = '<i class="bi bi-signpost-2-fill"></i> Ruta de evacuación';
 
                     if (!res.waypoints || res.waypoints.length < 2) {
-                        alert('No se pudo calcular la ruta: ' + (res.mensaje || 'Sin datos'));
+                        showAlert('No se pudo calcular la ruta: ' + (res.mensaje || 'Sin datos'), 'warning');
                         return;
                     }
 
@@ -1466,13 +1466,13 @@ document.getElementById('btnRutaEvacuacion').addEventListener('click', function 
                 .catch(() => {
                     document.getElementById('btnRutaEvacuacion').disabled = false;
                     document.getElementById('btnRutaEvacuacion').innerHTML = '<i class="bi bi-signpost-2-fill"></i> Ruta de evacuación';
-                    alert('Error al conectar con el servidor.');
+                    showAlert('Error al conectar con el servidor.', 'danger');
                 });
         },
         function () {
             document.getElementById('btnRutaEvacuacion').disabled = false;
             document.getElementById('btnRutaEvacuacion').innerHTML = '<i class="bi bi-signpost-2-fill"></i> Ruta de evacuación';
-            alert('No se pudo obtener tu ubicación GPS.');
+            showAlert('No se pudo obtener tu ubicación GPS.', 'warning');
         },
         { enableHighAccuracy: true, timeout: 8000 }
     );

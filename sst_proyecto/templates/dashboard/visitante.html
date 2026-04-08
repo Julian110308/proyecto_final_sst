@@ -278,9 +278,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 function reportarEmergencia() {
-    if (confirm('Desea reportar una emergencia? Se notificara al personal de seguridad.')) {
+    showConfirm('¿Desea reportar una emergencia? Se notificará al personal de seguridad.', () => {
         window.location.href = '/emergencias/';
-    }
+    }, { title: 'Reportar Emergencia', type: 'danger', confirmText: 'Sí, reportar' });
 }
 </script>
 {% endblock %}
@@ -413,7 +413,7 @@ document.getElementById('btnGenerarRuta').addEventListener('click', function() {
     const destLng = parseFloat(selectedOpt.dataset.lng);
 
     if (isNaN(destLat) || isNaN(destLng)) {
-        alert('Este destino no tiene coordenadas validas.');
+        showAlert('Este destino no tiene coordenadas válidas.', 'warning');
         return;
     }
 

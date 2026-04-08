@@ -520,28 +520,22 @@ function getCookie(name) {
 }
 
 function verificarEquipo(equipoId) {
-    if (confirm('¿Confirma que ha verificado este equipo y está en condiciones operativas?')) {
+    showConfirm('¿Confirma que ha verificado este equipo y está en condiciones operativas?', () => {
         fetch(`/api/mapas/equipamientos/${equipoId}/verificar/`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            }
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert('Verificación registrada correctamente');
+                showAlert('Verificación registrada correctamente', 'success');
                 location.reload();
             } else {
-                alert('Error: ' + (data.error || 'No se pudo registrar la verificación'));
+                showAlert('Error: ' + (data.error || 'No se pudo registrar la verificación'), 'danger');
             }
         })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error al conectar con el servidor');
-        });
-    }
+        .catch(() => showAlert('Error al conectar con el servidor', 'danger'));
+    }, { title: 'Verificar Equipo', type: 'info', confirmText: 'Sí, verificar' });
 }
 
 function verDetalles(equipoId) {
@@ -573,16 +567,13 @@ function guardarCambioEstado() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('Estado actualizado correctamente');
+            showAlert('Estado actualizado correctamente', 'success');
             location.reload();
         } else {
-            alert('Error: ' + (data.error || 'No se pudo actualizar el estado'));
+            showAlert('Error: ' + (data.error || 'No se pudo actualizar el estado'), 'danger');
         }
     })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error al conectar con el servidor');
-    });
+    .catch(() => showAlert('Error al conectar con el servidor', 'danger'));
 }
 
 function abrirEditar(id, codigo, tipo, descripcion, estado, edificioId, piso, revision) {
@@ -614,16 +605,13 @@ function iniciarVerificacionGeneral() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert(`Verificación general completada. ${data.equipos_verificados} equipos actualizados.`);
+            showAlert(`Verificación general completada. ${data.equipos_verificados} equipos actualizados.`, 'success');
             location.reload();
         } else {
-            alert('Error: ' + (data.error || 'No se pudo completar la verificación'));
+            showAlert('Error: ' + (data.error || 'No se pudo completar la verificación'), 'danger');
         }
     })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error al conectar con el servidor');
-    });
+    .catch(() => showAlert('Error al conectar con el servidor', 'danger'));
 }
 </script>
 {% endblock %}

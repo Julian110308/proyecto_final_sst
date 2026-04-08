@@ -342,33 +342,34 @@ function seleccionarNodoParaTramo(nodoId, marker) {
 
 // ─── ELIMINAR ─────────────────────────────────────────────────────────────────
 function eliminarNodo(id) {
-  if (!confirm('¿Eliminar este nodo y sus tramos conectados?')) return;
-  fetch(`${API_NODO}${id}/`, { method: 'DELETE', headers: { 'X-CSRFToken': CSRF_TOKEN } })
-    .then(r => r.json())
-    .then(() => {
-      if (nodosEnMapa[id]) { capaGrafo.removeLayer(nodosEnMapa[id].marker); delete nodosEnMapa[id]; }
-      // Eliminar tramos que usaban este nodo
-      Object.keys(tramosEnMapa).forEach(tid => {
-        const t = tramosEnMapa[tid].data;
-        if (t.nodo_origen_id === id || t.nodo_destino_id === id) {
-          capaGrafo.removeLayer(tramosEnMapa[tid].line);
-          delete tramosEnMapa[tid];
-        }
+  showConfirm('¿Eliminar este nodo y sus tramos conectados?', () => {
+    fetch(`${API_NODO}${id}/`, { method: 'DELETE', headers: { 'X-CSRFToken': CSRF_TOKEN } })
+      .then(r => r.json())
+      .then(() => {
+        if (nodosEnMapa[id]) { capaGrafo.removeLayer(nodosEnMapa[id].marker); delete nodosEnMapa[id]; }
+        Object.keys(tramosEnMapa).forEach(tid => {
+          const t = tramosEnMapa[tid].data;
+          if (t.nodo_origen_id === id || t.nodo_destino_id === id) {
+            capaGrafo.removeLayer(tramosEnMapa[tid].line);
+            delete tramosEnMapa[tid];
+          }
+        });
+        actualizarContadores(); actualizarListaNodos(); actualizarListaTramos();
+        toast('Nodo eliminado', 'secondary');
       });
-      actualizarContadores(); actualizarListaNodos(); actualizarListaTramos();
-      toast('Nodo eliminado', 'secondary');
-    });
+  }, { title: 'Eliminar Nodo', type: 'danger', confirmText: 'Sí, eliminar' });
 }
 
 function eliminarTramo(id) {
-  if (!confirm('¿Eliminar este tramo?')) return;
-  fetch(`${API_TRAMO}${id}/`, { method: 'DELETE', headers: { 'X-CSRFToken': CSRF_TOKEN } })
-    .then(r => r.json())
-    .then(() => {
-      if (tramosEnMapa[id]) { capaGrafo.removeLayer(tramosEnMapa[id].line); delete tramosEnMapa[id]; }
-      actualizarContadores(); actualizarListaTramos();
-      toast('Tramo eliminado', 'secondary');
-    });
+  showConfirm('¿Eliminar este tramo?', () => {
+    fetch(`${API_TRAMO}${id}/`, { method: 'DELETE', headers: { 'X-CSRFToken': CSRF_TOKEN } })
+      .then(r => r.json())
+      .then(() => {
+        if (tramosEnMapa[id]) { capaGrafo.removeLayer(tramosEnMapa[id].line); delete tramosEnMapa[id]; }
+        actualizarContadores(); actualizarListaTramos();
+        toast('Tramo eliminado', 'secondary');
+      });
+  }, { title: 'Eliminar Tramo', type: 'danger', confirmText: 'Sí, eliminar' });
 }
 
 // ─── DIBUJAR POLÍGONO DE EDIFICIO con Leaflet.draw ───────────────────────────

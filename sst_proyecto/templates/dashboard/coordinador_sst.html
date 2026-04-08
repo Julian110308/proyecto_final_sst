@@ -401,21 +401,22 @@ function confirmarAprobacion() {
 
 // ── Rechazar ─────────────────────────────────────────────────────────────
 function rechazarCuenta(id, nombre) {
-    if (!confirm(`¿Rechazar la solicitud de ${nombre}? La cuenta quedará bloqueada.`)) return;
-    fetch(`/api/auth/usuarios/${id}/rechazar/`, {
-        method: 'POST',
-        headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/json' }
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            showToast(data.mensaje, true);
-            cargarPendientes();
-            setTimeout(() => location.reload(), 2500);
-        } else {
-            showToast(data.error || 'Error al rechazar', false);
-        }
-    });
+    showConfirm(`¿Rechazar la solicitud de ${nombre}? La cuenta quedará bloqueada.`, () => {
+        fetch(`/api/auth/usuarios/${id}/rechazar/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/json' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.mensaje, true);
+                cargarPendientes();
+                setTimeout(() => location.reload(), 2500);
+            } else {
+                showToast(data.error || 'Error al rechazar', false);
+            }
+        });
+    }, { title: 'Rechazar Solicitud', type: 'danger', confirmText: 'Sí, rechazar' });
 }
 
 // ── Cargar todos los usuarios ─────────────────────────────────────────────

@@ -871,23 +871,24 @@ document.getElementById('btnReportarEmergencia').addEventListener('click', async
 });
 
 async function atenderEmergencia(id) {
-    if (!confirm('Vas a marcar esta emergencia como EN ATENCION. Continuar?')) return;
-    try {
-        const resp = await fetch(`/api/emergencias/emergencias/${id}/atender/`, {
-            method: 'POST',
-            headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json' },
-            credentials: 'same-origin'
-        });
-        if (resp.ok) {
-            mostrarToast('Emergencia marcada como en atención.', 'success');
-            cargarTodo();
-        } else {
-            const err = await resp.json();
-            mostrarToast(err.error || 'Error al atender emergencia', 'danger');
+    showConfirm('¿Vas a marcar esta emergencia como EN ATENCIÓN?', async () => {
+        try {
+            const resp = await fetch(`/api/emergencias/emergencias/${id}/atender/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json' },
+                credentials: 'same-origin'
+            });
+            if (resp.ok) {
+                mostrarToast('Emergencia marcada como en atención.', 'success');
+                cargarTodo();
+            } else {
+                const err = await resp.json();
+                mostrarToast(err.error || 'Error al atender emergencia', 'danger');
+            }
+        } catch (e) {
+            mostrarToast('Error de conexión', 'danger');
         }
-    } catch (e) {
-        mostrarToast('Error de conexión', 'danger');
-    }
+    }, { title: 'Atender Emergencia', type: 'danger', confirmText: 'Sí, atender' });
 }
 
 function abrirModalResolver(id) {
@@ -973,8 +974,9 @@ document.getElementById('btnConfirmarFalsaAlarma').addEventListener('click', asy
 });
 
 async function notificarBrigada() {
-    if (!confirm('Se enviara notificacion a todos los miembros de la brigada. Continuar?')) return;
-    mostrarToast('Notificacion enviada a la brigada de emergencia.', 'info');
+    showConfirm('¿Enviar notificación a todos los miembros de la brigada?', () => {
+        mostrarToast('Notificación enviada a la brigada de emergencia.', 'info');
+    }, { title: 'Notificar Brigada', type: 'info', confirmText: 'Sí, notificar' });
 }
 
 // ============================================================

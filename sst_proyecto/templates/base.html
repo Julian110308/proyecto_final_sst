@@ -1445,6 +1445,104 @@
     {% block extra_js %}{% endblock %}
 
     <!-- ============================================================ -->
+    <!-- SISTEMA GLOBAL DE ALERTAS Y CONFIRMACIONES DEL PROYECTO      -->
+    <!-- Reemplaza alert() y confirm() del navegador                  -->
+    <!-- ============================================================ -->
+
+    <!-- Modal de Confirmación -->
+    <div class="modal fade" id="sstConfirmModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered" style="max-width:420px;">
+            <div class="modal-content border-0 shadow-lg" style="border-radius:14px;overflow:hidden;">
+                <div class="modal-header border-0 pb-0 px-4 pt-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div id="sstConfirmIcon" style="width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="bi bi-question-circle-fill text-white" style="font-size:1.3rem;"></i>
+                        </div>
+                        <h6 class="modal-title fw-bold mb-0" id="sstConfirmTitle">Confirmar acción</h6>
+                    </div>
+                </div>
+                <div class="modal-body px-4 py-3">
+                    <p class="mb-0" id="sstConfirmMessage" style="font-size:0.92rem;color:#374151;"></p>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4 pt-0 gap-2">
+                    <button type="button" class="btn btn-outline-secondary" id="sstConfirmCancel" style="border-radius:8px;font-size:0.88rem;">
+                        <i class="bi bi-x-lg me-1"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn" id="sstConfirmOk" style="border-radius:8px;font-size:0.88rem;font-weight:600;">
+                        <i class="bi bi-check-lg me-1"></i>Confirmar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast de Alertas del Sistema -->
+    <div id="sstToastContainer" style="position:fixed;top:80px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;min-width:300px;max-width:380px;"></div>
+
+    <script>
+    // ── showConfirm(message, onConfirm, options) ────────────────────────────
+    // Reemplaza confirm() del navegador
+    // options: { title, type: 'danger'|'warning'|'info', confirmText, cancelText }
+    function showConfirm(message, onConfirm, options = {}) {
+        const type = options.type || 'warning';
+        const colors = { danger: '#DC2626', warning: '#D97706', info: '#2563EB' };
+        const color = colors[type] || colors.warning;
+
+        const icon = document.getElementById('sstConfirmIcon');
+        icon.style.background = color;
+        icon.querySelector('i').className = type === 'danger'
+            ? 'bi bi-exclamation-triangle-fill text-white'
+            : type === 'info'
+            ? 'bi bi-info-circle-fill text-white'
+            : 'bi bi-question-circle-fill text-white';
+
+        document.getElementById('sstConfirmTitle').textContent = options.title || 'Confirmar acción';
+        document.getElementById('sstConfirmMessage').textContent = message;
+
+        const okBtn = document.getElementById('sstConfirmOk');
+        okBtn.className = `btn btn-${type === 'danger' ? 'danger' : type === 'info' ? 'primary' : 'warning'}`;
+        okBtn.style = 'border-radius:8px;font-size:0.88rem;font-weight:600;';
+        okBtn.innerHTML = `<i class="bi bi-check-lg me-1"></i>${options.confirmText || 'Confirmar'}`;
+
+        const modal = new bootstrap.Modal(document.getElementById('sstConfirmModal'));
+        modal.show();
+
+        const okClone = okBtn.cloneNode(true);
+        okBtn.parentNode.replaceChild(okClone, okBtn);
+        document.getElementById('sstConfirmCancel').onclick = () => modal.hide();
+        okClone.addEventListener('click', () => { modal.hide(); if (onConfirm) onConfirm(); });
+    }
+
+    // ── showAlert(message, type) ────────────────────────────────────────────
+    // Reemplaza alert() del navegador
+    // type: 'success' | 'danger' | 'warning' | 'info'
+    function showAlert(message, type = 'info') {
+        const container = document.getElementById('sstToastContainer');
+        const icons = { success: 'bi-check-circle-fill', danger: 'bi-x-circle-fill', warning: 'bi-exclamation-triangle-fill', info: 'bi-info-circle-fill' };
+        const colors = { success: '#166534', danger: '#991B1B', warning: '#92400E', info: '#1e40af' };
+        const bgs = { success: '#F0FDF4', danger: '#FEF2F2', warning: '#FFFBEB', info: '#EFF6FF' };
+        const borders = { success: '#86EFAC', danger: '#FECACA', warning: '#FDE68A', info: '#BFDBFE' };
+
+        const toast = document.createElement('div');
+        toast.style.cssText = `background:${bgs[type]};border:1px solid ${borders[type]};border-left:4px solid ${colors[type]};border-radius:10px;padding:12px 14px;display:flex;align-items:flex-start;gap:10px;box-shadow:0 4px 12px rgba(0,0,0,0.1);animation:slideInRight .25s ease;`;
+        toast.innerHTML = `
+            <i class="bi ${icons[type]}" style="color:${colors[type]};font-size:1.1rem;flex-shrink:0;margin-top:1px;"></i>
+            <span style="font-size:0.88rem;color:${colors[type]};line-height:1.5;flex-grow:1;">${message}</span>
+            <button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;color:${colors[type]};opacity:0.6;padding:0;line-height:1;"><i class="bi bi-x-lg" style="font-size:0.8rem;"></i></button>`;
+        container.appendChild(toast);
+        setTimeout(() => { toast.style.animation = 'fadeOut .3s ease'; setTimeout(() => toast.remove(), 300); }, 5000);
+    }
+
+    // Animaciones CSS
+    const sstStyle = document.createElement('style');
+    sstStyle.textContent = `
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; transform: translateX(100%); } }
+    `;
+    document.head.appendChild(sstStyle);
+    </script>
+
+    <!-- ============================================================ -->
     <!-- BANNER DE INSTALACION PWA (movil y PC)                      -->
     <!-- ============================================================ -->
     <div id="pwaInstallBanner" class="d-none position-fixed bottom-0 start-0 end-0 p-3"

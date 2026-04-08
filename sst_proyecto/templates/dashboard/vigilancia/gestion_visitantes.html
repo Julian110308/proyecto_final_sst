@@ -246,22 +246,20 @@ async function crearVisitante() {
 }
 
 async function registrarSalida(id, nombre) {
-    if (!confirm(`Registrar salida de ${nombre}?`)) return;
-    try {
-        const r = await fetch(`/api/auth/visitantes/${id}/`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({hora_salida: new Date().toTimeString().split(' ')[0]})
-        });
-        if (r.ok) {
-            location.reload();
-        } else {
-            alert('Error al registrar salida');
-        }
-    } catch(e) { alert('Error de conexion'); }
+    showConfirm(`¿Registrar salida de ${nombre}?`, async () => {
+        try {
+            const r = await fetch(`/api/auth/visitantes/${id}/`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                body: JSON.stringify({hora_salida: new Date().toTimeString().split(' ')[0]})
+            });
+            if (r.ok) {
+                location.reload();
+            } else {
+                showAlert('Error al registrar salida', 'danger');
+            }
+        } catch(e) { showAlert('Error de conexión', 'danger'); }
+    }, { title: 'Registrar Salida', type: 'warning', confirmText: 'Sí, registrar' });
 }
 </script>
 {% endblock %}

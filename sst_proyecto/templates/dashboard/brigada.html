@@ -703,22 +703,23 @@ function calcularEstadisticas(lista) {
 
 // === ACCIONES DE EMERGENCIA ===
 async function atenderEmergencia(id) {
-    if (!confirm('Confirmar que esta atendiendo esta emergencia?')) return;
-    try {
-        const r = await fetch(`/api/emergencias/emergencias/${id}/atender/`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }
-        });
-        if (r.ok) {
-            mostrarToast('Emergencia marcada como en atencion', 'info');
-            cargarEmergencias();
-        } else {
-            const err = await r.json();
-            mostrarToast(err.error || 'Error al atender emergencia', 'danger');
+    showConfirm('¿Confirmar que está atendiendo esta emergencia?', async () => {
+        try {
+            const r = await fetch(`/api/emergencias/emergencias/${id}/atender/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }
+            });
+            if (r.ok) {
+                mostrarToast('Emergencia marcada como en atención', 'info');
+                cargarEmergencias();
+            } else {
+                const err = await r.json();
+                mostrarToast(err.error || 'Error al atender emergencia', 'danger');
+            }
+        } catch(e) {
+            mostrarToast('Error de conexion', 'danger');
         }
-    } catch(e) {
-        mostrarToast('Error de conexion', 'danger');
-    }
+    }, { title: 'Atender Emergencia', type: 'danger', confirmText: 'Sí, atender' });
 }
 
 function iniciarResolucion(id) {
