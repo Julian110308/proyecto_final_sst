@@ -436,7 +436,7 @@
                 <ul class="nav flex-column">
                 <!-- Dashboard - Todos los roles -->
                 <li class="nav-item mb-2">
-                    <a class="nav-link" href="{% url 'dashboard' %}">
+                    <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="{% url 'dashboard' %}">
                         <i class="bi bi-speedometer2 me-2" aria-hidden="true"></i>Inicio
                     </a>
                 </li>
@@ -922,6 +922,7 @@
         });
 
         // Marcar enlace activo en el sidebar según la URL actual
+        // (El link de Inicio ya recibe la clase active desde el servidor vía Django)
         (function() {
             const path = window.location.pathname;
             const links = document.querySelectorAll('#sidebar .nav-link');
@@ -930,12 +931,8 @@
 
             links.forEach(function(link) {
                 const href = link.getAttribute('href');
-                if (!href) return;
-                // Coincidencia exacta para "/" (dashboard)
-                if (href === '/' && path === '/') {
-                    matched = link;
-                    matchLen = 999;
-                } else if (href !== '/' && path.startsWith(href) && href.length > matchLen) {
+                if (!href || href === '/') return; // Inicio lo maneja Django server-side
+                if (path.startsWith(href) && href.length > matchLen) {
                     matched = link;
                     matchLen = href.length;
                 }
