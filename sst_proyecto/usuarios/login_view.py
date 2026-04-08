@@ -45,30 +45,41 @@ def custom_login_view(request):
 
         user = None
 
-        # Buscar el usuario por email y autenticar con su username interno
-        try:
-            usuario_obj = Usuario.objects.get(email__iexact=email)
-            user = authenticate(request, username=usuario_obj.username, password=password)
-        except Usuario.DoesNotExist:
-            user = None
-
-        # Verificar estado de cuenta antes de autenticar (PENDIENTE no tiene is_active=True)
+        # Verificar estado de cuenta ANTES de autenticar.
+        # Los roles operativos creados por admin (BRIGADA, COORDINADOR_SST) no pasan
+        # por el flujo de aprobación; si quedaron en PENDIENTE se activan automáticamente.
+        ROLES_SIN_APROBACION = {"BRIGADA", "COORDINADOR_SST", "APRENDIZ", "VISITANTE"}
         try:
             usuario_obj_check = Usuario.objects.get(email__iexact=email)
             if usuario_obj_check.estado_cuenta == "PENDIENTE":
-                logger.warning(f"Intento de login con cuenta pendiente: {email}")
-                messages.warning(
-                    request,
-                    "Tu cuenta está pendiente de aprobación por el Coordinador SST. "
-                    "Recibirás acceso una vez sea revisada tu solicitud.",
-                )
-                return _render_login(request)
+                if usuario_obj_check.rol not in ROLES_SIN_APROBACION:
+                    logger.warning(f"Intento de login con cuenta pendiente: {email}")
+                    messages.warning(
+                        request,
+                        "Tu cuenta está pendiente de aprobación por el Coordinador SST. "
+                        "Recibirás acceso una vez sea revisada tu solicitud.",
+                    )
+                    return _render_login(request)
+                else:
+                    # Activar automáticamente cuentas operativas que quedaron en PENDIENTE
+                    usuario_obj_check.estado_cuenta = "ACTIVO"
+                    usuario_obj_check.activo = True
+                    usuario_obj_check.is_active = True
+                    usuario_obj_check.save(update_fields=["estado_cuenta", "activo", "is_active"])
+                    logger.info(f"Cuenta operativa activada automáticamente: {email} (rol={usuario_obj_check.rol})")
             elif usuario_obj_check.estado_cuenta == "BLOQUEADO":
                 logger.warning(f"Intento de login con cuenta bloqueada: {email}")
                 messages.error(request, "Tu cuenta ha sido bloqueada. Contacta al Coordinador SST.")
                 return _render_login(request)
         except Usuario.DoesNotExist:
             pass
+
+        # Buscar el usuario por email y autenticar con su username interno
+        try:
+            usuario_obj = Usuario.objects.get(email__iexact=email)
+            user = authenticate(request, username=usuario_obj.username, password=password)
+        except Usuario.DoesNotExist:
+            user = None
 
         if user is not None:
             if user.activo:
