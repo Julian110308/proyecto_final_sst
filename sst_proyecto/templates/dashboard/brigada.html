@@ -97,6 +97,42 @@
     </div>
 </div>
 
+<!-- ── Panel de Evacuación (visible solo cuando hay emergencia masiva activa) ── -->
+<div id="panelEvacuacion" class="card shadow border-0 border-start border-5 border-danger mb-4" style="display:none!important;">
+    <div class="card-header d-flex justify-content-between align-items-center py-2 px-3" style="background:#dc3545;">
+        <span class="fw-bold text-white">
+            <i class="bi bi-people-fill me-2"></i>Control de Evacuación
+            <span class="badge bg-white text-danger ms-2 fw-bold" id="evacTipoEmergencia"></span>
+        </span>
+        <span class="text-white small" id="evacFecha"></span>
+    </div>
+    <div class="card-body p-3">
+        <div class="row g-3 mb-3">
+            <div class="col-4 text-center">
+                <div class="fs-2 fw-bold text-dark" id="evacTotal">—</div>
+                <div class="small text-muted">Total esperados</div>
+            </div>
+            <div class="col-4 text-center">
+                <div class="fs-2 fw-bold text-success" id="evacConfirmados">—</div>
+                <div class="small text-muted">En punto de encuentro</div>
+            </div>
+            <div class="col-4 text-center">
+                <div class="fs-2 fw-bold text-danger" id="evacFaltantes">—</div>
+                <div class="small text-muted">Faltantes</div>
+            </div>
+        </div>
+        <!-- Barra de progreso -->
+        <div class="progress mb-3" style="height:12px;">
+            <div class="progress-bar bg-success" id="evacBarra" style="width:0%;transition:width 0.5s;"></div>
+        </div>
+        <!-- Detalle por ficha -->
+        <div id="evacDetalleFichas" class="d-flex flex-wrap gap-2"></div>
+        <div class="text-muted small mt-2">
+            <i class="bi bi-arrow-repeat me-1"></i>Actualización automática cada 10 segundos
+        </div>
+    </div>
+</div>
+
 <!-- Alerta SLA -->
 {% if incidentes_criticos_sla %}
 <div class="alert alert-danger d-flex align-items-center mb-4 border-danger border-2" role="alert">
@@ -1034,4 +1070,69 @@ document.addEventListener('visibilitychange', function() {
     50% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
 }
 </style>
+
+<script>
+// ── Control de Evacuación — polling cada 10 s ──────────────────────────────
+let _evacTimer = null;
+
+async function actualizarEvacuacion() {
+    try {
+        const resp = await fetch('/api/emergencias/emergencias/evacuacion-stats/', { credentials: 'same-origin' });
+        if (!resp.ok) return;
+        const d = await resp.json();
+        const panel = document.getElementById('panelEvacuacion');
+        if (!panel) return;
+
+        if (!d.activa) {
+            panel.style.setProperty('display', 'none', 'important');
+            return;
+        }
+
+        // Mostrar panel
+        panel.style.removeProperty('display');
+
+        document.getElementById('evacTipoEmergencia').textContent = d.emergencia_tipo || '';
+        document.getElementById('evacTotal').textContent = d.total ?? '—';
+        document.getElementById('evacConfirmados').textContent = d.confirmados ?? '—';
+        document.getElementById('evacFaltantes').textContent = d.faltantes ?? '—';
+
+        const pct = d.porcentaje || 0;
+        const barra = document.getElementById('evacBarra');
+        barra.style.width = pct + '%';
+        barra.className = 'progress-bar ' + (pct >= 80 ? 'bg-success' : pct >= 50 ? 'bg-warning' : 'bg-danger');
+
+        // Detalle por ficha
+        const cont = document.getElementById('evacDetalleFichas');
+        if (d.fichas && d.fichas.length) {
+            cont.innerHTML = d.fichas.map(f => {
+                const color = f.faltantes === 0 ? 'success' : f.confirmados === 0 ? 'danger' : 'warning';
+                return `<span class="badge bg-${color} px-2 py-1 fs-6">
+                    Ficha ${f.ficha}: ${f.confirmados}/${f.total}
+                    ${f.faltantes > 0 ? `<span class="ms-1">(${f.faltantes} faltan)</span>` : ''}
+                </span>`;
+            }).join('');
+        }
+
+        if (d.emergencia_fecha) {
+            const dt = new Date(d.emergencia_fecha);
+            document.getElementById('evacFecha').textContent =
+                dt.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+        }
+    } catch (e) { /* silencioso */ }
+}
+
+// Iniciar polling cuando la página carga
+actualizarEvacuacion();
+_evacTimer = setInterval(actualizarEvacuacion, 10000);
+
+// Pausar cuando la pestaña no está visible
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        clearInterval(_evacTimer);
+    } else {
+        actualizarEvacuacion();
+        _evacTimer = setInterval(actualizarEvacuacion, 10000);
+    }
+});
+</script>
 {% endblock %}

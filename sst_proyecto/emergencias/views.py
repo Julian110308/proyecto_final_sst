@@ -13,6 +13,7 @@ from .models import (
     BrigadaEmergencia,
     NotificacionEmergencia,
     ContactoExterno,
+    RegistroEvacuacion,
 )
 from .serializers import (
     TipoEmergenciaSerializer,
@@ -339,6 +340,142 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
                 tipo_notificacion="APP",
                 mensaje=f"EMERGENCIA: {emergencia.tipo.nombre} en {emergencia.descripcion_ubicacion}",
             )
+
+    # ── Evacuación ────────────────────────────────────────────────────────
+
+    @action(detail=False, methods=["get"], url_path="evacuacion-stats")
+    def evacuacion_stats(self, request):
+        """
+        Estadísticas de evacuación para la emergencia de alerta masiva activa.
+        Devuelve: total esperado, confirmados, faltantes, detalle por rol/ficha.
+        Solo accesible por BRIGADA, COORDINADOR_SST y ADMINISTRATIVO.
+        """
+        from usuarios.models import Usuario
+
+        if request.user.rol not in {"BRIGADA", "COORDINADOR_SST", "ADMINISTRATIVO"}:
+            return Response({"error": "Sin permiso."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Buscar la emergencia de alerta masiva más reciente que esté activa
+        emergencia = (
+            Emergencia.objects.filter(
+                tipo__alerta_masiva=True,
+                estado__in=["REPORTADA", "EN_ATENCION"],
+            )
+            .order_by("-fecha_hora_reporte")
+            .first()
+        )
+
+        if not emergencia:
+            return Response({"activa": False})
+
+        ROLES_ESPERADOS = ["APRENDIZ", "INSTRUCTOR", "ADMINISTRATIVO", "VIGILANCIA", "BRIGADA", "COORDINADOR_SST"]
+        usuarios_esperados = Usuario.objects.filter(rol__in=ROLES_ESPERADOS, activo=True)
+        total = usuarios_esperados.count()
+
+        confirmados_ids = set(
+            RegistroEvacuacion.objects.filter(emergencia=emergencia, confirmado=True).values_list(
+                "usuario_id", flat=True
+            )
+        )
+        confirmados = len(confirmados_ids)
+        faltantes = total - confirmados
+
+        # Detalle por ficha (aprendices)
+
+        detalle_fichas = []
+        fichas = (
+            Usuario.objects.filter(rol="APRENDIZ", activo=True, ficha__isnull=False)
+            .exclude(ficha="")
+            .values_list("ficha", flat=True)
+            .distinct()
+        )
+        for ficha in fichas:
+            aprendices_ficha = Usuario.objects.filter(rol="APRENDIZ", activo=True, ficha=ficha)
+            total_ficha = aprendices_ficha.count()
+            confirmados_ficha = aprendices_ficha.filter(id__in=confirmados_ids).count()
+            detalle_fichas.append(
+                {
+                    "ficha": ficha,
+                    "total": total_ficha,
+                    "confirmados": confirmados_ficha,
+                    "faltantes": total_ficha - confirmados_ficha,
+                }
+            )
+
+        return Response(
+            {
+                "activa": True,
+                "emergencia_id": emergencia.id,
+                "emergencia_tipo": emergencia.tipo.nombre,
+                "emergencia_fecha": emergencia.fecha_hora_reporte,
+                "total": total,
+                "confirmados": confirmados,
+                "faltantes": faltantes,
+                "porcentaje": round(confirmados / total * 100) if total else 0,
+                "fichas": detalle_fichas,
+            }
+        )
+
+    @action(detail=False, methods=["post"], url_path="evacuacion-confirmar")
+    def evacuacion_confirmar(self, request):
+        """
+        El instructor confirma la presencia de uno o varios aprendices en el punto de encuentro.
+        Body: { "emergencia_id": int, "usuario_ids": [int, ...] }
+        """
+        from usuarios.models import Usuario
+
+        if request.user.rol not in {"INSTRUCTOR", "BRIGADA", "COORDINADOR_SST", "ADMINISTRATIVO"}:
+            return Response({"error": "Sin permiso."}, status=status.HTTP_403_FORBIDDEN)
+
+        emergencia_id = request.data.get("emergencia_id")
+        usuario_ids = request.data.get("usuario_ids", [])
+
+        if not emergencia_id or not usuario_ids:
+            return Response(
+                {"error": "emergencia_id y usuario_ids son requeridos."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            emergencia = Emergencia.objects.get(pk=emergencia_id, tipo__alerta_masiva=True)
+        except Emergencia.DoesNotExist:
+            return Response({"error": "Emergencia no encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Instructores solo pueden confirmar sus propios aprendices
+        if request.user.rol == "INSTRUCTOR":
+            fichas = request.user.get_fichas_list() or ([request.user.ficha] if request.user.ficha else [])
+            usuarios_permitidos = set(
+                Usuario.objects.filter(rol="APRENDIZ", ficha__in=fichas, activo=True).values_list("id", flat=True)
+            )
+            usuario_ids = [uid for uid in usuario_ids if uid in usuarios_permitidos]
+
+        ahora = timezone.now()
+        confirmados = 0
+        for uid in usuario_ids:
+            obj, created = RegistroEvacuacion.objects.get_or_create(
+                emergencia=emergencia,
+                usuario_id=uid,
+                defaults={"confirmado": True, "confirmado_por": request.user, "fecha_confirmacion": ahora},
+            )
+            if not created and not obj.confirmado:
+                obj.confirmado = True
+                obj.confirmado_por = request.user
+                obj.fecha_confirmacion = ahora
+                obj.save(update_fields=["confirmado", "confirmado_por", "fecha_confirmacion"])
+            confirmados += 1
+
+        # Notificar en tiempo real a brigada via WebSocket
+        from usuarios.services import _ws_dispatch_roles
+
+        _ws_dispatch_roles(
+            roles=["BRIGADA"],
+            tipo="SISTEMA",
+            titulo="Actualización de evacuación",
+            mensaje=f"{request.user.get_full_name()} confirmó {confirmados} persona(s) en punto de encuentro.",
+            prioridad="NORMAL",
+            url="/",
+        )
+
+        return Response({"confirmados": confirmados, "ok": True})
 
 
 class BrigadaEmergenciaViewSet(viewsets.ModelViewSet):

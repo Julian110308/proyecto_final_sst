@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+
+{% block title %}Lista de Evacuación — Instructor{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Inicio</a></li>
+<li class="breadcrumb-item active">Lista de Evacuación</li>
+{% endblock %}
+
+{% block content %}
+{% if not emergencia %}
+<div class="alert alert-info d-flex align-items-center gap-3 mb-4">
+    <i class="bi bi-info-circle-fill fs-4"></i>
+    <div>
+        <strong>Sin emergencia activa.</strong> Esta lista se activa cuando el sistema detecta una
+        emergencia de alerta masiva (sismo, deslizamiento, etc.).
+    </div>
+</div>
+{% else %}
+
+<!-- Alerta emergencia activa -->
+<div class="alert alert-danger border-0 shadow-sm d-flex align-items-center gap-3 mb-4 p-3">
+    <i class="bi bi-exclamation-octagon-fill fs-3 flex-shrink-0"></i>
+    <div>
+        <strong class="d-block fs-6">EMERGENCIA ACTIVA: {{ emergencia.tipo.nombre }}</strong>
+        <span class="small">Reporte: {{ emergencia.fecha_hora_reporte|date:"d/m/Y H:i" }} &mdash; {{ emergencia.descripcion|truncatechars:80 }}</span>
+    </div>
+</div>
+
+<!-- Contador -->
+<div class="row g-3 mb-4">
+    <div class="col-4">
+        <div class="card border-0 shadow-sm text-center h-100">
+            <div class="card-body py-3">
+                <div class="fs-2 fw-bold text-dark" id="cntTotal">{{ total }}</div>
+                <div class="small text-muted">Total aprendices</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="card border-0 shadow-sm text-center h-100" style="border-left: 4px solid #198754 !important;">
+            <div class="card-body py-3">
+                <div class="fs-2 fw-bold text-success" id="cntConfirmados">{{ confirmados }}</div>
+                <div class="small text-muted">Confirmados</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="card border-0 shadow-sm text-center h-100" style="border-left: 4px solid #dc3545 !important;">
+            <div class="card-body py-3">
+                <div class="fs-2 fw-bold text-danger" id="cntFaltantes">{{ total|add:"-"|add:confirmados }}</div>
+                <div class="small text-muted">Faltantes</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Acciones rápidas -->
+<div class="d-flex gap-2 flex-wrap mb-3">
+    <button class="btn btn-success btn-sm fw-bold" onclick="confirmarTodos()">
+        <i class="bi bi-check-all me-1"></i>Confirmar todos presentes
+    </button>
+    <span class="text-muted small align-self-center">Fichas: {{ fichas|join:", " }}</span>
+</div>
+
+<!-- Lista de aprendices -->
+{% if aprendices %}
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white fw-semibold">
+        <i class="bi bi-people-fill me-2 text-danger"></i>Lista de aprendices — Punto de encuentro
+    </div>
+    <div class="list-group list-group-flush" id="listaAprendices">
+        {% for item in aprendices %}
+        <div class="list-group-item d-flex align-items-center gap-3 py-3" id="fila-{{ item.usuario.id }}">
+            <div class="flex-grow-1">
+                <div class="fw-semibold">{{ item.usuario.get_full_name }}</div>
+                <div class="small text-muted">Doc: {{ item.usuario.numero_documento }} &mdash; Ficha: {{ item.usuario.ficha }}</div>
+            </div>
+            {% if item.confirmado %}
+            <span class="badge bg-success px-3 py-2" id="badge-{{ item.usuario.id }}">
+                <i class="bi bi-check-circle-fill me-1"></i>Presente
+            </span>
+            {% else %}
+            <button class="btn btn-outline-success btn-sm px-3"
+                    id="btn-{{ item.usuario.id }}"
+                    onclick="confirmarUsuario({{ item.usuario.id }})">
+                <i class="bi bi-check2 me-1"></i>Confirmar
+            </button>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="alert alert-warning">
+    No tienes aprendices asignados en tus fichas ({{ fichas|join:", "|default:"sin ficha" }}).
+    Actualiza tu perfil para asignar una ficha.
+</div>
+{% endif %}
+
+{% endif %}
+
+<script>
+const EMERGENCIA_ID = {{ emergencia.id|default:"null" }};
+const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+
+async function confirmarUsuario(usuarioId) {
+    const btn = document.getElementById(`btn-${usuarioId}`);
+    if (!btn) return;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+    const ok = await enviarConfirmacion([usuarioId]);
+    if (ok) {
+        const fila = document.getElementById(`fila-${usuarioId}`);
+        btn.replaceWith(Object.assign(document.createElement('span'), {
+            className: 'badge bg-success px-3 py-2',
+            innerHTML: '<i class="bi bi-check-circle-fill me-1"></i>Presente',
+            id: `badge-${usuarioId}`,
+        }));
+        actualizarContador(1);
+    } else {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check2 me-1"></i>Confirmar';
+    }
+}
+
+async function confirmarTodos() {
+    const botones = document.querySelectorAll('[id^="btn-"]');
+    if (!botones.length) return;
+    const ids = Array.from(botones).map(b => parseInt(b.id.replace('btn-', '')));
+
+    botones.forEach(b => { b.disabled = true; b.innerHTML = '<span class="spinner-border spinner-border-sm"></span>'; });
+
+    const ok = await enviarConfirmacion(ids);
+    if (ok) {
+        botones.forEach(btn => {
+            const uid = btn.id.replace('btn-', '');
+            btn.replaceWith(Object.assign(document.createElement('span'), {
+                className: 'badge bg-success px-3 py-2',
+                innerHTML: '<i class="bi bi-check-circle-fill me-1"></i>Presente',
+                id: `badge-${uid}`,
+            }));
+        });
+        actualizarContador(ids.length);
+    } else {
+        botones.forEach(b => { b.disabled = false; b.innerHTML = '<i class="bi bi-check2 me-1"></i>Confirmar'; });
+    }
+}
+
+async function enviarConfirmacion(usuarioIds) {
+    try {
+        const resp = await fetch('/api/emergencias/emergencias/evacuacion-confirmar/', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify({ emergencia_id: EMERGENCIA_ID, usuario_ids: usuarioIds }),
+        });
+        return resp.ok;
+    } catch (e) {
+        return false;
+    }
+}
+
+function actualizarContador(delta) {
+    const conf = document.getElementById('cntConfirmados');
+    const falt = document.getElementById('cntFaltantes');
+    if (conf) conf.textContent = parseInt(conf.textContent) + delta;
+    if (falt) falt.textContent = Math.max(0, parseInt(falt.textContent) - delta);
+}
+</script>
+{% endblock %}

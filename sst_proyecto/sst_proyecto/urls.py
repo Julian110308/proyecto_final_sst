@@ -678,6 +678,59 @@ def mis_aprendices_view(request):
     return render(request, "dashboard/instructor/mis_aprendices.html", context)
 
 
+@login_required
+@rol_requerido("INSTRUCTOR")
+def evacuacion_instructor_view(request):
+    """
+    Vista para que el instructor tome lista de evacuación de sus aprendices
+    cuando hay una emergencia de alerta masiva activa.
+    """
+    from usuarios.models import Usuario
+    from emergencias.models import Emergencia, RegistroEvacuacion
+
+    instructor = request.user
+    fichas = instructor.get_fichas_list() or ([instructor.ficha] if instructor.ficha else [])
+
+    # Buscar emergencia de alerta masiva activa
+    emergencia = (
+        Emergencia.objects.filter(
+            tipo__alerta_masiva=True,
+            estado__in=["REPORTADA", "EN_ATENCION"],
+        )
+        .order_by("-fecha_hora_reporte")
+        .first()
+    )
+
+    aprendices_data = []
+    if emergencia and fichas:
+        aprendices = Usuario.objects.filter(rol="APRENDIZ", activo=True, ficha__in=fichas).order_by(
+            "ficha", "last_name", "first_name"
+        )
+
+        confirmados_ids = set(
+            RegistroEvacuacion.objects.filter(emergencia=emergencia, confirmado=True).values_list(
+                "usuario_id", flat=True
+            )
+        )
+
+        for aprendiz in aprendices:
+            aprendices_data.append(
+                {
+                    "usuario": aprendiz,
+                    "confirmado": aprendiz.id in confirmados_ids,
+                }
+            )
+
+    context = {
+        "emergencia": emergencia,
+        "aprendices": aprendices_data,
+        "fichas": fichas,
+        "total": len(aprendices_data),
+        "confirmados": sum(1 for a in aprendices_data if a["confirmado"]),
+    }
+    return render(request, "dashboard/instructor/evacuacion.html", context)
+
+
 # ==============================================
 # VISTAS ESPECÍFICAS PARA ADMINISTRATIVO
 # ==============================================
@@ -1318,6 +1371,7 @@ urlpatterns = [
     # ==============================================
     # URLs PARA INSTRUCTOR
     path("instructor/mis-aprendices/", mis_aprendices_view, name="mis_aprendices"),
+    path("instructor/evacuacion/", evacuacion_instructor_view, name="evacuacion_instructor"),
     # URLs PARA ADMINISTRATIVO
     path("administrativo/usuarios/", gestion_usuarios_view, name="gestion_usuarios"),
     path("administrativo/configuracion/", configuracion_view, name="configuracion_sistema"),

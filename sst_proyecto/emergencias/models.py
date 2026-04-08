@@ -232,6 +232,36 @@ class NotificacionEmergencia(models.Model):
         return f"Notificacion a {self.destinatario} - {self.emergencia}"
 
 
+class RegistroEvacuacion(models.Model):
+    """
+    Registra si un usuario fue confirmado en el punto de encuentro
+    durante una emergencia de alerta masiva (sismo, deslizamiento, etc.)
+    """
+
+    emergencia = models.ForeignKey(Emergencia, on_delete=models.CASCADE, related_name="registros_evacuacion")
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name="evacuaciones_registradas")
+    confirmado = models.BooleanField(default=False)
+    confirmado_por = models.ForeignKey(
+        Usuario,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="evacuaciones_confirmadas",
+        help_text="Instructor u otro usuario que confirmo la presencia",
+    )
+    fecha_confirmacion = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Registro de Evacuación"
+        verbose_name_plural = "Registros de Evacuación"
+        unique_together = [("emergencia", "usuario")]
+        ordering = ["-fecha_confirmacion"]
+
+    def __str__(self):
+        estado = "Confirmado" if self.confirmado else "No confirmado"
+        return f"{self.usuario.get_full_name()} — {self.emergencia.tipo.nombre} ({estado})"
+
+
 class ContactoExterno(models.Model):
     # Contactos de entidades externas (Bomberos, Ambulancia, etc.)
 
