@@ -826,7 +826,6 @@ async function cargarBrigadistas() {
                             <div class="fw-semibold small text-truncate">${b.usuario_nombre || 'Brigadista'}</div>
                             <div class="text-muted" style="font-size:0.72rem;">${espNames[b.especializacion] || b.especializacion}</div>
                         </div>
-                        <span class="badge bg-${color}" style="font-size:0.68rem;">${b.disponible ? 'Disponible' : 'No disp.'}</span>
                     </div>
                     <div class="ps-5 d-flex flex-wrap gap-2" style="font-size:0.72rem; color:#6c757d;">
                         ${doc ? `<span><i class="bi bi-person-vcard me-1"></i>${doc}</span>` : ''}
