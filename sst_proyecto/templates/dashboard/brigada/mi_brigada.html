@@ -74,4 +74,165 @@
         {% endfor %}
     </div>
 </div>
+
+<!-- Panel de Alertas por Causas Naturales -->
+<div class="container-fluid mt-4">
+    <div class="card shadow-sm border-2" style="border-color:#dc3545 !important;">
+        <div class="card-header d-flex justify-content-between align-items-center" style="background:#dc3545;">
+            <h5 class="mb-0 fw-bold text-white">
+                <i class="bi bi-exclamation-octagon-fill me-2"></i>Activar Alerta — Emergencia Natural
+            </h5>
+            <span class="badge bg-white text-danger fw-semibold">Solo Brigada</span>
+        </div>
+        <div class="card-body">
+            <p class="text-muted small mb-3">
+                Activa una alerta masiva ante un desastre natural. Se notificará inmediatamente a
+                <strong>todos los usuarios del sistema</strong> y se registrará en el historial de emergencias.
+            </p>
+            <div class="row g-3" id="btnAlertasNaturales">
+                <div class="col-12 text-center py-2">
+                    <div class="spinner-border spinner-border-sm text-danger me-2"></div>
+                    <span class="text-muted small">Cargando...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal confirmación de alerta natural -->
+<div class="modal fade" id="modalAlertaNatural" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header" style="background:#dc3545;">
+                <h5 class="modal-title text-white fw-bold">
+                    <i class="bi bi-exclamation-octagon-fill me-2"></i>
+                    Activar: <span id="alertaNombreTipo"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger py-2 small mb-3">
+                    <i class="bi bi-megaphone-fill me-1"></i>
+                    Se enviará una <strong>alerta inmediata a TODOS los usuarios activos</strong> del sistema.
+                    Esta acción no se puede deshacer.
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Descripción de la situación <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="alertaDescripcion" rows="3"
+                              placeholder="Describe brevemente lo que está ocurriendo..." required></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Zona afectada</label>
+                    <input type="text" class="form-control" id="alertaUbicacion"
+                           placeholder="Ej: Todo el campus / Bloque C / Zona norte">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger fw-bold" id="btnConfirmarAlertaNatural">
+                    <i class="bi bi-send-fill me-1"></i>Activar y notificar a todos
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const CSRF_BRIGADA = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+
+const ICONOS_NATURALES = {
+    'Sismo':         { icon: 'bi-activity',        color: '#8B4513' },
+    'Deslizamiento': { icon: 'bi-cloud-rain-heavy', color: '#6f4e37' },
+};
+
+let _tipoNaturalSeleccionado = null;
+
+async function cargarAlertasNaturales() {
+    try {
+        const resp = await fetch('/api/emergencias/tipos/', { credentials: 'same-origin' });
+        const data = await resp.json();
+        const tipos = (data.results || data).filter(t => t.solo_autorizado && t.alerta_masiva);
+
+        const cont = document.getElementById('btnAlertasNaturales');
+        if (!tipos.length) {
+            cont.innerHTML = '<p class="text-muted small col-12">No hay tipos de emergencia natural configurados.</p>';
+            return;
+        }
+
+        cont.innerHTML = tipos.map(t => {
+            const cfg = ICONOS_NATURALES[t.nombre] || { icon: 'bi-exclamation-triangle', color: '#dc3545' };
+            return `
+            <div class="col-6 col-sm-4 col-md-3">
+                <button class="btn w-100 py-3 fw-bold border-2 text-white"
+                        style="background:${cfg.color}; border-color:${cfg.color};"
+                        onclick="abrirAlertaNatural(${t.id}, '${t.nombre.replace(/'/g, "\\'")}')">
+                    <i class="bi ${cfg.icon} fs-3 d-block mb-1"></i>
+                    ${t.nombre}
+                </button>
+            </div>`;
+        }).join('');
+    } catch (e) {
+        document.getElementById('btnAlertasNaturales').innerHTML =
+            '<p class="text-danger small col-12">Error cargando alertas.</p>';
+    }
+}
+
+function abrirAlertaNatural(tipoId, tipoNombre) {
+    _tipoNaturalSeleccionado = tipoId;
+    document.getElementById('alertaNombreTipo').textContent = tipoNombre;
+    document.getElementById('alertaDescripcion').value = '';
+    document.getElementById('alertaUbicacion').value = '';
+    new bootstrap.Modal(document.getElementById('modalAlertaNatural')).show();
+}
+
+document.getElementById('btnConfirmarAlertaNatural').addEventListener('click', async function () {
+    const descripcion = document.getElementById('alertaDescripcion').value.trim();
+    const ubicacion   = document.getElementById('alertaUbicacion').value.trim();
+
+    if (!descripcion) {
+        document.getElementById('alertaDescripcion').focus();
+        return;
+    }
+
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Activando...';
+
+    try {
+        const resp = await fetch('/api/emergencias/emergencias/', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_BRIGADA },
+            body: JSON.stringify({
+                tipo: _tipoNaturalSeleccionado,
+                descripcion: descripcion,
+                descripcion_ubicacion: ubicacion || 'Centro Minero SENA',
+                latitud: 5.8520,
+                longitud: -73.0318,
+                requiere_evacuacion: true,
+            }),
+        });
+
+        const data = await resp.json();
+        bootstrap.Modal.getInstance(document.getElementById('modalAlertaNatural')).hide();
+
+        if (resp.ok) {
+            const toast = document.createElement('div');
+            toast.className = 'alert alert-success alert-dismissible position-fixed bottom-0 end-0 m-3 shadow';
+            toast.style.zIndex = 9999;
+            toast.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Alerta activada. Todos los usuarios han sido notificados. <button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 6000);
+        } else {
+            alert(data.error || 'Error al activar la alerta.');
+        }
+    } catch (e) {
+        alert('Error de conexión.');
+    } finally {
+        this.disabled = false;
+        this.innerHTML = '<i class="bi bi-send-fill me-1"></i>Activar y notificar a todos';
+    }
+});
+
+cargarAlertasNaturales();
+</script>
 {% endblock %}

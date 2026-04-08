@@ -468,3 +468,10 @@ else:
 # ====================================================================
 # Los modelos se registran en cada apps/apps.py con register()
 AUDITLOG_INCLUDE_ALL_MODELS = False  # Solo registramos los modelos explícitos
+
+# ====================================================================
+# WEBHOOK — Auto-detección de emergencias naturales (sensores externos)
+# ====================================================================
+# Token secreto que deben enviar sensores/servicios externos para activar
+# alertas masivas automáticas. Cambiar en producción via variable de entorno.
+WEBHOOK_EMERGENCIA_TOKEN = config("WEBHOOK_EMERGENCIA_TOKEN", default="cambiar-en-produccion-token-secreto")

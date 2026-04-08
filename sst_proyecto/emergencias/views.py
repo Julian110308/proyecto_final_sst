@@ -1,8 +1,9 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from drf_spectacular.utils import extend_schema, OpenApiResponse
+from django.conf import settings
 from django.utils import timezone
 from django.db.models import Q
 from django_ratelimit.core import is_ratelimited
@@ -26,7 +27,8 @@ from .serializers import (
 from usuarios.services import NotificacionService
 
 
-ROLES_AUTORIZADOS_EMERGENCIA = {"COORDINADOR_SST", "BRIGADA", "ADMINISTRATIVO", "VIGILANCIA"}
+# Solo brigadistas pueden activar emergencias naturales (sismo, deslizamiento)
+ROLES_EMERGENCIA_NATURAL = {"BRIGADA"}
 
 
 class TipoEmergenciaViewSet(viewsets.ModelViewSet):
@@ -37,11 +39,9 @@ class TipoEmergenciaViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        es_autorizado = user.rol in ROLES_AUTORIZADOS_EMERGENCIA
-
-        # Usuarios comunes solo ven tipos que NO son de solo_autorizado
         qs = TipoEmergencia.objects.filter(activo=True)
-        if not es_autorizado:
+        # Solo la brigada ve los tipos de emergencia natural (solo_autorizado)
+        if user.rol not in ROLES_EMERGENCIA_NATURAL:
             qs = qs.filter(solo_autorizado=False)
         return qs
 
@@ -57,10 +57,13 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
         - list, retrieve, create, boton_panico: Todos los autenticados
         - atender, resolver: Solo Brigada y Administrativo
         - update, partial_update, destroy: Solo Administrativo
+        - alerta_automatica: AllowAny — autenticación via token en el body/header
         """
         from usuarios.permissions import EsBrigadaOAdministrativo, EsAdministrativo
 
-        if self.action in ["atender", "resolver", "marcar_falsa_alarma"]:
+        if self.action == "alerta_automatica":
+            return [AllowAny()]
+        elif self.action in ["atender", "resolver", "marcar_falsa_alarma"]:
             return [EsBrigadaOAdministrativo()]
         elif self.action in ["update", "partial_update", "destroy"]:
             return [EsAdministrativo()]
@@ -78,10 +81,10 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
         if tipo_id:
             try:
                 tipo = TipoEmergencia.objects.get(pk=tipo_id)
-                if tipo.solo_autorizado and request.user.rol not in ROLES_AUTORIZADOS_EMERGENCIA:
+                if tipo.solo_autorizado and request.user.rol not in ROLES_EMERGENCIA_NATURAL:
                     return Response(
                         {
-                            "error": "Este tipo de emergencia solo puede ser reportado por personal autorizado (Brigada, Coordinador o Administrativo)."
+                            "error": "Este tipo de emergencia (causa natural) solo puede ser activado por la Brigada de Emergencia."
                         },
                         status=status.HTTP_403_FORBIDDEN,
                     )
@@ -266,6 +269,61 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(emergencias, many=True)
             return Response(serializer.data)
         return Response({"error": "Parámetros tipo_id requerido."}, status=400)
+
+    @extend_schema(
+        summary="Alerta automática por sensor externo",
+        description=(
+            "Endpoint para sensores sísmicos u otros sistemas externos. "
+            "Requiere el header X-Webhook-Token o campo 'token' en el body. "
+            "Crea una emergencia automáticamente y notifica a todos los usuarios."
+        ),
+        tags=["emergencias"],
+        responses={201: EmergenciaSerializer, 401: OpenApiResponse(description="Token inválido")},
+    )
+    @action(detail=False, methods=["post"], url_path="alerta-automatica")
+    def alerta_automatica(self, request):
+        # Verificar token secreto del webhook
+        token = request.headers.get("X-Webhook-Token") or request.data.get("token", "")
+        expected = getattr(settings, "WEBHOOK_EMERGENCIA_TOKEN", "")
+        if not token or token != expected:
+            return Response({"error": "Token inválido o ausente."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        tipo_nombre = request.data.get("tipo_nombre", "Sismo")
+        try:
+            tipo = TipoEmergencia.objects.get(nombre=tipo_nombre, activo=True, solo_autorizado=True)
+        except TipoEmergencia.DoesNotExist:
+            return Response(
+                {"error": f"Tipo '{tipo_nombre}' no encontrado o no es un tipo de emergencia natural."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        lat = request.data.get("latitud", 5.852)
+        lng = request.data.get("longitud", -73.031)
+        descripcion = request.data.get(
+            "descripcion", f"{tipo_nombre} detectado automáticamente por el sistema de monitoreo."
+        )
+        ubicacion = request.data.get("ubicacion", "Centro Minero SENA - Detección automática")
+
+        emergencia = Emergencia.objects.create(
+            tipo=tipo,
+            reportada_por=None,
+            latitud=lat,
+            longitud=lng,
+            descripcion=descripcion,
+            descripcion_ubicacion=ubicacion,
+            estado="REPORTADA",
+            requiere_evacuacion=True,
+        )
+
+        NotificacionService.notificar_emergencia_masiva(emergencia)
+
+        return Response(
+            {
+                "mensaje": f"Alerta masiva de {tipo_nombre} activada automáticamente.",
+                "emergencia_id": emergencia.id,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
     def notificar_brigada(self, emergencia):
         # Notificar a miembros de la brigada
