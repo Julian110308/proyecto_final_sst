@@ -615,6 +615,10 @@ async function onQrDetectado(token) {
     await _html5QrCode.stop();
     _escaneando = false;
 
+    // Ocultar cámara y mostrar sección de resultado
+    document.getElementById('qrReaderContainer').classList.add('d-none');
+    document.getElementById('qrResultado').classList.remove('d-none');
+
     try {
         const resp = await fetch('/api/acceso/registros/escanear-qr/', {
             method: 'POST',
@@ -623,8 +627,6 @@ async function onQrDetectado(token) {
             body: JSON.stringify({ token, modo: _modoEscaner }),
         });
         const d = await resp.json();
-
-        document.getElementById('qrResultado').classList.remove('d-none');
 
         if (resp.ok) {
             const u = d.usuario;
@@ -649,16 +651,18 @@ async function onQrDetectado(token) {
             document.getElementById('qrExito').classList.add('d-none');
         }
     } catch (e) {
-        document.getElementById('qrResultado').classList.remove('d-none');
-        document.getElementById('qrErrorTexto').textContent = 'Error de conexión.';
+        document.getElementById('qrErrorTexto').textContent = 'Error de conexión al servidor.';
         document.getElementById('qrError').classList.remove('d-none');
+        document.getElementById('qrExito').classList.add('d-none');
     }
 }
 
 function reiniciarScanner() {
+    // Ocultar resultado y mostrar cámara de nuevo
     document.getElementById('qrResultado').classList.add('d-none');
     document.getElementById('qrExito').classList.add('d-none');
     document.getElementById('qrError').classList.add('d-none');
+    document.getElementById('qrReaderContainer').classList.remove('d-none');
     iniciarScanner();
 }
 </script>
