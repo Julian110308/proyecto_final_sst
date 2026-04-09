@@ -127,9 +127,50 @@
             <div class="progress-bar bg-success" id="evacBarra" style="width:0%;transition:width 0.5s;"></div>
         </div>
         <!-- Detalle por ficha -->
-        <div id="evacDetalleFichas" class="d-flex flex-wrap gap-2"></div>
-        <div class="text-muted small mt-2">
-            <i class="bi bi-arrow-repeat me-1"></i>Actualización automática cada 10 segundos
+        <div id="evacDetalleFichas" class="d-flex flex-wrap gap-2 mb-3"></div>
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div class="text-muted small">
+                <i class="bi bi-arrow-repeat me-1"></i>Actualización automática cada 10 segundos
+            </div>
+            <button class="btn btn-outline-danger btn-sm fw-bold"
+                    onclick="confirmarDesactivarAlerta()">
+                <i class="bi bi-shield-check me-1"></i>Desactivar Alerta
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: confirmar desactivación de alerta masiva -->
+<div class="modal fade" id="modalDesactivarAlerta" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-shield-check me-2"></i>Desactivar Alerta
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">
+                    Confirma que la emergencia <strong id="desactivarNombreEmergencia"></strong>
+                    ha sido controlada y el personal puede regresar a sus actividades.
+                </p>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Acciones tomadas <span class="text-muted fw-normal">(opcional)</span></label>
+                    <textarea class="form-control form-control-sm" id="desactivarAcciones" rows="2"
+                              placeholder="Ej: Evacuación completada, zona revisada, sin lesionados..."></textarea>
+                </div>
+                <div class="alert alert-success py-2 small mb-0">
+                    <i class="bi bi-megaphone-fill me-1"></i>
+                    Se notificará a <strong>todos los usuarios</strong> que la emergencia finalizó.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success fw-bold btn-sm" id="btnConfirmarDesactivar">
+                    <i class="bi bi-check-circle me-1"></i>Confirmar — Emergencia Finalizada
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -1075,6 +1116,9 @@ document.addEventListener('visibilitychange', function() {
 <script>
 // ── Control de Evacuación — polling cada 10 s ──────────────────────────────
 let _evacTimer = null;
+let _emergenciaActivaId = null;
+let _emergenciaActivaNombre = '';
+const CSRF_BRIGADA_EVAC = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
 
 async function actualizarEvacuacion() {
     try {
@@ -1085,14 +1129,17 @@ async function actualizarEvacuacion() {
         if (!panel) return;
 
         if (!d.activa) {
+            _emergenciaActivaId = null;
+            _emergenciaActivaNombre = '';
             panel.style.setProperty('display', 'none', 'important');
             return;
         }
 
-        // Mostrar panel
-        panel.style.removeProperty('display');
+        _emergenciaActivaId = d.emergencia_id;
+        _emergenciaActivaNombre = d.emergencia_tipo || '';
 
-        document.getElementById('evacTipoEmergencia').textContent = d.emergencia_tipo || '';
+        panel.style.removeProperty('display');
+        document.getElementById('evacTipoEmergencia').textContent = _emergenciaActivaNombre;
         document.getElementById('evacTotal').textContent = d.total ?? '—';
         document.getElementById('evacConfirmados').textContent = d.confirmados ?? '—';
         document.getElementById('evacFaltantes').textContent = d.faltantes ?? '—';
@@ -1102,7 +1149,6 @@ async function actualizarEvacuacion() {
         barra.style.width = pct + '%';
         barra.className = 'progress-bar ' + (pct >= 80 ? 'bg-success' : pct >= 50 ? 'bg-warning' : 'bg-danger');
 
-        // Detalle por ficha
         const cont = document.getElementById('evacDetalleFichas');
         if (d.fichas && d.fichas.length) {
             cont.innerHTML = d.fichas.map(f => {
@@ -1120,7 +1166,49 @@ async function actualizarEvacuacion() {
                 dt.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
         }
     } catch (e) { /* silencioso */ }
+};
+
+function confirmarDesactivarAlerta() {
+    if (!_emergenciaActivaId) return;
+    document.getElementById('desactivarNombreEmergencia').textContent = _emergenciaActivaNombre;
+    document.getElementById('desactivarAcciones').value = '';
+    new bootstrap.Modal(document.getElementById('modalDesactivarAlerta')).show();
 }
+
+document.getElementById('btnConfirmarDesactivar').addEventListener('click', async function () {
+    if (!_emergenciaActivaId) return;
+
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Desactivando...';
+
+    const acciones = document.getElementById('desactivarAcciones').value.trim()
+        || 'Emergencia controlada por la brigada de respuesta.';
+
+    try {
+        const resp = await fetch(`/api/emergencias/emergencias/${_emergenciaActivaId}/resolver/`, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_BRIGADA_EVAC },
+            body: JSON.stringify({ acciones_tomadas: acciones }),
+        });
+
+        bootstrap.Modal.getInstance(document.getElementById('modalDesactivarAlerta')).hide();
+
+        if (resp.ok) {
+            document.getElementById('panelEvacuacion').style.setProperty('display', 'none', 'important');
+            _emergenciaActivaId = null;
+            mostrarToast('Alerta desactivada. Se notificó a todos los usuarios.', 'success');
+        } else {
+            const err = await resp.json();
+            mostrarToast(err.error || 'Error al desactivar la alerta.', 'danger');
+        }
+    } catch (e) {
+        mostrarToast('Error de conexión.', 'danger');
+    } finally {
+        this.disabled = false;
+        this.innerHTML = '<i class="bi bi-check-circle me-1"></i>Confirmar — Emergencia Finalizada';
+    }
+});
 
 // Iniciar polling cuando la página carga
 actualizarEvacuacion();

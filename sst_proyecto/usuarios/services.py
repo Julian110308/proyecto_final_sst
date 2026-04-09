@@ -276,17 +276,45 @@ class NotificacionService:
     def notificar_emergencia_resuelta(emergencia):
         """
         Notifica cuando se resuelve una emergencia.
-
-        Args:
-            emergencia: Instancia del modelo Emergencia
+        Si era de alerta masiva (sismo, deslizamiento), notifica a TODOS los usuarios.
         """
-        titulo = "✅ Emergencia resuelta"
+        tipo_nombre = emergencia.tipo.nombre if hasattr(emergencia.tipo, "nombre") else str(emergencia.tipo)
+        titulo = f"Alerta finalizada: {tipo_nombre}"
         mensaje = (
-            f"La emergencia ha sido resuelta.\n"
-            f"Tipo: {emergencia.tipo.nombre if hasattr(emergencia.tipo, 'nombre') else emergencia.tipo}"
+            f"La emergencia de {tipo_nombre} ha sido controlada y finalizada.\n"
+            f"El personal puede regresar a sus actividades con normalidad."
         )
 
-        # Notificar a administrativos
+        # Si era alerta masiva → notificar a todos (igual que al activarla)
+        if getattr(emergencia.tipo, "alerta_masiva", False):
+            usuarios = Usuario.objects.filter(activo=True).exclude(rol="VISITANTE")
+            notificaciones = [
+                Notificacion(
+                    destinatario=u,
+                    titulo=titulo,
+                    mensaje=mensaje,
+                    tipo="EMERGENCIA",
+                    prioridad="MEDIA",
+                    url_relacionada="/",
+                )
+                for u in usuarios
+            ]
+            if notificaciones:
+                Notificacion.objects.bulk_create(notificaciones)
+
+            _ws_dispatch_roles(
+                roles=["COORDINADOR_SST", "BRIGADA", "ADMINISTRATIVO", "VIGILANCIA", "INSTRUCTOR", "APRENDIZ"],
+                tipo="EMERGENCIA",
+                titulo=titulo,
+                mensaje=mensaje,
+                prioridad="NORMAL",
+                url="/",
+            )
+            return len(notificaciones)
+
+        # Emergencia normal → solo administrativos y quien reportó
+        titulo = "Emergencia resuelta"
+        mensaje = f"La emergencia ha sido resuelta.\nTipo: {tipo_nombre}"
         administradores = list(Usuario.objects.filter(rol="ADMINISTRATIVO", activo=True))
 
         notificaciones = []
