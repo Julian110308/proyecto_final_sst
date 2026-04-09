@@ -559,10 +559,11 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
             accion = "INGRESO"
             hora = registro.fecha_hora_ingreso
 
+        hora_local = timezone.localtime(hora)
         return Response(
             {
                 "accion": accion,
-                "hora": hora.strftime("%H:%M:%S"),
+                "hora": hora_local.strftime("%I:%M:%S %p"),
                 "usuario": {
                     "nombre": usuario.get_full_name() or usuario.username,
                     "documento": usuario.numero_documento or "",
