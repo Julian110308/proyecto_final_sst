@@ -217,12 +217,15 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        limite = int(request.query_params.get("limite", 20))
+        limite = int(request.query_params.get("limite", 200))
         ficha = request.query_params.get("ficha", "").strip()
         programa = request.query_params.get("programa", "").strip()
+        fecha = request.query_params.get("fecha", "").strip()  # YYYY-MM-DD
 
         qs = RegistroAcceso.objects.select_related("usuario").all().order_by("-fecha_hora_ingreso")
 
+        if fecha:
+            qs = qs.filter(fecha_hora_ingreso__date=fecha)
         if ficha:
             qs = qs.filter(usuario__ficha__icontains=ficha)
         if programa:
