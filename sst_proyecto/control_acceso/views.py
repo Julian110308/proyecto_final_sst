@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from django.utils import timezone
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 
 from .models import Geocerca, RegistroAcceso, ConfiguracionAforo
 from .serializers import (
@@ -12,7 +14,12 @@ from .serializers import (
     ConfiguracionAforoSerializer,
     RegistrarAccesoSerializer,
 )
-from .utils import verificar_aforo_actual, obtener_estadisticas_hoy
+from .utils import (
+    verificar_aforo_actual,
+    obtener_estadisticas_hoy,
+    generar_token_qr,
+    validar_token_qr,
+)
 from usuarios.models import Usuario
 from usuarios.permissions import EsVigilanciaOAdministrativo, EsAdministrativo
 
@@ -85,6 +92,8 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
             "registros_recientes",
             "auto_registro",
             "mi_estado",
+            "mi_qr",
+            "escanear_qr",
         ]:
             return [IsAuthenticated()]
         return super().get_permissions()
@@ -618,6 +627,100 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
             }
         )
 
+    @action(detail=False, methods=["get"], url_path="mi-qr")
+    def mi_qr(self, request):
+        """
+        Devuelve el token QR del usuario autenticado + imagen base64.
+        GET /api/acceso/registros/mi-qr/
+        """
+        token = generar_token_qr(request.user.id)
+        return Response(
+            {
+                "token": token,
+                "usuario": request.user.get_full_name() or request.user.username,
+                "rol": request.user.get_rol_display(),
+                "ficha": request.user.ficha or "",
+                "programa": request.user.programa_formacion or "",
+                "documento": request.user.numero_documento or "",
+            }
+        )
+
+    @action(detail=False, methods=["post"], url_path="escanear-qr")
+    def escanear_qr(self, request):
+        """
+        Vigilancia escanea el QR de un usuario → registra ingreso o egreso automáticamente.
+        POST /api/acceso/registros/escanear-qr/
+        Body: { "token": "SST-..." }
+        Requiere rol VIGILANCIA o ADMINISTRATIVO.
+        """
+        if request.user.rol not in {"VIGILANCIA", "ADMINISTRATIVO", "COORDINADOR_SST"}:
+            return Response({"error": "Sin permiso."}, status=status.HTTP_403_FORBIDDEN)
+
+        token = (request.data.get("token") or "").strip()
+        if not token:
+            return Response({"error": "Token requerido."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user_id, error = validar_token_qr(token)
+        if error:
+            return Response({"error": error}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            usuario = Usuario.objects.get(pk=user_id, activo=True)
+        except Usuario.DoesNotExist:
+            return Response({"error": "Usuario no encontrado o inactivo."}, status=status.HTTP_404_NOT_FOUND)
+
+        hoy = timezone.now().date()
+
+        # Detectar si es ingreso o egreso
+        registro_abierto = (
+            RegistroAcceso.objects.filter(
+                usuario=usuario,
+                tipo="INGRESO",
+                fecha_hora_egreso__isnull=True,
+                fecha_hora_ingreso__date=hoy,
+            )
+            .order_by("-fecha_hora_ingreso")
+            .first()
+        )
+
+        if registro_abierto:
+            # Registrar EGRESO
+            registro_abierto.fecha_hora_egreso = timezone.now()
+            registro_abierto.metodo_egreso = "QR"
+            registro_abierto.save(update_fields=["fecha_hora_egreso", "metodo_egreso"])
+            accion = "EGRESO"
+            hora = registro_abierto.fecha_hora_egreso
+        else:
+            # Verificar aforo antes de registrar ingreso
+            aforo = verificar_aforo_actual()
+            if aforo["alerta"] == "CRITICO":
+                return Response(
+                    {"error": "Aforo máximo alcanzado. No se puede registrar ingreso."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            registro = RegistroAcceso.objects.create(
+                usuario=usuario,
+                tipo="INGRESO",
+                metodo_ingreso="QR",
+            )
+            accion = "INGRESO"
+            hora = registro.fecha_hora_ingreso
+
+        return Response(
+            {
+                "accion": accion,
+                "hora": hora.strftime("%H:%M:%S"),
+                "usuario": {
+                    "nombre": usuario.get_full_name() or usuario.username,
+                    "documento": usuario.numero_documento or "",
+                    "rol": usuario.get_rol_display(),
+                    "rol_code": usuario.rol,
+                    "ficha": usuario.ficha or "",
+                    "programa": usuario.programa_formacion or "",
+                },
+            }
+        )
+
 
 class ConfiguracionAforoViewSet(viewsets.ModelViewSet):
     """
@@ -640,3 +743,20 @@ class ConfiguracionAforoViewSet(viewsets.ModelViewSet):
         """
         aforo_info = verificar_aforo_actual()
         return Response(aforo_info)
+
+
+@login_required
+def mi_qr_view(request):
+    """Vista Django simple para generar el token QR del usuario actual."""
+    user = request.user
+    token = generar_token_qr(user.id)
+    return JsonResponse(
+        {
+            "token": token,
+            "usuario": user.get_full_name() or user.username,
+            "rol": user.get_rol_display(),
+            "ficha": user.ficha or "",
+            "programa": user.programa_formacion or "",
+            "documento": user.numero_documento or "",
+        }
+    )

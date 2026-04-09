@@ -398,6 +398,15 @@
                                 <span>Mi Perfil</span>
                             </a>
                         </li>
+                        {% if user.rol != 'VISITANTE' %}
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="#"
+                               onclick="abrirModalQR(); return false;">
+                                <i class="bi bi-qr-code me-3 fs-5 text-primary"></i>
+                                <span>Mi QR de Acceso</span>
+                            </a>
+                        </li>
+                        {% endif %}
                         {% if user.rol == 'ADMINISTRATIVO' %}
                         <li>
                             <a class="dropdown-item d-flex align-items-center" href="{% url 'configuracion_sistema' %}">
@@ -529,9 +538,10 @@
                             <i class="bi bi-people me-2"></i>Mis Aprendices
                         </a>
                     </li>
-                    <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'evacuacion_instructor' %}" id="linkEvacuacion">
-                            <i class="bi bi-person-check me-2"></i>Lista Evacuación
+                    <li class="nav-item mb-2 d-none" id="liEvacuacion">
+                        <a class="nav-link" href="{% url 'evacuacion_instructor' %}">
+                            <i class="bi bi-person-check me-2 text-danger"></i>Lista Evacuación
+                            <span class="badge bg-danger ms-1" style="font-size:0.6rem; animation:pulse 1.5s infinite;">ACTIVA</span>
                         </a>
                     </li>
                     <li class="nav-item mb-2">
@@ -710,6 +720,42 @@
             &nbsp;|&nbsp; Sistema de Gestión de Seguridad y Salud en el Trabajo
         </small>
     </footer>
+
+    <!-- Modal Mi QR de Acceso -->
+    {% if user.rol != 'VISITANTE' %}
+    <div class="modal fade" id="modalMiQR" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width:360px;">
+            <div class="modal-content border-0 shadow-lg" style="border-radius:18px; overflow:hidden;">
+                <div class="modal-header border-0 pb-0" style="background:#f8fafc;">
+                    <div class="w-100 text-center pt-3">
+                        <i class="bi bi-qr-code fs-1 text-primary"></i>
+                        <h6 class="fw-bold mt-2 mb-0">Mi QR de Acceso</h6>
+                        <p class="text-muted small mb-0">Válido solo por hoy</p>
+                    </div>
+                    <button type="button" class="btn-close position-absolute" data-bs-dismiss="modal"
+                            style="top:1rem; right:1rem;"></button>
+                </div>
+                <div class="modal-body text-center px-4 pb-4" style="background:#f8fafc;">
+                    <!-- QR image -->
+                    <div id="qrImageContainer" class="d-flex align-items-center justify-content-center my-3"
+                         style="min-height:200px;">
+                        <div class="spinner-border text-primary"></div>
+                    </div>
+                    <!-- Info usuario -->
+                    <div id="qrUserInfo" class="d-none bg-white rounded-3 p-3 text-start shadow-sm">
+                        <div class="fw-bold text-dark" id="qrNombre"></div>
+                        <div class="small text-muted" id="qrRolFicha"></div>
+                        <div class="small text-muted" id="qrDocumento"></div>
+                    </div>
+                    <p class="text-muted small mt-3 mb-0">
+                        <i class="bi bi-shield-lock me-1"></i>
+                        Muestra este QR al personal de vigilancia al ingresar o salir del centro.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Boton de Emergencia Flotante (Todos los roles) -->
     <button class="btn btn-emergencia text-white" id="botonEmergencia">
@@ -898,6 +944,9 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {% if user.rol != 'VISITANTE' %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    {% endif %}
 
     <script>
         // Toggle sidebar con backdrop
@@ -1166,6 +1215,58 @@
             resetModalEmergencia();
         });
 
+        // ============================================================
+        // MODAL MI QR DE ACCESO
+        // ============================================================
+        {% if user.rol != 'VISITANTE' %}
+        function abrirModalQR() {
+            const modal = new bootstrap.Modal(document.getElementById('modalMiQR'));
+            modal.show();
+            cargarQR();
+        }
+
+        async function cargarQR() {
+            const container = document.getElementById('qrImageContainer');
+            container.innerHTML = '<div class="spinner-border text-primary"></div>';
+
+            try {
+                const resp = await fetch('/api/acceso/mi-qr/', { credentials: 'same-origin' });
+                const text = await resp.text();
+
+                if (!resp.ok) {
+                    container.innerHTML = `<p class="text-danger small">Error ${resp.status}: ${text.substring(0,120)}</p>`;
+                    return;
+                }
+
+                const d = JSON.parse(text);
+                const qrDiv = document.createElement('div');
+                qrDiv.style.cssText = 'border-radius:12px;border:3px solid #e5e7eb;display:inline-block;overflow:hidden;';
+
+                container.innerHTML = '';
+                container.appendChild(qrDiv);
+
+                new QRCode(qrDiv, {
+                    text: d.token,
+                    width: 210,
+                    height: 210,
+                    colorDark: '#1a1a1a',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+
+                document.getElementById('qrNombre').textContent = d.usuario;
+                const ficha = d.ficha ? ` · Ficha ${d.ficha}` : '';
+                const prog = d.programa ? ` · ${d.programa}` : '';
+                document.getElementById('qrRolFicha').textContent = d.rol + ficha + prog;
+                document.getElementById('qrDocumento').textContent = d.documento ? `Doc: ${d.documento}` : '';
+                document.getElementById('qrUserInfo').classList.remove('d-none');
+
+            } catch (e) {
+                container.innerHTML = `<p class="text-danger small"><i class="bi bi-exclamation-triangle me-1"></i>${e.message || 'Error al generar el QR.'}</p>`;
+            }
+        }
+        {% endif %}
+
         // Auto-ocultar alertas
         setTimeout(() => {
             document.querySelectorAll('.alert').forEach(alert => {
@@ -1173,6 +1274,39 @@
                 bsAlert.close();
             });
         }, 5000);
+
+        // ============================================================
+        // INSTRUCTOR: control dinámico de "Lista Evacuación" en sidebar
+        // ============================================================
+        {% if user.rol == 'INSTRUCTOR' %}
+        (function() {
+            const liEvacuacion = document.getElementById('liEvacuacion');
+            const enPaginaEvacuacion = window.location.pathname.startsWith('/instructor/evacuacion');
+
+            async function checkEmergenciaMasiva() {
+                try {
+                    const resp = await fetch('/api/emergencias/emergencias/evacuacion-stats/', {
+                        credentials: 'same-origin'
+                    });
+                    if (!resp.ok) return;
+                    const d = await resp.json();
+
+                    if (d.activa) {
+                        liEvacuacion.classList.remove('d-none');
+                    } else {
+                        liEvacuacion.classList.add('d-none');
+                        // Si el instructor está en la página de evacuación, redirigir al inicio
+                        if (enPaginaEvacuacion) {
+                            window.location.href = '/';
+                        }
+                    }
+                } catch (e) { /* silencioso */ }
+            }
+
+            checkEmergenciaMasiva();
+            setInterval(checkEmergenciaMasiva, 10000);
+        })();
+        {% endif %}
 
         // ============================================================
         // SISTEMA DE NOTIFICACIONES - Polling cada 30 segundos

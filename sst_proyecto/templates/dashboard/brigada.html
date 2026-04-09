@@ -98,7 +98,7 @@
 </div>
 
 <!-- ── Panel de Evacuación (visible SOLO cuando hay emergencia masiva activa) ── -->
-<div id="panelEvacuacion" class="card shadow border-0 mb-4" style="display:none!important; border-left: 6px solid #dc3545 !important;">
+<div id="panelEvacuacion" class="card shadow border-0 mb-4 d-none" style="border-left: 6px solid #dc3545 !important;">
     <div class="card-header d-flex justify-content-between align-items-center py-3 px-3" style="background:#dc3545;">
         <span class="fw-bold text-white fs-6">
             <i class="bi bi-exclamation-triangle-fill me-2"></i>
@@ -395,8 +395,8 @@
     </div>
 </div>
 
-<!-- Modal: Reportar Emergencia -->
-<div class="modal fade" id="modalEmergencia" tabindex="-1" aria-hidden="true">
+<!-- Modal: Reportar Emergencia (Brigada) -->
+<div class="modal fade" id="modalEmergenciaBrigada" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
@@ -410,30 +410,30 @@
                     <i class="bi bi-exclamation-triangle-fill me-2"></i>
                     <strong>Atencion:</strong> Esta accion activara una alerta y notificara a todo el personal de brigada.
                 </div>
-                <form id="formEmergencia">
+                <form id="formEmergenciaBrigada">
                     <div class="mb-3">
-                        <label for="tipoEmergencia" class="form-label fw-bold">Tipo de Emergencia *</label>
-                        <select class="form-select" id="tipoEmergencia" required>
+                        <label for="brigTipoEmergencia" class="form-label fw-bold">Tipo de Emergencia *</label>
+                        <select class="form-select" id="brigTipoEmergencia" required>
                             <option value="">Seleccione el tipo...</option>
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label for="descripcionEmergencia" class="form-label fw-bold">Descripcion *</label>
-                        <textarea class="form-control" id="descripcionEmergencia" rows="3" placeholder="Describa brevemente la situacion..." required></textarea>
+                        <label for="brigDescripcionEmergencia" class="form-label fw-bold">Descripcion *</label>
+                        <textarea class="form-control" id="brigDescripcionEmergencia" rows="3" placeholder="Describa brevemente la situacion..." required></textarea>
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="ubicacionEmergencia" class="form-label fw-bold">Ubicacion</label>
-                            <input type="text" class="form-control" id="ubicacionEmergencia" placeholder="Ej: Bloque A, segundo piso">
+                            <label for="brigUbicacionEmergencia" class="form-label fw-bold">Ubicacion</label>
+                            <input type="text" class="form-control" id="brigUbicacionEmergencia" placeholder="Ej: Bloque A, segundo piso">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="personasAfectadas" class="form-label fw-bold">Personas afectadas</label>
-                            <input type="number" class="form-control" id="personasAfectadas" value="0" min="0">
+                            <label for="brigPersonasAfectadas" class="form-label fw-bold">Personas afectadas</label>
+                            <input type="number" class="form-control" id="brigPersonasAfectadas" value="0" min="0">
                         </div>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="requiereEvacuacion">
-                        <label class="form-check-label fw-bold text-danger" for="requiereEvacuacion">
+                        <input class="form-check-input" type="checkbox" id="brigRequiereEvacuacion">
+                        <label class="form-check-label fw-bold text-danger" for="brigRequiereEvacuacion">
                             <i class="bi bi-sign-stop-fill me-1"></i>Requiere evacuacion inmediata
                         </label>
                     </div>
@@ -441,7 +441,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-danger" onclick="confirmarEmergencia()" id="btnConfirmarEmergencia">
+                <button type="button" class="btn btn-danger" onclick="confirmarEmergencia()" id="brigBtnConfirmarEmergencia">
                     <i class="bi bi-megaphone-fill me-2"></i>CONFIRMAR EMERGENCIA
                 </button>
             </div>
@@ -538,7 +538,7 @@ function tiempoRelativo(fechaStr) {
 }
 
 // === VARIABLES GLOBALES ===
-let modalEmergencia, modalResolver, modalFalsaAlarma;
+let modalEmergenciaBrigada, modalResolver, modalFalsaAlarma;
 let emergenciaResolviendoId = null;
 let emergenciaFalsaId = null;
 
@@ -964,7 +964,7 @@ async function cargarTiposEmergencia() {
     try {
         const r = await fetch('/api/emergencias/tipos/');
         const data = await r.json();
-        const select = document.getElementById('tipoEmergencia');
+        const select = document.getElementById('brigTipoEmergencia');
         (data.results || data).forEach(tipo => {
             const opt = document.createElement('option');
             opt.value = tipo.id;
@@ -976,22 +976,22 @@ async function cargarTiposEmergencia() {
 
 // === CREAR EMERGENCIA ===
 function mostrarModalEmergencia() {
-    modalEmergencia.show();
+    modalEmergenciaBrigada.show();
 }
 
 async function confirmarEmergencia() {
-    const tipo = document.getElementById('tipoEmergencia').value;
-    const descripcion = document.getElementById('descripcionEmergencia').value;
-    const ubicacion = document.getElementById('ubicacionEmergencia').value;
-    const personas = document.getElementById('personasAfectadas').value;
-    const evacuacion = document.getElementById('requiereEvacuacion').checked;
+    const tipo = document.getElementById('brigTipoEmergencia').value;
+    const descripcion = document.getElementById('brigDescripcionEmergencia').value;
+    const ubicacion = document.getElementById('brigUbicacionEmergencia').value;
+    const personas = document.getElementById('brigPersonasAfectadas').value;
+    const evacuacion = document.getElementById('brigRequiereEvacuacion').checked;
 
     if (!tipo || !descripcion) {
         mostrarToast('Complete los campos obligatorios', 'warning');
         return;
     }
 
-    const btn = document.getElementById('btnConfirmarEmergencia');
+    const btn = document.getElementById('brigBtnConfirmarEmergencia');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Activando...';
 
@@ -1017,8 +1017,8 @@ async function confirmarEmergencia() {
         });
 
         if (r.ok) {
-            modalEmergencia.hide();
-            document.getElementById('formEmergencia').reset();
+            modalEmergenciaBrigada.hide();
+            document.getElementById('formEmergenciaBrigada').reset();
             mostrarToast('EMERGENCIA ACTIVADA - Se ha notificado al personal', 'danger');
             cargarEmergencias();
         } else {
@@ -1069,7 +1069,7 @@ function refrescarTodo() {
 
 // === INICIALIZACION ===
 document.addEventListener('DOMContentLoaded', function() {
-    modalEmergencia = new bootstrap.Modal(document.getElementById('modalEmergencia'));
+    modalEmergenciaBrigada = new bootstrap.Modal(document.getElementById('modalEmergenciaBrigada'));
     modalResolver = new bootstrap.Modal(document.getElementById('modalResolver'));
     modalFalsaAlarma = new bootstrap.Modal(document.getElementById('modalFalsaAlarma'));
 
@@ -1131,14 +1131,14 @@ async function actualizarEvacuacion() {
         if (!d.activa) {
             _emergenciaActivaId = null;
             _emergenciaActivaNombre = '';
-            panel.style.setProperty('display', 'none', 'important');
+            panel.classList.add('d-none');
             return;
         }
 
         _emergenciaActivaId = d.emergencia_id;
         _emergenciaActivaNombre = d.emergencia_tipo || '';
 
-        panel.style.removeProperty('display');
+        panel.classList.remove('d-none');
         document.getElementById('evacTipoEmergencia').textContent = _emergenciaActivaNombre;
         document.getElementById('evacTotal').textContent = d.total ?? '—';
         document.getElementById('evacConfirmados').textContent = d.confirmados ?? '—';
@@ -1195,7 +1195,7 @@ document.getElementById('btnConfirmarDesactivar').addEventListener('click', asyn
         bootstrap.Modal.getInstance(document.getElementById('modalDesactivarAlerta')).hide();
 
         if (resp.ok) {
-            document.getElementById('panelEvacuacion').style.setProperty('display', 'none', 'important');
+            document.getElementById('panelEvacuacion').classList.add('d-none');
             _emergenciaActivaId = null;
             mostrarToast('Alerta desactivada. Se notificó a todos los usuarios.', 'success');
         } else {

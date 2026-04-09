@@ -701,23 +701,46 @@ def evacuacion_instructor_view(request):
         .first()
     )
 
+    # Si no hay emergencia masiva activa, redirigir al inicio
+    if not emergencia:
+        from django.contrib import messages
+
+        messages.info(request, "No hay ninguna emergencia masiva activa en este momento.")
+        return redirect("dashboard")
+
     aprendices_data = []
-    if emergencia and fichas:
-        aprendices = Usuario.objects.filter(rol="APRENDIZ", activo=True, ficha__in=fichas).order_by(
-            "ficha", "last_name", "first_name"
+    if fichas:
+        from control_acceso.models import RegistroAcceso
+        from django.db.models import Exists, OuterRef
+        from django.utils import timezone
+
+        hoy = timezone.now().date()
+
+        # Solo aprendices que registraron asistencia hoy (están en el centro)
+        aprendices = (
+            Usuario.objects.filter(rol="APRENDIZ", activo=True, ficha__in=fichas)
+            .filter(
+                Exists(
+                    RegistroAcceso.objects.filter(
+                        usuario=OuterRef("pk"),
+                        fecha_hora_ingreso__date=hoy,
+                    )
+                )
+            )
+            .order_by("ficha", "last_name", "first_name")
         )
 
-        confirmados_ids = set(
-            RegistroEvacuacion.objects.filter(emergencia=emergencia, confirmado=True).values_list(
-                "usuario_id", flat=True
-            )
-        )
+        registros = {
+            r.usuario_id: r for r in RegistroEvacuacion.objects.filter(emergencia=emergencia, usuario__in=aprendices)
+        }
 
         for aprendiz in aprendices:
+            reg = registros.get(aprendiz.id)
             aprendices_data.append(
                 {
                     "usuario": aprendiz,
-                    "confirmado": aprendiz.id in confirmados_ids,
+                    "confirmado": reg.confirmado if reg else False,
+                    "ausente": reg.ausente if reg else False,
                 }
             )
 
@@ -727,6 +750,7 @@ def evacuacion_instructor_view(request):
         "fichas": fichas,
         "total": len(aprendices_data),
         "confirmados": sum(1 for a in aprendices_data if a["confirmado"]),
+        "ausentes": sum(1 for a in aprendices_data if a["ausente"]),
     }
     return render(request, "dashboard/instructor/evacuacion.html", context)
 

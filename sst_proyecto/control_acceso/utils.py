@@ -1,6 +1,67 @@
 # control_acceso/utils.py
+import hmac
+import hashlib
+import io
+import base64
+
 from django.core.cache import cache
 from django.conf import settings
+from django.utils import timezone
+
+
+# ─── QR Token ────────────────────────────────────────────────────────────────
+
+
+def _firma_qr(user_id: int, fecha_str: str) -> str:
+    """HMAC-SHA256 truncado a 16 hex chars."""
+    clave = settings.SECRET_KEY.encode()
+    mensaje = f"{user_id}:{fecha_str}".encode()
+    return hmac.new(clave, mensaje, hashlib.sha256).hexdigest()[:16]
+
+
+def generar_token_qr(user_id: int) -> str:
+    """Devuelve un token válido solo para el día de hoy."""
+    fecha = timezone.now().date().strftime("%Y%m%d")
+    firma = _firma_qr(user_id, fecha)
+    return f"SST-{user_id}-{fecha}-{firma}"
+
+
+def validar_token_qr(token: str):
+    """
+    Valida el token QR.
+    Retorna (user_id: int, None) si es válido, o (None, mensaje_error) si no.
+    """
+    try:
+        partes = token.strip().split("-")
+        if len(partes) != 4 or partes[0] != "SST":
+            return None, "Formato de QR inválido."
+        _, user_id_str, fecha, firma_recibida = partes
+        user_id = int(user_id_str)
+    except (ValueError, AttributeError):
+        return None, "QR malformado."
+
+    hoy = timezone.now().date().strftime("%Y%m%d")
+    if fecha != hoy:
+        return None, "QR expirado. El usuario debe regenerarlo."
+
+    firma_esperada = _firma_qr(user_id, fecha)
+    if not hmac.compare_digest(firma_recibida, firma_esperada):
+        return None, "QR inválido o falsificado."
+
+    return user_id, None
+
+
+def generar_imagen_qr_base64(token: str) -> str:
+    """Genera un PNG del QR y lo devuelve como data URI base64."""
+    import qrcode
+
+    qr = qrcode.QRCode(version=1, box_size=8, border=3, error_correction=qrcode.constants.ERROR_CORRECT_M)
+    qr.add_data(token)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="#1a1a1a", back_color="white")
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
 
 
 def verificar_aforo_actual():

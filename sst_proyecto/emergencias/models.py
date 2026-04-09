@@ -241,6 +241,7 @@ class RegistroEvacuacion(models.Model):
     emergencia = models.ForeignKey(Emergencia, on_delete=models.CASCADE, related_name="registros_evacuacion")
     usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name="evacuaciones_registradas")
     confirmado = models.BooleanField(default=False)
+    ausente = models.BooleanField(default=False, help_text="Marcado como no presente en el punto de encuentro")
     confirmado_por = models.ForeignKey(
         Usuario,
         on_delete=models.SET_NULL,
@@ -258,7 +259,12 @@ class RegistroEvacuacion(models.Model):
         ordering = ["-fecha_confirmacion"]
 
     def __str__(self):
-        estado = "Confirmado" if self.confirmado else "No confirmado"
+        if self.confirmado:
+            estado = "Presente"
+        elif self.ausente:
+            estado = "Ausente"
+        else:
+            estado = "Sin confirmar"
         return f"{self.usuario.get_full_name()} — {self.emergencia.tipo.nombre} ({estado})"
 
 

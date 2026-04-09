@@ -23,6 +23,9 @@
         <button class="btn btn-outline-secondary btn-sm" onclick="cargarTodo()">
             <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
         </button>
+        <button class="btn btn-success text-white shadow-sm rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#modalEscanerQR">
+            <i class="bi bi-qr-code-scan me-2"></i>Escanear QR
+        </button>
         <button class="btn btn-primary text-white shadow-sm rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#modalRegistroManual">
             <i class="bi bi-plus-lg me-2"></i>Registrar Acceso
         </button>
@@ -477,6 +480,152 @@ function mostrarAlerta(msg, tipo) {
     el.textContent = msg;
     el.classList.remove('d-none');
     if (tipo === 'success') setTimeout(() => el.classList.add('d-none'), 3000);
+}
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MODAL ESCÁNER QR
+════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="modalEscanerQR" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:420px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:18px; overflow:hidden;">
+
+            <!-- Header -->
+            <div class="modal-header border-0 text-white" style="background:linear-gradient(135deg,#16a34a,#166534); padding:1.25rem 1.5rem;">
+                <div>
+                    <h5 class="modal-title fw-bold mb-0"><i class="bi bi-qr-code-scan me-2"></i>Escanear QR</h5>
+                    <small style="opacity:.8;">Apunta la cámara al QR del usuario</small>
+                </div>
+                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal" onclick="detenerScanner()"></button>
+            </div>
+
+            <div class="modal-body p-4" style="background:#f8fafc;">
+
+                <!-- Visor de cámara -->
+                <div id="qrReaderContainer" style="border-radius:12px; overflow:hidden; background:#000; position:relative; min-height:250px;">
+                    <div id="qrReader" style="width:100%;"></div>
+                    <!-- overlay de mira -->
+                    <div style="position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center;">
+                        <div style="width:160px;height:160px;border:3px solid #4ade80;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,0.45);"></div>
+                    </div>
+                </div>
+
+                <!-- Resultado del escaneo -->
+                <div id="qrResultado" class="d-none mt-3">
+                    <!-- Éxito -->
+                    <div id="qrExito" class="d-none rounded-3 p-3 text-white mb-2"
+                         style="background:linear-gradient(135deg,#16a34a,#15803d);">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <i class="bi bi-check-circle-fill fs-4"></i>
+                            <span class="fw-bold fs-6" id="qrAccionTexto"></span>
+                        </div>
+                        <div class="fw-bold" id="qrResNombre"></div>
+                        <div class="small opacity-90" id="qrResRol"></div>
+                        <div class="small opacity-75" id="qrResDetalle"></div>
+                        <div class="small opacity-75 mt-1"><i class="bi bi-clock me-1"></i><span id="qrResHora"></span></div>
+                    </div>
+                    <!-- Error -->
+                    <div id="qrError" class="d-none alert alert-danger py-2 small mb-2">
+                        <i class="bi bi-x-circle me-1"></i><span id="qrErrorTexto"></span>
+                    </div>
+                    <!-- Botón escanear otro -->
+                    <button class="btn btn-outline-success btn-sm w-100" onclick="reiniciarScanner()">
+                        <i class="bi bi-qr-code-scan me-1"></i>Escanear otro
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- html5-qrcode library -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+const CSRF_QR = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+let _html5QrCode = null;
+let _escaneando = false;
+
+document.getElementById('modalEscanerQR').addEventListener('shown.bs.modal', iniciarScanner);
+document.getElementById('modalEscanerQR').addEventListener('hidden.bs.modal', detenerScanner);
+
+function iniciarScanner() {
+    if (_escaneando) return;
+    _html5QrCode = new Html5Qrcode("qrReader");
+    _html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 200, height: 200 }, aspectRatio: 1.0 },
+        onQrDetectado,
+        () => {}
+    ).then(() => { _escaneando = true; })
+     .catch(err => {
+         document.getElementById('qrReader').innerHTML =
+             `<p class="text-white text-center p-4 small">No se pudo acceder a la cámara.<br>${err}</p>`;
+     });
+}
+
+function detenerScanner() {
+    if (_html5QrCode && _escaneando) {
+        _html5QrCode.stop().catch(() => {});
+        _escaneando = false;
+    }
+    document.getElementById('qrResultado').classList.add('d-none');
+    document.getElementById('qrExito').classList.add('d-none');
+    document.getElementById('qrError').classList.add('d-none');
+}
+
+async function onQrDetectado(token) {
+    if (!_escaneando) return;
+    // Pausar scanner mientras procesamos
+    await _html5QrCode.stop();
+    _escaneando = false;
+
+    try {
+        const resp = await fetch('/api/acceso/registros/escanear-qr/', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_QR },
+            body: JSON.stringify({ token }),
+        });
+        const d = await resp.json();
+
+        document.getElementById('qrResultado').classList.remove('d-none');
+
+        if (resp.ok) {
+            const u = d.usuario;
+            const esIngreso = d.accion === 'INGRESO';
+            const exito = document.getElementById('qrExito');
+            exito.style.background = esIngreso
+                ? 'linear-gradient(135deg,#16a34a,#15803d)'
+                : 'linear-gradient(135deg,#2563eb,#1d4ed8)';
+            document.getElementById('qrAccionTexto').textContent =
+                esIngreso ? '✅ INGRESO REGISTRADO' : '🚪 EGRESO REGISTRADO';
+            document.getElementById('qrResNombre').textContent = u.nombre;
+            const ficha = u.ficha ? ` · Ficha ${u.ficha}` : '';
+            document.getElementById('qrResRol').textContent = u.rol + ficha;
+            document.getElementById('qrResDetalle').textContent = u.programa || (u.documento ? `Doc: ${u.documento}` : '');
+            document.getElementById('qrResHora').textContent = d.hora;
+            exito.classList.remove('d-none');
+            document.getElementById('qrError').classList.add('d-none');
+            // Actualizar lista de accesos recientes si existe en la página
+            if (typeof cargarRegistrosRecientes === 'function') cargarRegistrosRecientes();
+        } else {
+            document.getElementById('qrErrorTexto').textContent = d.error || 'Error al procesar el QR.';
+            document.getElementById('qrError').classList.remove('d-none');
+            document.getElementById('qrExito').classList.add('d-none');
+        }
+    } catch (e) {
+        document.getElementById('qrResultado').classList.remove('d-none');
+        document.getElementById('qrErrorTexto').textContent = 'Error de conexión.';
+        document.getElementById('qrError').classList.remove('d-none');
+    }
+}
+
+function reiniciarScanner() {
+    document.getElementById('qrResultado').classList.add('d-none');
+    document.getElementById('qrExito').classList.add('d-none');
+    document.getElementById('qrError').classList.add('d-none');
+    iniciarScanner();
 }
 </script>
 {% endblock %}

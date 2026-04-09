@@ -352,7 +352,7 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
         """
         from usuarios.models import Usuario
 
-        if request.user.rol not in {"BRIGADA", "COORDINADOR_SST", "ADMINISTRATIVO"}:
+        if request.user.rol not in {"BRIGADA", "COORDINADOR_SST", "ADMINISTRATIVO", "INSTRUCTOR"}:
             return Response({"error": "Sin permiso."}, status=status.HTTP_403_FORBIDDEN)
 
         # Buscar la emergencia de alerta masiva más reciente que esté activa
@@ -368,8 +368,21 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
         if not emergencia:
             return Response({"activa": False})
 
+        from control_acceso.models import RegistroAcceso
+        from django.db.models import Exists, OuterRef
+
+        hoy = timezone.now().date()
+
+        # Solo contar usuarios que registraron asistencia hoy
+        con_asistencia_hoy = Exists(
+            RegistroAcceso.objects.filter(
+                usuario=OuterRef("pk"),
+                fecha_hora_ingreso__date=hoy,
+            )
+        )
+
         ROLES_ESPERADOS = ["APRENDIZ", "INSTRUCTOR", "ADMINISTRATIVO", "VIGILANCIA", "BRIGADA", "COORDINADOR_SST"]
-        usuarios_esperados = Usuario.objects.filter(rol__in=ROLES_ESPERADOS, activo=True)
+        usuarios_esperados = Usuario.objects.filter(rol__in=ROLES_ESPERADOS, activo=True).filter(con_asistencia_hoy)
         total = usuarios_esperados.count()
 
         confirmados_ids = set(
@@ -380,8 +393,7 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
         confirmados = len(confirmados_ids)
         faltantes = total - confirmados
 
-        # Detalle por ficha (aprendices)
-
+        # Detalle por ficha (solo aprendices con asistencia hoy)
         detalle_fichas = []
         fichas = (
             Usuario.objects.filter(rol="APRENDIZ", activo=True, ficha__isnull=False)
@@ -390,8 +402,12 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
             .distinct()
         )
         for ficha in fichas:
-            aprendices_ficha = Usuario.objects.filter(rol="APRENDIZ", activo=True, ficha=ficha)
+            aprendices_ficha = Usuario.objects.filter(rol="APRENDIZ", activo=True, ficha=ficha).filter(
+                con_asistencia_hoy
+            )
             total_ficha = aprendices_ficha.count()
+            if total_ficha == 0:
+                continue
             confirmados_ficha = aprendices_ficha.filter(id__in=confirmados_ids).count()
             detalle_fichas.append(
                 {
@@ -476,6 +492,59 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
         )
 
         return Response({"confirmados": confirmados, "ok": True})
+
+    @action(detail=False, methods=["post"], url_path="evacuacion-marcar-ausente")
+    def evacuacion_marcar_ausente(self, request):
+        """
+        El instructor marca a un aprendiz como NO presente en el punto de encuentro.
+        Body: { "emergencia_id": int, "usuario_id": int }
+        Enviar "deshacer": true revierte el estado a sin confirmar.
+        """
+        from usuarios.models import Usuario
+
+        if request.user.rol not in {"INSTRUCTOR", "BRIGADA", "COORDINADOR_SST", "ADMINISTRATIVO"}:
+            return Response({"error": "Sin permiso."}, status=status.HTTP_403_FORBIDDEN)
+
+        emergencia_id = request.data.get("emergencia_id")
+        usuario_id = request.data.get("usuario_id")
+        deshacer = request.data.get("deshacer", False)
+
+        if not emergencia_id or not usuario_id:
+            return Response({"error": "emergencia_id y usuario_id son requeridos."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            emergencia = Emergencia.objects.get(pk=emergencia_id, tipo__alerta_masiva=True)
+        except Emergencia.DoesNotExist:
+            return Response({"error": "Emergencia no encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Instructores solo pueden gestionar sus propios aprendices
+        if request.user.rol == "INSTRUCTOR":
+            fichas = request.user.get_fichas_list() or ([request.user.ficha] if request.user.ficha else [])
+            permitido = Usuario.objects.filter(id=usuario_id, rol="APRENDIZ", ficha__in=fichas, activo=True).exists()
+            if not permitido:
+                return Response({"error": "No autorizado para este aprendiz."}, status=status.HTTP_403_FORBIDDEN)
+
+        obj, _ = RegistroEvacuacion.objects.get_or_create(
+            emergencia=emergencia,
+            usuario_id=usuario_id,
+        )
+
+        if deshacer:
+            # Revertir a estado sin confirmar
+            obj.ausente = False
+            obj.confirmado = False
+            obj.save(update_fields=["ausente", "confirmado"])
+            return Response({"estado": "sin_confirmar", "ok": True})
+
+        # No se puede marcar ausente si ya está confirmado presente
+        if obj.confirmado:
+            return Response(
+                {"error": "El aprendiz ya fue confirmado como presente."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        obj.ausente = True
+        obj.save(update_fields=["ausente"])
+        return Response({"estado": "ausente", "ok": True})
 
 
 class BrigadaEmergenciaViewSet(viewsets.ModelViewSet):
