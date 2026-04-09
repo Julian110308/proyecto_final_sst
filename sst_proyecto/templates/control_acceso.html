@@ -639,7 +639,7 @@ async function onQrDetectado(token) {
             const ficha = u.ficha ? ` · Ficha ${u.ficha}` : '';
             document.getElementById('qrResRol').textContent = u.rol + ficha;
             document.getElementById('qrResDetalle').textContent = u.programa || (u.documento ? `Doc: ${u.documento}` : '');
-            document.getElementById('qrResHora').textContent = d.hora;
+            document.getElementById('qrResHora').textContent = new Date(d.hora).toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit'});
             exito.classList.remove('d-none');
             document.getElementById('qrError').classList.add('d-none');
             cargarTodo();

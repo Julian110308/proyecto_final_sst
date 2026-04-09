@@ -563,7 +563,7 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
         return Response(
             {
                 "accion": accion,
-                "hora": hora_local.strftime("%I:%M:%S %p"),
+                "hora": hora_local.isoformat(),
                 "usuario": {
                     "nombre": usuario.get_full_name() or usuario.username,
                     "documento": usuario.numero_documento or "",
