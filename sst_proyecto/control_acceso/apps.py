@@ -7,10 +7,9 @@ class ControlAccesoConfig(AppConfig):
 
     def ready(self):
         from auditlog.registry import auditlog
-        from .models import ConfiguracionAforo, Geocerca, RegistroAcceso
+        from .models import ConfiguracionAforo, RegistroAcceso
 
         auditlog.register(RegistroAcceso)
         auditlog.register(ConfiguracionAforo)
-        auditlog.register(Geocerca)
 
         import control_acceso.signals  # noqa: F401
