@@ -231,7 +231,16 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
         if programa:
             qs = qs.filter(usuario__programa_formacion__icontains=programa)
 
-        registros = qs[:limite]
+        # Mostrar solo el registro más reciente por usuario (el más reciente es el primero por el order_by)
+        vistos = set()
+        registros_unicos = []
+        for reg in qs[:limite * 5]:  # margen extra para cubrir duplicados
+            if reg.usuario_id not in vistos:
+                vistos.add(reg.usuario_id)
+                registros_unicos.append(reg)
+            if len(registros_unicos) >= limite:
+                break
+        registros = registros_unicos
 
         data = []
         for registro in registros:
