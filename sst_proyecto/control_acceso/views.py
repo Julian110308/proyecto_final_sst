@@ -7,9 +7,8 @@ from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 
-from .models import Geocerca, RegistroAcceso, ConfiguracionAforo
+from .models import RegistroAcceso, ConfiguracionAforo
 from .serializers import (
-    GeocercaSerializer,
     RegistroAccesoSerializer,
     ConfiguracionAforoSerializer,
     RegistrarAccesoSerializer,
@@ -21,53 +20,10 @@ from .utils import (
     validar_token_qr,
 )
 from usuarios.models import Usuario
-from usuarios.permissions import EsVigilanciaOAdministrativo, EsAdministrativo
+from usuarios.permissions import EsVigilanciaOAdministrativo
 
 # Servicio centralizado de notificaciones
 from usuarios.services import NotificacionService
-
-
-class GeocercaViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet para gestionar geocercas del centro
-    PERMISOS: Solo ADMINISTRATIVO puede crear/editar, otros solo ver
-    """
-
-    queryset = Geocerca.objects.filter(activo=True)
-    serializer_class = GeocercaSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_permissions(self):
-        """
-        Permisos personalizados según la acción
-        """
-        if self.action in ["create", "update", "partial_update", "destroy"]:
-            # Solo ADMINISTRATIVO puede modificar geocercas
-            return [EsAdministrativo()]
-        # Todos los autenticados pueden ver
-        return [IsAuthenticated()]
-
-    @action(detail=True, methods=["post"])
-    def verificar_ubicacion(self, request, pk=None):
-        """
-        Verifica si una ubicación está dentro de la geocerca
-        """
-        geocerca = self.get_object()
-        latitud = request.data.get("latitud")
-        longitud = request.data.get("longitud")
-
-        if not latitud or not longitud:
-            return Response({"error": "Se requieren latitud y longitud"}, status=status.HTTP_400_BAD_REQUEST)
-
-        dentro = geocerca.punto_esta_dentro(float(latitud), float(longitud))
-
-        return Response(
-            {
-                "dentro": dentro,
-                "geocerca": geocerca.nombre,
-                "mensaje": "Ubicación dentro del centro" if dentro else "Ubicación fuera del centro",
-            }
-        )
 
 
 class RegistroAccesoViewSet(viewsets.ModelViewSet):
@@ -90,108 +46,12 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
             "registrar_asistencia_masiva",
             "estadisticas",
             "registros_recientes",
-            "auto_registro",
             "mi_estado",
             "mi_qr",
             "escanear_qr",
         ]:
             return [IsAuthenticated()]
         return super().get_permissions()
-
-    @extend_schema(
-        summary="Auto-registro por geolocalización",
-        description="Registra ingreso/egreso del usuario usando sus coordenadas GPS. Rechazado si está fuera de la geocerca del centro.",
-        tags=["acceso"],
-        responses={
-            200: OpenApiResponse(description="Registro exitoso"),
-            403: OpenApiResponse(description="Fuera de geocerca"),
-        },
-    )
-    @action(detail=False, methods=["post"], url_path="auto-registro")
-    def auto_registro(self, request):
-        """
-        Endpoint llamado periodicamente por el frontend con la ubicacion GPS.
-        Detecta automaticamente si el usuario cruza la geocerca y registra
-        ingreso/egreso segun corresponda.
-        """
-        latitud = request.data.get("latitud")
-        longitud = request.data.get("longitud")
-
-        if latitud is None or longitud is None:
-            return Response({"error": "Se requieren latitud y longitud"}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            lat = float(latitud)
-            lng = float(longitud)
-        except (ValueError, TypeError):
-            return Response({"error": "Coordenadas invalidas"}, status=status.HTTP_400_BAD_REQUEST)
-
-        usuario = request.user
-        hoy = timezone.now().date()
-
-        # Calcular distancia a cada geocerca activa y verificar si está dentro
-        from mapas.services import calcular_distancia as _calc_dist
-
-        geocerca_activa = Geocerca.objects.filter(activo=True).first()
-        distancia_metros = None
-        radio_geocerca = None
-
-        if geocerca_activa:
-            distancia_metros = round(
-                _calc_dist(geocerca_activa.centro_latitud, geocerca_activa.centro_longitud, lat, lng)
-            )
-            radio_geocerca = geocerca_activa.radio_metros
-
-        geocerca = Geocerca.verificar_ubicacion_usuario(lat, lng)
-        esta_dentro = geocerca is not None
-
-        # Buscar registro abierto de hoy (ingreso sin egreso)
-        registro_abierto = (
-            RegistroAcceso.objects.filter(
-                usuario=usuario, tipo="INGRESO", fecha_hora_egreso__isnull=True, fecha_hora_ingreso__date=hoy
-            )
-            .order_by("-fecha_hora_ingreso")
-            .first()
-        )
-
-        accion = None
-        mensaje = None
-
-        if esta_dentro and not registro_abierto:
-            # Usuario entro al centro: registrar INGRESO
-            aforo = verificar_aforo_actual()
-            if aforo["alerta"] == "CRITICO":
-                mensaje = "Aforo máximo alcanzado"
-            else:
-                RegistroAcceso.objects.create(
-                    usuario=usuario,
-                    tipo="INGRESO",
-                    latitud_ingreso=lat,
-                    longitud_ingreso=lng,
-                    metodo_ingreso="AUTOMATICO",
-                )
-                accion = "INGRESO"
-
-        elif not esta_dentro and registro_abierto:
-            # Usuario salio del centro: registrar EGRESO
-            registro_abierto.fecha_hora_egreso = timezone.now()
-            registro_abierto.latitud_egreso = lat
-            registro_abierto.longitud_egreso = lng
-            registro_abierto.metodo_egreso = "AUTOMATICO"
-            registro_abierto.save()
-            accion = "EGRESO"
-
-        response_data = {
-            "estado": "DENTRO" if esta_dentro else "FUERA",
-            "accion": accion,
-            "dentro_geocerca": esta_dentro,
-            "registro_abierto": registro_abierto is not None if accion != "EGRESO" else False,
-            "distancia_metros": distancia_metros,
-            "radio_geocerca": radio_geocerca,
-        }
-        if mensaje:
-            response_data["mensaje"] = mensaje
-        return Response(response_data)
 
     def get_queryset(self):
         """
@@ -236,8 +96,6 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         usuario_id = serializer.validated_data.get("usuario_id")
-        latitud = serializer.validated_data.get("latitud")
-        longitud = serializer.validated_data.get("longitud")
         metodo = serializer.validated_data.get("metodo", "MANUAL")
 
         try:
@@ -252,12 +110,6 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
             return Response(
                 {"error": "El usuario ya tiene un ingreso activo sin salida"}, status=status.HTTP_400_BAD_REQUEST
             )
-
-        # Verificar geocerca si hay coordenadas
-        if latitud and longitud:
-            geocerca = Geocerca.verificar_ubicacion_usuario(latitud, longitud)
-            if not geocerca and metodo == "AUTOMATICO":
-                return Response({"error": "Ubicación fuera del centro"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Verificar aforo
         aforo_info = verificar_aforo_actual()
@@ -274,7 +126,9 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
 
         # Crear registro de ingreso
         registro = RegistroAcceso.objects.create(
-            usuario=usuario, tipo="INGRESO", latitud_ingreso=latitud, longitud_ingreso=longitud, metodo_ingreso=metodo
+            usuario=usuario,
+            tipo="INGRESO",
+            metodo_ingreso=metodo,
         )
 
         # Notificar si el aforo está en nivel ADVERTENCIA (≥70%) o CRITICO (≥90%)
@@ -305,8 +159,6 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         usuario_id = serializer.validated_data.get("usuario_id")
-        latitud = serializer.validated_data.get("latitud")
-        longitud = serializer.validated_data.get("longitud")
         metodo = serializer.validated_data.get("metodo", "MANUAL")
 
         try:
@@ -326,8 +178,6 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
 
         # Actualizar el registro con la salida
         registro.fecha_hora_egreso = timezone.now()
-        registro.latitud_egreso = latitud
-        registro.longitud_egreso = longitud
         registro.metodo_egreso = metodo
         registro.save()
 
@@ -406,8 +256,8 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def personas_en_centro(self, request):
         """
-        Retorna las personas actualmente dentro del centro con sus coordenadas.
-        Usado para el monitoreo en tiempo real en el mapa.
+        Retorna las personas actualmente dentro del centro.
+        Usado para el monitoreo en tiempo real.
         Accesible por VIGILANCIA y ADMINISTRATIVO.
         Soporta filtros: ?ficha=, ?programa=
         """
@@ -434,8 +284,6 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
                     "rol_code": registro.usuario.rol,
                     "ficha": registro.usuario.ficha or "",
                     "programa_formacion": registro.usuario.programa_formacion or "",
-                    "latitud": registro.latitud_ingreso,
-                    "longitud": registro.longitud_ingreso,
                     "hora_ingreso": registro.fecha_hora_ingreso.strftime("%H:%M"),
                     "metodo": registro.get_metodo_ingreso_display(),
                 }
@@ -449,7 +297,6 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
         Registra la asistencia manual de un aprendiz (para instructores)
         PERMISOS: INSTRUCTOR, VIGILANCIA, ADMINISTRATIVO
         """
-        # Verificar permisos
         if request.user.rol not in ["INSTRUCTOR", "VIGILANCIA", "ADMINISTRATIVO"]:
             return Response(
                 {"success": False, "error": "No tiene permisos para registrar asistencia"},
@@ -478,17 +325,9 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Crear registro de asistencia manual (ingreso sin coordenadas)
-        # Usar coordenadas del centro por defecto
-        geocerca = Geocerca.objects.filter(activo=True).first()
-        lat_default = geocerca.centro_latitud if geocerca else 5.7303596
-        lng_default = geocerca.centro_longitud if geocerca else -72.8943613
-
         registro = RegistroAcceso.objects.create(
             usuario=usuario,
             tipo="INGRESO",
-            latitud_ingreso=lat_default,
-            longitud_ingreso=lng_default,
             metodo_ingreso="MANUAL",
         )
 
@@ -508,7 +347,6 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
         Registra la asistencia manual de multiples aprendices
         PERMISOS: INSTRUCTOR, VIGILANCIA, ADMINISTRATIVO
         """
-        # Verificar permisos
         if request.user.rol not in ["INSTRUCTOR", "VIGILANCIA", "ADMINISTRATIVO"]:
             return Response(
                 {"success": False, "error": "No tiene permisos para registrar asistencia"},
@@ -522,11 +360,6 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
                 {"success": False, "error": "Se requiere una lista de IDs de usuarios"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-        # Obtener coordenadas por defecto
-        geocerca = Geocerca.objects.filter(activo=True).first()
-        lat_default = geocerca.centro_latitud if geocerca else 5.7303596
-        lng_default = geocerca.centro_longitud if geocerca else -72.8943613
 
         hoy = timezone.now().date()
         errores = []
@@ -558,8 +391,6 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
                     RegistroAcceso(
                         usuario=usuario,
                         tipo="INGRESO",
-                        latitud_ingreso=lat_default,
-                        longitud_ingreso=lng_default,
                         metodo_ingreso="MANUAL",
                     )
                 )
@@ -583,7 +414,6 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
     def mi_estado(self, request):
         """
         Retorna el estado de acceso actual del usuario autenticado.
-        No requiere GPS — consulta directamente la BD.
         GET /api/acceso/registros/mi-estado/
         """
         hoy = timezone.now().date()
@@ -627,10 +457,15 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
             }
         )
 
+    @extend_schema(
+        summary="Token QR del usuario autenticado",
+        tags=["acceso"],
+        responses={200: OpenApiResponse(description="Token QR válido para el día")},
+    )
     @action(detail=False, methods=["get"], url_path="mi-qr")
     def mi_qr(self, request):
         """
-        Devuelve el token QR del usuario autenticado + imagen base64.
+        Devuelve el token QR del usuario autenticado.
         GET /api/acceso/registros/mi-qr/
         """
         token = generar_token_qr(request.user.id)

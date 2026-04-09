@@ -1,8 +1,6 @@
 # control_acceso/utils.py
 import hmac
 import hashlib
-import io
-import base64
 
 from django.core.cache import cache
 from django.conf import settings
@@ -49,19 +47,6 @@ def validar_token_qr(token: str):
         return None, "QR inválido o falsificado."
 
     return user_id, None
-
-
-def generar_imagen_qr_base64(token: str) -> str:
-    """Genera un PNG del QR y lo devuelve como data URI base64."""
-    import qrcode
-
-    qr = qrcode.QRCode(version=1, box_size=8, border=3, error_correction=qrcode.constants.ERROR_CORRECT_M)
-    qr.add_data(token)
-    qr.make(fit=True)
-    img = qr.make_image(fill_color="#1a1a1a", back_color="white")
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
 
 
 def verificar_aforo_actual():

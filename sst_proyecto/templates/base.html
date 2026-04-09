@@ -1545,34 +1545,6 @@
     }
     </script>
 
-    <!-- Auto-registro por geolocalizacion -->
-    {% if user.rol != 'VISITANTE' %}
-    <script>
-        (function() {
-            const AUTO_REG_INTERVAL = 120000; // 2 minutos
-            function autoRegistroGeo() {
-                if (!navigator.geolocation) return;
-                navigator.geolocation.getCurrentPosition(function(pos) {
-                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
-                    fetch('/api/acceso/registros/auto-registro/', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': csrfToken
-                        },
-                        credentials: 'same-origin',
-                        body: JSON.stringify({
-                            latitud: pos.coords.latitude,
-                            longitud: pos.coords.longitude
-                        })
-                    }).catch(() => {});
-                }, function() {}, { enableHighAccuracy: true, timeout: 10000 });
-            }
-            autoRegistroGeo();
-            setInterval(autoRegistroGeo, AUTO_REG_INTERVAL);
-        })();
-    </script>
-    {% endif %}
 
     <!-- Design System JavaScript -->
     <script src="{% static 'js/ui-feedback.js' %}"></script>

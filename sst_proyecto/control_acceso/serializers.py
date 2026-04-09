@@ -1,16 +1,6 @@
 from rest_framework import serializers
-from .models import Geocerca, RegistroAcceso, ConfiguracionAforo
+from .models import RegistroAcceso, ConfiguracionAforo
 from usuarios.models import Usuario
-
-
-class GeocercaSerializer(serializers.ModelSerializer):
-    """
-    Serializer para el modelo Geocerca
-    """
-
-    class Meta:
-        model = Geocerca
-        fields = "__all__"
 
 
 class UsuarioBasicoSerializer(serializers.ModelSerializer):
@@ -69,9 +59,7 @@ class RegistrarAccesoSerializer(serializers.Serializer):
     """
 
     usuario_id = serializers.IntegerField(required=True)
-    latitud = serializers.FloatField(required=False, allow_null=True)
-    longitud = serializers.FloatField(required=False, allow_null=True)
-    metodo = serializers.ChoiceField(choices=["MANUAL", "AUTOMATICO"], default="MANUAL", required=False)
+    metodo = serializers.ChoiceField(choices=["MANUAL", "QR"], default="MANUAL", required=False)
 
     def validate_usuario_id(self, value):
         """Valida que el usuario exista"""
