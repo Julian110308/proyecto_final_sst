@@ -1124,7 +1124,7 @@ def control_acceso_view(request):
 from mapas.views import mapa_interactivo, plano_centro as plano_centro_view
 
 
-@rol_requerido("ADMINISTRATIVO", "BRIGADA", "VIGILANCIA")
+@rol_requerido("ADMINISTRATIVO", "BRIGADA")
 def emergencias_view(request):
     """
     Vista de Emergencias
