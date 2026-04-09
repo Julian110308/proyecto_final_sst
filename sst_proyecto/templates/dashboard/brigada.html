@@ -126,7 +126,9 @@
         <div class="progress mb-3" style="height:12px;">
             <div class="progress-bar bg-success" id="evacBarra" style="width:0%;transition:width 0.5s;"></div>
         </div>
-        <!-- Detalle por ficha -->
+        <!-- Desglose por rol -->
+        <div id="evacDetalleRoles" class="mb-3"></div>
+        <!-- Detalle por ficha (aprendices) -->
         <div id="evacDetalleFichas" class="d-flex flex-wrap gap-2 mb-3"></div>
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
             <div class="text-muted small">
@@ -1149,15 +1151,56 @@ async function actualizarEvacuacion() {
         barra.style.width = pct + '%';
         barra.className = 'progress-bar ' + (pct >= 80 ? 'bg-success' : pct >= 50 ? 'bg-warning' : 'bg-danger');
 
+        // Desglose por rol
+        const contRoles = document.getElementById('evacDetalleRoles');
+        if (d.roles && d.roles.length) {
+            contRoles.innerHTML = `
+                <div class="table-responsive">
+                <table class="table table-sm table-bordered mb-0" style="font-size:0.85rem;">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Rol</th>
+                            <th class="text-center">Total</th>
+                            <th class="text-center text-success">Presentes</th>
+                            <th class="text-center text-danger">Faltantes</th>
+                            <th class="text-center" style="width:110px;">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${d.roles.map(r => {
+                            const pctRol = r.total > 0 ? Math.round(r.confirmados / r.total * 100) : 0;
+                            const color = r.faltantes === 0 ? 'success' : r.confirmados === 0 ? 'danger' : 'warning';
+                            return `<tr>
+                                <td class="fw-semibold">${r.label}</td>
+                                <td class="text-center">${r.total}</td>
+                                <td class="text-center fw-bold text-success">${r.confirmados}</td>
+                                <td class="text-center fw-bold text-danger">${r.faltantes}</td>
+                                <td class="text-center">
+                                    <div class="progress" style="height:8px;">
+                                        <div class="progress-bar bg-${color}" style="width:${pctRol}%"></div>
+                                    </div>
+                                    <small class="text-muted">${pctRol}%</small>
+                                </td>
+                            </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+                </div>`;
+        }
+
+        // Detalle por ficha (aprendices)
         const cont = document.getElementById('evacDetalleFichas');
         if (d.fichas && d.fichas.length) {
-            cont.innerHTML = d.fichas.map(f => {
+            cont.innerHTML = `<div class="small text-muted fw-semibold mb-1 w-100">Fichas de aprendices:</div>` +
+            d.fichas.map(f => {
                 const color = f.faltantes === 0 ? 'success' : f.confirmados === 0 ? 'danger' : 'warning';
-                return `<span class="badge bg-${color} px-2 py-1 fs-6">
+                return `<span class="badge bg-${color} px-2 py-1">
                     Ficha ${f.ficha}: ${f.confirmados}/${f.total}
-                    ${f.faltantes > 0 ? `<span class="ms-1">(${f.faltantes} faltan)</span>` : ''}
+                    ${f.faltantes > 0 ? `(${f.faltantes} faltan)` : ''}
                 </span>`;
             }).join('');
+        } else {
+            cont.innerHTML = '';
         }
 
         if (d.emergencia_fecha) {

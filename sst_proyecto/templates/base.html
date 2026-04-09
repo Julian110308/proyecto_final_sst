@@ -758,6 +758,19 @@
         <span class="emergencia-text ms-2">EMERGENCIA</span>
     </button>
 
+    <!-- Botón flotante: Confirmar presencia en punto de encuentro (solo durante emergencia masiva) -->
+    {% if user.is_authenticated and user.rol != 'VISITANTE' %}
+    <div id="btnConfirmarEvacuacion" style="display:none; position:fixed; bottom:90px; right:24px; z-index:1055;">
+        <button class="btn text-white fw-bold shadow-lg d-flex align-items-center gap-2 px-4 py-2"
+                id="btnConfirmarPresencia"
+                style="background:linear-gradient(135deg,#16a34a,#166534); border-radius:50px; border:none; font-size:0.9rem;"
+                onclick="confirmarMiPresencia()">
+            <i class="bi bi-geo-alt-fill fs-5"></i>
+            <span id="textoConfirmarPresencia">Estoy en el punto de encuentro</span>
+        </button>
+    </div>
+    {% endif %}
+
     <!-- Modal de Seleccion de Tipo de Emergencia -->
     <div class="modal fade" id="modalEmergencia" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="modalEmergenciaLabel" aria-modal="true" role="dialog">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
@@ -1540,6 +1553,79 @@
     }
     </script>
 
+
+    <!-- ============================================================ -->
+    <!-- BOTÓN DE CONFIRMACIÓN DE EVACUACIÓN                        -->
+    <!-- ============================================================ -->
+    {% if user.is_authenticated and user.rol != 'VISITANTE' %}
+    <script>
+    (function() {
+        const CSRF_EVAC = () => document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+        let _evacuacionId = null;
+        let _yoConfirmado = false;
+
+        async function checkEvacuacion() {
+            try {
+                const r = await fetch('/api/emergencias/emergencias/evacuacion-stats/', { credentials: 'same-origin' });
+                if (!r.ok) return;
+                const d = await r.json();
+                const btn = document.getElementById('btnConfirmarEvacuacion');
+                if (!btn) return;
+                if (d.activa) {
+                    _evacuacionId = d.emergencia_id;
+                    _yoConfirmado = d.yo_confirmado;
+                    btn.style.display = 'block';
+                    const texto = document.getElementById('textoConfirmarPresencia');
+                    const boton = document.getElementById('btnConfirmarPresencia');
+                    if (_yoConfirmado) {
+                        texto.textContent = 'Presencia confirmada ✓';
+                        boton.style.background = 'linear-gradient(135deg,#1d4ed8,#1e40af)';
+                        boton.disabled = true;
+                    } else {
+                        texto.textContent = 'Estoy en el punto de encuentro';
+                        boton.style.background = 'linear-gradient(135deg,#16a34a,#166534)';
+                        boton.disabled = false;
+                    }
+                } else {
+                    _evacuacionId = null;
+                    btn.style.display = 'none';
+                }
+            } catch(e) {}
+        }
+
+        window.confirmarMiPresencia = async function() {
+            if (!_evacuacionId || _yoConfirmado) return;
+            const boton = document.getElementById('btnConfirmarPresencia');
+            boton.disabled = true;
+            boton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Confirmando...';
+            try {
+                const r = await fetch('/api/emergencias/emergencias/evacuacion-confirmar/', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_EVAC() },
+                    body: JSON.stringify({ emergencia_id: _evacuacionId, usuario_ids: [{{ user.id }}] }),
+                });
+                if (r.ok) {
+                    _yoConfirmado = true;
+                    document.getElementById('textoConfirmarPresencia').textContent = 'Presencia confirmada ✓';
+                    boton.style.background = 'linear-gradient(135deg,#1d4ed8,#1e40af)';
+                    boton.innerHTML = '<i class="bi bi-check-circle-fill fs-5"></i><span>Presencia confirmada ✓</span>';
+                } else {
+                    boton.disabled = false;
+                    boton.innerHTML = '<i class="bi bi-geo-alt-fill fs-5"></i><span>Estoy en el punto de encuentro</span>';
+                }
+            } catch(e) {
+                boton.disabled = false;
+                boton.innerHTML = '<i class="bi bi-geo-alt-fill fs-5"></i><span>Estoy en el punto de encuentro</span>';
+            }
+        };
+
+        // Revisar estado de evacuación al cargar y cada 15 segundos
+        checkEvacuacion();
+        setInterval(checkEvacuacion, 15000);
+    })();
+    </script>
+    {% endif %}
 
     <!-- Design System JavaScript -->
     <script src="{% static 'js/ui-feedback.js' %}"></script>

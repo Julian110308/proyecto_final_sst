@@ -393,7 +393,39 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
         confirmados = len(confirmados_ids)
         faltantes = total - confirmados
 
-        # Detalle por ficha (solo aprendices con asistencia hoy)
+        # Desglose por rol
+        LABELS_ROL = {
+            "APRENDIZ": "Aprendices",
+            "INSTRUCTOR": "Instructores",
+            "ADMINISTRATIVO": "Administrativos",
+            "VIGILANCIA": "Vigilancia",
+            "BRIGADA": "Brigada",
+            "COORDINADOR_SST": "Coordinadores SST",
+        }
+        detalle_roles = []
+        for rol_code in ROLES_ESPERADOS:
+            usuarios_rol = usuarios_esperados.filter(rol=rol_code)
+            total_rol = usuarios_rol.count()
+            if total_rol == 0:
+                continue
+            confirmados_rol = usuarios_rol.filter(id__in=confirmados_ids).count()
+            ausentes_rol = set(
+                RegistroEvacuacion.objects.filter(
+                    emergencia=emergencia, usuario__in=usuarios_rol, ausente=True
+                ).values_list("usuario_id", flat=True)
+            )
+            detalle_roles.append(
+                {
+                    "rol": rol_code,
+                    "label": LABELS_ROL.get(rol_code, rol_code),
+                    "total": total_rol,
+                    "confirmados": confirmados_rol,
+                    "faltantes": total_rol - confirmados_rol,
+                    "ausentes": len(ausentes_rol),
+                }
+            )
+
+        # Detalle por ficha (solo aprendices)
         detalle_fichas = []
         fichas = (
             Usuario.objects.filter(rol="APRENDIZ", activo=True, ficha__isnull=False)
@@ -418,6 +450,9 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
                 }
             )
 
+        # ¿El usuario actual ya está confirmado?
+        yo_confirmado = request.user.id in confirmados_ids
+
         return Response(
             {
                 "activa": True,
@@ -428,6 +463,8 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
                 "confirmados": confirmados,
                 "faltantes": faltantes,
                 "porcentaje": round(confirmados / total * 100) if total else 0,
+                "yo_confirmado": yo_confirmado,
+                "roles": detalle_roles,
                 "fichas": detalle_fichas,
             }
         )
@@ -435,13 +472,13 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["post"], url_path="evacuacion-confirmar")
     def evacuacion_confirmar(self, request):
         """
-        El instructor confirma la presencia de uno o varios aprendices en el punto de encuentro.
+        Confirma la presencia en el punto de encuentro.
+        - Cualquier usuario puede confirmar su PROPIA presencia (self-confirm).
+        - INSTRUCTOR puede confirmar sus aprendices.
+        - BRIGADA / COORDINADOR_SST / ADMINISTRATIVO pueden confirmar a cualquiera.
         Body: { "emergencia_id": int, "usuario_ids": [int, ...] }
         """
         from usuarios.models import Usuario
-
-        if request.user.rol not in {"INSTRUCTOR", "BRIGADA", "COORDINADOR_SST", "ADMINISTRATIVO"}:
-            return Response({"error": "Sin permiso."}, status=status.HTTP_403_FORBIDDEN)
 
         emergencia_id = request.data.get("emergencia_id")
         usuario_ids = request.data.get("usuario_ids", [])
@@ -456,13 +493,22 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
         except Emergencia.DoesNotExist:
             return Response({"error": "Emergencia no encontrada."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Instructores solo pueden confirmar sus propios aprendices
-        if request.user.rol == "INSTRUCTOR":
+        rol = request.user.rol
+        es_privilegiado = rol in {"BRIGADA", "COORDINADOR_SST", "ADMINISTRATIVO"}
+        es_self = len(usuario_ids) == 1 and usuario_ids[0] == request.user.id
+
+        if es_self:
+            # Cualquier usuario puede confirmar su propia presencia
+            pass
+        elif rol == "INSTRUCTOR":
+            # Instructores solo confirman sus aprendices
             fichas = request.user.get_fichas_list() or ([request.user.ficha] if request.user.ficha else [])
             usuarios_permitidos = set(
                 Usuario.objects.filter(rol="APRENDIZ", ficha__in=fichas, activo=True).values_list("id", flat=True)
             )
             usuario_ids = [uid for uid in usuario_ids if uid in usuarios_permitidos]
+        elif not es_privilegiado:
+            return Response({"error": "Sin permiso."}, status=status.HTTP_403_FORBIDDEN)
 
         ahora = timezone.now()
         confirmados = 0
