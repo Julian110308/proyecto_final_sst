@@ -498,6 +498,11 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
         if not token:
             return Response({"error": "Token requerido."}, status=status.HTTP_400_BAD_REQUEST)
 
+        # modo puede ser 'INGRESO' o 'EGRESO'; si no se envía, auto-detecta
+        modo = (request.data.get("modo") or "").upper()
+        if modo not in {"INGRESO", "EGRESO"}:
+            modo = None  # auto-detectar
+
         user_id, error = validar_token_qr(token)
         if error:
             return Response({"error": error}, status=status.HTTP_400_BAD_REQUEST)
@@ -509,7 +514,6 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
 
         hoy = timezone.now().date()
 
-        # Detectar si es ingreso o egreso
         registro_abierto = (
             RegistroAcceso.objects.filter(
                 usuario=usuario,
@@ -521,15 +525,26 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
             .first()
         )
 
-        if registro_abierto:
-            # Registrar EGRESO
+        # Determinar acción según modo explícito o auto-detección
+        accion_final = modo or ("EGRESO" if registro_abierto else "INGRESO")
+
+        if accion_final == "EGRESO":
+            if not registro_abierto:
+                return Response(
+                    {"error": f"{usuario.get_full_name()} no tiene un ingreso activo hoy."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             registro_abierto.fecha_hora_egreso = timezone.now()
             registro_abierto.metodo_egreso = "QR"
             registro_abierto.save(update_fields=["fecha_hora_egreso", "metodo_egreso"])
             accion = "EGRESO"
             hora = registro_abierto.fecha_hora_egreso
         else:
-            # Verificar aforo antes de registrar ingreso
+            if registro_abierto:
+                return Response(
+                    {"error": f"{usuario.get_full_name()} ya tiene un ingreso activo hoy. ¿Desea registrar su egreso?"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             aforo = verificar_aforo_actual()
             if aforo["alerta"] == "CRITICO":
                 return Response(

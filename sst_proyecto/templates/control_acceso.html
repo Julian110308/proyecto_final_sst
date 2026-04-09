@@ -23,11 +23,14 @@
         <button class="btn btn-outline-secondary btn-sm" onclick="cargarTodo()">
             <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
         </button>
-        <button class="btn btn-success text-white shadow-sm rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#modalEscanerQR">
-            <i class="bi bi-qr-code-scan me-2"></i>Escanear QR
+        <button class="btn btn-success text-white shadow-sm rounded-pill px-4" onclick="abrirEscaner('INGRESO')">
+            <i class="bi bi-box-arrow-in-right me-2"></i>Ingreso QR
+        </button>
+        <button class="btn btn-danger text-white shadow-sm rounded-pill px-4" onclick="abrirEscaner('EGRESO')">
+            <i class="bi bi-box-arrow-right me-2"></i>Egreso QR
         </button>
         <button class="btn btn-primary text-white shadow-sm rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#modalRegistroManual">
-            <i class="bi bi-plus-lg me-2"></i>Registrar Acceso
+            <i class="bi bi-plus-lg me-2"></i>Registrar Manual
         </button>
     </div>
 </div>
@@ -500,11 +503,11 @@ function mostrarAlerta(msg, tipo) {
     <div class="modal-dialog modal-dialog-centered" style="max-width:420px;">
         <div class="modal-content border-0 shadow-lg" style="border-radius:18px; overflow:hidden;">
 
-            <!-- Header -->
-            <div class="modal-header border-0 text-white" style="background:linear-gradient(135deg,#16a34a,#166534); padding:1.25rem 1.5rem;">
+            <!-- Header (color cambia según modo) -->
+            <div class="modal-header border-0 text-white" id="qrModalHeader" style="padding:1.25rem 1.5rem;">
                 <div>
-                    <h5 class="modal-title fw-bold mb-0"><i class="bi bi-qr-code-scan me-2"></i>Escanear QR</h5>
-                    <small style="opacity:.8;">Apunta la cámara al QR del usuario</small>
+                    <h5 class="modal-title fw-bold mb-0" id="qrModalTitulo"><i class="bi bi-qr-code-scan me-2"></i>Escanear QR</h5>
+                    <small style="opacity:.8;" id="qrModalSubtitulo">Apunta la cámara al QR del usuario</small>
                 </div>
                 <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal" onclick="detenerScanner()"></button>
             </div>
@@ -555,6 +558,29 @@ function mostrarAlerta(msg, tipo) {
 const CSRF_QR = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
 let _html5QrCode = null;
 let _escaneando = false;
+let _modoEscaner = 'INGRESO'; // 'INGRESO' o 'EGRESO'
+
+const ESTILOS_MODO = {
+    INGRESO: {
+        bg: 'linear-gradient(135deg,#16a34a,#166534)',
+        titulo: '<i class="bi bi-box-arrow-in-right me-2"></i>Registrar Ingreso',
+        subtitulo: 'Escanea el QR del usuario que entra al centro',
+    },
+    EGRESO: {
+        bg: 'linear-gradient(135deg,#dc2626,#991b1b)',
+        titulo: '<i class="bi bi-box-arrow-right me-2"></i>Registrar Egreso',
+        subtitulo: 'Escanea el QR del usuario que sale del centro',
+    },
+};
+
+function abrirEscaner(modo) {
+    _modoEscaner = modo || 'INGRESO';
+    const estilo = ESTILOS_MODO[_modoEscaner];
+    document.getElementById('qrModalHeader').style.background = estilo.bg;
+    document.getElementById('qrModalTitulo').innerHTML = estilo.titulo;
+    document.getElementById('qrModalSubtitulo').textContent = estilo.subtitulo;
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEscanerQR')).show();
+}
 
 document.getElementById('modalEscanerQR').addEventListener('shown.bs.modal', iniciarScanner);
 document.getElementById('modalEscanerQR').addEventListener('hidden.bs.modal', detenerScanner);
@@ -586,7 +612,6 @@ function detenerScanner() {
 
 async function onQrDetectado(token) {
     if (!_escaneando) return;
-    // Pausar scanner mientras procesamos
     await _html5QrCode.stop();
     _escaneando = false;
 
@@ -595,7 +620,7 @@ async function onQrDetectado(token) {
             method: 'POST',
             credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_QR },
-            body: JSON.stringify({ token }),
+            body: JSON.stringify({ token, modo: _modoEscaner }),
         });
         const d = await resp.json();
 
@@ -607,7 +632,7 @@ async function onQrDetectado(token) {
             const exito = document.getElementById('qrExito');
             exito.style.background = esIngreso
                 ? 'linear-gradient(135deg,#16a34a,#15803d)'
-                : 'linear-gradient(135deg,#2563eb,#1d4ed8)';
+                : 'linear-gradient(135deg,#dc2626,#991b1b)';
             document.getElementById('qrAccionTexto').textContent =
                 esIngreso ? '✅ INGRESO REGISTRADO' : '🚪 EGRESO REGISTRADO';
             document.getElementById('qrResNombre').textContent = u.nombre;
