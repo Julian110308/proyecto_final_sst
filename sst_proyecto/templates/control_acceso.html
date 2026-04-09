@@ -266,8 +266,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Auto-refresh cada 30 segundos
-    setInterval(cargarTodo, 30000);
+    // Auto-refresh cada 10 segundos
+    setInterval(cargarTodo, 10000);
 });
 
 function resetBuscador() {
@@ -321,8 +321,9 @@ async function cargarRegistros() {
         const r = await fetch(url);
         todosRegistros = await r.json();
         filtrarTabla();
-        const ahora = new Date().toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit'});
-        document.getElementById('ultimaActualizacion').textContent = `Última actualización: ${ahora}`;
+        const ahora = new Date().toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+        document.getElementById('ultimaActualizacion').innerHTML =
+            `<i class="bi bi-circle-fill text-success me-1" style="font-size:0.5rem;vertical-align:middle;"></i>En vivo &mdash; última actualización: ${ahora}`;
     } catch (error) {
         console.error('Error:', error);
         document.getElementById('tablaRegistros').innerHTML = '<tr><td colspan="7" class="text-center text-danger py-4">Error al cargar datos</td></tr>';
@@ -607,8 +608,7 @@ async function onQrDetectado(token) {
             document.getElementById('qrResHora').textContent = d.hora;
             exito.classList.remove('d-none');
             document.getElementById('qrError').classList.add('d-none');
-            // Actualizar lista de accesos recientes si existe en la página
-            if (typeof cargarRegistrosRecientes === 'function') cargarRegistrosRecientes();
+            cargarTodo();
         } else {
             document.getElementById('qrErrorTexto').textContent = d.error || 'Error al procesar el QR.';
             document.getElementById('qrError').classList.remove('d-none');
