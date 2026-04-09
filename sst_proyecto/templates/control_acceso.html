@@ -615,8 +615,7 @@ async function onQrDetectado(token) {
     await _html5QrCode.stop();
     _escaneando = false;
 
-    // Ocultar cámara y mostrar sección de resultado
-    document.getElementById('qrReaderContainer').classList.add('d-none');
+    // Mostrar sección de resultado (la cámara permanece visible arriba)
     document.getElementById('qrResultado').classList.remove('d-none');
 
     try {
@@ -658,11 +657,9 @@ async function onQrDetectado(token) {
 }
 
 function reiniciarScanner() {
-    // Ocultar resultado y mostrar cámara de nuevo
     document.getElementById('qrResultado').classList.add('d-none');
     document.getElementById('qrExito').classList.add('d-none');
     document.getElementById('qrError').classList.add('d-none');
-    document.getElementById('qrReaderContainer').classList.remove('d-none');
     iniciarScanner();
 }
 </script>
