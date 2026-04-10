@@ -26,6 +26,7 @@ from .serializers import (
 
 # Servicio centralizado de notificaciones
 from usuarios.services import NotificacionService
+from .utils import usuario_en_penalizacion
 
 
 # Solo brigadistas pueden activar emergencias naturales (sismo, deslizamiento)
@@ -77,6 +78,18 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
         return EmergenciaSerializer
 
     def create(self, request, *args, **kwargs):
+        # Verificar penalización por falsa alarma
+        bloqueado, tipo_falsa, hasta = usuario_en_penalizacion(request.user)
+        if bloqueado:
+            return Response(
+                {
+                    "penalizado": True,
+                    "tipo_falsa": tipo_falsa,
+                    "hasta": hasta.isoformat(),
+                    "error": f"Tu {'emergencia' if tipo_falsa == 'emergencia' else 'incidente'} anterior fue marcada como falsa alarma. No puedes reportar emergencias ni incidentes durante 24 horas.",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
         # Validar que el usuario puede reportar este tipo de emergencia
         tipo_id = request.data.get("tipo")
         if tipo_id:
@@ -112,6 +125,18 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
     )
     @action(detail=False, methods=["post"])
     def boton_panico(self, request):
+        # Verificar penalización por falsa alarma
+        bloqueado, tipo_falsa, hasta = usuario_en_penalizacion(request.user)
+        if bloqueado:
+            return Response(
+                {
+                    "penalizado": True,
+                    "tipo_falsa": tipo_falsa,
+                    "hasta": hasta.isoformat(),
+                    "error": f"Tu {'emergencia' if tipo_falsa == 'emergencia' else 'incidente'} anterior fue marcada como falsa alarma. No puedes reportar emergencias durante 24 horas.",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
         # Máximo 3 activaciones por usuario por hora (previene falsas alarmas en loop)
         if is_ratelimited(request, group="boton_panico", key="user_or_ip", rate="3/h", method="POST", increment=True):
             return Response(
@@ -236,6 +261,61 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
             }
         )
 
+    @action(detail=False, methods=["get"], url_path="mis-restricciones")
+    def mis_restricciones(self, request):
+        """Retorna si el usuario está penalizado por falsa alarma y cuándo termina."""
+        bloqueado, tipo_falsa, hasta = usuario_en_penalizacion(request.user)
+        return Response(
+            {
+                "penalizado": bloqueado,
+                "tipo_falsa": tipo_falsa,
+                "hasta": hasta.isoformat() if hasta else None,
+            }
+        )
+
+    @action(detail=False, methods=["post"], url_path="marcar-falsa-incidente")
+    def marcar_falsa_incidente(self, request):
+        """Permite a BRIGADA o ADMINISTRATIVO marcar un incidente como falsa alarma."""
+        from reportes.models import Incidente
+
+        if request.user.rol not in {"BRIGADA", "ADMINISTRATIVO", "COORDINADOR_SST"}:
+            return Response({"error": "Sin permiso."}, status=status.HTTP_403_FORBIDDEN)
+
+        incidente_id = request.data.get("incidente_id")
+        motivo = (request.data.get("motivo") or "").strip()
+        if not incidente_id:
+            return Response({"error": "Falta incidente_id."}, status=status.HTTP_400_BAD_REQUEST)
+        if not motivo:
+            return Response({"error": "Debe proporcionar un motivo."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            incidente = Incidente.objects.get(pk=incidente_id)
+        except Incidente.DoesNotExist:
+            return Response({"error": "Incidente no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+        if incidente.es_falsa_alarma:
+            return Response({"error": "Ya estaba marcado como falsa alarma."}, status=status.HTTP_400_BAD_REQUEST)
+
+        incidente.es_falsa_alarma = True
+        incidente.fecha_falsa_alarma = timezone.now()
+        incidente.marcado_falso_por = request.user
+        incidente.motivo_falsa_alarma = motivo
+        incidente.estado = "CERRADO"
+        incidente.save()
+
+        # Notificar al reportante
+        if incidente.reportado_por:
+            from usuarios.models import Notificacion
+
+            Notificacion.objects.create(
+                usuario=incidente.reportado_por,
+                tipo="ALERTA",
+                titulo="Tu incidente fue marcado como falsa alarma",
+                mensaje=f'El incidente "{incidente.titulo}" fue marcado como falsa alarma. Motivo: {motivo}. No podrás reportar emergencias ni incidentes durante 24 horas.',
+            )
+
+        return Response({"mensaje": "Incidente marcado como falsa alarma correctamente."})
+
     @action(detail=False, methods=["get"], url_path="falsas-alarmas")
     def falsas_alarmas(self, request):
         from django.db.models import Count
@@ -352,9 +432,6 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
         """
         from usuarios.models import Usuario
 
-        if request.user.rol not in {"BRIGADA", "COORDINADOR_SST", "ADMINISTRATIVO", "INSTRUCTOR"}:
-            return Response({"error": "Sin permiso."}, status=status.HTTP_403_FORBIDDEN)
-
         # Buscar la emergencia de alerta masiva más reciente que esté activa
         emergencia = (
             Emergencia.objects.filter(
@@ -453,6 +530,20 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
         # ¿El usuario actual ya está confirmado?
         yo_confirmado = request.user.id in confirmados_ids
 
+        # ¿El usuario está actualmente dentro del centro?
+        # Un usuario está "dentro" si su último registro de acceso del día es un INGRESO sin egreso
+        ultimo_acceso = (
+            RegistroAcceso.objects.filter(
+                usuario=request.user,
+                fecha_hora_ingreso__date=hoy,
+            )
+            .order_by("-fecha_hora_ingreso")
+            .first()
+        )
+        usuario_dentro = (
+            ultimo_acceso is not None and ultimo_acceso.tipo == "INGRESO" and ultimo_acceso.fecha_hora_egreso is None
+        )
+
         return Response(
             {
                 "activa": True,
@@ -464,6 +555,7 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
                 "faltantes": faltantes,
                 "porcentaje": round(confirmados / total * 100) if total else 0,
                 "yo_confirmado": yo_confirmado,
+                "usuario_dentro": usuario_dentro,
                 "roles": detalle_roles,
                 "fichas": detalle_fichas,
             }

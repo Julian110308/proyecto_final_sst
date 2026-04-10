@@ -284,6 +284,18 @@ class Usuario(AbstractUser):
         help_text="Indica si este usuario forma parte de la brigada de emergencias",
     )
 
+    # Preferencias de notificaciones externas
+    recibir_notif_email = models.BooleanField(
+        default=True,
+        verbose_name="Notificaciones por correo",
+        help_text="Recibir alertas de emergencias e incidentes críticos por correo electrónico",
+    )
+    recibir_notif_whatsapp = models.BooleanField(
+        default=False,
+        verbose_name="Notificaciones por WhatsApp",
+        help_text="Recibir alertas de emergencias por WhatsApp (requiere número de teléfono registrado)",
+    )
+
     # Control
     activo = models.BooleanField(default=True)
     fecha_registro = models.DateTimeField(auto_now_add=True)

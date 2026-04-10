@@ -36,6 +36,7 @@ CSRF_TRUSTED_ORIGINS = config(
 # Application definition
 
 INSTALLED_APPS = [
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -95,6 +96,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "sst_proyecto.wsgi.application"
+ASGI_APPLICATION = "sst_proyecto.asgi.application"
 
 
 # Database
@@ -254,6 +256,15 @@ else:
     EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
 
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="SST Centro Minero <noreply@centrominerosst.com>")
+EMAIL_TIMEOUT = 5  # Máximo 5 segundos para conexión SMTP (evita bloquear requests)
+
+# ====================================================================
+# TWILIO - WhatsApp Notifications
+# ====================================================================
+TWILIO_ACCOUNT_SID = config("TWILIO_ACCOUNT_SID", default="")
+TWILIO_AUTH_TOKEN = config("TWILIO_AUTH_TOKEN", default="")
+# Sandbox de Twilio: whatsapp:+14155238886 | Número propio si ya está aprobado
+TWILIO_WHATSAPP_FROM = config("TWILIO_WHATSAPP_FROM", default="whatsapp:+14155238886")
 
 # ====================================================================
 # CONFIGURACIÓN WEB PUSH (VAPID)
@@ -361,8 +372,9 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
     X_FRAME_OPTIONS = "DENY"
 
-# Tiempo de expiración de sesión (30 minutos de inactividad)
-SESSION_COOKIE_AGE = 1800
+# Tiempo de expiración de sesión
+# En producción: 30 minutos. En desarrollo: 8 horas para no perder sesión al hacer pruebas.
+SESSION_COOKIE_AGE = 1800 if not DEBUG else 28800
 SESSION_SAVE_EVERY_REQUEST = True
 
 # ====================================================================

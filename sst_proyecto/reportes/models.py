@@ -180,6 +180,18 @@ class Incidente(models.Model):
         help_text="Último usuario que modificó el incidente",
     )
 
+    # Falsa alarma
+    es_falsa_alarma = models.BooleanField(default=False)
+    fecha_falsa_alarma = models.DateTimeField(null=True, blank=True)
+    marcado_falso_por = models.ForeignKey(
+        Usuario,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="incidentes_falsos_marcados",
+    )
+    motivo_falsa_alarma = models.TextField(blank=True)
+
     class Meta:
         verbose_name = "Incidente"
         verbose_name_plural = "Incidentes"
@@ -191,6 +203,7 @@ class Incidente(models.Model):
 
 class HistorialModificacionIncidente(models.Model):
     """Registra cada modificación realizada a un incidente con fecha, usuario y cambios."""
+
     incidente = models.ForeignKey(Incidente, on_delete=models.CASCADE, related_name="historial_modificaciones")
     modificado_por = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, related_name="historial_cambios")
     fecha_modificacion = models.DateTimeField(auto_now_add=True)

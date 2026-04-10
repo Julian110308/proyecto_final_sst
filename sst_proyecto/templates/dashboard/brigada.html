@@ -1154,38 +1154,51 @@ async function actualizarEvacuacion() {
         // Desglose por rol
         const contRoles = document.getElementById('evacDetalleRoles');
         if (d.roles && d.roles.length) {
-            contRoles.innerHTML = `
-                <div class="table-responsive">
-                <table class="table table-sm table-bordered mb-0" style="font-size:0.85rem;">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Rol</th>
-                            <th class="text-center">Total</th>
-                            <th class="text-center text-success">Presentes</th>
-                            <th class="text-center text-danger">Faltantes</th>
-                            <th class="text-center" style="width:110px;">Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${d.roles.map(r => {
-                            const pctRol = r.total > 0 ? Math.round(r.confirmados / r.total * 100) : 0;
-                            const color = r.faltantes === 0 ? 'success' : r.confirmados === 0 ? 'danger' : 'warning';
-                            return `<tr>
-                                <td class="fw-semibold">${r.label}</td>
-                                <td class="text-center">${r.total}</td>
-                                <td class="text-center fw-bold text-success">${r.confirmados}</td>
-                                <td class="text-center fw-bold text-danger">${r.faltantes}</td>
-                                <td class="text-center">
-                                    <div class="progress" style="height:8px;">
-                                        <div class="progress-bar bg-${color}" style="width:${pctRol}%"></div>
-                                    </div>
-                                    <small class="text-muted">${pctRol}%</small>
-                                </td>
-                            </tr>`;
-                        }).join('')}
-                    </tbody>
-                </table>
+            const iconosRol = {
+                'Aprendices': 'bi-mortarboard-fill',
+                'Instructores': 'bi-person-badge-fill',
+                'Vigilancia': 'bi-shield-fill',
+                'Brigada': 'bi-fire',
+                'Administrativos': 'bi-building-fill',
+                'Coordinador SST': 'bi-star-fill',
+            };
+            contRoles.innerHTML = d.roles.map(r => {
+                const pctRol = r.total > 0 ? Math.round(r.confirmados / r.total * 100) : 0;
+                const completo = r.faltantes === 0 && r.total > 0;
+                const vacio    = r.confirmados === 0;
+                const color  = completo ? '#16a34a' : vacio ? '#dc2626' : '#d97706';
+                const bg     = completo ? '#f0fdf4' : vacio ? '#fef2f2' : '#fffbeb';
+                const border = completo ? '#bbf7d0' : vacio ? '#fecaca' : '#fde68a';
+                const icono  = iconosRol[r.label] || 'bi-person-fill';
+                return `
+                <div style="background:${bg}; border:1.5px solid ${border}; border-radius:12px; padding:0.75rem 1rem; display:flex; align-items:center; gap:0.875rem; margin-bottom:0.5rem;">
+                    <div style="width:38px; height:38px; background:${color}22; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <i class="bi ${icono}" style="color:${color}; font-size:1rem;"></i>
+                    </div>
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-size:0.83rem; font-weight:700; color:#1f2937; margin-bottom:0.3rem;">${r.label}</div>
+                        <div style="background:#e5e7eb; border-radius:999px; height:5px; overflow:hidden;">
+                            <div style="background:${color}; width:${pctRol}%; height:100%; border-radius:999px; transition:width 0.5s;"></div>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:0.75rem; flex-shrink:0; align-items:center;">
+                        <div style="text-align:center; min-width:36px;">
+                            <div style="font-size:1.15rem; font-weight:800; color:#16a34a; line-height:1;">${r.confirmados}</div>
+                            <div style="font-size:0.6rem; color:#6b7280; text-transform:uppercase; letter-spacing:0.03em;">presentes</div>
+                        </div>
+                        <div style="width:1px; height:28px; background:#d1d5db;"></div>
+                        <div style="text-align:center; min-width:36px;">
+                            <div style="font-size:1.15rem; font-weight:800; color:${r.faltantes > 0 ? '#dc2626' : '#9ca3af'}; line-height:1;">${r.faltantes}</div>
+                            <div style="font-size:0.6rem; color:#6b7280; text-transform:uppercase; letter-spacing:0.03em;">faltan</div>
+                        </div>
+                        <div style="width:1px; height:28px; background:#d1d5db;"></div>
+                        <div style="text-align:center; min-width:28px;">
+                            <div style="font-size:1.15rem; font-weight:800; color:#374151; line-height:1;">${r.total}</div>
+                            <div style="font-size:0.6rem; color:#6b7280; text-transform:uppercase; letter-spacing:0.03em;">total</div>
+                        </div>
+                    </div>
                 </div>`;
+            }).join('');
         }
 
         // Detalle por ficha (aprendices)

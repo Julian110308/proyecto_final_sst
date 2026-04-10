@@ -381,5 +381,73 @@ document.getElementById('filtro-estado-inc')?.addEventListener('change', functio
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
 });
+
+/* ── Contador de leídas ── */
+let leidasCount = parseInt(document.getElementById('badge-total-leidas')?.textContent || '0');
+
+function actualizarContadorLeidas(decremento) {
+  leidasCount = Math.max(0, leidasCount - decremento);
+  const badge = document.getElementById('badge-total-leidas');
+  if (badge) badge.textContent = leidasCount;
+  if (leidasCount === 0) {
+    const zonaLeidas = document.getElementById('zona-leidas-body');
+    if (zonaLeidas) zonaLeidas.innerHTML = `
+      <div class="empty-state" style="padding:2rem 1rem;">
+        <i class="bi bi-inbox text-muted" style="font-size:2.5rem;"></i>
+        <p class="small text-muted mb-0 mt-2">No hay notificaciones leídas recientes.</p>
+      </div>`;
+    document.getElementById('btn-limpiar-leidas')?.remove();
+    document.getElementById('wrap-btn-mas-leidas')?.remove();
+  }
+}
+
+/* ── Eliminar una notificación leída ── */
+function eliminarNotif(id, btn) {
+  const card = btn.closest('.notif-card');
+  const item = btn.closest('.notif-item');
+  fetch(`/api/auth/notificaciones/${id}/`, {
+    method: 'DELETE',
+    headers: { 'X-CSRFToken': getCookie('csrftoken') }
+  })
+  .then(r => {
+    if (r.ok || r.status === 204) {
+      if (card) card.classList.add('saliendo');
+      setTimeout(() => { if (item) item.remove(); else if (card) card.remove(); }, 390);
+      actualizarContadorLeidas(1);
+    }
+  })
+  .catch(console.error);
+}
+
+/* ── Limpiar todas las leídas ── */
+document.getElementById('btn-limpiar-leidas')?.addEventListener('click', function () {
+  if (!confirm('¿Eliminar permanentemente todas las notificaciones leídas?')) return;
+  fetch('/api/auth/notificaciones/eliminar_todas_leidas/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (!data.success) return;
+    const items = document.querySelectorAll('#zona-leidas-body .notif-item');
+    items.forEach(c => c.classList.add('saliendo'));
+    const total = leidasCount;
+    setTimeout(() => { items.forEach(c => c.remove()); actualizarContadorLeidas(total); }, 400);
+  })
+  .catch(console.error);
+});
+
+/* ── Ver más / ver menos leídas ── */
+document.getElementById('leidas-adicionales')?.addEventListener('show.bs.collapse', function () {
+  document.getElementById('ico-mas-leidas')?.classList.replace('bi-chevron-down', 'bi-chevron-up');
+  const txt = document.getElementById('txt-mas-leidas');
+  if (txt) txt.textContent = 'Ver menos';
+});
+document.getElementById('leidas-adicionales')?.addEventListener('hide.bs.collapse', function () {
+  document.getElementById('ico-mas-leidas')?.classList.replace('bi-chevron-up', 'bi-chevron-down');
+  const txt = document.getElementById('txt-mas-leidas');
+  const total = parseInt('{{ total_leidas }}') - 3;
+  if (txt) txt.textContent = `Ver ${total} más`;
+});
 </script>
 {% endblock %}

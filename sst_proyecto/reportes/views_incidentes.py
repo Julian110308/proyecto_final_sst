@@ -11,6 +11,7 @@ from .forms import IncidenteForm
 
 # Servicio centralizado de notificaciones
 from usuarios.services import NotificacionService
+from emergencias.utils import usuario_en_penalizacion
 
 
 def _calcular_sla(incidente):
@@ -129,6 +130,19 @@ def crear_incidente(request):
     Formulario para reportar un nuevo incidente
     Cualquier usuario autenticado puede reportar
     """
+    # Verificar penalización por falsa alarma
+    bloqueado, tipo_falsa, hasta = usuario_en_penalizacion(request.user)
+    if bloqueado:
+        origen = "emergencia" if tipo_falsa == "emergencia" else "incidente"
+        return render(
+            request,
+            "reportes/incidente_bloqueado.html",
+            {
+                "origen": origen,
+                "hasta": hasta,
+            },
+        )
+
     if request.method == "POST":
         form = IncidenteForm(request.POST, request.FILES)
 
@@ -192,8 +206,13 @@ def detalle_incidente(request, pk):
     # Historial de modificaciones y notificaciones
     from reportes.models import HistorialModificacionIncidente
     from usuarios.models import Notificacion
+
     historial = HistorialModificacionIncidente.objects.filter(incidente=incidente).select_related("modificado_por")
-    notificaciones = Notificacion.objects.filter(url_relacionada=f"/reportes/incidentes/{incidente.pk}/").select_related("destinatario").order_by("-fecha_creacion")
+    notificaciones = (
+        Notificacion.objects.filter(url_relacionada=f"/reportes/incidentes/{incidente.pk}/")
+        .select_related("destinatario")
+        .order_by("-fecha_creacion")
+    )
 
     context = {
         "incidente": incidente,
@@ -258,6 +277,7 @@ def actualizar_incidente(request, pk):
 
         # Guardar historial de modificaciones
         from reportes.models import HistorialModificacionIncidente
+
         if estado and estado_anterior != incidente.estado:
             HistorialModificacionIncidente.objects.create(
                 incidente=incidente,

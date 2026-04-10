@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Acceso Restringido - Sistema SST{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'listar_incidentes' %}">Incidentes</a></li>
+<li class="breadcrumb-item active">Acceso Restringido</li>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-start pt-4">
+    <div style="max-width: 520px; width: 100%;">
+
+        <div class="card border-0 shadow-lg overflow-hidden" style="border-radius: 18px;">
+            <!-- Header rojo -->
+            <div style="background: linear-gradient(135deg, #DC2626 0%, #7F1D1D 100%); padding: 2rem 2rem 1.5rem; position: relative; overflow: hidden;">
+                <div style="position:absolute; top:-30px; right:-30px; width:120px; height:120px; background:rgba(255,255,255,0.06); border-radius:50%;"></div>
+                <div style="position:absolute; bottom:-40px; right:60px; width:80px; height:80px; background:rgba(255,255,255,0.04); border-radius:50%;"></div>
+                <div class="d-flex align-items-center gap-3">
+                    <div style="width:52px; height:52px; background:rgba(255,255,255,0.15); border-radius:14px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <i class="bi bi-shield-exclamation text-white" style="font-size:1.6rem;"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-white fw-bold mb-0" style="font-size:1.15rem;">Acceso Temporalmente Restringido</h4>
+                        <small style="color:rgba(255,255,255,0.75); font-size:0.8rem;">Por medida correctiva del sistema SST</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <div class="card-body p-4">
+                <!-- Aviso principal -->
+                <div style="background:#FEF2F2; border:1.5px solid #FECACA; border-left:4px solid #DC2626; border-radius:12px; padding:1rem 1.25rem; margin-bottom:1.25rem;">
+                    <p class="fw-bold mb-1" style="color:#991B1B; font-size:0.92rem;">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Tu {% if origen == 'emergencia' %}emergencia{% else %}incidente{% endif %} anterior fue marcada como <strong>falsa alarma</strong>
+                    </p>
+                    <p class="mb-0" style="color:#B91C1C; font-size:0.85rem; line-height:1.5;">
+                        Como medida correctiva, no puedes reportar emergencias ni incidentes durante <strong>24 horas</strong> desde que fue marcada.
+                    </p>
+                </div>
+
+                <!-- Tiempo restante -->
+                <div style="background:#F9FAFB; border:1.5px solid #E5E7EB; border-radius:12px; padding:1rem 1.25rem; margin-bottom:1.25rem; text-align:center;">
+                    <p class="text-muted mb-1" style="font-size:0.78rem; text-transform:uppercase; letter-spacing:0.05em; font-weight:600;">Restricción activa hasta</p>
+                    <p class="fw-bold mb-0" style="font-size:1.2rem; color:#1F2937;">
+                        {{ hasta|date:"d/m/Y" }} a las {{ hasta|time:"h:i A" }}
+                    </p>
+                </div>
+
+                <!-- Qué hacer -->
+                <div style="background:#FFFBEB; border:1.5px solid #FDE68A; border-radius:12px; padding:1rem 1.25rem; margin-bottom:1.5rem;">
+                    <p class="fw-bold mb-2" style="font-size:0.85rem; color:#92400E;">
+                        <i class="bi bi-info-circle-fill me-1"></i> Si tienes una emergencia real:
+                    </p>
+                    <ul class="mb-0" style="font-size:0.83rem; color:#78350F; padding-left:1.25rem; line-height:1.7;">
+                        <li>Llama directamente al número de emergencias: <strong>123</strong></li>
+                        <li>Contacta a vigilancia del SENA: <strong>Ext. 100</strong></li>
+                        <li>Dirígete al puesto de vigilancia más cercano</li>
+                    </ul>
+                </div>
+
+                <a href="{% url 'listar_incidentes' %}" class="btn btn-outline-secondary w-100" style="border-radius:10px;">
+                    <i class="bi bi-arrow-left me-2"></i>Volver al listado de incidentes
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

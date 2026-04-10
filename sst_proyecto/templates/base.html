@@ -538,12 +538,6 @@
                             <i class="bi bi-people me-2"></i>Mis Aprendices
                         </a>
                     </li>
-                    <li class="nav-item mb-2 d-none" id="liEvacuacion">
-                        <a class="nav-link" href="{% url 'evacuacion_instructor' %}">
-                            <i class="bi bi-person-check me-2 text-danger"></i>Lista Evacuación
-                            <span class="badge bg-danger ms-1" style="font-size:0.6rem; animation:pulse 1.5s infinite;">ACTIVA</span>
-                        </a>
-                    </li>
                     <li class="nav-item mb-2">
                         <a class="nav-link" href="/mapas/">
                             <i class="bi bi-map me-2"></i>Mapa del Centro
@@ -671,6 +665,17 @@
             </ul>
         </div>
 
+        {% if user.is_authenticated and user.rol != 'VISITANTE' %}
+        <div id="btnConfirmarEvacuacion" style="display:none;" class="sidebar-footer">
+            <button id="btnConfirmarPresencia"
+                    onclick="confirmarMiPresencia()"
+                    style="width:100%; background:linear-gradient(135deg,#16a34a,#166534); color:white; border:none; border-radius:10px; padding:0.75rem 1rem; font-size:0.88rem; font-weight:700; box-shadow:0 2px 10px rgba(22,163,74,0.35); display:flex; align-items:center; justify-content:center; gap:0.5rem; cursor:pointer; transition:all 0.2s;">
+                <i class="bi bi-geo-alt-fill" style="font-size:1rem; flex-shrink:0;"></i>
+                <span id="textoConfirmarPresencia">Estoy en el punto de encuentro</span>
+            </button>
+        </div>
+        {% endif %}
+
     </nav>
 
     <!-- Contenido Principal -->
@@ -758,18 +763,47 @@
         <span class="emergencia-text ms-2">EMERGENCIA</span>
     </button>
 
-    <!-- Botón flotante: Confirmar presencia en punto de encuentro (solo durante emergencia masiva) -->
-    {% if user.is_authenticated and user.rol != 'VISITANTE' %}
-    <div id="btnConfirmarEvacuacion" style="display:none; position:fixed; bottom:90px; right:24px; z-index:1055;">
-        <button class="btn text-white fw-bold shadow-lg d-flex align-items-center gap-2 px-4 py-2"
-                id="btnConfirmarPresencia"
-                style="background:linear-gradient(135deg,#16a34a,#166534); border-radius:50px; border:none; font-size:0.9rem;"
-                onclick="confirmarMiPresencia()">
-            <i class="bi bi-geo-alt-fill fs-5"></i>
-            <span id="textoConfirmarPresencia">Estoy en el punto de encuentro</span>
-        </button>
+
+    <!-- Modal: Usuario bloqueado por falsa alarma -->
+    <div class="modal fade" id="modalBloqueado" tabindex="-1" aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-dialog-centered" style="max-width:480px;">
+            <div class="modal-content border-0 shadow-lg" style="border-radius:18px; overflow:hidden;">
+                <div style="background:linear-gradient(135deg,#DC2626 0%,#7F1D1D 100%); padding:1.5rem 1.75rem 1.25rem; position:relative; overflow:hidden;">
+                    <div style="position:absolute;top:-30px;right:-30px;width:110px;height:110px;background:rgba(255,255,255,0.06);border-radius:50%;"></div>
+                    <div class="d-flex align-items-center gap-3">
+                        <div style="width:46px;height:46px;background:rgba(255,255,255,0.15);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="bi bi-shield-exclamation text-white" style="font-size:1.4rem;"></i>
+                        </div>
+                        <div>
+                            <h5 class="text-white fw-bold mb-0" style="font-size:1rem;">Acceso Restringido</h5>
+                            <small style="color:rgba(255,255,255,0.75);font-size:0.78rem;">Por medida correctiva — falsa alarma</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white position-absolute" data-bs-dismiss="modal" style="top:1rem;right:1rem;"></button>
+                </div>
+                <div class="p-4">
+                    <div style="background:#FEF2F2;border:1.5px solid #FECACA;border-left:4px solid #DC2626;border-radius:10px;padding:0.875rem 1rem;margin-bottom:1rem;">
+                        <p class="fw-bold mb-1" style="color:#991B1B;font-size:0.88rem;">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                            Tu <span id="bloqueadoOrigen">reporte</span> anterior fue marcada como <strong>falsa alarma</strong>
+                        </p>
+                        <p class="mb-0" style="color:#B91C1C;font-size:0.83rem;line-height:1.5;">
+                            No puedes reportar emergencias ni incidentes durante <strong>24 horas</strong>.
+                        </p>
+                    </div>
+                    <div style="background:#F9FAFB;border:1.5px solid #E5E7EB;border-radius:10px;padding:0.875rem 1rem;margin-bottom:1rem;text-align:center;">
+                        <p class="text-muted mb-1" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;">Restricción activa hasta</p>
+                        <p class="fw-bold mb-0" style="font-size:1.1rem;color:#1F2937;" id="bloqueadoHasta">—</p>
+                    </div>
+                    <div style="background:#FFFBEB;border:1.5px solid #FDE68A;border-radius:10px;padding:0.875rem 1rem;margin-bottom:1.25rem;">
+                        <p class="fw-bold mb-1" style="font-size:0.82rem;color:#92400E;"><i class="bi bi-telephone-fill me-1"></i>Si es una emergencia real:</p>
+                        <p class="mb-0" style="font-size:0.82rem;color:#78350F;">Emergencias: <strong>123</strong> &nbsp;·&nbsp; Vigilancia SENA: <strong>Ext. 100</strong></p>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary w-100" data-bs-dismiss="modal" style="border-radius:10px;font-size:0.88rem;">Cerrar</button>
+                </div>
+            </div>
+        </div>
     </div>
-    {% endif %}
 
     <!-- Modal de Seleccion de Tipo de Emergencia -->
     <div class="modal fade" id="modalEmergencia" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="modalEmergenciaLabel" aria-modal="true" role="dialog">
@@ -922,6 +956,10 @@
     </div>
 
     <style>
+    @keyframes slideInRight {
+        from { opacity: 0; transform: translateX(40px); }
+        to   { opacity: 1; transform: translateX(0); }
+    }
     @keyframes emg-pulse {
         0%   { transform: scale(1);   opacity: 0.7; }
         70%  { transform: scale(2.2); opacity: 0; }
@@ -1084,8 +1122,31 @@
             document.getElementById('emergenciaError').classList.add('d-none');
         }
 
-        // Abrir modal al hacer clic en boton de emergencia
-        document.getElementById('botonEmergencia')?.addEventListener('click', function() {
+        // Verificar restricción y abrir modal correcto
+        async function verificarYAbrirEmergencia() {
+            try {
+                const r = await fetch('/api/emergencias/emergencias/mis-restricciones/', { credentials: 'same-origin' });
+                if (r.ok) {
+                    const d = await r.json();
+                    if (d.penalizado) {
+                        const origen = d.tipo_falsa === 'emergencia' ? 'emergencia' : 'incidente';
+                        document.getElementById('bloqueadoOrigen').textContent = origen;
+                        if (d.hasta) {
+                            const dt = new Date(d.hasta);
+                            document.getElementById('bloqueadoHasta').textContent =
+                                dt.toLocaleDateString('es-CO', { day:'2-digit', month:'long', year:'numeric' }) +
+                                ' a las ' + dt.toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
+                        }
+                        new bootstrap.Modal(document.getElementById('modalBloqueado')).show();
+                        return;
+                    }
+                }
+            } catch(e) { /* continuar normalmente si falla la consulta */ }
+            // Sin restricción — abrir modal de emergencia normalmente
+            abrirModalEmergenciaNormal();
+        }
+
+        function abrirModalEmergenciaNormal() {
             resetModalEmergencia();
 
             // Poblar tipos de emergencia
@@ -1130,7 +1191,9 @@
             }
 
             modalEmergencia.show();
-        });
+        }
+
+        document.getElementById('botonEmergencia')?.addEventListener('click', verificarYAbrirEmergencia);
 
         // Seleccionar tipo de emergencia
         window.seleccionarTipoEmergencia = function(el) {
@@ -1284,39 +1347,6 @@
         }, 5000);
 
         // ============================================================
-        // INSTRUCTOR: control dinámico de "Lista Evacuación" en sidebar
-        // ============================================================
-        {% if user.rol == 'INSTRUCTOR' %}
-        (function() {
-            const liEvacuacion = document.getElementById('liEvacuacion');
-            const enPaginaEvacuacion = window.location.pathname.startsWith('/instructor/evacuacion');
-
-            async function checkEmergenciaMasiva() {
-                try {
-                    const resp = await fetch('/api/emergencias/emergencias/evacuacion-stats/', {
-                        credentials: 'same-origin'
-                    });
-                    if (!resp.ok) return;
-                    const d = await resp.json();
-
-                    if (d.activa) {
-                        liEvacuacion.classList.remove('d-none');
-                    } else {
-                        liEvacuacion.classList.add('d-none');
-                        // Si el instructor está en la página de evacuación, redirigir al inicio
-                        if (enPaginaEvacuacion) {
-                            window.location.href = '/';
-                        }
-                    }
-                } catch (e) { /* silencioso */ }
-            }
-
-            checkEmergenciaMasiva();
-            setInterval(checkEmergenciaMasiva, 10000);
-        })();
-        {% endif %}
-
-        // ============================================================
         // SISTEMA DE NOTIFICACIONES - Polling cada 30 segundos
         // ============================================================
         const NOTIF_ICONS = {
@@ -1329,7 +1359,10 @@
             'INFO': { icon: 'bi-info-circle-fill', bg: 'info', border: 'info' }
         };
 
-        async function checkNotifications() {
+        let _notifIdsVistos = new Set();
+        let _primeraVerificacion = true;
+
+        async function checkNotifications(mostrarToasts = true) {
             try {
                 // Consultar notificaciones generales del usuario
                 const response = await fetch('/api/auth/notificaciones/no_leidas/', {
@@ -1340,6 +1373,17 @@
                 const data = await response.json();
                 const notifications = data.notificaciones || data.results || data;
                 const count = data.count || notifications.length;
+
+                // Mostrar toast solo si fue llamado por polling (no por WS, que ya muestra su propio toast)
+                if (!_primeraVerificacion && mostrarToasts) {
+                    notifications.forEach(n => {
+                        if (!_notifIdsVistos.has(n.id)) {
+                            mostrarToastNotificacion({ tipo: n.tipo, titulo: n.titulo, mensaje: n.mensaje });
+                        }
+                    });
+                }
+                _notifIdsVistos = new Set(notifications.map(n => n.id));
+                _primeraVerificacion = false;
 
                 const badge = document.getElementById('notificationCount');
                 const headerCount = document.getElementById('notifHeaderCount');
@@ -1414,15 +1458,34 @@
         }
 
         async function marcarTodasLeidas() {
+            // Limpiar visualmente de inmediato
+            const badge = document.getElementById('notificationCount');
+            const headerCount = document.getElementById('notifHeaderCount');
+            const list = document.getElementById('notificationList');
+            if (badge) badge.classList.add('d-none');
+            if (headerCount) headerCount.textContent = '0';
+            if (list) list.innerHTML = `
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-bell-slash fs-3 d-block mb-2"></i>
+                    <span class="small">Sin notificaciones nuevas</span>
+                </div>`;
+            _notifIdsVistos = new Set();
+
             try {
-                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
-                await fetch('/api/auth/notificaciones/marcar_todas_leidas/', {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value
+                    || document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+                const resp = await fetch('/api/auth/notificaciones/marcar_todas_leidas/', {
                     method: 'POST',
                     headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/json' },
                     credentials: 'same-origin'
                 });
-                checkNotifications();
-            } catch (e) {}
+                if (!resp.ok) {
+                    // Si falló, recargar el estado real desde el servidor
+                    await checkNotifications();
+                }
+            } catch (e) {
+                await checkNotifications();
+            }
         }
 
         // ── WebSocket de notificaciones ─────────────────────────────
@@ -1430,6 +1493,24 @@
         // Si el WS no está disponible (sin Redis, HTTP) cae en polling.
         let wsReconnectDelay = 2000;
         let wsReconnectTimer = null;
+
+        // Deduplicación: evita mostrar la misma notificación dos veces
+        // (ocurre si hay dos tabs abiertos o dos conexiones WS simultáneas)
+        const _notifRecientes = new Map(); // clave→timestamp
+        function _esNotifDuplicada(data) {
+            const clave = `${data.tipo}|${data.titulo}|${data.mensaje}`.substring(0, 120);
+            const ahora = Date.now();
+            if (_notifRecientes.has(clave) && ahora - _notifRecientes.get(clave) < 5000) {
+                return true; // ya se mostró hace menos de 5 segundos
+            }
+            _notifRecientes.set(clave, ahora);
+            // Limpiar entradas viejas para no acumular memoria
+            if (_notifRecientes.size > 20) {
+                const viejas = [..._notifRecientes.entries()].filter(([, t]) => ahora - t > 10000);
+                viejas.forEach(([k]) => _notifRecientes.delete(k));
+            }
+            return false;
+        }
 
         function connectNotifWS() {
             if (!window.location.protocol.startsWith('http')) return;
@@ -1443,51 +1524,63 @@
             };
 
             ws.onmessage = (event) => {
-                // Recibimos una notificación nueva → refrescar el dropdown
-                checkNotifications();
-
-                // Mostrar toast flotante para EMERGENCIA o prioridad ALTA
+                // Refrescar dropdown sin mostrar toast (el toast lo muestra el WS directamente)
+                checkNotifications(false);
+                // Mostrar un único toast con deduplicación
                 try {
                     const data = JSON.parse(event.data);
-                    if (data.prioridad === 'ALTA' || data.tipo === 'EMERGENCIA') {
-                        mostrarToastEmergencia(data);
+                    if (!_esNotifDuplicada(data)) {
+                        mostrarToastNotificacion(data);
+                    }
+                    // Si la notificación es de emergencia, actualizar botón de evacuación de inmediato
+                    if (data.tipo === 'EMERGENCIA' && typeof checkEvacuacion === 'function') {
+                        checkEvacuacion();
                     }
                 } catch (_) {}
             };
 
             ws.onclose = () => {
-                // Reconectar con backoff exponencial (máx 30 s)
-                wsReconnectDelay = Math.min(wsReconnectDelay * 2, 30000);
+                // Reconectar con backoff exponencial (máx 15 s)
+                wsReconnectDelay = Math.min(wsReconnectDelay * 2, 15000);
                 setTimeout(connectNotifWS, wsReconnectDelay);
-                // Mientras no hay WS, usar polling cada 30 s como fallback
+                // Mientras no hay WS, usar polling cada 5 s como fallback
                 if (!wsReconnectTimer) {
-                    wsReconnectTimer = setInterval(checkNotifications, 30000);
+                    wsReconnectTimer = setInterval(checkNotifications, 5000);
                 }
             };
 
             ws.onerror = () => ws.close();
         }
 
-        function mostrarToastEmergencia(data) {
-            const container = document.getElementById('toastContainer') || (() => {
-                const d = document.createElement('div');
-                d.id = 'toastContainer';
-                d.style.cssText = 'position:fixed;top:70px;right:16px;z-index:9999;min-width:300px;';
-                document.body.appendChild(d);
-                return d;
-            })();
+        function mostrarToastNotificacion(data) {
+            let container = document.getElementById('toastContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toastContainer';
+                container.style.cssText = 'position:fixed;top:72px;right:16px;z-index:9999;width:320px;display:flex;flex-direction:column;gap:8px;';
+                document.body.appendChild(container);
+            }
 
-            const colors = { 'EMERGENCIA': 'danger', 'INCIDENTE': 'warning', 'SISTEMA': 'info' };
-            const color = colors[data.tipo] || 'secondary';
+            const cfg = NOTIF_ICONS[data.tipo] || NOTIF_ICONS['INFO'];
+            const colorMap = { danger: '#DC2626', warning: '#D97706', info: '#0891b2', success: '#16a34a', secondary: '#6B7280' };
+            const accent = colorMap[cfg.bg] || '#6B7280';
 
             const toast = document.createElement('div');
-            toast.className = `alert alert-${color} alert-dismissible shadow mb-2 py-2`;
+            toast.style.cssText = `background:white;border:1px solid #E5E7EB;border-left:4px solid ${accent};border-radius:12px;padding:0.75rem 1rem;box-shadow:0 4px 16px rgba(0,0,0,0.12);animation:slideInRight 0.25s ease;`;
             toast.innerHTML = `
-                <strong><i class="bi bi-bell-fill me-1"></i>${data.titulo}</strong><br>
-                <small>${(data.mensaje || '').substring(0, 100)}</small>
-                <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>`;
+                <div style="display:flex;align-items:flex-start;gap:0.625rem;">
+                    <div style="width:32px;height:32px;background:${accent}18;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <i class="bi ${cfg.icon}" style="color:${accent};font-size:0.95rem;"></i>
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-weight:700;font-size:0.83rem;color:#1F2937;margin-bottom:0.15rem;">${data.titulo || 'Nueva notificación'}</div>
+                        <div style="font-size:0.78rem;color:#6B7280;line-height:1.4;">${(data.mensaje || '').substring(0, 90)}${(data.mensaje||'').length > 90 ? '…' : ''}</div>
+                    </div>
+                    <button onclick="this.closest('[data-toast]').remove()" style="background:none;border:none;color:#9CA3AF;cursor:pointer;padding:0;font-size:1rem;line-height:1;flex-shrink:0;">×</button>
+                </div>`;
+            toast.setAttribute('data-toast', '1');
             container.prepend(toast);
-            setTimeout(() => toast.remove(), 10000);
+            setTimeout(() => { if (toast.parentElement) toast.remove(); }, 8000);
         }
 
         // Iniciar: carga inicial + WebSocket (con polling como fallback)
@@ -1571,23 +1664,17 @@
                 const d = await r.json();
                 const btn = document.getElementById('btnConfirmarEvacuacion');
                 if (!btn) return;
-                if (d.activa) {
+                // Mostrar botón solo si: hay evacuación activa + usuario está físicamente dentro + no confirmó aún
+                if (d.activa && d.usuario_dentro && !d.yo_confirmado) {
                     _evacuacionId = d.emergencia_id;
-                    _yoConfirmado = d.yo_confirmado;
+                    _yoConfirmado = false;
                     btn.style.display = 'block';
-                    const texto = document.getElementById('textoConfirmarPresencia');
                     const boton = document.getElementById('btnConfirmarPresencia');
-                    if (_yoConfirmado) {
-                        texto.textContent = 'Presencia confirmada ✓';
-                        boton.style.background = 'linear-gradient(135deg,#1d4ed8,#1e40af)';
-                        boton.disabled = true;
-                    } else {
-                        texto.textContent = 'Estoy en el punto de encuentro';
-                        boton.style.background = 'linear-gradient(135deg,#16a34a,#166534)';
-                        boton.disabled = false;
-                    }
+                    boton.style.background = 'linear-gradient(135deg,#16a34a,#166534)';
+                    boton.disabled = false;
+                    boton.innerHTML = '<i class="bi bi-geo-alt-fill" style="font-size:1rem; flex-shrink:0;"></i><span id="textoConfirmarPresencia">Estoy en el punto de encuentro</span>';
                 } else {
-                    _evacuacionId = null;
+                    _evacuacionId = d.activa ? d.emergencia_id : null;
                     btn.style.display = 'none';
                 }
             } catch(e) {}
@@ -1607,9 +1694,9 @@
                 });
                 if (r.ok) {
                     _yoConfirmado = true;
-                    document.getElementById('textoConfirmarPresencia').textContent = 'Presencia confirmada ✓';
-                    boton.style.background = 'linear-gradient(135deg,#1d4ed8,#1e40af)';
-                    boton.innerHTML = '<i class="bi bi-check-circle-fill fs-5"></i><span>Presencia confirmada ✓</span>';
+                    setTimeout(() => {
+                        document.getElementById('btnConfirmarEvacuacion').style.display = 'none';
+                    }, 800);
                 } else {
                     boton.disabled = false;
                     boton.innerHTML = '<i class="bi bi-geo-alt-fill fs-5"></i><span>Estoy en el punto de encuentro</span>';
@@ -1620,9 +1707,12 @@
             }
         };
 
-        // Revisar estado de evacuación al cargar y cada 15 segundos
+        // Exponer globalmente para que el WebSocket pueda llamarla al instante
+        window.checkEvacuacion = checkEvacuacion;
+
+        // Revisar estado de evacuación al cargar y cada 5 segundos
         checkEvacuacion();
-        setInterval(checkEvacuacion, 15000);
+        setInterval(checkEvacuacion, 5000);
     })();
     </script>
     {% endif %}

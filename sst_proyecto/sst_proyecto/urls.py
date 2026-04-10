@@ -413,6 +413,10 @@ def mi_perfil_view(request):
         usuario.telefono_emergencia = request.POST.get("telefono_emergencia", usuario.telefono_emergencia).strip()
         usuario.contacto_emergencia = request.POST.get("contacto_emergencia", usuario.contacto_emergencia).strip()
 
+        # Preferencias de notificaciones externas (checkboxes)
+        usuario.recibir_notif_email = "recibir_notif_email" in request.POST
+        usuario.recibir_notif_whatsapp = "recibir_notif_whatsapp" in request.POST
+
         # Programa y ficha — editables para instructores
         if usuario.rol == "INSTRUCTOR":
             if "programa_formacion" in request.POST:

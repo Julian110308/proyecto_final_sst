@@ -36,6 +36,8 @@ class EmergenciaSerializer(serializers.ModelSerializer):
 class EmergenciaCreateSerializer(serializers.ModelSerializer):
     # Serializer para crear emergencias (desde app móvil y botón de pánico)
     foto = serializers.ImageField(required=False, allow_null=True)
+    latitud = serializers.FloatField(required=False, allow_null=True)
+    longitud = serializers.FloatField(required=False, allow_null=True)
     personas_afectadas = serializers.IntegerField(required=False, default=0)
     requiere_evacuacion = serializers.BooleanField(required=False, default=False)
 

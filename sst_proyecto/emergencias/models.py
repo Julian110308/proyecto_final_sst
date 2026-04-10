@@ -67,9 +67,14 @@ class Emergencia(models.Model):
 
     # Ubicación (usando campos FloatField en lugar de PointField)
     latitud = models.FloatField(
-        validators=[MinValueValidator(-90), MaxValueValidator(90)], help_text="Latitud debe estar entre -90 y 90 grados"
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(-90), MaxValueValidator(90)],
+        help_text="Latitud debe estar entre -90 y 90 grados",
     )
     longitud = models.FloatField(
+        null=True,
+        blank=True,
         validators=[MinValueValidator(-180), MaxValueValidator(180)],
         help_text="Longitud debe estar entre -180 y 180 grados",
     )

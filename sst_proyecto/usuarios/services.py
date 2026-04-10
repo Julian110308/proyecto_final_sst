@@ -8,6 +8,9 @@ cuando ocurren eventos importantes en el sistema.
 import json
 import logging
 from django.conf import settings
+from django.core.mail import EmailMessage
+from django.template.loader import render_to_string
+from django.utils import timezone
 from .models import Notificacion, Usuario, PushSubscripcion
 
 logger = logging.getLogger(__name__)
@@ -189,6 +192,11 @@ class NotificacionService:
             url="/emergencias/",
         )
 
+        # Email y WhatsApp
+        lista_usuarios = list(usuarios)
+        EmailNotificationService.notificar_emergencia(emergencia, lista_usuarios)
+        WhatsAppNotificationService.notificar_emergencia(emergencia, lista_usuarios)
+
         return len(notificaciones)
 
     @staticmethod
@@ -238,6 +246,11 @@ class NotificacionService:
             cuerpo=mensaje[:100],
             url=url,
         )
+
+        # Email y WhatsApp (alerta masiva → todos los roles con notif activa)
+        lista_todos = list(usuarios)
+        EmailNotificationService.notificar_emergencia(emergencia, lista_todos)
+        WhatsAppNotificationService.notificar_emergencia(emergencia, lista_todos)
 
         return len(notificaciones)
 
@@ -539,6 +552,12 @@ class NotificacionService:
 
         if notificaciones:
             Notificacion.objects.bulk_create(notificaciones)
+
+        # Email y WhatsApp solo para incidentes graves
+        if gravedad in ["ALTA", "CRITICA"]:
+            lista_usuarios = list(usuarios)
+            EmailNotificationService.notificar_incidente(incidente, lista_usuarios)
+            WhatsAppNotificationService.notificar_incidente(incidente, lista_usuarios)
 
         return len(notificaciones)
 
@@ -902,3 +921,193 @@ def verificar_visitantes():
 def verificar_equipos():
     """Atajo para verificar equipos próximos a vencer"""
     return NotificacionService.notificar_equipos_proximos_vencer()
+
+
+# ============================================================
+# SERVICIO DE EMAIL
+# ============================================================
+
+
+class EmailNotificationService:
+    """Envía notificaciones por correo electrónico usando Django email."""
+
+    SITE_URL = getattr(settings, "SITE_URL", "http://localhost:8000")
+
+    @staticmethod
+    def _enviar_sync(usuario, asunto, template, contexto):
+        """Lógica real de envío (ejecutada en hilo separado)."""
+        try:
+            ctx = {**contexto, "site_url": EmailNotificationService.SITE_URL}
+            html = render_to_string(template, ctx)
+            msg = EmailMessage(
+                subject=asunto,
+                body=html,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[usuario.email],
+                reply_to=[settings.DEFAULT_FROM_EMAIL],
+            )
+            msg.content_subtype = "html"
+            # Headers que mejoran la entregabilidad en Outlook/Hotmail
+            msg.extra_headers = {
+                "X-Priority": "1",
+                "X-Mailer": "SST-CentroMinero/1.0",
+                "Precedence": "bulk",
+                "Auto-Submitted": "auto-generated",
+            }
+            msg.send(fail_silently=False)
+        except Exception as e:
+            logger.warning("Email fallido para %s (%s): %s", usuario.username, usuario.email, e)
+
+    @staticmethod
+    def _enviar(usuario, asunto, template, contexto):
+        """Envía un email HTML en un hilo de fondo para no bloquear el request."""
+        if not usuario.email:
+            return
+        if not getattr(usuario, "recibir_notif_email", True):
+            return
+        import threading
+
+        t = threading.Thread(
+            target=EmailNotificationService._enviar_sync,
+            args=(usuario, asunto, template, contexto),
+            daemon=True,
+        )
+        t.start()
+
+    @staticmethod
+    def notificar_emergencia(emergencia, destinatarios):
+        """Envía alerta de emergencia por email a la lista de usuarios."""
+        tipo_nombre = emergencia.tipo.nombre if hasattr(emergencia.tipo, "nombre") else str(emergencia.tipo)
+        asunto = f"[EMERGENCIA] {tipo_nombre} – Centro Minero SENA"
+        contexto = {
+            "titulo": f"EMERGENCIA: {tipo_nombre}",
+            "tipo_emergencia": tipo_nombre,
+            "descripcion": emergencia.descripcion or "Sin descripción",
+            "ubicacion": getattr(emergencia, "descripcion_ubicacion", None) or "No especificada",
+            "reportado_por": emergencia.reportada_por.get_full_name() if emergencia.reportada_por else "Anónimo",
+            "fecha_hora": timezone.localtime(emergencia.fecha_hora).strftime("%d/%m/%Y %I:%M %p")
+            if hasattr(emergencia, "fecha_hora")
+            else "—",
+            "estado": getattr(emergencia, "estado", "ACTIVA"),
+        }
+        for usuario in destinatarios:
+            EmailNotificationService._enviar(usuario, asunto, "emails/emergencia_alerta.html", contexto)
+
+    @staticmethod
+    def notificar_incidente(incidente, destinatarios):
+        """Envía alerta de incidente crítico por email."""
+        gravedad = getattr(incidente, "gravedad", "ALTA")
+        titulo_inc = getattr(incidente, "titulo", "Incidente reportado")
+        asunto = f"[INCIDENTE {gravedad}] {titulo_inc} – Centro Minero SENA"
+        descripcion_texto = str(incidente.descripcion) if incidente.descripcion else ""
+        area = ""
+        if hasattr(incidente, "get_area_incidente_display") and incidente.area_incidente:
+            area = incidente.get_area_incidente_display()
+        contexto = {
+            "titulo": f"Incidente {gravedad}: {titulo_inc}",
+            "titulo_incidente": titulo_inc,
+            "tipo": incidente.get_tipo_display() if hasattr(incidente, "get_tipo_display") else str(incidente.tipo),
+            "gravedad": gravedad,
+            "descripcion": descripcion_texto[:200] or "Sin descripción",
+            "ubicacion": incidente.ubicacion or "No especificada",
+            "area": area or "No especificada",
+            "reportado_por": incidente.reportado_por.get_full_name() if incidente.reportado_por else "Anónimo",
+            "fecha_hora": timezone.localtime(incidente.fecha_reporte).strftime("%d/%m/%Y %I:%M %p")
+            if hasattr(incidente, "fecha_reporte")
+            else "—",
+        }
+        for usuario in destinatarios:
+            EmailNotificationService._enviar(usuario, asunto, "emails/incidente_alerta.html", contexto)
+
+
+# ============================================================
+# SERVICIO DE WHATSAPP (Twilio)
+# ============================================================
+
+
+class WhatsAppNotificationService:
+    """Envía mensajes de WhatsApp usando la API de Twilio."""
+
+    @staticmethod
+    def _disponible():
+        return bool(getattr(settings, "TWILIO_ACCOUNT_SID", "") and getattr(settings, "TWILIO_AUTH_TOKEN", ""))
+
+    @staticmethod
+    def _formatear_numero(telefono):
+        """Normaliza el número al formato whatsapp:+57XXXXXXXXXX."""
+        numero = telefono.strip().replace(" ", "").replace("-", "")
+        if numero.startswith("whatsapp:"):
+            return numero
+        if not numero.startswith("+"):
+            # Asume Colombia si no tiene prefijo internacional
+            numero = "+57" + numero.lstrip("0")
+        return f"whatsapp:{numero}"
+
+    @staticmethod
+    def _enviar_sync(usuario, mensaje):
+        """Lógica real de envío WhatsApp (ejecutada en hilo separado)."""
+        try:
+            from twilio.rest import Client
+
+            client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+            client.messages.create(
+                from_=settings.TWILIO_WHATSAPP_FROM,
+                to=WhatsAppNotificationService._formatear_numero(usuario.telefono),
+                body=mensaje,
+            )
+        except Exception as e:
+            logger.warning("WhatsApp fallido para %s: %s", usuario.username, e)
+
+    @staticmethod
+    def enviar_mensaje(usuario, mensaje):
+        """Envía un mensaje de WhatsApp en un hilo de fondo para no bloquear el request."""
+        if not WhatsAppNotificationService._disponible():
+            logger.debug("WhatsApp no configurado (Twilio sin credenciales).")
+            return
+        if not getattr(usuario, "recibir_notif_whatsapp", False):
+            return
+        telefono = getattr(usuario, "telefono", "")
+        if not telefono:
+            return
+        import threading
+
+        t = threading.Thread(
+            target=WhatsAppNotificationService._enviar_sync,
+            args=(usuario, mensaje),
+            daemon=True,
+        )
+        t.start()
+
+    @staticmethod
+    def notificar_emergencia(emergencia, destinatarios):
+        """Envía alerta de emergencia por WhatsApp."""
+        tipo_nombre = emergencia.tipo.nombre if hasattr(emergencia.tipo, "nombre") else str(emergencia.tipo)
+        reportante = emergencia.reportada_por.get_full_name() if emergencia.reportada_por else "Anónimo"
+        ubicacion = getattr(emergencia, "descripcion_ubicacion", None) or "No especificada"
+        mensaje = (
+            f"🚨 *EMERGENCIA – Centro Minero SENA*\n\n"
+            f"*Tipo:* {tipo_nombre}\n"
+            f"*Descripción:* {(emergencia.descripcion or '')[:120]}\n"
+            f"*Ubicación:* {ubicacion}\n"
+            f"*Reportada por:* {reportante}\n\n"
+            f"Ingresa al sistema para más detalles."
+        )
+        for usuario in destinatarios:
+            WhatsAppNotificationService.enviar_mensaje(usuario, mensaje)
+
+    @staticmethod
+    def notificar_incidente(incidente, destinatarios):
+        """Envía alerta de incidente crítico por WhatsApp."""
+        gravedad = getattr(incidente, "gravedad", "ALTA")
+        titulo_inc = getattr(incidente, "titulo", "Incidente reportado")
+        reportante = incidente.reportado_por.get_full_name() if incidente.reportado_por else "Anónimo"
+        mensaje = (
+            f"⚠️ *INCIDENTE {gravedad} – Centro Minero SENA*\n\n"
+            f"*{titulo_inc}*\n"
+            f"*Tipo:* {incidente.get_tipo_display() if hasattr(incidente, 'get_tipo_display') else incidente.tipo}\n"
+            f"*Ubicación:* {incidente.ubicacion or 'No especificada'}\n"
+            f"*Reportado por:* {reportante}\n\n"
+            f"Ingresa al sistema para más detalles."
+        )
+        for usuario in destinatarios:
+            WhatsAppNotificationService.enviar_mensaje(usuario, mensaje)

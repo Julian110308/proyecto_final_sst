@@ -408,6 +408,14 @@ class NotificacionViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"success": False, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=False, methods=["post"])
+    def eliminar_todas_leidas(self, request):
+        """Elimina permanentemente todas las notificaciones leídas del usuario"""
+        from .models import Notificacion
+
+        eliminadas, _ = Notificacion.objects.filter(destinatario=request.user, leida=True).delete()
+        return Response({"success": True, "eliminadas": eliminadas})
+
     @action(detail=False, methods=["get"])
     def no_leidas(self, request):
         """Retorna solo las notificaciones no leidas"""

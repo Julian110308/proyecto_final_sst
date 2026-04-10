@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ titulo }}</title>
+<style>
+  body { margin:0; padding:0; background:#F3F4F6; font-family: 'Segoe UI', Arial, sans-serif; }
+  .wrapper { max-width:600px; margin:32px auto; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,0.08); }
+  .header { padding:28px 32px; color:#fff; }
+  .header.emergencia { background: linear-gradient(135deg,#DC2626 0%,#7F1D1D 100%); }
+  .header.incidente   { background: linear-gradient(135deg,#D97706 0%,#92400E 100%); }
+  .header.sistema     { background: linear-gradient(135deg,#1D4ED8 0%,#1E3A8A 100%); }
+  .header.sena        { background: linear-gradient(135deg,#39A900 0%,#1E6B00 100%); }
+  .header-icon { font-size:2.5rem; margin-bottom:8px; }
+  .header h1 { margin:0; font-size:1.4rem; font-weight:700; }
+  .header p  { margin:6px 0 0; font-size:0.88rem; opacity:0.85; }
+  .body { padding:28px 32px; }
+  .alert-box { border-radius:8px; padding:16px 20px; margin-bottom:20px; border-left:4px solid; }
+  .alert-box.rojo  { background:#FEF2F2; border-color:#DC2626; color:#7F1D1D; }
+  .alert-box.naranja { background:#FFFBEB; border-color:#D97706; color:#78350F; }
+  .alert-box.azul  { background:#EFF6FF; border-color:#1D4ED8; color:#1E3A8A; }
+  .alert-box.verde { background:#F0FDF4; border-color:#16A34A; color:#14532D; }
+  .datos-table { width:100%; border-collapse:collapse; margin:16px 0; font-size:0.9rem; }
+  .datos-table tr td { padding:8px 12px; border-bottom:1px solid #F3F4F6; }
+  .datos-table tr td:first-child { font-weight:600; color:#374151; width:38%; }
+  .datos-table tr td:last-child  { color:#1F2937; }
+  .cta-btn { display:inline-block; margin-top:20px; padding:12px 28px; border-radius:8px; color:#fff !important; font-weight:600; font-size:0.95rem; text-decoration:none; }
+  .cta-btn.rojo   { background:#DC2626; }
+  .cta-btn.naranja{ background:#D97706; }
+  .cta-btn.verde  { background:#39A900; }
+  .footer { background:#F9FAFB; padding:18px 32px; text-align:center; font-size:0.78rem; color:#6B7280; border-top:1px solid #E5E7EB; }
+  .footer a { color:#39A900; text-decoration:none; }
+  .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:0.78rem; font-weight:600; }
+  .badge-rojo   { background:#FEE2E2; color:#DC2626; }
+  .badge-naranja{ background:#FEF3C7; color:#D97706; }
+  .badge-verde  { background:#DCFCE7; color:#16A34A; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  {% block header %}{% endblock %}
+  <div class="body">
+    {% block body %}{% endblock %}
+  </div>
+  <div class="footer">
+    <p>Este es un mensaje automático del <strong>Sistema SST - Centro Minero SENA</strong>.<br>
+    No respondas a este correo. Si tienes dudas, contacta a tu coordinador SST.</p>
+    <p style="margin-top:8px;">
+      <a href="{{ site_url }}">Ir al sistema &rarr;</a>
+    </p>
+  </div>
+</div>
+</body>
+</html>

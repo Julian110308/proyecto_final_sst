@@ -1,0 +1,50 @@
+{% extends 'emails/notificacion_base.html' %}
+
+{% block header %}
+<div class="header emergencia">
+  <div class="header-icon">🚨</div>
+  <h1>{{ titulo }}</h1>
+  <p>Alerta de emergencia – Centro Minero SENA</p>
+</div>
+{% endblock %}
+
+{% block body %}
+<div class="alert-box rojo">
+  <strong>Se ha reportado una emergencia en el Centro Minero.</strong><br>
+  Se requiere atención inmediata del personal de brigada y seguridad.
+</div>
+
+<table class="datos-table">
+  <tr>
+    <td>Tipo de emergencia</td>
+    <td><strong>{{ tipo_emergencia }}</strong></td>
+  </tr>
+  <tr>
+    <td>Descripción</td>
+    <td>{{ descripcion }}</td>
+  </tr>
+  <tr>
+    <td>Ubicación</td>
+    <td>{{ ubicacion }}</td>
+  </tr>
+  <tr>
+    <td>Reportada por</td>
+    <td>{{ reportado_por }}</td>
+  </tr>
+  <tr>
+    <td>Fecha y hora</td>
+    <td>{{ fecha_hora }}</td>
+  </tr>
+  <tr>
+    <td>Estado</td>
+    <td><span class="badge badge-rojo">{{ estado }}</span></td>
+  </tr>
+</table>
+
+<a href="{{ site_url }}/emergencias/" class="cta-btn rojo">Ver emergencia en el sistema &rarr;</a>
+
+<p style="font-size:0.83rem; color:#6B7280; margin-top:20px;">
+  Recibes este correo porque estás registrado como personal de respuesta en el sistema SST.
+  Puedes desactivar estas notificaciones desde tu <a href="{{ site_url }}/usuarios/mi-perfil/" style="color:#39A900;">perfil</a>.
+</p>
+{% endblock %}

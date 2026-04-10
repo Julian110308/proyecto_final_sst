@@ -1,0 +1,57 @@
+{% extends 'emails/notificacion_base.html' %}
+
+{% block header %}
+<div class="header incidente">
+  <div class="header-icon">⚠️</div>
+  <h1>{{ titulo }}</h1>
+  <p>Incidente crítico – Centro Minero SENA</p>
+</div>
+{% endblock %}
+
+{% block body %}
+<div class="alert-box naranja">
+  <strong>Se ha reportado un incidente de gravedad {{ gravedad }}.</strong><br>
+  Revisa los detalles y toma las acciones necesarias.
+</div>
+
+<table class="datos-table">
+  <tr>
+    <td>Título</td>
+    <td><strong>{{ titulo_incidente }}</strong></td>
+  </tr>
+  <tr>
+    <td>Tipo</td>
+    <td>{{ tipo }}</td>
+  </tr>
+  <tr>
+    <td>Gravedad</td>
+    <td><span class="badge badge-naranja">{{ gravedad }}</span></td>
+  </tr>
+  <tr>
+    <td>Descripción</td>
+    <td>{{ descripcion }}</td>
+  </tr>
+  <tr>
+    <td>Ubicación</td>
+    <td>{{ ubicacion }}</td>
+  </tr>
+  <tr>
+    <td>Área</td>
+    <td>{{ area }}</td>
+  </tr>
+  <tr>
+    <td>Reportado por</td>
+    <td>{{ reportado_por }}</td>
+  </tr>
+  <tr>
+    <td>Fecha y hora</td>
+    <td>{{ fecha_hora }}</td>
+  </tr>
+</table>
+
+<a href="{{ site_url }}/reportes/incidentes/" class="cta-btn naranja">Ver incidente en el sistema &rarr;</a>
+
+<p style="font-size:0.83rem; color:#6B7280; margin-top:20px;">
+  Puedes desactivar estas notificaciones desde tu <a href="{{ site_url }}/usuarios/mi-perfil/" style="color:#39A900;">perfil</a>.
+</p>
+{% endblock %}

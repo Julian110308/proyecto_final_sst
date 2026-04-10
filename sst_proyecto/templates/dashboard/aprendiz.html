@@ -210,11 +210,8 @@
 
 {% block extra_js %}
 <script>
-// Estado actual basado en geocerca via GPS
+// Estado de acceso basado en registros QR/Manual
 (function() {
-    var watchId = null;
-    var mejorPosicion = null;
-
     function setEstado(enCentro, sub) {
         const el = document.getElementById('estadoAprendiz');
         const subEl = document.getElementById('estadoSub');
@@ -227,127 +224,24 @@
         if (subEl) subEl.textContent = sub;
     }
 
-    function setDebug(msg) {
-        var el = document.getElementById('estadoDebug');
-        if (el) el.textContent = msg;
-    }
-
-    function getCsrf() {
-        return document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
-    }
-
     function consultarEstadoBD() {
         fetch('/api/acceso/registros/mi-estado/')
             .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
             .then(function(data) {
                 if (data.en_centro) {
                     setEstado(true, 'Ingreso: ' + data.hora_ingreso);
-                    setDebug('Estado desde base de datos');
                 } else {
                     setEstado(false, 'Sin registro de ingreso hoy');
-                    setDebug('Sin registro activo en BD');
                 }
             })
             .catch(function() {
                 setEstado(false, 'No se pudo verificar');
-                setDebug('Error al consultar BD');
             });
     }
 
-    function enviarUbicacion(lat, lng, precision) {
-        setDebug('GPS: ' + lat.toFixed(6) + ', ' + lng.toFixed(6) + ' (±' + Math.round(precision) + 'm)');
-        fetch('/api/acceso/registros/auto-registro/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
-            body: JSON.stringify({ latitud: lat, longitud: lng })
-        })
-        .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
-        .then(function(data) {
-            if (data.estado === 'DENTRO') {
-                var msg = data.accion === 'INGRESO' ? 'Ingreso registrado' : 'Dentro del centro';
-                if (data.mensaje) msg = data.mensaje;
-                setEstado(true, msg);
-                setDebug('GPS ±' + Math.round(precision) + 'm | dist: ' + (data.distancia_metros || 0) + 'm del centro');
-            } else {
-                var dist = data.distancia_metros != null ? data.distancia_metros : '?';
-                setEstado(false, 'A ' + dist + 'm del centro (radio: ' + (data.radio_geocerca || 200) + 'm)');
-                setDebug('GPS ±' + Math.round(precision) + 'm | fuera por ' + (data.distancia_metros - (data.radio_geocerca || 200)) + 'm');
-            }
-        })
-        .catch(function(err) {
-            setDebug('Error auto-registro: ' + err + ' | usando BD');
-            consultarEstadoBD();
-        });
-    }
-
-    function verificarUbicacion() {
-        if (!navigator.geolocation) {
-            setDebug('GPS no disponible en este dispositivo');
-            consultarEstadoBD();
-            return;
-        }
-
-        // Detener watch anterior si existe
-        if (watchId !== null) {
-            navigator.geolocation.clearWatch(watchId);
-            watchId = null;
-        }
-        mejorPosicion = null;
-
-        // Timeout: si en 15 segundos no logramos precision < 100m, usamos la mejor obtenida
-        var timeout = setTimeout(function() {
-            if (watchId !== null) {
-                navigator.geolocation.clearWatch(watchId);
-                watchId = null;
-            }
-            if (mejorPosicion) {
-                setDebug('Timeout GPS — usando mejor lectura obtenida ±' + Math.round(mejorPosicion.accuracy) + 'm');
-                enviarUbicacion(mejorPosicion.latitude, mejorPosicion.longitude, mejorPosicion.accuracy);
-            } else {
-                setDebug('Timeout GPS sin lectura — consultando BD');
-                consultarEstadoBD();
-            }
-        }, 15000);
-
-        watchId = navigator.geolocation.watchPosition(
-            function(pos) {
-                var precision = pos.coords.accuracy;
-                var lat = pos.coords.latitude;
-                var lng = pos.coords.longitude;
-
-                // Guardar la mejor posicion obtenida hasta ahora
-                if (!mejorPosicion || precision < mejorPosicion.accuracy) {
-                    mejorPosicion = { latitude: lat, longitude: lng, accuracy: precision };
-                }
-
-                setDebug('Obteniendo GPS... ±' + Math.round(precision) + 'm');
-
-                // Si la precision es suficientemente buena (< 100m), usarla de inmediato
-                if (precision <= 100) {
-                    clearTimeout(timeout);
-                    navigator.geolocation.clearWatch(watchId);
-                    watchId = null;
-                    enviarUbicacion(lat, lng, precision);
-                }
-            },
-            function(err) {
-                clearTimeout(timeout);
-                if (watchId !== null) {
-                    navigator.geolocation.clearWatch(watchId);
-                    watchId = null;
-                }
-                var errMsg = err.code === 1 ? 'Permiso GPS denegado' : err.code === 2 ? 'GPS no disponible' : 'Timeout GPS';
-                setDebug(errMsg + ' — consultando BD');
-                consultarEstadoBD();
-            },
-            { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
-        );
-    }
-
-    // Verificar al cargar la página
-    verificarUbicacion();
-    // Re-verificar cada 2 minutos
-    setInterval(verificarUbicacion, 120000);
+    // Verificar al cargar y cada 2 minutos
+    consultarEstadoBD();
+    setInterval(consultarEstadoBD, 120000);
 })();
 
 document.addEventListener('DOMContentLoaded', function() {
