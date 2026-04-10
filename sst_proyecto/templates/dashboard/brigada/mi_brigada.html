@@ -231,10 +231,10 @@ document.getElementById('btnConfirmarAlertaNatural').addEventListener('click', a
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 6000);
         } else {
-            alert(data.error || 'Error al activar la alerta.');
+            showAlert(data.error || 'Error al activar la alerta.', 'danger');
         }
     } catch (e) {
-        alert('Error de conexión.');
+        showAlert('Error de conexión.', 'danger');
     } finally {
         this.disabled = false;
         this.innerHTML = '<i class="bi bi-send-fill me-1"></i>Activar y notificar a todos';
