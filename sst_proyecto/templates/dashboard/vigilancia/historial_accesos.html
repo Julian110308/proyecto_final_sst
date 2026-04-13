@@ -84,7 +84,6 @@
                         <th>Ficha / Programa</th>
                         <th>Hora Ingreso</th>
                         <th>Hora Egreso</th>
-                        <th>Permanencia</th>
                         <th>Método</th>
                         <th class="text-center">Estado</th>
                     </tr>
@@ -127,15 +126,6 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% if registro.fecha_hora_egreso %}
-                            {% with mins=registro.fecha_hora_egreso|timeuntil:registro.fecha_hora_ingreso %}
-                            <small>{{ mins }}</small>
-                            {% endwith %}
-                            {% else %}
-                            <small class="text-muted">En curso</small>
-                            {% endif %}
-                        </td>
-                        <td>
                             <span class="badge {% if registro.metodo_ingreso == 'AUTOMATICO' %}bg-success{% else %}bg-secondary{% endif %}">
                                 {{ registro.get_metodo_ingreso_display }}
                             </span>
@@ -150,7 +140,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="8" class="text-center py-5 text-muted">
+                        <td colspan="7" class="text-center py-5 text-muted">
                             <i class="bi bi-inbox fs-3 d-block mb-2"></i>
                             No hay registros para el período seleccionado.
                         </td>

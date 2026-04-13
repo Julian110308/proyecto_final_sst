@@ -23,9 +23,6 @@
         <a href="/acceso/" class="btn btn-sm" style="background-color:#39A900;color:white;border:none;">
             <i class="bi bi-door-open me-1"></i>Control de Acceso
         </a>
-        <button class="btn btn-outline-secondary btn-sm" onclick="alertaSeguridad()">
-            <i class="bi bi-exclamation-triangle me-1"></i>Alerta
-        </button>
     </div>
 </div>
 
@@ -415,12 +412,6 @@ async function registrarSalidaVisitante(id, nombre) {
             }
         } catch(e) { mostrarToast('Error de conexion', 'danger'); }
     }, { title: 'Registrar Salida', type: 'warning', confirmText: 'Sí, registrar' });
-}
-
-function alertaSeguridad() {
-    showConfirm('¿Desea reportar una ALERTA DE SEGURIDAD? Esto lo redirigirá al módulo de emergencias.', () => {
-        window.location.href = '/emergencias/';
-    }, { title: 'Alerta de Seguridad', type: 'danger', confirmText: 'Sí, reportar' });
 }
 
 function refrescarTodo() {

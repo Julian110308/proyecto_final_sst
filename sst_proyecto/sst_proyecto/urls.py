@@ -1431,7 +1431,6 @@ def exportar_accesos_excel(request):
         "Ficha / Programa",
         "Hora Ingreso",
         "Hora Egreso",
-        "Permanencia (min)",
         "Método",
         "Estado",
     ]
@@ -1446,10 +1445,8 @@ def exportar_accesos_excel(request):
     # Datos
     for i, reg in enumerate(registros, 3):
         if reg.fecha_hora_egreso:
-            permanencia = int((reg.fecha_hora_egreso - reg.fecha_hora_ingreso).total_seconds() / 60)
             estado = "Salió"
         else:
-            permanencia = "—"
             estado = "En centro"
 
         row = [
@@ -1459,7 +1456,6 @@ def exportar_accesos_excel(request):
             f"{reg.usuario.ficha or ''} {reg.usuario.programa_formacion or ''}".strip() or "—",
             reg.fecha_hora_ingreso.strftime("%d/%m/%Y %H:%M"),
             reg.fecha_hora_egreso.strftime("%d/%m/%Y %H:%M") if reg.fecha_hora_egreso else "—",
-            permanencia,
             reg.get_metodo_ingreso_display(),
             estado,
         ]
@@ -1471,7 +1467,7 @@ def exportar_accesos_excel(request):
             cell.alignment = Alignment(vertical="center")
 
     # Anchos de columna
-    for col, ancho in zip("ABCDEFGHI", [28, 15, 16, 30, 18, 18, 16, 12, 12]):
+    for col, ancho in zip("ABCDEFGH", [28, 15, 16, 30, 18, 18, 12, 12]):
         ws.column_dimensions[col].width = ancho
 
     response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
