@@ -62,9 +62,6 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <h6 class="mb-0">Centro Minero SENA - Boyacá</h6>
                     <div class="d-flex gap-2 flex-wrap">
-                        <button id="btnMiUbicacion" class="btn btn-sm btn-outline-secondary">
-                            <i class="bi bi-crosshair2"></i> Mi ubicación
-                        </button>
                         <button id="btnLimpiarRuta" class="btn btn-sm btn-outline-secondary d-none" title="Limpiar ruta">
                             <i class="bi bi-x-circle"></i>
                         </button>
@@ -119,7 +116,6 @@
                                 <div style="width:12px;height:12px;border-radius:50%;background:#FF9800;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div><span>Alarma</span>
 <div style="width:12px;height:12px;border-radius:50%;background:#2E7D32;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div><span>Salida Emerg.</span>
                                 <div style="width:12px;height:12px;border-radius:50%;background:#546E7A;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div><span>Camilla</span>
-<div style="width:12px;height:12px;border-radius:50%;background:#FF9800;border:2px solid white;animation:pulse 1.5s infinite;"></div><span>Mi ubicación</span>
                                 <div style="width:12px;height:12px;border-radius:50%;background:#DC2626;border:2px solid white;animation:pulse 1.5s infinite;"></div><span>Emergencia</span>
                             </div>
                         </div>
@@ -892,16 +888,6 @@ function inicializarDatosDinamicos() {
 // ====================================================================
 
 function inicializarControles() {
-    // Botón "Mi ubicación"
-    document.getElementById('btnMiUbicacion').addEventListener('click', function() {
-        if (miMarcador) {
-            mapa.setView(miMarcador.getLatLng(), 18);
-            miMarcador.openPopup();
-        } else {
-            showAlert('Aún no se ha detectado tu ubicación. Por favor espera un momento o verifica los permisos del navegador.', 'warning');
-        }
-    });
-
     // Botón "Centrar en el SENA"
     document.getElementById('btnZoomCentro').addEventListener('click', function() {
         mapa.setView([centroMinero.latitud, centroMinero.longitud], 17);
