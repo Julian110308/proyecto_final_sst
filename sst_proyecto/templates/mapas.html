@@ -68,11 +68,6 @@
                         <button id="btnLimpiarRuta" class="btn btn-sm btn-outline-secondary d-none" title="Limpiar ruta">
                             <i class="bi bi-x-circle"></i>
                         </button>
-                        {% if user.rol in "ADMINISTRATIVO COORDINADOR_SST" %}
-                        <a href="{% url 'editor_mapa' %}" class="btn btn-sm btn-outline-warning" title="Editor del campus">
-                            <i class="bi bi-pencil-square"></i>
-                        </a>
-                        {% endif %}
                         <button id="btnPantallaCompleta" class="btn btn-sm btn-outline-secondary">
                             <i class="bi bi-arrows-fullscreen"></i>
                         </button>
