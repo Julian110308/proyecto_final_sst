@@ -916,6 +916,10 @@
                         ¿No tienes cuenta?
                         <button type="button" class="switch-btn" onclick="switchToRegister()">Regístrate aquí</button>
                     </div>
+                    <div class="switch-text" style="margin-top:8px;">
+                        ¿Eres visitante?
+                        <button type="button" class="switch-btn" onclick="switchToVisitante()">Ingresar aquí</button>
+                    </div>
 
                     <!-- Separador + Botón Instalar App (oculto hasta que el navegador soporte PWA) -->
                     <div id="pwa-install-section" style="display:none;">
@@ -940,6 +944,57 @@
                                 }
                             ">
                             <i class="bi bi-download"></i> Instalar Aplicación
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Panel de Visitante -->
+            <div class="login-panel" id="visitante-panel" style="display:none; z-index:3;">
+                <div class="logo-section">
+                    <div class="sena-logo">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Sena_Colombia_logo.svg/1200px-Sena_Colombia_logo.svg.png"
+                             alt="Logo SENA">
+                    </div>
+                    <h1>Acceso Visitante</h1>
+                    <p class="subtitle">Sistema de Seguridad y Salud en el Trabajo</p>
+                    <p class="system-name">SENA - Centro Minero</p>
+                </div>
+
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert {% if message.tags == 'success' %}success{% endif %}">
+                        <i class="bi bi-{% if message.tags == 'success' %}check-circle{% else %}info-circle{% endif %}-fill"></i>
+                        <div>{{ message }}</div>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="post" action="{% url 'visitante_login' %}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="id_email_visitante">
+                            Correo electrónico <span class="required">*</span>
+                        </label>
+                        <div class="input-wrapper">
+                            <span class="input-icon-left">
+                                <i class="bi bi-envelope"></i>
+                            </span>
+                            <input type="email" name="email" id="id_email_visitante"
+                                   placeholder="tu.correo@ejemplo.com" required autofocus>
+                            <span class="input-icon-right">
+                                <i class="bi bi-check-circle"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-login">
+                        <i class="bi bi-person-check"></i> Ingresar como Visitante
+                    </button>
+
+                    <div class="switch-text" style="margin-top:16px;">
+                        <button type="button" class="switch-btn" onclick="switchToLogin()">
+                            <i class="bi bi-arrow-left me-1"></i>Volver al inicio de sesión
                         </button>
                     </div>
                 </form>
@@ -1060,27 +1115,6 @@
                     <div id="aprendiz-fields" style="display: none;">
                         <div class="two-columns">
                             <div class="form-group">
-                                <label for="reg_ficha">
-                                    N° Ficha <span class="required">*</span>
-                                </label>
-                                <div class="input-wrapper">
-                                    <span class="input-icon-left">
-                                        <i class="bi bi-journal-bookmark"></i>
-                                    </span>
-                                    <input
-                                        type="text"
-                                        name="ficha"
-                                        id="reg_ficha"
-                                        placeholder="Ej: 2543891"
-                                        maxlength="20"
-                                    >
-                                    <span class="input-icon-right">
-                                        <i class="bi bi-check-circle"></i>
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
                                 <label for="reg_programa">
                                     Programa de Formación <span class="required">*</span>
                                 </label>
@@ -1095,6 +1129,23 @@
                                         {% endfor %}
                                     </select>
                                 </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="reg_ficha">
+                                    N° Ficha <span class="required">*</span>
+                                </label>
+                                <div class="input-wrapper">
+                                    <span class="input-icon-left">
+                                        <i class="bi bi-journal-bookmark"></i>
+                                    </span>
+                                    <select name="ficha" id="reg_ficha" disabled>
+                                        <option value="">Primero selecciona el programa</option>
+                                    </select>
+                                </div>
+                                <small id="ficha-hint" class="text-muted" style="font-size:.75rem; display:none;">
+                                    No hay fichas registradas para este programa. Contacta al coordinador.
+                                </small>
                             </div>
                         </div>
                     </div>
@@ -1261,6 +1312,7 @@
     <script>
         // Cambiar a registro
         function switchToRegister() {
+            document.getElementById('visitante-panel').style.display = 'none';
             document.getElementById('container').classList.add('register-mode');
             setTimeout(() => {
                 document.getElementById('reg_username').focus();
@@ -1269,9 +1321,19 @@
 
         // Cambiar a login
         function switchToLogin() {
+            document.getElementById('visitante-panel').style.display = 'none';
             document.getElementById('container').classList.remove('register-mode');
             setTimeout(() => {
                 document.getElementById('id_username').focus();
+            }, 100);
+        }
+
+        // Cambiar a visitante
+        function switchToVisitante() {
+            document.getElementById('container').classList.remove('register-mode');
+            document.getElementById('visitante-panel').style.display = 'flex';
+            setTimeout(() => {
+                document.getElementById('id_email_visitante').focus();
             }, 100);
         }
 
@@ -1296,6 +1358,46 @@
                 button.style.transform = 'translateY(-50%) scale(1)';
             }, 200);
         }
+
+        // Cargar fichas según el programa seleccionado
+        document.getElementById('reg_programa')?.addEventListener('change', async function () {
+            const fichaSelect = document.getElementById('reg_ficha');
+            const hint = document.getElementById('ficha-hint');
+            const programa = this.value;
+
+            fichaSelect.innerHTML = '<option value="">Cargando...</option>';
+            fichaSelect.disabled = true;
+            hint.style.display = 'none';
+
+            if (!programa) {
+                fichaSelect.innerHTML = '<option value="">Primero selecciona el programa</option>';
+                return;
+            }
+
+            try {
+                const resp = await fetch(`/api/fichas/?programa_nombre=${encodeURIComponent(programa)}`);
+                const data = await resp.json();
+
+                fichaSelect.innerHTML = '';
+                if (data.fichas && data.fichas.length > 0) {
+                    fichaSelect.innerHTML = '<option value="">Selecciona tu ficha...</option>';
+                    data.fichas.forEach(f => {
+                        const opt = document.createElement('option');
+                        opt.value = f;
+                        opt.textContent = f;
+                        fichaSelect.appendChild(opt);
+                    });
+                    fichaSelect.disabled = false;
+                } else {
+                    fichaSelect.innerHTML = '<option value="">Sin fichas registradas</option>';
+                    hint.style.display = 'block';
+                    fichaSelect.removeAttribute('required');
+                }
+            } catch (e) {
+                fichaSelect.innerHTML = '<option value="">Error al cargar fichas</option>';
+                fichaSelect.disabled = false;
+            }
+        });
 
         // Detectar rol según el dominio del correo y mostrar/ocultar campos
         function detectRoleFromEmail(email) {

@@ -420,31 +420,28 @@ textarea.form-control {
         </div>
 
         <!-- ══════════════════════════════════════════ -->
-        <!-- SECCIÓN 3 · Persona Afectada             -->
+        <!-- SECCIÓN 3 · Personas Afectadas          -->
         <!-- ══════════════════════════════════════════ -->
+        {{ form.personas_afectadas }}
         <div class="form-section sec-warning">
             <div class="section-header">
                 <div class="section-number">3</div>
                 <div>
-                    <h6>Persona Afectada</h6>
-                    <p class="section-subtitle">Datos de la persona involucrada en el incidente</p>
+                    <h6>Personas Afectadas</h6>
+                    <p class="section-subtitle">Datos de las personas involucradas en el incidente</p>
                 </div>
             </div>
             <div class="section-body">
-                <div class="row g-3">
-                    <div class="col-md-5">
-                        <label class="field-label">{{ form.persona_afectada.label }}</label>
-                        {{ form.persona_afectada }}
-                    </div>
-                    <div class="col-md-4">
-                        <label class="field-label">{{ form.documento_afectado.label }}</label>
-                        {{ form.documento_afectado }}
-                    </div>
-                    <div class="col-md-3">
-                        <label class="field-label">{{ form.rol_afectado.label }}</label>
-                        {{ form.rol_afectado }}
-                    </div>
+                <div id="afectados-container"></div>
+                <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="btn-agregar-afectado">
+                    <i class="bi bi-plus-circle me-1"></i>Agregar persona afectada
+                </button>
+                <div class="form-text mt-2">El documento es opcional.</div>
+                {% if form.personas_afectadas.errors %}
+                <div class="invalid-feedback d-block mt-1">
+                    {% for e in form.personas_afectadas.errors %}{{ e }}{% endfor %}
                 </div>
+                {% endif %}
             </div>
         </div>
 
@@ -455,7 +452,7 @@ textarea.form-control {
             <div class="section-header">
                 <div class="section-number">4</div>
                 <div>
-                    <h6>Descripción y Versión del Accidente</h6>
+                    <h6>Descripción del Incidente</h6>
                     <p class="section-subtitle">Relate detalladamente cómo sucedieron los hechos</p>
                 </div>
             </div>
@@ -465,13 +462,6 @@ textarea.form-control {
                     {{ form.descripcion }}
                     {% if form.descripcion.help_text %}
                     <div class="form-text mt-1">{{ form.descripcion.help_text }}</div>
-                    {% endif %}
-                </div>
-                <div>
-                    <label class="field-label">{{ form.version_accidente.label }}</label>
-                    {{ form.version_accidente }}
-                    {% if form.version_accidente.help_text %}
-                    <div class="form-text mt-1">{{ form.version_accidente.help_text }}</div>
                     {% endif %}
                 </div>
             </div>
@@ -500,6 +490,7 @@ textarea.form-control {
         <!-- ══════════════════════════════════════════ -->
         <!-- SECCIÓN 6 · Testigos                     -->
         <!-- ══════════════════════════════════════════ -->
+        {{ form.testigos }}
         <div class="form-section sec-purple">
             <div class="section-header">
                 <div class="section-number">6</div>
@@ -509,10 +500,17 @@ textarea.form-control {
                 </div>
             </div>
             <div class="section-body">
-                <label class="field-label">{{ form.testigos.label }}</label>
-                {{ form.testigos }}
-                {% if form.testigos.help_text %}
-                <div class="form-text mt-1">{{ form.testigos.help_text }}</div>
+                <div id="testigos-container">
+                    <!-- Las filas de testigos se generan aquí -->
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="btn-agregar-testigo">
+                    <i class="bi bi-plus-circle me-1"></i>Agregar testigo
+                </button>
+                <div class="form-text mt-2">Incluye nombre y documento de cada testigo presente. El documento es opcional.</div>
+                {% if form.testigos.errors %}
+                <div class="invalid-feedback d-block mt-1">
+                    {% for e in form.testigos.errors %}{{ e }}{% endfor %}
+                </div>
                 {% endif %}
             </div>
         </div>
@@ -700,26 +698,129 @@ document.addEventListener('DOMContentLoaded', function() {
         setCoordInfo(lat, lng);
     }
 
-    /* ─── DOCUMENTO AFECTADO ─────────────────────────── */
-    const inputDoc = document.getElementById('id_documento_afectado');
-    if (inputDoc) {
-        // Bloquear letras en tiempo real
-        inputDoc.addEventListener('input', function() {
-            const soloDigitos = this.value.replace(/\D/g, '');
-            if (this.value !== soloDigitos) this.value = soloDigitos;
+    /* ─── PERSONAS AFECTADAS ────────────────────────── */
+    const REGLAS_DOC_PERSONA = {
+        'CC':  { min: 8, max: 10, soloNumeros: true,  hint: 'Cédula de Ciudadanía: 8-10 dígitos numéricos' },
+        'TI':  { min: 8, max: 10, soloNumeros: true,  hint: 'Tarjeta de Identidad: 8-10 dígitos numéricos' },
+        'CE':  { min: 6, max: 12, soloNumeros: false, hint: 'Cédula de Extranjería: 6-12 caracteres alfanuméricos' },
+        'PAS': { min: 5, max: 20, soloNumeros: false, hint: 'Pasaporte: 5-20 caracteres alfanuméricos' },
+    };
+    const ROLES_PERSONA = [
+        { value: 'APRENDIZ',       label: 'Aprendiz' },
+        { value: 'INSTRUCTOR',     label: 'Instructor' },
+        { value: 'ADMINISTRATIVO', label: 'Administrativo' },
+        { value: 'VIGILANCIA',     label: 'Vigilancia' },
+        { value: 'BRIGADA',        label: 'Brigada' },
+        { value: 'VISITANTE',      label: 'Visitante' },
+        { value: 'OTRO',           label: 'Otro' },
+    ];
+
+    const contenedorAfectados    = document.getElementById('afectados-container');
+    const inputAfectadosOculto   = document.getElementById('id_personas_afectadas');
+
+    function crearFilaAfectado(datos) {
+        const tipoOpts = ['CC','TI','CE','PAS'].map(t =>
+            `<option value="${t}"${datos && datos.tipo_doc === t ? ' selected' : ''}>${t}</option>`
+        ).join('');
+        const rolOpts = ROLES_PERSONA.map(r =>
+            `<option value="${r.value}"${datos && datos.rol === r.value ? ' selected' : ''}>${r.label}</option>`
+        ).join('');
+        const nombre = datos ? datos.nombre     : '';
+        const numDoc = datos ? datos.numero_doc : '';
+
+        const div = document.createElement('div');
+        div.className = 'testigo-fila border rounded p-3 mb-2 bg-white';
+        div.innerHTML = `
+            <div class="row g-3 align-items-start">
+                <div class="col-md-4">
+                    <label class="field-label mb-1">Nombre completo <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control afectado-nombre"
+                        placeholder="Nombre completo de la persona" maxlength="200" value="${nombre}" autocomplete="off">
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="field-label mb-1">Tipo doc.</label>
+                    <select class="form-select afectado-tipo-doc">${tipoOpts}</select>
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="field-label mb-1">N° Documento</label>
+                    <input type="text" class="form-control afectado-num-doc"
+                        placeholder="Ej: 1234567890" maxlength="10" value="${numDoc}"
+                        inputmode="numeric" autocomplete="off">
+                    <div class="form-text afectado-doc-hint" style="font-size:0.72rem;min-height:1.2em;"></div>
+                </div>
+                <div class="col-9 col-md-2">
+                    <label class="field-label mb-1">Rol</label>
+                    <select class="form-select afectado-rol">${rolOpts}</select>
+                </div>
+                <div class="col-3 col-md-1 d-flex flex-column justify-content-end">
+                    <label class="field-label mb-1 invisible">X</label>
+                    <button type="button" class="btn btn-outline-danger btn-quitar-afectado" title="Quitar persona">
+                        <i class="bi bi-trash3"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        const selectTipo = div.querySelector('.afectado-tipo-doc');
+        const inputNum   = div.querySelector('.afectado-num-doc');
+        const hint       = div.querySelector('.afectado-doc-hint');
+
+        function actualizarReglas() {
+            const r = REGLAS_DOC_PERSONA[selectTipo.value];
+            inputNum.maxLength  = r.max;
+            inputNum.inputMode  = r.soloNumeros ? 'numeric' : 'text';
+            hint.textContent    = r.hint;
+        }
+        selectTipo.addEventListener('change', function() { actualizarReglas(); inputNum.value = ''; });
+        inputNum.addEventListener('input', function() {
+            const r = REGLAS_DOC_PERSONA[selectTipo.value];
+            let val = r.soloNumeros ? this.value.replace(/\D/g, '') : this.value.replace(/[^A-Za-z0-9]/g, '');
+            if (this.value !== val) this.value = val;
         });
-        inputDoc.addEventListener('keypress', function(e) {
-            if (!/[0-9]/.test(e.key) && !['Backspace','Delete','ArrowLeft','ArrowRight','Tab'].includes(e.key)) {
-                e.preventDefault();
-            }
-        });
-        inputDoc.addEventListener('paste', function(e) {
+        inputNum.addEventListener('paste', function(e) {
             e.preventDefault();
             const texto = (e.clipboardData || window.clipboardData).getData('text');
-            const soloDigitos = texto.replace(/\D/g, '').slice(0, 11);
-            this.value = soloDigitos;
+            const r = REGLAS_DOC_PERSONA[selectTipo.value];
+            let val = r.soloNumeros ? texto.replace(/\D/g, '') : texto.replace(/[^A-Za-z0-9]/g, '');
+            this.value = val.slice(0, r.max);
         });
+        div.querySelector('.btn-quitar-afectado').addEventListener('click', function() {
+            div.remove(); serializarAfectados();
+        });
+        actualizarReglas();
+        return div;
     }
+
+    function serializarAfectados() {
+        const filas = contenedorAfectados.querySelectorAll('.testigo-fila');
+        const lista = Array.from(filas).map(f => ({
+            nombre:     f.querySelector('.afectado-nombre').value.trim(),
+            tipo_doc:   f.querySelector('.afectado-tipo-doc').value,
+            numero_doc: f.querySelector('.afectado-num-doc').value.trim(),
+            rol:        f.querySelector('.afectado-rol').value,
+        }));
+        inputAfectadosOculto.value = lista.length ? JSON.stringify(lista) : '';
+    }
+
+    contenedorAfectados.appendChild(crearFilaAfectado(null));
+
+    document.getElementById('btn-agregar-afectado').addEventListener('click', function() {
+        contenedorAfectados.appendChild(crearFilaAfectado(null));
+    });
+
+    // serializar afectados se llama en el submit consolidado abajo
+
+    (function() {
+        const raw = inputAfectadosOculto.value;
+        if (!raw) return;
+        try {
+            const lista = JSON.parse(raw);
+            if (Array.isArray(lista) && lista.length) {
+                contenedorAfectados.innerHTML = '';
+                lista.forEach(p => contenedorAfectados.appendChild(crearFilaAfectado(p)));
+            }
+        } catch(e) {}
+    })();
 
     /* ─── SUBIDA DE FOTO ──────────────────────────────── */
     const inputFoto = document.getElementById('id_foto');
@@ -753,6 +854,167 @@ document.addEventListener('DOMContentLoaded', function() {
         zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
         zone.addEventListener('drop', () => zone.classList.remove('drag-over'));
     }
+
+    /* ─── TESTIGOS ──────────────────────────────────── */
+    const REGLAS_DOC_TESTIGO = {
+        'CC':  { min: 8, max: 10, soloNumeros: true,  hint: 'Cédula de Ciudadanía: 8-10 dígitos numéricos' },
+        'TI':  { min: 8, max: 10, soloNumeros: true,  hint: 'Tarjeta de Identidad: 8-10 dígitos numéricos' },
+        'CE':  { min: 6, max: 12, soloNumeros: false, hint: 'Cédula de Extranjería: 6-12 caracteres alfanuméricos' },
+        'PAS': { min: 5, max: 20, soloNumeros: false, hint: 'Pasaporte: 5-20 caracteres alfanuméricos' },
+    };
+
+    const ROLES_TESTIGO = [
+        { value: 'APRENDIZ',      label: 'Aprendiz' },
+        { value: 'INSTRUCTOR',    label: 'Instructor' },
+        { value: 'ADMINISTRATIVO',label: 'Administrativo' },
+        { value: 'VIGILANCIA',    label: 'Vigilancia' },
+        { value: 'BRIGADA',       label: 'Brigada' },
+        { value: 'VISITANTE',     label: 'Visitante' },
+        { value: 'OTRO',          label: 'Otro' },
+    ];
+
+    const contenedorTestigos = document.getElementById('testigos-container');
+    const inputTestigosOculto = document.getElementById('id_testigos');
+
+    function crearFilaTestigo(datos) {
+        const idx = Date.now() + Math.random();
+        const tipoOpts = ['CC','TI','CE','PAS'].map(t =>
+            `<option value="${t}"${datos && datos.tipo_doc === t ? ' selected' : ''}>${t}</option>`
+        ).join('');
+        const rolOpts = ROLES_TESTIGO.map(r =>
+            `<option value="${r.value}"${datos && datos.rol === r.value ? ' selected' : ''}>${r.label}</option>`
+        ).join('');
+        const nombre  = datos ? datos.nombre    : '';
+        const numDoc  = datos ? datos.numero_doc : '';
+
+        const div = document.createElement('div');
+        div.className = 'testigo-fila border rounded p-3 mb-2 bg-white';
+        div.dataset.idx = idx;
+        div.innerHTML = `
+            <div class="row g-3 align-items-start">
+                <div class="col-md-4">
+                    <label class="field-label mb-1">Nombre completo <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control testigo-nombre"
+                        placeholder="Nombre completo del testigo" maxlength="200" value="${nombre}" autocomplete="off">
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="field-label mb-1">Tipo doc.</label>
+                    <select class="form-select testigo-tipo-doc">${tipoOpts}</select>
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="field-label mb-1">N° Documento</label>
+                    <input type="text" class="form-control testigo-num-doc"
+                        placeholder="Ej: 1234567890" maxlength="10" value="${numDoc}"
+                        inputmode="numeric" autocomplete="off">
+                    <div class="form-text testigo-doc-hint" style="font-size:0.72rem;min-height:1.2em;"></div>
+                </div>
+                <div class="col-9 col-md-2">
+                    <label class="field-label mb-1">Rol</label>
+                    <select class="form-select testigo-rol">${rolOpts}</select>
+                </div>
+                <div class="col-3 col-md-1 d-flex flex-column justify-content-end">
+                    <label class="field-label mb-1 invisible">X</label>
+                    <button type="button" class="btn btn-outline-danger btn-quitar-testigo" title="Quitar testigo">
+                        <i class="bi bi-trash3"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        // Validación dinámica por tipo de documento
+        const selectTipo = div.querySelector('.testigo-tipo-doc');
+        const inputNum   = div.querySelector('.testigo-num-doc');
+        const hint       = div.querySelector('.testigo-doc-hint');
+
+        function actualizarReglasDoc() {
+            const tipo = selectTipo.value;
+            const r = REGLAS_DOC_TESTIGO[tipo];
+            inputNum.maxLength = r.max;
+            if (r.soloNumeros) {
+                inputNum.inputMode = 'numeric';
+                inputNum.pattern = `[0-9]{${r.min},${r.max}}`;
+            } else {
+                inputNum.inputMode = 'text';
+                inputNum.pattern = `[A-Za-z0-9]{${r.min},${r.max}}`;
+            }
+            hint.textContent = r.hint;
+        }
+
+        selectTipo.addEventListener('change', function() {
+            actualizarReglasDoc();
+            // Limpiar si no cumple el patrón nuevo
+            inputNum.value = '';
+        });
+
+        // Filtrar caracteres inválidos en tiempo real
+        inputNum.addEventListener('input', function() {
+            const tipo = selectTipo.value;
+            const r = REGLAS_DOC_TESTIGO[tipo];
+            let val = this.value;
+            if (r.soloNumeros) {
+                val = val.replace(/\D/g, '');
+            } else {
+                val = val.replace(/[^A-Za-z0-9]/g, '');
+            }
+            if (this.value !== val) this.value = val;
+        });
+
+        inputNum.addEventListener('paste', function(e) {
+            e.preventDefault();
+            const texto = (e.clipboardData || window.clipboardData).getData('text');
+            const tipo = selectTipo.value;
+            const r = REGLAS_DOC_TESTIGO[tipo];
+            let val = r.soloNumeros ? texto.replace(/\D/g, '') : texto.replace(/[^A-Za-z0-9]/g, '');
+            this.value = val.slice(0, r.max);
+        });
+
+        // Quitar fila
+        div.querySelector('.btn-quitar-testigo').addEventListener('click', function() {
+            div.remove();
+            serializarTestigos();
+        });
+
+        actualizarReglasDoc();
+        return div;
+    }
+
+    function serializarTestigos() {
+        const filas = contenedorTestigos.querySelectorAll('.testigo-fila');
+        const lista = Array.from(filas).map(f => ({
+            nombre:    f.querySelector('.testigo-nombre').value.trim(),
+            tipo_doc:  f.querySelector('.testigo-tipo-doc').value,
+            numero_doc: f.querySelector('.testigo-num-doc').value.trim(),
+            rol:       f.querySelector('.testigo-rol').value,
+        }));
+        inputTestigosOculto.value = lista.length ? JSON.stringify(lista) : '';
+    }
+
+    // Agregar testigo inicial vacío
+    contenedorTestigos.appendChild(crearFilaTestigo(null));
+
+    // Botón agregar
+    document.getElementById('btn-agregar-testigo').addEventListener('click', function() {
+        contenedorTestigos.appendChild(crearFilaTestigo(null));
+    });
+
+    // Serializar ambos campos antes de enviar
+    document.getElementById('formIncidente').addEventListener('submit', function() {
+        serializarAfectados();
+        serializarTestigos();
+    });
+
+    // Si hay errores de validación y el servidor devuelve datos previos, recargar filas
+    (function() {
+        const raw = inputTestigosOculto.value;
+        if (!raw) return;
+        try {
+            const lista = JSON.parse(raw);
+            if (Array.isArray(lista) && lista.length) {
+                contenedorTestigos.innerHTML = '';
+                lista.forEach(t => contenedorTestigos.appendChild(crearFilaTestigo(t)));
+            }
+        } catch(e) {}
+    })();
 
     /* ─── MODAL DE CONFIRMACIÓN ─────────────────────── */
     const btnAbrirModal = document.getElementById('btnAbrirModal');

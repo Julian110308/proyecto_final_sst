@@ -303,6 +303,98 @@
 
         .bg-light-green { background-color: var(--color-primary-light) !important; }
         .text-primary-green { color: var(--color-primary) !important; }
+        .border-sena { border-color: #39A900 !important; }
+
+        /* ── Botón principal SENA (reemplaza btn-success en toda la app) ── */
+        .btn-sena {
+            background-color: #39A900;
+            color: #fff;
+            border: none;
+        }
+        .btn-sena:hover, .btn-sena:focus {
+            background-color: #2d8200;
+            color: #fff;
+            border: none;
+        }
+        .btn-sena:disabled {
+            background-color: #7fc96a;
+            color: #fff;
+        }
+        .btn-outline-sena {
+            color: #39A900;
+            border: 1.5px solid #39A900;
+            background: transparent;
+        }
+        .btn-outline-sena:hover, .btn-outline-sena:focus {
+            background-color: #39A900;
+            color: #fff;
+        }
+
+        /* ── Modales modernos estilo SENA ── */
+        .modal-sena .modal-content {
+            border: none;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+        .modal-sena .modal-header {
+            border: none;
+            padding: 0;
+        }
+        .modal-sena-header {
+            background: linear-gradient(135deg, #39A900 0%, #2d6800 100%);
+            width: 100%;
+            padding: 1.25rem 1.75rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .modal-sena-header::before {
+            content: '';
+            position: absolute;
+            top: -20px; right: -20px;
+            width: 100px; height: 100px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 50%;
+        }
+        .modal-sena-header .modal-icon-box {
+            width: 42px; height: 42px;
+            background: rgba(255,255,255,0.18);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .modal-sena .modal-body { padding: 1.5rem 1.75rem 0.75rem; }
+        .modal-sena .modal-footer {
+            border: none;
+            padding: 0.75rem 1.75rem 1.5rem;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+        .modal-sena .campos-aprendiz {
+            background: #F0FAF0;
+            border-radius: 10px;
+            padding: 1rem;
+            border-left: 3px solid #39A900;
+        }
+
+        /* ── Card con acento verde izquierdo (formularios y paneles) ── */
+        .card-sena {
+            border-left: 4px solid #39A900;
+            border-top: none;
+            border-right: none;
+            border-bottom: none;
+        }
+
+        /* ── Labels de formularios ── */
+        .form-label { font-weight: 600; }
+
+        /* ── Focus verde en inputs ── */
+        .form-control:focus, .form-select:focus {
+            border-color: #39A900;
+            box-shadow: 0 0 0 .2rem rgba(57,169,0,.18);
+        }
 
         /* Estilos para el dropdown de usuario */
         .user-dropdown-menu .dropdown-item {
@@ -345,7 +437,6 @@
             </a>
 
             <!-- Notificaciones -->
-            {% if user.rol != 'VISITANTE' %}
             <div class="navbar-nav ms-auto me-2">
                 <div class="nav-item dropdown">
                     <a href="#" class="nav-link position-relative p-2" data-bs-toggle="dropdown" aria-expanded="false" id="notificationBell" title="Notificaciones">
@@ -366,10 +457,9 @@
                     </div>
                 </div>
             </div>
-            {% endif %}
 
             <!-- Usuario -->
-            <div class="navbar-nav {% if user.rol == 'VISITANTE' %}ms-auto{% else %}ms-2{% endif %}">
+            <div class="navbar-nav ms-2">
                 <div class="dropdown">
                     <a href="#" class="d-flex align-items-center text-dark text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
                         {% if user.foto %}
@@ -460,6 +550,11 @@
                     <li class="nav-item mb-2">
                         <a class="nav-link" href="{% url 'programas_formacion' %}">
                             <i class="bi bi-mortarboard me-2"></i>Programas de Formación
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="{% url 'fichas_formacion' %}">
+                            <i class="bi bi-journal-bookmark me-2"></i>Fichas de Formación
                         </a>
                     </li>
                     <li class="nav-item mb-2">
@@ -730,7 +825,7 @@
                     <div class="w-100 text-center pt-3">
                         <i class="bi bi-qr-code fs-1 text-primary"></i>
                         <h6 class="fw-bold mt-2 mb-0">Mi QR de Acceso</h6>
-                        <p class="text-muted small mb-0">Válido solo por hoy</p>
+                        <p class="text-muted small mb-0">Tu código de acceso permanente</p>
                     </div>
                     <button type="button" class="btn-close position-absolute" data-bs-dismiss="modal"
                             style="top:1rem; right:1rem;"></button>
@@ -747,7 +842,14 @@
                         <div class="small text-muted" id="qrRolFicha"></div>
                         <div class="small text-muted" id="qrDocumento"></div>
                     </div>
-                    <p class="text-muted small mt-3 mb-0">
+                    <!-- Botón descargar -->
+                    <button id="btnDescargarQR"
+                            type="button"
+                            onclick="descargarQR(this)"
+                            class="btn btn-outline-secondary btn-sm mt-3 d-none">
+                        <i class="bi bi-download me-1"></i>Descargar QR
+                    </button>
+                    <p class="text-muted small mt-2 mb-0">
                         <i class="bi bi-shield-lock me-1"></i>
                         Muestra este QR al personal de vigilancia al ingresar o salir del centro.
                     </p>
@@ -846,7 +948,7 @@
                             <i class="bi bi-shield-check me-1"></i>Permanezca seguro y siga las instrucciones del personal autorizado.
                         </p>
                     </div>
-                    <div><button type="button" class="btn btn-success px-4" data-bs-dismiss="modal">Cerrar</button></div>
+                    <div><button type="button" class="btn btn-sena px-4" data-bs-dismiss="modal">Cerrar</button></div>
                 </div>
 
                 <!-- Pantalla de error (oculta por defecto) -->
@@ -1296,6 +1398,30 @@
             cargarQR();
         }
 
+        async function descargarQR(btn) {
+            const original = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Generando...';
+            try {
+                const resp = await fetch('/api/acceso/registros/mi-qr-imagen/', { credentials: 'same-origin' });
+                if (!resp.ok) throw new Error('Error al generar la imagen');
+                const blob = await resp.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'QR_Acceso_SST.png';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } catch (e) {
+                alert('No se pudo descargar el QR: ' + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = original;
+            }
+        }
+
         async function cargarQR() {
             const container = document.getElementById('qrImageContainer');
             container.innerHTML = '<div class="spinner-border text-primary"></div>';
@@ -1325,12 +1451,15 @@
                     correctLevel: QRCode.CorrectLevel.M
                 });
 
-                document.getElementById('qrNombre').textContent = d.usuario;
+                document.getElementById('qrNombre').textContent = d.usuario || '';
                 const ficha = d.ficha ? ` · Ficha ${d.ficha}` : '';
                 const prog = d.programa ? ` · ${d.programa}` : '';
-                document.getElementById('qrRolFicha').textContent = d.rol + ficha + prog;
-                document.getElementById('qrDocumento').textContent = d.documento ? `Doc: ${d.documento}` : '';
+                document.getElementById('qrRolFicha').textContent = (d.rol || '') + ficha + prog;
+                const docEl = document.getElementById('qrDocumento');
+                docEl.textContent = d.documento ? `Doc: ${d.documento}` : '';
+                docEl.style.display = d.documento ? '' : 'none';
                 document.getElementById('qrUserInfo').classList.remove('d-none');
+                document.getElementById('btnDescargarQR').classList.remove('d-none');
 
             } catch (e) {
                 container.innerHTML = `<p class="text-danger small"><i class="bi bi-exclamation-triangle me-1"></i>${e.message || 'Error al generar el QR.'}</p>`;

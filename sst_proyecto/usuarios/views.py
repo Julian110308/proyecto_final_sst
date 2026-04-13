@@ -363,7 +363,82 @@ class VisitanteViewSet(viewsets.ModelViewSet):
         return [EsVigilanciaOAdministrativo()]
 
     def perform_create(self, serializer):
-        serializer.save(registrado_por=self.request.user)
+        import logging
+        from django.core.mail import send_mail
+
+        logger = logging.getLogger(__name__)
+        visitante = serializer.save(registrado_por=self.request.user)
+
+        email = visitante.email.strip()
+        if not email:
+            return
+
+        username = f"visitante_{visitante.numero_documento}"
+        partes = visitante.nombre_completo.strip().split()
+        first_name = partes[0] if partes else visitante.nombre_completo
+        last_name = " ".join(partes[1:]) if len(partes) > 1 else ""
+
+        # Buscar por username o por número de documento con rol VISITANTE
+        usuario_existente = Usuario.objects.filter(username=username).first()
+        if not usuario_existente:
+            usuario_existente = Usuario.objects.filter(
+                numero_documento=visitante.numero_documento, rol="VISITANTE"
+            ).first()
+
+        if usuario_existente:
+            usuario_existente.email = email
+            usuario_existente.activo = True
+            usuario_existente.is_active = True
+            usuario_existente.estado_cuenta = "ACTIVO"
+            usuario_existente.set_unusable_password()
+            usuario_existente.save(update_fields=["email", "activo", "is_active", "estado_cuenta", "password"])
+            cuenta = usuario_existente
+        else:
+            cuenta = Usuario.objects.create_user(
+                username=username,
+                email=email,
+                password=None,
+                first_name=first_name,
+                last_name=last_name,
+                rol="VISITANTE",
+                tipo_documento=visitante.tipo_documento,
+                numero_documento=visitante.numero_documento,
+                telefono=visitante.telefono,
+                activo=True,
+                is_active=True,
+                estado_cuenta="ACTIVO",
+            )
+            cuenta.set_unusable_password()
+            cuenta.save(update_fields=["password"])
+
+        visitante.usuario = cuenta
+        visitante.save(update_fields=["usuario"])
+
+        # Enviar correo al visitante con el link de acceso
+        import threading
+
+        def _enviar_correo_visitante():
+            try:
+                send_mail(
+                    subject="Tu acceso al Sistema SST - Centro Minero SENA",
+                    message=(
+                        f"Hola {visitante.nombre_completo},\n\n"
+                        f"Has sido registrado como visitante en el Centro Minero SENA.\n\n"
+                        f"Puedes ingresar al sistema usando el siguiente enlace:\n"
+                        f"http://127.0.0.1:8000/accounts/login/visitante/\n\n"
+                        f"Solo ingresa tu correo electrónico ({email}) y podrás acceder.\n\n"
+                        f"Ten en cuenta que este acceso estará disponible únicamente durante el día de hoy.\n\n"
+                        f"Saludos,\nSistema SST - Centro Minero SENA"
+                    ),
+                    from_email=None,
+                    recipient_list=[email],
+                    fail_silently=False,
+                )
+                logger.info(f"Correo de acceso enviado a visitante: {email}")
+            except Exception as e:
+                logger.error(f"Error enviando correo a visitante {email}: {e}")
+
+        threading.Thread(target=_enviar_correo_visitante, daemon=True).start()
 
 
 class NotificacionViewSet(viewsets.ModelViewSet):

@@ -12,7 +12,7 @@ from django.contrib.auth import views as auth_views
 from django.views.generic import RedirectView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 from usuarios.permissions import rol_requerido, excluir_visitantes
-from usuarios.login_view import custom_login_view
+from usuarios.login_view import custom_login_view, visitante_login_view
 
 
 # Páginas de error personalizadas
@@ -413,9 +413,9 @@ def mi_perfil_view(request):
         usuario.telefono_emergencia = request.POST.get("telefono_emergencia", usuario.telefono_emergencia).strip()
         usuario.contacto_emergencia = request.POST.get("contacto_emergencia", usuario.contacto_emergencia).strip()
 
-        # Preferencias de notificaciones externas (checkboxes)
+        # Preferencias de notificaciones externas
         usuario.recibir_notif_email = "recibir_notif_email" in request.POST
-        usuario.recibir_notif_whatsapp = "recibir_notif_whatsapp" in request.POST
+        usuario.callmebot_apikey = request.POST.get("callmebot_apikey", "").strip()
 
         # Programa y ficha — editables para instructores
         if usuario.rol == "INSTRUCTOR":
@@ -854,14 +854,140 @@ def gestion_visitantes_view(request):
     Vista para gestión de visitantes
     PERMISOS: VIGILANCIA y ADMINISTRATIVO
     """
-    from usuarios.models import Visitante
+    from usuarios.models import Visitante, Usuario
     from django.utils import timezone
+    from django.contrib import messages as django_messages
 
     hoy = timezone.now().date()
-    visitantes_hoy = (
-        Visitante.objects.select_related("persona_a_visitar").filter(fecha_visita=hoy).order_by("-hora_ingreso")
-    )
 
+    if request.method == "POST" and request.POST.get("accion") == "salida":
+        from django.utils import timezone as tz
+
+        visitante_id = request.POST.get("visitante_id")
+        try:
+            v = Visitante.objects.get(id=visitante_id)
+            v.hora_salida = tz.localtime(tz.now()).time()
+            v.save(update_fields=["hora_salida"])
+            django_messages.success(request, f"Salida de {v.nombre_completo} registrada.")
+        except Visitante.DoesNotExist:
+            django_messages.error(request, "Visitante no encontrado.")
+        return redirect("gestion_visitantes")
+
+    if request.method == "POST":
+        nombre_completo = request.POST.get("nombre_completo", "").strip()
+        tipo_documento = request.POST.get("tipo_documento", "CC")
+        numero_documento = request.POST.get("numero_documento", "").strip()
+        email = request.POST.get("email", "").strip()
+        telefono = request.POST.get("telefono", "").strip()
+        entidad = request.POST.get("entidad", "").strip()
+        motivo_visita = request.POST.get("motivo_visita", "").strip()
+
+        if not nombre_completo or not numero_documento or not email or not motivo_visita:
+            django_messages.error(request, "Complete todos los campos obligatorios.")
+        else:
+            visitante = Visitante.objects.create(
+                nombre_completo=nombre_completo,
+                tipo_documento=tipo_documento,
+                numero_documento=numero_documento,
+                email=email,
+                telefono=telefono,
+                entidad=entidad,
+                motivo_visita=motivo_visita,
+                registrado_por=request.user,
+            )
+
+            # Crear o reactivar cuenta de usuario visitante
+            import logging
+            import threading
+
+            from django.core.mail import send_mail
+
+            logger = logging.getLogger(__name__)
+
+            partes = nombre_completo.split()
+            first_name = partes[0]
+            last_name = " ".join(partes[1:]) if len(partes) > 1 else ""
+
+            # Buscar cuenta existente por email (más confiable que documento)
+            cuenta = Usuario.objects.filter(email__iexact=email, rol="VISITANTE").first()
+
+            if not cuenta:
+                # Buscar por documento con rol VISITANTE
+                cuenta = Usuario.objects.filter(numero_documento=numero_documento, rol="VISITANTE").first()
+
+            if cuenta:
+                # Reactivar cuenta existente
+                cuenta.email = email
+                cuenta.activo = True
+                cuenta.is_active = True
+                cuenta.estado_cuenta = "ACTIVO"
+                cuenta.set_unusable_password()
+                cuenta.save(update_fields=["email", "activo", "is_active", "estado_cuenta", "password"])
+            else:
+                # Generar username único y número de documento sin conflictos
+                import hashlib
+
+                doc_visitante = f"v{numero_documento}"
+                # Si ese documento ya existe en Usuario (para otro rol), usar hash del email
+                if (
+                    Usuario.objects.filter(numero_documento=doc_visitante).exists()
+                    or Usuario.objects.filter(numero_documento=numero_documento).exists()
+                ):
+                    doc_visitante = "v" + hashlib.md5(email.encode()).hexdigest()[:12]
+
+                username = f"visitante_{numero_documento}"
+                if Usuario.objects.filter(username=username).exists():
+                    username = f"visitante_{hashlib.md5(email.encode()).hexdigest()[:10]}"
+
+                cuenta = Usuario.objects.create_user(
+                    username=username,
+                    email=email,
+                    password=None,
+                    first_name=first_name,
+                    last_name=last_name,
+                    rol="VISITANTE",
+                    tipo_documento=tipo_documento,
+                    numero_documento=doc_visitante,
+                    telefono=telefono,
+                    activo=True,
+                    is_active=True,
+                    estado_cuenta="ACTIVO",
+                )
+                cuenta.set_unusable_password()
+                cuenta.save(update_fields=["password"])
+
+            visitante.usuario = cuenta
+            visitante.save(update_fields=["usuario"])
+
+            def _enviar_correo():
+                try:
+                    send_mail(
+                        subject="Tu acceso al Sistema SST - Centro Minero SENA",
+                        message=(
+                            f"Hola {nombre_completo},\n\n"
+                            f"Has sido registrado como visitante en el Centro Minero SENA.\n\n"
+                            f"Puedes ingresar al sistema usando el siguiente enlace:\n"
+                            f"http://127.0.0.1:8000/accounts/login/visitante/\n\n"
+                            f"Solo ingresa tu correo electrónico ({email}) y podrás acceder.\n\n"
+                            f"Ten en cuenta que este acceso estará disponible únicamente durante el día de hoy.\n\n"
+                            f"Saludos,\nSistema SST - Centro Minero SENA"
+                        ),
+                        from_email=None,
+                        recipient_list=[email],
+                        fail_silently=False,
+                    )
+                    logger.info(f"Correo enviado a visitante: {email}")
+                except Exception as e:
+                    logger.error(f"Error enviando correo a visitante {email}: {e}")
+
+            threading.Thread(target=_enviar_correo, daemon=True).start()
+            django_messages.success(
+                request, f"Visitante {nombre_completo} registrado. Se envió el enlace de acceso a {email}."
+            )
+
+        return redirect("gestion_visitantes")
+
+    visitantes_hoy = Visitante.objects.filter(fecha_visita=hoy).order_by("-hora_ingreso")
     context = {
         "visitantes": visitantes_hoy,
         "total_hoy": visitantes_hoy.count(),
@@ -879,7 +1005,7 @@ def equipos_brigada_view(request):
     POST → CRUD (crear, editar, eliminar) — solo COORDINADOR_SST
     """
     from mapas.models import EquipamientoSeguridad, EdificioBloque
-    from django.db.models import Q, Case, When
+    from django.db.models import Q
     from django.utils import timezone
     from datetime import timedelta
     from django.contrib import messages as django_messages
@@ -991,9 +1117,7 @@ def equipos_brigada_view(request):
             Q(nombre__icontains=busqueda) | Q(codigo__icontains=busqueda) | Q(edificio__nombre__icontains=busqueda)
         )
 
-    equipos = equipos.order_by(
-        Case(When(estado="FUERA_SERVICIO", then=0), When(estado="MANTENIMIENTO", then=1), default=2), "tipo", "codigo"
-    )
+    equipos = equipos.order_by("-fecha_creacion")
 
     total_equipos = EquipamientoSeguridad.objects.count()
     operativos = EquipamientoSeguridad.objects.filter(estado="OPERATIVO").count()
@@ -1020,6 +1144,7 @@ def equipos_brigada_view(request):
         "estado_filtro": estado_filtro,
         "busqueda": busqueda,
         "edificios": edificios,
+        "now": timezone.now(),
         "estados": [
             ("OPERATIVO", "Operativo"),
             ("MANTENIMIENTO", "En mantenimiento"),
@@ -1091,8 +1216,92 @@ def programas_formacion_view(request):
 
         return redirect("programas_formacion")
 
-    programas = ProgramaFormacion.objects.all()
+    programas = ProgramaFormacion.objects.all().order_by("-fecha_creacion")
     return render(request, "dashboard/coordinador/programas_formacion.html", {"programas": programas})
+
+
+@login_required
+@rol_requerido("COORDINADOR_SST")
+def fichas_formacion_view(request):
+    """
+    CRUD de fichas por programa de formación — solo Coordinador SST.
+    """
+    from usuarios.models import FichaFormacion, ProgramaFormacion
+    from django.contrib import messages as django_messages
+
+    if request.method == "POST":
+        accion = request.POST.get("accion")
+
+        if accion == "crear":
+            programa_id = request.POST.get("programa_id")
+            numero = request.POST.get("numero", "").strip()
+            if not numero:
+                django_messages.error(request, "El número de ficha no puede estar vacío.")
+            elif not numero.isdigit() or len(numero) != 7:
+                django_messages.error(request, "El número de ficha debe tener exactamente 7 dígitos numéricos.")
+            elif not programa_id:
+                django_messages.error(request, "Debes seleccionar un programa.")
+            else:
+                try:
+                    programa = ProgramaFormacion.objects.get(pk=programa_id)
+                    if FichaFormacion.objects.filter(programa=programa, numero=numero).exists():
+                        django_messages.error(request, f'La ficha "{numero}" ya existe en ese programa.')
+                    else:
+                        FichaFormacion.objects.create(programa=programa, numero=numero)
+                        django_messages.success(request, f'Ficha "{numero}" creada en "{programa.nombre}".')
+                except ProgramaFormacion.DoesNotExist:
+                    django_messages.error(request, "Programa no encontrado.")
+
+        elif accion == "eliminar":
+            ficha_id = request.POST.get("ficha_id")
+            try:
+                ficha = FichaFormacion.objects.get(pk=ficha_id)
+                numero = ficha.numero
+                ficha.delete()
+                django_messages.success(request, f'Ficha "{numero}" eliminada.')
+            except FichaFormacion.DoesNotExist:
+                django_messages.error(request, "Ficha no encontrada.")
+
+        return redirect("fichas_formacion")
+
+    from django.db.models import Prefetch
+
+    programas = (
+        ProgramaFormacion.objects.filter(activo=True)
+        .prefetch_related(Prefetch("fichas", queryset=FichaFormacion.objects.order_by("-fecha_creacion")))
+        .order_by("-fecha_creacion")
+    )
+    return render(request, "dashboard/coordinador/fichas_formacion.html", {"programas": programas})
+
+
+def api_fichas_por_programa(request):
+    """
+    JSON público: fichas activas para un programa dado.
+    GET /api/fichas/?programa_id=X  o  ?programa_nombre=Nombre
+    Usado en el formulario de registro (sin autenticación).
+    """
+    from usuarios.models import FichaFormacion, ProgramaFormacion
+    from django.http import JsonResponse
+
+    programa_id = request.GET.get("programa_id")
+    programa_nombre = request.GET.get("programa_nombre", "").strip()
+
+    try:
+        if programa_id:
+            programa = ProgramaFormacion.objects.get(pk=programa_id, activo=True)
+        elif programa_nombre:
+            programa = ProgramaFormacion.objects.get(nombre__iexact=programa_nombre, activo=True)
+        else:
+            return JsonResponse({"fichas": []})
+    except ProgramaFormacion.DoesNotExist:
+        return JsonResponse({"fichas": []})
+
+    fichas = list(
+        FichaFormacion.objects.filter(programa=programa, activo=True)
+        .order_by("numero")
+        .values_list("numero", flat=True)
+    )
+    return JsonResponse({"fichas": fichas})
 
 
 @login_required
@@ -1356,6 +1565,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     # Autenticación - Rutas principales (con debugging temporal)
     path("accounts/login/", custom_login_view, name="login"),
+    path("accounts/login/visitante/", visitante_login_view, name="visitante_login"),
     path("accounts/logout/", auth_views.LogoutView.as_view(next_page="login"), name="logout"),
     # Recuperar Clave
     path(
@@ -1405,6 +1615,8 @@ urlpatterns = [
     path("administrativo/configuracion/", configuracion_view, name="configuracion_sistema"),
     # URLs PARA COORDINADOR SST
     path("coordinador/programas-formacion/", programas_formacion_view, name="programas_formacion"),
+    path("coordinador/fichas-formacion/", fichas_formacion_view, name="fichas_formacion"),
+    path("api/fichas/", api_fichas_por_programa, name="api_fichas_por_programa"),
     # URLs PARA VIGILANCIA
     path("vigilancia/visitantes/", gestion_visitantes_view, name="gestion_visitantes"),
     path("acceso/historial/", historial_accesos_view, name="historial_accesos"),

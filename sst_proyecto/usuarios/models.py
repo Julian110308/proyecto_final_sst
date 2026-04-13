@@ -30,6 +30,29 @@ class ProgramaFormacion(models.Model):
         return self.nombre
 
 
+class FichaFormacion(models.Model):
+    """Fichas de formación asociadas a un programa. Gestión por Coordinador SST."""
+
+    programa = models.ForeignKey(
+        ProgramaFormacion,
+        on_delete=models.CASCADE,
+        related_name="fichas",
+        verbose_name="Programa de formación",
+    )
+    numero = models.CharField(max_length=20, verbose_name="Número de ficha")
+    activo = models.BooleanField(default=True, verbose_name="Activo")
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Ficha de Formación"
+        verbose_name_plural = "Fichas de Formación"
+        ordering = ["numero"]
+        unique_together = [["programa", "numero"]]
+
+    def __str__(self):
+        return f"{self.numero} — {self.programa.nombre}"
+
+
 class RolePermissions:
     """
     Clase para gestión centralizada de permisos por rol - VERSIÓN CORREGIDA
@@ -290,10 +313,11 @@ class Usuario(AbstractUser):
         verbose_name="Notificaciones por correo",
         help_text="Recibir alertas de emergencias e incidentes críticos por correo electrónico",
     )
-    recibir_notif_whatsapp = models.BooleanField(
-        default=False,
-        verbose_name="Notificaciones por WhatsApp",
-        help_text="Recibir alertas de emergencias por WhatsApp (requiere número de teléfono registrado)",
+    callmebot_apikey = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name="API Key de CallMeBot",
+        help_text="Clave para recibir alertas por WhatsApp vía CallMeBot",
     )
 
     # Control
@@ -425,11 +449,17 @@ class Visitante(models.Model):
     nombre_completo = models.CharField(max_length=200)
     tipo_documento = models.CharField(max_length=3, choices=Usuario.TIPO_DOCUMENTO)
     numero_documento = models.CharField(max_length=20)
+    email = models.EmailField(blank=True)
     entidad = models.CharField(max_length=200, blank=True)
-    telefono = models.CharField(max_length=15)
+    telefono = models.CharField(max_length=15, blank=True)
+
+    # Cuenta de acceso al sistema (ForeignKey para permitir múltiples visitas del mismo usuario)
+    usuario = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, blank=True, related_name="visitas")
 
     # Visita
-    persona_a_visitar = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name="visitantes")
+    persona_a_visitar = models.ForeignKey(
+        Usuario, on_delete=models.SET_NULL, null=True, blank=True, related_name="visitantes"
+    )
     motivo_visita = models.TextField()
     fecha_visita = models.DateField(auto_now_add=True)
     hora_ingreso = models.TimeField(auto_now_add=True)

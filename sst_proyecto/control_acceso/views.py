@@ -1,3 +1,8 @@
+import io
+
+import qrcode
+from PIL import Image, ImageDraw, ImageFont
+
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -5,7 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 
 from .models import RegistroAcceso, ConfiguracionAforo
 from .serializers import (
@@ -48,6 +53,7 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
             "registros_recientes",
             "mi_estado",
             "mi_qr",
+            "mi_qr_imagen",
             "escanear_qr",
         ]:
             return [IsAuthenticated()]
@@ -234,7 +240,7 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
         # Mostrar solo el registro más reciente por usuario (el más reciente es el primero por el order_by)
         vistos = set()
         registros_unicos = []
-        for reg in qs[:limite * 5]:  # margen extra para cubrir duplicados
+        for reg in qs[: limite * 5]:  # margen extra para cubrir duplicados
             if reg.usuario_id not in vistos:
                 vistos.add(reg.usuario_id)
                 registros_unicos.append(reg)
@@ -491,6 +497,91 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
                 "documento": request.user.numero_documento or "",
             }
         )
+
+    @action(detail=False, methods=["get"], url_path="mi-qr-imagen")
+    def mi_qr_imagen(self, request):
+        """
+        Devuelve el QR del usuario como imagen PNG descargable.
+        GET /api/acceso/registros/mi-qr-imagen/
+        """
+        user = request.user
+        token = generar_token_qr(user.id)
+
+        # Generar QR
+        qr = qrcode.QRCode(
+            version=3,
+            error_correction=qrcode.constants.ERROR_CORRECT_M,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(token)
+        qr.make(fit=True)
+        qr_img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
+
+        # Agregar banda inferior con nombre y datos
+        qr_w, qr_h = qr_img.size
+        banda_h = 90
+        final_img = Image.new("RGB", (qr_w, qr_h + banda_h), "#ffffff")
+        final_img.paste(qr_img, (0, 0))
+
+        draw = ImageDraw.Draw(final_img)
+
+        # Buscar fuente disponible en Windows; caer en la fuente bitmap si no hay ninguna
+        font_name = None
+        font_data = None
+        for ruta in [
+            "C:/Windows/Fonts/arial.ttf",
+            "C:/Windows/Fonts/calibri.ttf",
+            "C:/Windows/Fonts/segoeui.ttf",
+        ]:
+            try:
+                font_name = ImageFont.truetype(ruta, 17)
+                font_data = ImageFont.truetype(ruta, 13)
+                break
+            except OSError:
+                continue
+        if font_name is None:
+            font_name = ImageFont.load_default()
+            font_data = font_name
+
+        def texto_centrado(draw, y, texto, font, fill):
+            """Dibuja texto centrado horizontalmente sin usar anchor."""
+            try:
+                bbox = draw.textbbox((0, 0), texto, font=font)
+                tw = bbox[2] - bbox[0]
+            except AttributeError:
+                tw = len(texto) * 7  # estimación para fuente bitmap
+            x = max(0, (qr_w - tw) // 2)
+            draw.text((x, y), texto, font=font, fill=fill)
+
+        nombre = user.get_full_name() or user.username
+        texto_centrado(draw, qr_h + 10, nombre, font_name, "#1a1a1a")
+
+        linea2_parts = []
+        if user.rol:
+            linea2_parts.append(user.get_rol_display())
+        if user.ficha:
+            linea2_parts.append(f"Ficha: {user.ficha}")
+        if linea2_parts:
+            texto_centrado(draw, qr_h + 34, " · ".join(linea2_parts), font_data, "#555555")
+
+        linea3_parts = []
+        if user.numero_documento:
+            linea3_parts.append(f"Doc: {user.numero_documento}")
+        if user.programa_formacion:
+            linea3_parts.append(user.programa_formacion[:30])
+        if linea3_parts:
+            texto_centrado(draw, qr_h + 56, " · ".join(linea3_parts), font_data, "#888888")
+
+        # Serializar a PNG
+        buffer = io.BytesIO()
+        final_img.save(buffer, format="PNG", optimize=True)
+        buffer.seek(0)
+
+        nombre_archivo = f"QR_{user.username}_SST.png"
+        response = HttpResponse(buffer, content_type="image/png")
+        response["Content-Disposition"] = f'attachment; filename="{nombre_archivo}"'
+        return response
 
     @action(detail=False, methods=["post"], url_path="escanear-qr")
     def escanear_qr(self, request):

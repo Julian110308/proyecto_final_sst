@@ -143,35 +143,36 @@
 </div>
 
 <!-- Modal: confirmar desactivación de alerta masiva -->
-<div class="modal fade" id="modalDesactivarAlerta" tabindex="-1" aria-hidden="true">
+<div class="modal fade modal-sena" id="modalDesactivarAlerta" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title fw-bold">
-                    <i class="bi bi-shield-check me-2"></i>Desactivar Alerta
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-sena-header w-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="modal-icon-box">
+                            <i class="bi bi-shield-check text-white" style="font-size:1.3rem;"></i>
+                        </div>
+                        <div>
+                            <h5 class="text-white fw-bold mb-0" style="font-size:1rem;">Desactivar Alerta</h5>
+                            <small style="color:rgba(255,255,255,0.75);font-size:0.78rem;">Confirme que la situación fue controlada</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white position-absolute" data-bs-dismiss="modal" style="top:1rem;right:1rem;"></button>
+                </div>
             </div>
             <div class="modal-body">
-                <p class="mb-2">
-                    Confirma que la emergencia <strong id="desactivarNombreEmergencia"></strong>
-                    ha sido controlada y el personal puede regresar a sus actividades.
-                </p>
+                <p class="mb-3 text-muted small">Confirma que la emergencia <strong class="text-dark" id="desactivarNombreEmergencia"></strong> ha sido controlada y el personal puede regresar a sus actividades.</p>
                 <div class="mb-3">
-                    <label class="form-label fw-semibold small">Acciones tomadas <span class="text-muted fw-normal">(opcional)</span></label>
-                    <textarea class="form-control form-control-sm" id="desactivarAcciones" rows="2"
-                              placeholder="Ej: Evacuación completada, zona revisada, sin lesionados..."></textarea>
+                    <label class="form-label">Acciones tomadas <span class="text-muted fw-normal">(opcional)</span></label>
+                    <textarea class="form-control" id="desactivarAcciones" rows="2" placeholder="Ej: Evacuación completada, zona revisada, sin lesionados..."></textarea>
                 </div>
-                <div class="alert alert-success py-2 small mb-0">
-                    <i class="bi bi-megaphone-fill me-1"></i>
-                    Se notificará a <strong>todos los usuarios</strong> que la emergencia finalizó.
+                <div style="background:#F0FAF0;border:1.5px solid #BBF7D0;border-left:4px solid #39A900;border-radius:10px;padding:0.75rem 1rem;">
+                    <p class="mb-0 small fw-semibold" style="color:#166534;"><i class="bi bi-megaphone-fill me-1"></i>Se notificará a <strong>todos los usuarios</strong> que la emergencia finalizó.</p>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-success fw-bold btn-sm" id="btnConfirmarDesactivar">
-                    <i class="bi bi-check-circle me-1"></i>Confirmar — Emergencia Finalizada
-                </button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-lg me-1"></i>Cancelar</button>
+                <button type="button" class="btn btn-sena px-4 fw-bold" id="btnConfirmarDesactivar"><i class="bi bi-check-circle me-1"></i>Confirmar — Emergencia Finalizada</button>
             </div>
         </div>
     </div>
@@ -452,24 +453,32 @@
 </div>
 
 <!-- Modal: Resolver Emergencia -->
-<div class="modal fade" id="modalResolver" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+<div class="modal fade modal-sena" id="modalResolver" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title"><i class="bi bi-check-circle me-2"></i>Resolver Emergencia</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            <div class="modal-header">
+                <div class="modal-sena-header w-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="modal-icon-box">
+                            <i class="bi bi-check-circle text-white" style="font-size:1.3rem;"></i>
+                        </div>
+                        <div>
+                            <h5 class="text-white fw-bold mb-0" style="font-size:1rem;">Resolver Emergencia</h5>
+                            <small style="color:rgba(255,255,255,0.75);font-size:0.78rem;">Registre las acciones tomadas</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white position-absolute" data-bs-dismiss="modal" style="top:1rem;right:1rem;"></button>
+                </div>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label for="accionesTomadas" class="form-label fw-bold">Acciones tomadas</label>
+                    <label for="accionesTomadas" class="form-label">Acciones tomadas</label>
                     <textarea class="form-control" id="accionesTomadas" rows="3" placeholder="Describa las acciones que se tomaron para resolver la emergencia..."></textarea>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-success" id="btnConfirmarResolver">
-                    <i class="bi bi-check-circle me-1"></i>Confirmar Resolucion
-                </button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-lg me-1"></i>Cancelar</button>
+                <button type="button" class="btn btn-sena px-4" id="btnConfirmarResolver"><i class="bi bi-check-circle me-1"></i>Confirmar Resolución</button>
             </div>
         </div>
     </div>
@@ -673,7 +682,7 @@ async function cargarEmergencias() {
                         <a href="/emergencias/" class="btn btn-primary btn-sm">
                             <i class="bi bi-hand-index me-1"></i>Atender
                         </a>` : ''}
-                        <a href="/emergencias/" class="btn btn-success btn-sm">
+                        <a href="/emergencias/" class="btn btn-sena btn-sm">
                             <i class="bi bi-check-circle me-1"></i>Resolver
                         </a>
                         <a href="/emergencias/" class="btn btn-outline-secondary btn-sm ms-auto">

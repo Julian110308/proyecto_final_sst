@@ -200,29 +200,34 @@
 </div>
 
 <!-- Modal Confirmar Asistencia -->
-<div class="modal fade" id="modalAsistencia" tabindex="-1">
-    <div class="modal-dialog">
+<div class="modal fade modal-sena" id="modalAsistencia" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="bi bi-person-check me-2"></i>Registrar Asistencia Manual
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-sena-header w-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="modal-icon-box">
+                            <i class="bi bi-person-check text-white" style="font-size:1.3rem;"></i>
+                        </div>
+                        <div>
+                            <h5 class="text-white fw-bold mb-0" style="font-size:1rem;">Registrar Asistencia Manual</h5>
+                            <small style="color:rgba(255,255,255,0.75);font-size:0.78rem;">Ingreso manual para hoy</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white position-absolute" data-bs-dismiss="modal" style="top:1rem;right:1rem;"></button>
+                </div>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="aprendizId">
-                <p>Va a registrar la asistencia de:</p>
-                <h5 class="text-primary fw-bold" id="aprendizNombre"></h5>
-                <div class="alert alert-info mt-3">
-                    <i class="bi bi-info-circle me-1"></i>
-                    Esto creara un registro de ingreso manual para el dia de hoy.
+                <p class="mb-1 text-muted">Va a registrar la asistencia de:</p>
+                <h5 class="fw-bold mb-3" style="color:#39A900;" id="aprendizNombre"></h5>
+                <div style="background:#EFF6FF;border:1.5px solid #BFDBFE;border-left:4px solid #3B82F6;border-radius:10px;padding:0.75rem 1rem;">
+                    <p class="mb-0 small" style="color:#1E40AF;"><i class="bi bi-info-circle me-1"></i>Se creará un registro de ingreso manual para el día de hoy.</p>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-success" onclick="confirmarAsistencia()">
-                    <i class="bi bi-check-lg me-1"></i>Confirmar Asistencia
-                </button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-lg me-1"></i>Cancelar</button>
+                <button type="button" class="btn btn-sena px-4" onclick="confirmarAsistencia()"><i class="bi bi-check-lg me-1"></i>Confirmar Asistencia</button>
             </div>
         </div>
     </div>

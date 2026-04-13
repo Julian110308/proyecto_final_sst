@@ -151,9 +151,25 @@ class Incidente(models.Model):
         related_name="incidentes_como_afectado",
         help_text="Usuario del sistema que fue afectado (si aplica)",
     )
+    TIPO_DOCUMENTO_CHOICES = [
+        ("CC", "Cédula de Ciudadanía"),
+        ("TI", "Tarjeta de Identidad"),
+        ("CE", "Cédula de Extranjería"),
+        ("PAS", "Pasaporte"),
+    ]
     persona_afectada = models.CharField(max_length=200, blank=True, help_text="Nombre de la persona afectada")
+    tipo_documento_afectado = models.CharField(
+        max_length=3,
+        choices=TIPO_DOCUMENTO_CHOICES,
+        default="CC",
+        blank=True,
+        help_text="Tipo de documento de la persona afectada",
+    )
     documento_afectado = models.CharField(max_length=20, blank=True, help_text="Documento de la persona afectada")
     rol_afectado = models.CharField(max_length=50, blank=True, help_text="Rol de la persona afectada")
+
+    # Personas afectadas (múltiples, JSON)
+    personas_afectadas = models.TextField(blank=True, help_text="Lista de personas afectadas en formato JSON")
 
     # Versión del accidente
     version_accidente = models.TextField(
