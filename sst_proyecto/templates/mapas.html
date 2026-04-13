@@ -199,44 +199,6 @@
         </div>
         {% endif %}
 
-        <!-- Búsqueda -->
-        <div class="card card-modern mb-4">
-            <div class="card-header-modern">
-                <h6 class="mb-0">
-                    <i class="bi bi-search me-2"></i>
-                    Buscar Ubicación
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="input-group mb-3">
-                    <input type="text" id="inputBusqueda" class="form-control" placeholder="Buscar edificio, punto...">
-                    <button id="btnBuscar" class="btn btn-sena" type="button">
-                        <i class="bi bi-search"></i>
-                    </button>
-                </div>
-                <div id="resultadosBusqueda" class="mt-2" style="max-height: 150px; overflow-y: auto; display: none;">
-                    <!-- Resultados dinámicos -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Información de Ubicación Seleccionada -->
-        <div class="card card-modern mb-4">
-            <div class="card-header-modern">
-                <h6 class="mb-0">
-                    <i class="bi bi-info-circle me-2"></i>
-                    Información de Ubicación
-                </h6>
-            </div>
-            <div class="card-body">
-                <div id="infoSeleccionada">
-                    <p class="text-muted mb-0">
-                        <i class="bi bi-mouse me-1"></i>
-                        Selecciona un punto en el mapa para ver información detallada
-                    </p>
-                </div>
-            </div>
-        </div>
 
         <!-- Acciones Rápidas -->
         <div class="card card-modern">
@@ -1118,11 +1080,6 @@ function inicializarControles() {
         setInterval(cargarPersonasEnCentro, 30000);
     }
 
-    // Busqueda
-    document.getElementById('btnBuscar').addEventListener('click', realizarBusqueda);
-    document.getElementById('inputBusqueda').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') realizarBusqueda();
-    });
 
 }
 
@@ -1186,136 +1143,6 @@ async function cargarEmergenciasActivas() {
     }
 }
 
-// ====================================================================
-// BÚSQUEDA Y FILTRADO
-// ====================================================================
-
-// Resultados de búsqueda guardados para centrar en ellos
-let _resultadosBusqueda = [];
-
-function realizarBusqueda() {
-    const termino = document.getElementById('inputBusqueda').value.toLowerCase().trim();
-    const resultadosDiv = document.getElementById('resultadosBusqueda');
-
-    if (!termino) {
-        resultadosDiv.style.display = 'none';
-        return;
-    }
-
-    // Buscar en puntos de encuentro
-    const puntosEncontrados = puntosEncuentroData.filter(p =>
-        p.nombre.toLowerCase().includes(termino) ||
-        (p.descripcion && p.descripcion.toLowerCase().includes(termino))
-    ).map(p => ({ ...p, _tipo: 'punto' }));
-
-    // Buscar en equipamiento
-    const equiposEncontrados = equipamientoData.filter(e =>
-        e.tipo.toLowerCase().includes(termino) ||
-        (e.descripcion && e.descripcion.toLowerCase().includes(termino)) ||
-        (e.codigo && e.codigo.toLowerCase().includes(termino))
-    ).map(e => ({ ...e, _tipo: 'equipo' }));
-
-    _resultadosBusqueda = [...puntosEncontrados, ...equiposEncontrados];
-
-    if (_resultadosBusqueda.length === 0) {
-        resultadosDiv.innerHTML = `
-            <div class="alert alert-warning py-2 mb-0">
-                <i class="bi bi-search me-2"></i>
-                No se encontraron resultados para: "${termino}"
-            </div>`;
-        resultadosDiv.style.display = 'block';
-        return;
-    }
-
-    const iconosPorTipo = {
-        punto:    'bi-signpost',
-        equipo:   'bi-fire-extinguisher',
-    };
-    const coloresPorTipo = {
-        punto:    'success',
-        equipo:   'danger',
-    };
-
-    let html = '<div class="list-group list-group-flush">';
-    _resultadosBusqueda.forEach((item, idx) => {
-        const icono = iconosPorTipo[item._tipo];
-        const color = coloresPorTipo[item._tipo];
-        const titulo = item._tipo === 'equipo' ? item.tipo : item.nombre;
-        const subtitulo = item._tipo === 'edificio' ? `Tipo: ${item.tipo}`
-            : item._tipo === 'punto' ? item.nombre
-            : item.ultima_revision ? `Rev: ${item.ultima_revision}` : '';
-        html += `
-            <a href="#" class="list-group-item list-group-item-action py-2"
-               onclick="event.preventDefault();centrarEnResultado(${idx});">
-                <div class="d-flex align-items-center">
-                    <i class="bi ${icono} text-${color} me-2"></i>
-                    <div class="flex-grow-1">
-                        <strong>${titulo}</strong>
-                        <div class="text-muted small">${subtitulo}</div>
-                    </div>
-                    <i class="bi bi-chevron-right text-muted"></i>
-                </div>
-            </a>`;
-    });
-    html += '</div>';
-    resultadosDiv.innerHTML = html;
-    resultadosDiv.style.display = 'block';
-}
-
-function centrarEnResultado(indice) {
-    const item = _resultadosBusqueda[indice];
-    if (!item) return;
-
-    mapa.setView([item.latitud, item.longitud], 19);
-    document.getElementById('resultadosBusqueda').style.display = 'none';
-
-    const infoDiv = document.getElementById('infoSeleccionada');
-
-    if (item._tipo === 'punto') {
-        infoDiv.innerHTML = `
-            <h6 class="text-success">
-                <i class="bi bi-signpost"></i> ${item.nombre}
-            </h6>
-            <p class="mb-1 small text-muted">${item.descripcion || ''}</p>
-        `;
-    } else {
-        infoDiv.innerHTML = `
-            <h6 class="text-danger">
-                <i class="bi bi-fire-extinguisher"></i> ${item.tipo}
-                <small class="text-muted fw-normal">#${item.codigo || item.id}</small>
-            </h6>
-            ${item.ultima_revision ? `<p class="mb-1"><strong>Última revisión:</strong> ${item.ultima_revision}</p>` : ''}
-            ${item.proxima_revision ? `<p class="mb-1"><strong>Próxima revisión:</strong> ${item.proxima_revision}</p>` : ''}
-            ${item.descripcion ? `<p class="mb-0 small text-muted">${item.descripcion}</p>` : ''}
-            <span class="badge bg-success mt-1">OPERATIVO</span>
-        `;
-    }
-}
-
-function mostrarDetallesPunto(puntoId) {
-    const punto = puntosEncuentroData.find(p => p.id === puntoId);
-    if (!punto) return;
-
-    document.getElementById('infoSeleccionada').innerHTML = `
-        <h6 class="text-success">
-            <i class="bi bi-signpost"></i> ${punto.nombre}
-        </h6>
-        <p class="mb-1"><strong>Coordenadas:</strong> ${punto.latitud}, ${punto.longitud}</p>
-        <p class="mb-2"><strong>Descripción:</strong> ${punto.descripcion || 'Sin descripción'}</p>
-        <div class="d-grid gap-2">
-            <button class="btn btn-sm btn-outline-primary" onclick="centrarMapaEnPunto(${punto.id})">
-                <i class="bi bi-geo-alt"></i> Centrar en este punto
-            </button>
-        </div>
-    `;
-}
-
-function centrarMapaEnPunto(puntoId) {
-    const punto = puntosEncuentroData.find(p => p.id === puntoId);
-    if (punto) {
-        mapa.setView([punto.latitud, punto.longitud], 18);
-    }
-}
 
 // ====================================================================
 // INICIALIZACIÓN COMPLETA
@@ -1347,19 +1174,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // 5. Configurar controles
     inicializarControles();
 
-    // 5. Configurar eventos del mapa
-    mapa.on('click', function(e) {
-        document.getElementById('infoSeleccionada').innerHTML = `
-            <p class="text-muted mb-1">
-                <i class="bi bi-geo-alt"></i>
-                <strong>Coordenadas:</strong> ${e.latlng.lat.toFixed(6)}, ${e.latlng.lng.toFixed(6)}
-            </p>
-            <p class="mb-0 small text-muted">
-                <i class="bi bi-info-circle"></i>
-                Haz clic en un marcador para ver más información
-            </p>
-        `;
-    });
 
     console.log('✅ Mapa interactivo inicializado correctamente');
     console.log(`📊 Puntos de encuentro: ${puntosEncuentroData.length}`);
@@ -1429,24 +1243,6 @@ document.getElementById('btnLimpiarRuta').addEventListener('click', function () 
     background: rgba(255, 255, 255, 0.95) !important;
 }
 
-/* Scroll personalizado para resultados de búsqueda */
-#resultadosBusqueda::-webkit-scrollbar {
-    width: 6px;
-}
-
-#resultadosBusqueda::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 3px;
-}
-
-#resultadosBusqueda::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 3px;
-}
-
-#resultadosBusqueda::-webkit-scrollbar-thumb:hover {
-    background: #555;
-}
 
 /* Responsive */
 @media (max-width: 768px) {
