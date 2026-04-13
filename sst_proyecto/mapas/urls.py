@@ -15,7 +15,6 @@ router.register("equipamientos", EquipamientoSeguridadViewSet)
 urlpatterns = [
     # Vistas HTML
     path("", views.mapa_interactivo, name="mapa_interactivo"),
-    path("editor/", views.editor_mapa, name="editor_mapa"),
     # APIs de estados de edificios
     path("api/edificios/estados/", views.estados_edificios, name="estados_edificios"),
     path("api/edificios/<int:pk>/cambiar-estado/", views.cambiar_estado_edificio, name="cambiar_estado_edificio"),

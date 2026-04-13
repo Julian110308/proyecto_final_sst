@@ -873,25 +873,3 @@ def guardar_poligono_edificio(request, edificio_id):
     edificio.poligono = poligono
     edificio.save(update_fields=["poligono"])
     return Response({"ok": True, "edificio": edificio.nombre, "puntos": len(poligono)})
-
-
-@login_required
-def editor_mapa(request):
-    """Editor visual del campus — solo administrativos/coordinadores."""
-    if request.user.rol not in ("ADMINISTRATIVO", "COORDINADOR_SST"):
-        from django.shortcuts import redirect
-
-        return redirect("mapa_interactivo")
-
-    import json
-
-    edificios = list(
-        EdificioBloque.objects.filter(activo=True).values("id", "nombre", "tipo", "latitud", "longitud", "poligono")
-    )
-    puntos = list(PuntoEncuentro.objects.filter(activo=True).values("id", "nombre", "latitud", "longitud", "prioridad"))
-
-    context = {
-        "edificios_json": json.dumps(edificios),
-        "puntos_json": json.dumps(puntos),
-    }
-    return render(request, "mapas/editor_mapa.html", context)
