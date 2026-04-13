@@ -606,8 +606,20 @@ html {
    Verde oficial SENA: #39A900
    ================================================ */
 
-/* btn-success */
+/* btn-success — sobrescribe variables internas de Bootstrap 5 */
 .btn-success {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: #39A900;
+    --bs-btn-border-color: #39A900;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #2E8B00;
+    --bs-btn-hover-border-color: #2E8B00;
+    --bs-btn-focus-shadow-rgb: 57, 169, 0;
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #2E8B00;
+    --bs-btn-active-border-color: #2E8B00;
+    --bs-btn-disabled-bg: #39A900;
+    --bs-btn-disabled-border-color: #39A900;
     background-color: #39A900 !important;
     border-color: #39A900 !important;
     color: #fff !important;
@@ -622,6 +634,14 @@ html {
 
 /* btn-outline-success */
 .btn-outline-success {
+    --bs-btn-color: #39A900;
+    --bs-btn-border-color: #39A900;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #39A900;
+    --bs-btn-hover-border-color: #39A900;
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #39A900;
+    --bs-btn-active-border-color: #39A900;
     color: #39A900 !important;
     border-color: #39A900 !important;
     background-color: transparent !important;
@@ -636,17 +656,20 @@ html {
 
 /* bg-success */
 .bg-success {
-    background-color: #39A900 !important;
+    --bs-bg-opacity: 1;
+    background-color: rgba(57, 169, 0, var(--bs-bg-opacity)) !important;
 }
 
 /* text-success */
 .text-success {
-    color: #39A900 !important;
+    --bs-text-opacity: 1;
+    color: rgba(57, 169, 0, var(--bs-text-opacity)) !important;
 }
 
 /* border-success */
 .border-success {
-    border-color: #39A900 !important;
+    --bs-border-opacity: 1;
+    border-color: rgba(57, 169, 0, var(--bs-border-opacity)) !important;
 }
 
 /* badge bg-success */
@@ -655,12 +678,15 @@ html {
     color: #fff !important;
 }
 
-/* bg-success con opacidad (bg-success bg-opacity-*) */
+/* bg-success con opacidad */
 .bg-success.bg-opacity-10 {
     background-color: rgba(57, 169, 0, 0.1) !important;
 }
 .bg-success.bg-opacity-25 {
     background-color: rgba(57, 169, 0, 0.25) !important;
+}
+.bg-success.bg-opacity-50 {
+    background-color: rgba(57, 169, 0, 0.5) !important;
 }
 
 /* Alert success */
@@ -675,7 +701,7 @@ html {
     background-color: #39A900 !important;
 }
 
-/* Tabla striped / hover success */
+/* Tabla success */
 .table-success {
     background-color: rgba(57, 169, 0, 0.1) !important;
 }
