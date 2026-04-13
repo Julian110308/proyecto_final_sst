@@ -17,8 +17,17 @@
     --color-tertiary: #004884;   /* Azul SENA */
 
     /* Semánticos */
-    --color-success: #2E7D32;
+    --color-success: #39A900;
     --color-success-light: #E8F5E9;
+
+    /* === OVERRIDE BOOTSTRAP CON VERDE SENA === */
+    --bs-success: #39A900;
+    --bs-success-rgb: 57, 169, 0;
+    --bs-success-bg-subtle: #e6f5d9;
+    --bs-success-border-subtle: #b3e08a;
+    --bs-success-text-emphasis: #2E8B00;
+    --bs-link-color: #39A900;
+    --bs-link-hover-color: #2E8B00;
     --color-danger: #DC2626;
     --color-danger-light: #FFEBEE;
     --color-warning: #F57C00;
@@ -590,4 +599,102 @@ html {
         max-width: var(--container-max-width);
         margin: 0 auto;
     }
+}
+
+/* ================================================
+   OVERRIDE VERDE SENA — Reemplaza Bootstrap green
+   Verde oficial SENA: #39A900
+   ================================================ */
+
+/* btn-success */
+.btn-success {
+    background-color: #39A900 !important;
+    border-color: #39A900 !important;
+    color: #fff !important;
+}
+.btn-success:hover,
+.btn-success:focus,
+.btn-success:active {
+    background-color: #2E8B00 !important;
+    border-color: #2E8B00 !important;
+    color: #fff !important;
+}
+
+/* btn-outline-success */
+.btn-outline-success {
+    color: #39A900 !important;
+    border-color: #39A900 !important;
+    background-color: transparent !important;
+}
+.btn-outline-success:hover,
+.btn-outline-success:focus,
+.btn-outline-success:active {
+    background-color: #39A900 !important;
+    border-color: #39A900 !important;
+    color: #fff !important;
+}
+
+/* bg-success */
+.bg-success {
+    background-color: #39A900 !important;
+}
+
+/* text-success */
+.text-success {
+    color: #39A900 !important;
+}
+
+/* border-success */
+.border-success {
+    border-color: #39A900 !important;
+}
+
+/* badge bg-success */
+.badge.bg-success {
+    background-color: #39A900 !important;
+    color: #fff !important;
+}
+
+/* bg-success con opacidad (bg-success bg-opacity-*) */
+.bg-success.bg-opacity-10 {
+    background-color: rgba(57, 169, 0, 0.1) !important;
+}
+.bg-success.bg-opacity-25 {
+    background-color: rgba(57, 169, 0, 0.25) !important;
+}
+
+/* Alert success */
+.alert-success {
+    background-color: #e6f5d9 !important;
+    border-color: #b3e08a !important;
+    color: #2E8B00 !important;
+}
+
+/* Progress bar success */
+.progress-bar.bg-success {
+    background-color: #39A900 !important;
+}
+
+/* Tabla striped / hover success */
+.table-success {
+    background-color: rgba(57, 169, 0, 0.1) !important;
+}
+
+/* Form check success */
+.form-check-input:checked {
+    background-color: #39A900 !important;
+    border-color: #39A900 !important;
+}
+
+/* Focus ring */
+.form-control:focus,
+.form-select:focus {
+    border-color: #39A900 !important;
+    box-shadow: 0 0 0 0.25rem rgba(57, 169, 0, 0.25) !important;
+}
+
+/* Nav link active sena */
+.nav-link.active {
+    color: #39A900 !important;
+    background-color: rgba(57, 169, 0, 0.1) !important;
 }
