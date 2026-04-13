@@ -13,6 +13,40 @@ logger = logging.getLogger("usuarios")
 
 
 @ratelimit(key="ip", rate="10/m", method="POST", block=False)
+def visitante_login_view(request):
+    """Login simplificado para visitantes: solo requiere correo, sin contraseña.
+    Solo funciona si la cuenta está activa (habilitada por vigilancia el día de hoy)."""
+
+    if getattr(request, "limited", False):
+        messages.error(request, "Demasiados intentos. Espera 1 minuto e intenta de nuevo.")
+        return redirect("login")
+
+    if request.method == "POST":
+        email = request.POST.get("email", "").strip()
+
+        if not email:
+            messages.error(request, "Ingresa tu correo electrónico.")
+            return redirect("login")
+
+        try:
+            usuario = Usuario.objects.get(email__iexact=email, rol="VISITANTE", activo=True)
+        except Usuario.DoesNotExist:
+            logger.warning(f"Intento de acceso como visitante fallido: {email}")
+            messages.error(
+                request,
+                "No se encontró una cuenta de visitante activa para ese correo. "
+                "Verifica que hayas sido registrado por el personal de vigilancia hoy.",
+            )
+            return redirect("login")
+
+        login(request, usuario, backend="django.contrib.auth.backends.ModelBackend")
+        logger.info(f"Acceso de visitante: {usuario.username} ({email})")
+        return redirect("/")
+
+    return redirect("login")
+
+
+@ratelimit(key="ip", rate="10/m", method="POST", block=False)
 def custom_login_view(request):
     """Vista de login: el usuario ingresa su correo, se busca el username interno
     y se autentica con él."""

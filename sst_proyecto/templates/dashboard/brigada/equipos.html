@@ -17,10 +17,10 @@
             <p class="text-muted mb-0">Revisión y estado del equipamiento a cargo de la brigada.</p>
         </div>
         <div class="d-flex gap-2 flex-wrap">
-            <button class="btn btn-success flex-shrink-0" data-bs-toggle="modal" data-bs-target="#modalCrear">
+            <button class="btn btn-sena flex-shrink-0" data-bs-toggle="modal" data-bs-target="#modalCrear">
                 <i class="bi bi-plus-lg me-1"></i>Agregar equipo
             </button>
-            <button class="btn btn-primary-custom flex-shrink-0" data-bs-toggle="modal" data-bs-target="#modalVerificacionGeneral">
+            <button class="btn btn-outline-sena flex-shrink-0" data-bs-toggle="modal" data-bs-target="#modalVerificacionGeneral">
                 <i class="bi bi-clipboard-check me-2"></i>Verificación General
             </button>
         </div>
@@ -109,7 +109,7 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary-custom w-100">
+                    <button type="submit" class="btn btn-sena w-100">
                         <i class="bi bi-search me-1"></i> Filtrar
                     </button>
                 </div>
@@ -215,11 +215,13 @@
                             </td>
                             <td class="text-end pe-4">
                                 <div class="btn-group">
+                                    {% if not equipo.proxima_revision or equipo.proxima_revision <= now %}
                                     <button class="btn btn-sm btn-outline-primary"
                                             onclick="verificarEquipo({{ equipo.id }})"
                                             title="Registrar verificación">
                                         <i class="bi bi-check-circle"></i>
                                     </button>
+                                    {% endif %}
                                     <button class="btn btn-sm btn-outline-secondary"
                                             onclick="verDetalles({{ equipo.id }})"
                                             title="Ver detalles">
@@ -269,22 +271,30 @@
 </div>
 
 <!-- ── Modales CRUD (brigada) ── -->
-<div class="modal fade" id="modalCrear" tabindex="-1" aria-hidden="true">
+<div class="modal fade modal-sena" id="modalCrear" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <form method="post" action="{% url 'equipos_brigada' %}">
                 {% csrf_token %}
                 <input type="hidden" name="accion" value="crear">
                 <div class="modal-header">
-                    <h5 class="modal-title fw-semibold">
-                        <i class="bi bi-plus-circle me-2 text-success"></i>Agregar Equipo
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <div class="modal-sena-header w-100">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="modal-icon-box">
+                                <i class="bi bi-plus-circle text-white" style="font-size:1.3rem;"></i>
+                            </div>
+                            <div>
+                                <h5 class="text-white fw-bold mb-0" style="font-size:1rem;">Agregar Equipo</h5>
+                                <small style="color:rgba(255,255,255,0.75);font-size:0.78rem;">Complete los datos del nuevo equipo</small>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close btn-close-white position-absolute" data-bs-dismiss="modal" style="top:1rem;right:1rem;"></button>
+                    </div>
                 </div>
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Tipo <span class="text-danger">*</span></label>
+                            <label class="form-label">Tipo <span class="text-danger">*</span></label>
                             <select class="form-select" name="tipo" required>
                                 <option value="">Selecciona un tipo...</option>
                                 {% for val, label in tipos_equipamiento %}
@@ -293,16 +303,16 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Código <span class="text-danger">*</span></label>
+                            <label class="form-label">Código <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" name="codigo" maxlength="50" placeholder="Ej: BOT-010" required>
                             <div class="form-text">Código único de identificación.</div>
                         </div>
                         <div class="col-12">
-                            <label class="form-label fw-semibold">Descripción</label>
+                            <label class="form-label">Descripción</label>
                             <input type="text" class="form-control" name="descripcion" maxlength="200" placeholder="Ej: Botiquín tipo A con insumos completos">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Estado</label>
+                            <label class="form-label">Estado</label>
                             <select class="form-select" name="estado">
                                 {% for val, label in estados %}
                                 <option value="{{ val }}" {% if val == 'OPERATIVO' %}selected{% endif %}>{{ label }}</option>
@@ -310,7 +320,7 @@
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-semibold">Edificio / Bloque</label>
+                            <label class="form-label">Edificio / Bloque</label>
                             <select class="form-select" name="edificio_id">
                                 <option value="">Sin ubicación específica</option>
                                 {% for ed in edificios %}
@@ -319,20 +329,18 @@
                             </select>
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label fw-semibold">Piso</label>
+                            <label class="form-label">Piso</label>
                             <input type="number" class="form-control" name="piso" value="1" min="1" max="10">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Próxima revisión</label>
+                            <label class="form-label">Próxima revisión</label>
                             <input type="date" class="form-control" name="proxima_revision">
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-success">
-                        <i class="bi bi-plus-lg me-1"></i>Registrar equipo
-                    </button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-lg me-1"></i>Cancelar</button>
+                    <button type="submit" class="btn btn-sena px-4"><i class="bi bi-plus-lg me-1"></i>Registrar equipo</button>
                 </div>
             </form>
         </div>
@@ -340,7 +348,7 @@
 </div>
 
 <!-- ── Modal EDITAR ── -->
-<div class="modal fade" id="modalEditar" tabindex="-1" aria-hidden="true">
+<div class="modal fade modal-sena" id="modalEditar" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <form method="post" action="{% url 'equipos_brigada' %}">
@@ -348,15 +356,23 @@
                 <input type="hidden" name="accion" value="editar">
                 <input type="hidden" name="equipo_id" id="editarId">
                 <div class="modal-header">
-                    <h5 class="modal-title fw-semibold">
-                        <i class="bi bi-pencil-square me-2 text-dark"></i>Editar Equipo
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <div class="modal-sena-header w-100">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="modal-icon-box">
+                                <i class="bi bi-pencil-square text-white" style="font-size:1.3rem;"></i>
+                            </div>
+                            <div>
+                                <h5 class="text-white fw-bold mb-0" style="font-size:1rem;">Editar Equipo</h5>
+                                <small style="color:rgba(255,255,255,0.75);font-size:0.78rem;">Modifique los datos del equipo</small>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close btn-close-white position-absolute" data-bs-dismiss="modal" style="top:1rem;right:1rem;"></button>
+                    </div>
                 </div>
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Tipo <span class="text-danger">*</span></label>
+                            <label class="form-label">Tipo <span class="text-danger">*</span></label>
                             <select class="form-select" name="tipo" id="editarTipo" required>
                                 {% for val, label in tipos_equipamiento %}
                                 <option value="{{ val }}">{{ label }}</option>
@@ -364,15 +380,15 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Código <span class="text-danger">*</span></label>
+                            <label class="form-label">Código <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" name="codigo" id="editarCodigo" maxlength="50" required>
                         </div>
                         <div class="col-12">
-                            <label class="form-label fw-semibold">Descripción</label>
+                            <label class="form-label">Descripción</label>
                             <input type="text" class="form-control" name="descripcion" id="editarDescripcion" maxlength="200">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Estado</label>
+                            <label class="form-label">Estado</label>
                             <select class="form-select" name="estado" id="editarEstado">
                                 {% for val, label in estados %}
                                 <option value="{{ val }}">{{ label }}</option>
@@ -380,7 +396,7 @@
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-semibold">Edificio / Bloque</label>
+                            <label class="form-label">Edificio / Bloque</label>
                             <select class="form-select" name="edificio_id" id="editarEdificio">
                                 <option value="">Sin ubicación específica</option>
                                 {% for ed in edificios %}
@@ -389,20 +405,18 @@
                             </select>
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label fw-semibold">Piso</label>
+                            <label class="form-label">Piso</label>
                             <input type="number" class="form-control" name="piso" id="editarPiso" min="1" max="10">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Próxima revisión</label>
+                            <label class="form-label">Próxima revisión</label>
                             <input type="date" class="form-control" name="proxima_revision" id="editarRevision">
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-dark">
-                        <i class="bi bi-check-lg me-1"></i>Guardar cambios
-                    </button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-lg me-1"></i>Cancelar</button>
+                    <button type="submit" class="btn btn-sena px-4"><i class="bi bi-check-lg me-1"></i>Guardar cambios</button>
                 </div>
             </form>
         </div>
@@ -410,7 +424,7 @@
 </div>
 
 <!-- ── Modal ELIMINAR ── -->
-<div class="modal fade" id="modalEliminar" tabindex="-1" aria-hidden="true">
+<div class="modal fade modal-sena" id="modalEliminar" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form method="post" action="{% url 'equipos_brigada' %}">
@@ -418,61 +432,82 @@
                 <input type="hidden" name="accion" value="eliminar">
                 <input type="hidden" name="equipo_id" id="eliminarId">
                 <div class="modal-header">
-                    <h5 class="modal-title fw-semibold text-danger">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Eliminar Equipo
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <div class="modal-sena-header w-100" style="background:linear-gradient(135deg,#DC2626 0%,#7F1D1D 100%);">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="modal-icon-box">
+                                <i class="bi bi-trash text-white" style="font-size:1.3rem;"></i>
+                            </div>
+                            <div>
+                                <h5 class="text-white fw-bold mb-0" style="font-size:1rem;">Eliminar Equipo</h5>
+                                <small style="color:rgba(255,255,255,0.75);font-size:0.78rem;">Esta acción no se puede deshacer</small>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close btn-close-white position-absolute" data-bs-dismiss="modal" style="top:1rem;right:1rem;"></button>
+                    </div>
                 </div>
                 <div class="modal-body">
-                    <p class="mb-1">¿Estás seguro de que deseas eliminar el equipo:</p>
-                    <p class="fw-bold" id="eliminarCodigo"></p>
-                    <div class="alert alert-warning py-2 small mb-0">
-                        <i class="bi bi-info-circle me-1"></i>Esta acción no se puede deshacer.
+                    <div style="background:#FFFBEB;border:1.5px solid #FDE68A;border-left:4px solid #D97706;border-radius:10px;padding:0.875rem 1rem;">
+                        <p class="mb-1 fw-semibold" style="font-size:0.9rem;">¿Eliminar el equipo: <strong id="eliminarCodigo"></strong>?</p>
+                        <p class="mb-0 text-muted small"><i class="bi bi-info-circle me-1"></i>Esta acción no se puede deshacer.</p>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-danger">
-                        <i class="bi bi-trash me-1"></i>Eliminar
-                    </button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-lg me-1"></i>Cancelar</button>
+                    <button type="submit" class="btn btn-danger px-4"><i class="bi bi-trash me-1"></i>Eliminar</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 <!-- Modal Verificación General -->
-<div class="modal fade" id="modalVerificacionGeneral" tabindex="-1">
-    <div class="modal-dialog">
+<div class="modal fade modal-sena" id="modalVerificacionGeneral" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="bi bi-clipboard-check me-2"></i>Verificación General de Equipos
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-sena-header w-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="modal-icon-box">
+                            <i class="bi bi-clipboard-check text-white" style="font-size:1.3rem;"></i>
+                        </div>
+                        <div>
+                            <h5 class="text-white fw-bold mb-0" style="font-size:1rem;">Verificación General</h5>
+                            <small style="color:rgba(255,255,255,0.75);font-size:0.78rem;">Actualiza todos los equipos operativos</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white position-absolute" data-bs-dismiss="modal" style="top:1rem;right:1rem;"></button>
+                </div>
             </div>
             <div class="modal-body">
-                <p>¿Desea iniciar una verificación general de todos los equipos?</p>
-                <p class="text-muted small">Esta acción registrará la fecha de verificación actual para todos los equipos marcados como operativos.</p>
+                <div style="background:#F0FAF0;border:1.5px solid #BBF7D0;border-left:4px solid #39A900;border-radius:10px;padding:0.875rem 1rem;">
+                    <p class="mb-1 fw-semibold" style="color:#166534;font-size:0.9rem;"><i class="bi bi-info-circle me-1"></i>¿Desea iniciar una verificación general?</p>
+                    <p class="mb-0 text-muted small">Se registrará la fecha de verificación actual para todos los equipos operativos.</p>
+                </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary-custom" onclick="iniciarVerificacionGeneral()">
-                    <i class="bi bi-check-all me-1"></i>Iniciar Verificación
-                </button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-lg me-1"></i>Cancelar</button>
+                <button type="button" class="btn btn-sena px-4" onclick="iniciarVerificacionGeneral()"><i class="bi bi-check-all me-1"></i>Iniciar Verificación</button>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Modal Cambiar Estado -->
-<div class="modal fade" id="modalCambiarEstado" tabindex="-1">
-    <div class="modal-dialog">
+<div class="modal fade modal-sena" id="modalCambiarEstado" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="bi bi-pencil me-2"></i>Cambiar Estado del Equipo
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-sena-header w-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="modal-icon-box">
+                            <i class="bi bi-arrow-repeat text-white" style="font-size:1.3rem;"></i>
+                        </div>
+                        <div>
+                            <h5 class="text-white fw-bold mb-0" style="font-size:1rem;">Cambiar Estado del Equipo</h5>
+                            <small style="color:rgba(255,255,255,0.75);font-size:0.78rem;">Actualice el estado operativo</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white position-absolute" data-bs-dismiss="modal" style="top:1rem;right:1rem;"></button>
+                </div>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="equipoIdCambio">
@@ -490,10 +525,8 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary-custom" onclick="guardarCambioEstado()">
-                    <i class="bi bi-save me-1"></i>Guardar Cambio
-                </button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-lg me-1"></i>Cancelar</button>
+                <button type="button" class="btn btn-sena px-4" onclick="guardarCambioEstado()"><i class="bi bi-save me-1"></i>Guardar Cambio</button>
             </div>
         </div>
     </div>
@@ -521,7 +554,7 @@ function getCookie(name) {
 
 function verificarEquipo(equipoId) {
     showConfirm('¿Confirma que ha verificado este equipo y está en condiciones operativas?', () => {
-        fetch(`/api/mapas/equipamientos/${equipoId}/verificar/`, {
+        fetch(`/api/mapas/api/equipamientos/${equipoId}/verificar/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }
         })
@@ -529,7 +562,7 @@ function verificarEquipo(equipoId) {
         .then(data => {
             if (data.success) {
                 showAlert('Verificación registrada correctamente', 'success');
-                location.reload();
+                setTimeout(() => location.reload(), 1500);
             } else {
                 showAlert('Error: ' + (data.error || 'No se pudo registrar la verificación'), 'danger');
             }
@@ -553,7 +586,7 @@ function guardarCambioEstado() {
     const nuevoEstado = document.getElementById('nuevoEstado').value;
     const observaciones = document.getElementById('observaciones').value;
 
-    fetch(`/api/mapas/equipamientos/${equipoId}/cambiar_estado/`, {
+    fetch(`/api/mapas/api/equipamientos/${equipoId}/cambiar_estado/`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -568,7 +601,7 @@ function guardarCambioEstado() {
     .then(data => {
         if (data.success) {
             showAlert('Estado actualizado correctamente', 'success');
-            location.reload();
+            setTimeout(() => location.reload(), 1500);
         } else {
             showAlert('Error: ' + (data.error || 'No se pudo actualizar el estado'), 'danger');
         }
@@ -595,7 +628,7 @@ function abrirEliminar(id, codigo) {
 }
 
 function iniciarVerificacionGeneral() {
-    fetch('/api/mapas/equipamientos/verificacion_general/', {
+    fetch('/api/mapas/api/equipamientos/verificacion_general/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -606,7 +639,7 @@ function iniciarVerificacionGeneral() {
     .then(data => {
         if (data.success) {
             showAlert(`Verificación general completada. ${data.equipos_verificados} equipos actualizados.`, 'success');
-            location.reload();
+            setTimeout(() => location.reload(), 1500);
         } else {
             showAlert('Error: ' + (data.error || 'No se pudo completar la verificación'), 'danger');
         }

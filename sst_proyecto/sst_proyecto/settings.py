@@ -52,6 +52,8 @@ INSTALLED_APPS = [
     "axes",
     "auditlog",
     "channels",
+    # Scheduler
+    "django_apscheduler",
     # Apps del proyecto
     "usuarios",
     "control_acceso",
@@ -256,15 +258,7 @@ else:
     EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
 
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="SST Centro Minero <noreply@centrominerosst.com>")
-EMAIL_TIMEOUT = 5  # Máximo 5 segundos para conexión SMTP (evita bloquear requests)
-
-# ====================================================================
-# TWILIO - WhatsApp Notifications
-# ====================================================================
-TWILIO_ACCOUNT_SID = config("TWILIO_ACCOUNT_SID", default="")
-TWILIO_AUTH_TOKEN = config("TWILIO_AUTH_TOKEN", default="")
-# Sandbox de Twilio: whatsapp:+14155238886 | Número propio si ya está aprobado
-TWILIO_WHATSAPP_FROM = config("TWILIO_WHATSAPP_FROM", default="whatsapp:+14155238886")
+EMAIL_TIMEOUT = 30  # Segundos de timeout para conexión SMTP
 
 # ====================================================================
 # CONFIGURACIÓN WEB PUSH (VAPID)

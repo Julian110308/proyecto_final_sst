@@ -4,45 +4,45 @@ import hashlib
 
 from django.core.cache import cache
 from django.conf import settings
-from django.utils import timezone
 
 
 # ─── QR Token ────────────────────────────────────────────────────────────────
 
+_QR_SALT = "PERM"
 
-def _firma_qr(user_id: int, fecha_str: str) -> str:
-    """HMAC-SHA256 truncado a 16 hex chars."""
+
+def _firma_qr(user_id: int) -> str:
+    """HMAC-SHA256 truncado a 16 hex chars. Permanente (no depende de la fecha)."""
     clave = settings.SECRET_KEY.encode()
-    mensaje = f"{user_id}:{fecha_str}".encode()
+    mensaje = f"{user_id}:{_QR_SALT}".encode()
     return hmac.new(clave, mensaje, hashlib.sha256).hexdigest()[:16]
 
 
 def generar_token_qr(user_id: int) -> str:
-    """Devuelve un token válido solo para el día de hoy."""
-    fecha = timezone.now().date().strftime("%Y%m%d")
-    firma = _firma_qr(user_id, fecha)
-    return f"SST-{user_id}-{fecha}-{firma}"
+    """Devuelve un token permanente para el usuario. Nunca expira."""
+    firma = _firma_qr(user_id)
+    return f"SST-{user_id}-{_QR_SALT}-{firma}"
 
 
 def validar_token_qr(token: str):
     """
     Valida el token QR.
     Retorna (user_id: int, None) si es válido, o (None, mensaje_error) si no.
+    Acepta tokens permanentes (SST-{id}-PERM-{firma}).
     """
     try:
         partes = token.strip().split("-")
         if len(partes) != 4 or partes[0] != "SST":
             return None, "Formato de QR inválido."
-        _, user_id_str, fecha, firma_recibida = partes
+        _, user_id_str, salt, firma_recibida = partes
         user_id = int(user_id_str)
     except (ValueError, AttributeError):
         return None, "QR malformado."
 
-    hoy = timezone.now().date().strftime("%Y%m%d")
-    if fecha != hoy:
-        return None, "QR expirado. El usuario debe regenerarlo."
+    if salt != _QR_SALT:
+        return None, "QR inválido o de versión antigua. Descarga tu nuevo QR desde tu perfil."
 
-    firma_esperada = _firma_qr(user_id, fecha)
+    firma_esperada = _firma_qr(user_id)
     if not hmac.compare_digest(firma_recibida, firma_esperada):
         return None, "QR inválido o falsificado."
 

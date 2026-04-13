@@ -26,3 +26,6 @@ daphne==4.2.1  # servidor ASGI para WebSocket en desarrollo
 
 # Documentación de API — Fase 8
 drf-spectacular==0.29.0
+
+# Scheduler — tareas programadas dentro del proceso Django
+django-apscheduler==0.7.0

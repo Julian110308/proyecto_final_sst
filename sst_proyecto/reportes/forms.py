@@ -43,11 +43,8 @@ class IncidenteForm(forms.ModelForm):
             "ubicacion",
             "latitud",
             "longitud",
-            "persona_afectada",
-            "documento_afectado",
-            "rol_afectado",
+            "personas_afectadas",
             "descripcion",
-            "version_accidente",
             "riesgos_identificados",
             "testigos",
             "foto",
@@ -79,44 +76,7 @@ class IncidenteForm(forms.ModelForm):
                 }
             ),
             "fecha_incidente": forms.DateTimeInput(attrs={"class": "form-control", "type": "datetime-local"}),
-            "persona_afectada": forms.TextInput(
-                attrs={
-                    "class": "form-control",
-                    "placeholder": "Nombre completo de la persona afectada",
-                    "maxlength": "200",
-                }
-            ),
-            "documento_afectado": forms.TextInput(
-                attrs={
-                    "class": "form-control",
-                    "placeholder": "Ej: 1234567890",
-                    "maxlength": "11",
-                    "inputmode": "numeric",
-                    "pattern": "[0-9]*",
-                    "autocomplete": "off",
-                }
-            ),
-            "rol_afectado": forms.Select(
-                attrs={"class": "form-select"},
-                choices=[
-                    ("", "Seleccione..."),
-                    ("APRENDIZ", "Aprendiz"),
-                    ("INSTRUCTOR", "Instructor"),
-                    ("ADMINISTRATIVO", "Administrativo"),
-                    ("VIGILANCIA", "Vigilancia"),
-                    ("BRIGADA", "Brigada"),
-                    ("VISITANTE", "Visitante"),
-                    ("OTRO", "Otro"),
-                ],
-            ),
-            "version_accidente": forms.Textarea(
-                attrs={
-                    "class": "form-control",
-                    "rows": 4,
-                    "placeholder": "Relato detallado: como ocurrio el accidente, que estaba haciendo la persona, condiciones del area...",
-                    "maxlength": "3000",
-                }
-            ),
+            "personas_afectadas": forms.HiddenInput(),
             "riesgos_identificados": forms.Textarea(
                 attrs={
                     "class": "form-control",
@@ -125,17 +85,10 @@ class IncidenteForm(forms.ModelForm):
                     "maxlength": "2000",
                 }
             ),
-            "testigos": forms.Textarea(
-                attrs={
-                    "class": "form-control",
-                    "rows": 3,
-                    "placeholder": "Nombre completo y documento de cada testigo (uno por linea)",
-                    "maxlength": "1000",
-                }
-            ),
             "foto": forms.FileInput(attrs={"class": "form-control", "accept": "image/*"}),
             "latitud": forms.HiddenInput(),
             "longitud": forms.HiddenInput(),
+            "testigos": forms.HiddenInput(),
         }
 
         labels = {
@@ -147,10 +100,7 @@ class IncidenteForm(forms.ModelForm):
             "ubicacion": "Ubicacion General",
             "lugar_exacto": "Lugar Exacto",
             "fecha_incidente": "Fecha y Hora del Incidente",
-            "persona_afectada": "Nombre de la Persona Afectada",
-            "documento_afectado": "Documento de la Persona Afectada",
-            "rol_afectado": "Rol de la Persona Afectada",
-            "version_accidente": "Version del Accidente",
+            "personas_afectadas": "Personas Afectadas",
             "riesgos_identificados": "Riesgos Identificados en el Area",
             "testigos": "Testigos del Incidente",
             "foto": "Foto de Evidencia (Obligatoria)",
@@ -161,7 +111,6 @@ class IncidenteForm(forms.ModelForm):
             "descripcion": "Explica que ocurrio con el mayor detalle posible",
             "foto": "Adjunta una foto del lugar o la situacion (JPG, PNG, max. 5MB)",
             "testigos": "Incluye nombre y documento de cada testigo presente",
-            "version_accidente": "Relato detallado del accidente segun los involucrados",
             "riesgos_identificados": "Identifica los posibles riesgos presentes en el area",
         }
 
@@ -200,40 +149,109 @@ class IncidenteForm(forms.ModelForm):
         return lugar
 
     def clean_testigos(self):
-        testigos = self.cleaned_data.get("testigos", "")
-        if testigos:
-            testigos = sanitizar_texto(testigos)
-            if len(testigos) > 1000:
-                raise forms.ValidationError("La informacion de testigos no puede exceder 1000 caracteres.")
-        return testigos
+        import json as _json
 
-    def clean_documento_afectado(self):
-        doc = self.cleaned_data.get("documento_afectado", "")
-        if doc:
-            doc = doc.strip()
-            if not doc.isdigit():
-                raise forms.ValidationError("El documento solo puede contener dígitos numéricos.")
-            if len(doc) < 6:
-                raise forms.ValidationError("El documento debe tener al menos 6 dígitos.")
-            if len(doc) > 11:
-                raise forms.ValidationError("El documento no puede tener más de 11 dígitos.")
-        return doc
+        testigos_raw = self.cleaned_data.get("testigos", "")
+        if not testigos_raw:
+            return ""
+        try:
+            lista = _json.loads(testigos_raw)
+        except (ValueError, TypeError):
+            raise forms.ValidationError("Formato de testigos inválido.")
+        if not isinstance(lista, list):
+            raise forms.ValidationError("Formato de testigos inválido.")
 
-    def clean_persona_afectada(self):
-        persona = self.cleaned_data.get("persona_afectada", "")
-        if persona:
-            persona = sanitizar_texto(persona)
-            if len(persona) > 200:
-                raise forms.ValidationError("El nombre no puede exceder 200 caracteres.")
-        return persona
+        TIPOS_DOC = {"CC", "TI", "CE", "PAS"}
+        ROLES = {"APRENDIZ", "INSTRUCTOR", "ADMINISTRATIVO", "VIGILANCIA", "BRIGADA", "VISITANTE", "OTRO"}
+        REGLAS_DOC = {
+            "CC": {"min": 8, "max": 10, "solo_numeros": True},
+            "TI": {"min": 8, "max": 10, "solo_numeros": True},
+            "CE": {"min": 6, "max": 12, "solo_numeros": False},
+            "PAS": {"min": 5, "max": 20, "solo_numeros": False},
+        }
 
-    def clean_version_accidente(self):
-        version = self.cleaned_data.get("version_accidente", "")
-        if version:
-            version = sanitizar_texto(version)
-            if len(version) > 3000:
-                raise forms.ValidationError("La version del accidente no puede exceder 3000 caracteres.")
-        return version
+        resultado = []
+        for i, t in enumerate(lista, 1):
+            if not isinstance(t, dict):
+                raise forms.ValidationError(f"Testigo #{i}: formato inválido.")
+            nombre = sanitizar_texto(t.get("nombre", "").strip())
+            tipo_doc = t.get("tipo_doc", "CC").strip().upper()
+            num_doc = t.get("numero_doc", "").strip()
+            rol = t.get("rol", "OTRO").strip().upper()
+
+            if not nombre:
+                raise forms.ValidationError(f"Testigo #{i}: el nombre es obligatorio.")
+            if len(nombre) > 200:
+                raise forms.ValidationError(f"Testigo #{i}: el nombre no puede exceder 200 caracteres.")
+            if tipo_doc not in TIPOS_DOC:
+                raise forms.ValidationError(f"Testigo #{i}: tipo de documento inválido.")
+            if num_doc:
+                regla = REGLAS_DOC[tipo_doc]
+                if regla["solo_numeros"] and not num_doc.isdigit():
+                    raise forms.ValidationError(f"Testigo #{i}: el documento solo puede contener dígitos.")
+                if not num_doc.isalnum():
+                    raise forms.ValidationError(f"Testigo #{i}: el documento solo puede contener letras y números.")
+                if len(num_doc) < regla["min"] or len(num_doc) > regla["max"]:
+                    raise forms.ValidationError(
+                        f"Testigo #{i}: el documento debe tener entre {regla['min']} y {regla['max']} caracteres."
+                    )
+            if rol not in ROLES:
+                rol = "OTRO"
+            resultado.append({"nombre": nombre, "tipo_doc": tipo_doc, "numero_doc": num_doc, "rol": rol})
+
+        return _json.dumps(resultado, ensure_ascii=False)
+
+    def clean_personas_afectadas(self):
+        import json as _json
+
+        raw = self.cleaned_data.get("personas_afectadas", "")
+        if not raw:
+            return ""
+        try:
+            lista = _json.loads(raw)
+        except (ValueError, TypeError):
+            raise forms.ValidationError("Formato de personas afectadas inválido.")
+        if not isinstance(lista, list):
+            raise forms.ValidationError("Formato de personas afectadas inválido.")
+
+        TIPOS_DOC = {"CC", "TI", "CE", "PAS"}
+        ROLES = {"APRENDIZ", "INSTRUCTOR", "ADMINISTRATIVO", "VIGILANCIA", "BRIGADA", "VISITANTE", "OTRO"}
+        REGLAS_DOC = {
+            "CC": {"min": 8, "max": 10, "solo_numeros": True},
+            "TI": {"min": 8, "max": 10, "solo_numeros": True},
+            "CE": {"min": 6, "max": 12, "solo_numeros": False},
+            "PAS": {"min": 5, "max": 20, "solo_numeros": False},
+        }
+        resultado = []
+        for i, p in enumerate(lista, 1):
+            if not isinstance(p, dict):
+                raise forms.ValidationError(f"Persona #{i}: formato inválido.")
+            nombre = sanitizar_texto(p.get("nombre", "").strip())
+            tipo_doc = p.get("tipo_doc", "CC").strip().upper()
+            num_doc = p.get("numero_doc", "").strip()
+            rol = p.get("rol", "OTRO").strip().upper()
+            if not nombre:
+                raise forms.ValidationError(f"Persona afectada #{i}: el nombre es obligatorio.")
+            if len(nombre) > 200:
+                raise forms.ValidationError(f"Persona afectada #{i}: el nombre no puede exceder 200 caracteres.")
+            if tipo_doc not in TIPOS_DOC:
+                raise forms.ValidationError(f"Persona afectada #{i}: tipo de documento inválido.")
+            if num_doc:
+                regla = REGLAS_DOC[tipo_doc]
+                if regla["solo_numeros"] and not num_doc.isdigit():
+                    raise forms.ValidationError(f"Persona afectada #{i}: el documento solo puede contener dígitos.")
+                if not num_doc.isalnum():
+                    raise forms.ValidationError(
+                        f"Persona afectada #{i}: el documento solo puede contener letras y números."
+                    )
+                if len(num_doc) < regla["min"] or len(num_doc) > regla["max"]:
+                    raise forms.ValidationError(
+                        f"Persona afectada #{i}: el documento debe tener entre {regla['min']} y {regla['max']} caracteres."
+                    )
+            if rol not in ROLES:
+                rol = "OTRO"
+            resultado.append({"nombre": nombre, "tipo_doc": tipo_doc, "numero_doc": num_doc, "rol": rol})
+        return _json.dumps(resultado, ensure_ascii=False)
 
     def clean_riesgos_identificados(self):
         riesgos = self.cleaned_data.get("riesgos_identificados", "")

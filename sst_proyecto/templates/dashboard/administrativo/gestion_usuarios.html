@@ -68,7 +68,7 @@
             </h2>
             <p class="text-muted mb-0">Administración de cuentas y roles del sistema</p>
         </div>
-        <button class="btn btn-success flex-shrink-0" data-bs-toggle="modal" data-bs-target="#modalNuevoUsuario">
+        <button class="btn btn-sena flex-shrink-0" data-bs-toggle="modal" data-bs-target="#modalNuevoUsuario">
             <i class="bi bi-person-plus-fill me-2"></i>Nuevo Usuario
         </button>
     </div>
@@ -183,14 +183,22 @@
 </div>
 
 <!-- Modal Nuevo Usuario -->
-<div class="modal fade" id="modalNuevoUsuario" tabindex="-1" aria-labelledby="modalNuevoUsuarioLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+<div class="modal fade modal-sena" id="modalNuevoUsuario" tabindex="-1" aria-labelledby="modalNuevoUsuarioLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
-            <div class="modal-header modal-header-green">
-                <h5 class="modal-title" id="modalNuevoUsuarioLabel">
-                    <i class="bi bi-person-plus-fill me-2"></i>Crear Nuevo Usuario
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            <div class="modal-header">
+                <div class="modal-sena-header w-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="modal-icon-box">
+                            <i class="bi bi-person-plus-fill text-white" style="font-size:1.3rem;"></i>
+                        </div>
+                        <div>
+                            <h5 class="text-white fw-bold mb-0" style="font-size:1rem;" id="modalNuevoUsuarioLabel">Crear Nuevo Usuario</h5>
+                            <small style="color:rgba(255,255,255,0.75);font-size:0.78rem;">Complete todos los campos obligatorios</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white position-absolute" data-bs-dismiss="modal" style="top:1rem;right:1rem;"></button>
+                </div>
             </div>
             <form id="formNuevoUsuario">
                 {% csrf_token %}
@@ -304,12 +312,8 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="bi bi-x-lg me-1"></i>Cancelar
-                    </button>
-                    <button type="submit" class="btn btn-success" id="btnCrearUsuario">
-                        <i class="bi bi-person-plus me-1"></i>Crear Usuario
-                    </button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-lg me-1"></i>Cancelar</button>
+                    <button type="submit" class="btn btn-sena px-4" id="btnCrearUsuario"><i class="bi bi-person-plus me-1"></i>Crear Usuario</button>
                 </div>
             </form>
         </div>
@@ -317,14 +321,22 @@
 </div>
 
 <!-- Modal Editar Usuario -->
-<div class="modal fade" id="modalEditarUsuario" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+<div class="modal fade modal-sena" id="modalEditarUsuario" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
-            <div class="modal-header modal-header-green">
-                <h5 class="modal-title">
-                    <i class="bi bi-pencil-square me-2"></i>Editar Usuario
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            <div class="modal-header">
+                <div class="modal-sena-header w-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="modal-icon-box">
+                            <i class="bi bi-pencil-square text-white" style="font-size:1.3rem;"></i>
+                        </div>
+                        <div>
+                            <h5 class="text-white fw-bold mb-0" style="font-size:1rem;">Editar Usuario</h5>
+                            <small style="color:rgba(255,255,255,0.75);font-size:0.78rem;">Actualice los datos del usuario</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white position-absolute" data-bs-dismiss="modal" style="top:1rem;right:1rem;"></button>
+                </div>
             </div>
             <form id="formEditarUsuario">
                 {% csrf_token %}
@@ -389,10 +401,8 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-check-lg me-1"></i>Guardar Cambios
-                    </button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-lg me-1"></i>Cancelar</button>
+                    <button type="submit" class="btn btn-sena px-4"><i class="bi bi-check-lg me-1"></i>Guardar Cambios</button>
                 </div>
             </form>
         </div>
@@ -400,22 +410,32 @@
 </div>
 
 <!-- Modal Confirmar Desactivación -->
-<div class="modal fade" id="modalConfirmarDesactivar" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+<div class="modal fade modal-sena" id="modalConfirmarDesactivar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header bg-warning">
-                <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Confirmar Acción</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <div class="modal-header">
+                <div class="modal-sena-header w-100" style="background:linear-gradient(135deg,#D97706 0%,#92400E 100%);">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="modal-icon-box">
+                            <i class="bi bi-exclamation-triangle text-white" style="font-size:1.3rem;"></i>
+                        </div>
+                        <div>
+                            <h5 class="text-white fw-bold mb-0" style="font-size:1rem;">Confirmar Acción</h5>
+                            <small style="color:rgba(255,255,255,0.75);font-size:0.78rem;">Revise antes de continuar</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white position-absolute" data-bs-dismiss="modal" style="top:1rem;right:1rem;"></button>
+                </div>
             </div>
             <div class="modal-body">
-                <p>¿Estás seguro de que deseas <strong id="accionTexto">desactivar</strong> al usuario <strong id="nombreUsuarioDesactivar"></strong>?</p>
-                <p class="text-muted small" id="desactivarInfo">El usuario no podrá iniciar sesión hasta que sea reactivado.</p>
+                <div style="background:#FFFBEB;border:1.5px solid #FDE68A;border-left:4px solid #D97706;border-radius:10px;padding:0.875rem 1rem;">
+                    <p class="mb-1 fw-semibold" style="font-size:0.9rem;">¿Deseas <strong id="accionTexto">desactivar</strong> al usuario <strong id="nombreUsuarioDesactivar"></strong>?</p>
+                    <p class="mb-0 text-muted small" id="desactivarInfo">El usuario no podrá iniciar sesión hasta que sea reactivado.</p>
+                </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-warning" id="btnConfirmarDesactivar">
-                    <i class="bi bi-check-lg me-1"></i>Confirmar
-                </button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-lg me-1"></i>Cancelar</button>
+                <button type="button" class="btn btn-warning px-4 fw-semibold" id="btnConfirmarDesactivar"><i class="bi bi-check-lg me-1"></i>Confirmar</button>
             </div>
         </div>
     </div>
@@ -619,7 +639,7 @@
         document.getElementById('desactivarInfo').textContent = activo
             ? 'El usuario no podrá iniciar sesión hasta que sea reactivado.'
             : 'El usuario podrá iniciar sesión nuevamente.';
-        document.getElementById('btnConfirmarDesactivar').className = activo ? 'btn btn-warning' : 'btn btn-success';
+        document.getElementById('btnConfirmarDesactivar').className = activo ? 'btn btn-warning' : 'btn btn-sena';
         new bootstrap.Modal(document.getElementById('modalConfirmarDesactivar')).show();
     }
 

@@ -154,9 +154,9 @@ class NotificacionService:
 
         url = "/emergencias/"
 
-        # Notificar a Brigada, Administrativos y Vigilancia
+        # Notificar solo a Brigada
         notificaciones = []
-        usuarios = Usuario.objects.filter(rol__in=["BRIGADA", "ADMINISTRATIVO", "VIGILANCIA"], activo=True)
+        usuarios = Usuario.objects.filter(rol="BRIGADA", activo=True)
 
         for usuario in usuarios:
             notificaciones.append(
@@ -175,7 +175,7 @@ class NotificacionService:
 
         # WebSocket — notificación instantánea en el navegador
         _ws_dispatch_roles(
-            roles=["BRIGADA", "ADMINISTRATIVO", "VIGILANCIA"],
+            roles=["BRIGADA"],
             tipo="EMERGENCIA",
             titulo=titulo,
             mensaje=mensaje,
@@ -183,28 +183,30 @@ class NotificacionService:
             url="/emergencias/",
         )
 
-        # Enviar también Web Push a los dispositivos móviles
+        # Web Push a dispositivos móviles
         tipo_nombre = emergencia.tipo.nombre if emergencia.tipo else "Emergencia"
         WebPushService.enviar_a_roles(
-            roles=["BRIGADA", "ADMINISTRATIVO", "VIGILANCIA"],
+            roles=["BRIGADA"],
             titulo=f"EMERGENCIA: {tipo_nombre}",
             cuerpo=f"{emergencia.descripcion[:80]} — Reportado por {emergencia.reportada_por.get_full_name() if emergencia.reportada_por else 'Anonimo'}",
             url="/emergencias/",
         )
 
-        # Email y WhatsApp
+        # Email
         lista_usuarios = list(usuarios)
         EmailNotificationService.notificar_emergencia(emergencia, lista_usuarios)
-        WhatsAppNotificationService.notificar_emergencia(emergencia, lista_usuarios)
 
         return len(notificaciones)
 
     @staticmethod
     def notificar_emergencia_masiva(emergencia):
         """
-        Alerta masiva: notifica a TODOS los usuarios activos del sistema.
-        Se usa para emergencias de causa natural (ej. sismo) donde todos deben saber.
+        Alerta masiva: notifica solo a los usuarios que están actualmente en el centro.
+        Un usuario está en el centro si tiene un RegistroAcceso de tipo INGRESO
+        sin egreso registrado el día de hoy.
         """
+        from control_acceso.models import RegistroAcceso
+
         tipo_nombre = emergencia.tipo.nombre if emergencia.tipo else "Emergencia"
         titulo = f"⚠️ ALERTA GENERAL: {tipo_nombre}"
         mensaje = (
@@ -214,7 +216,36 @@ class NotificacionService:
         )
         url = "/emergencias/"
 
-        usuarios = Usuario.objects.filter(activo=True).exclude(rol="VISITANTE")
+        # IDs de usuarios actualmente dentro del centro
+        hoy = timezone.now().date()
+        ids_en_centro = RegistroAcceso.objects.filter(
+            tipo="INGRESO",
+            fecha_hora_egreso__isnull=True,
+            fecha_hora_ingreso__date=hoy,
+        ).values_list("usuario_id", flat=True)
+
+        # Usuarios internos en el centro (por RegistroAcceso)
+        usuarios_internos = Usuario.objects.filter(
+            id__in=ids_en_centro,
+            activo=True,
+        ).exclude(rol="VISITANTE")
+
+        # Visitantes en el centro: registrados hoy sin hora de salida
+        from usuarios.models import Visitante
+
+        ids_visitantes_en_centro = Visitante.objects.filter(
+            fecha_visita=hoy,
+            hora_salida__isnull=True,
+            usuario__isnull=False,
+            usuario__activo=True,
+        ).values_list("usuario_id", flat=True)
+        visitantes_en_centro = Usuario.objects.filter(
+            id__in=ids_visitantes_en_centro,
+            rol="VISITANTE",
+        )
+
+        todos_en_centro = list(usuarios_internos) + list(visitantes_en_centro)
+
         notificaciones = [
             Notificacion(
                 destinatario=u,
@@ -224,14 +255,14 @@ class NotificacionService:
                 prioridad="ALTA",
                 url_relacionada=url,
             )
-            for u in usuarios
+            for u in todos_en_centro
         ]
         if notificaciones:
             Notificacion.objects.bulk_create(notificaciones)
 
-        # WebSocket a todos los roles activos
+        # WebSocket a todos los roles activos incluido VISITANTE
         _ws_dispatch_roles(
-            roles=["COORDINADOR_SST", "BRIGADA", "ADMINISTRATIVO", "VIGILANCIA", "INSTRUCTOR", "APRENDIZ"],
+            roles=["COORDINADOR_SST", "BRIGADA", "ADMINISTRATIVO", "VIGILANCIA", "INSTRUCTOR", "APRENDIZ", "VISITANTE"],
             tipo="EMERGENCIA",
             titulo=titulo,
             mensaje=mensaje,
@@ -239,18 +270,16 @@ class NotificacionService:
             url=url,
         )
 
-        # Web Push a todos
+        # Web Push a todos incluido VISITANTE
         WebPushService.enviar_a_roles(
-            roles=["COORDINADOR_SST", "BRIGADA", "ADMINISTRATIVO", "VIGILANCIA", "INSTRUCTOR", "APRENDIZ"],
+            roles=["COORDINADOR_SST", "BRIGADA", "ADMINISTRATIVO", "VIGILANCIA", "INSTRUCTOR", "APRENDIZ", "VISITANTE"],
             titulo=titulo,
             cuerpo=mensaje[:100],
             url=url,
         )
 
-        # Email y WhatsApp (alerta masiva → todos los roles con notif activa)
-        lista_todos = list(usuarios)
-        EmailNotificationService.notificar_emergencia(emergencia, lista_todos)
-        WhatsAppNotificationService.notificar_emergencia(emergencia, lista_todos)
+        # Email a todos los que están en el centro (internos + visitantes)
+        EmailNotificationService.notificar_emergencia(emergencia, todos_en_centro)
 
         return len(notificaciones)
 
@@ -557,7 +586,6 @@ class NotificacionService:
         if gravedad in ["ALTA", "CRITICA"]:
             lista_usuarios = list(usuarios)
             EmailNotificationService.notificar_incidente(incidente, lista_usuarios)
-            WhatsAppNotificationService.notificar_incidente(incidente, lista_usuarios)
 
         return len(notificaciones)
 
@@ -668,6 +696,70 @@ class NotificacionService:
         return Notificacion.notificar_usuarios_por_rol(
             rol="BRIGADA", titulo=titulo, mensaje=mensaje, tipo="RECORDATORIO", prioridad="MEDIA"
         )
+
+    @staticmethod
+    def notificar_revision_hoy():
+        """
+        Notifica a la Brigada por cada equipo cuya fecha de revisión llegó hoy o está vencida.
+        Evita duplicados: solo envía una notificación por equipo por día.
+        Retorna el número de notificaciones creadas.
+        """
+        from django.utils import timezone
+        from mapas.models import EquipamientoSeguridad
+
+        hoy = timezone.now().date()
+        brigada_users = list(Usuario.objects.filter(rol="BRIGADA", activo=True))
+        if not brigada_users:
+            return 0
+
+        equipos_pendientes = EquipamientoSeguridad.objects.filter(
+            proxima_revision__date__lte=hoy,
+            activo=True,
+        ).select_related("edificio")
+
+        if not equipos_pendientes.exists():
+            return 0
+
+        # IDs de equipos ya notificados hoy (se usa url_relacionada como clave de deduplicación)
+        urls_hoy = set(
+            Notificacion.objects.filter(
+                fecha_creacion__date=hoy,
+                url_relacionada__startswith="/brigada/equipos/?revision=",
+            ).values_list("url_relacionada", flat=True)
+        )
+
+        nuevas = []
+        for equipo in equipos_pendientes:
+            url_equipo = f"/brigada/equipos/?revision={equipo.id}"
+            if url_equipo in urls_hoy:
+                continue  # Ya fue notificado hoy
+
+            ubicacion = equipo.edificio.nombre if equipo.edificio else "Sin ubicacion"
+            fecha_str = equipo.proxima_revision.strftime("%d/%m/%Y") if equipo.proxima_revision else "Vencida"
+            titulo = f"Revision pendiente: {equipo.get_tipo_display()} {equipo.codigo}"
+            mensaje = (
+                f"El equipo {equipo.codigo} tiene revision programada para hoy ({fecha_str}).\n"
+                f"Tipo: {equipo.get_tipo_display()}\n"
+                f"Ubicacion: {ubicacion}\n"
+                f"Acceda al modulo de equipos para registrar la verificacion."
+            )
+
+            for usuario in brigada_users:
+                nuevas.append(
+                    Notificacion(
+                        destinatario=usuario,
+                        titulo=titulo,
+                        mensaje=mensaje,
+                        tipo="RECORDATORIO",
+                        prioridad="ALTA",
+                        url_relacionada=url_equipo,
+                    )
+                )
+
+        if nuevas:
+            Notificacion.objects.bulk_create(nuevas)
+
+        return len(nuevas)
 
     # ============================================================
     # NOTIFICACIONES DE VISITANTES
@@ -934,11 +1026,23 @@ class EmailNotificationService:
     SITE_URL = getattr(settings, "SITE_URL", "http://localhost:8000")
 
     @staticmethod
-    def _enviar_sync(usuario, asunto, template, contexto):
-        """Lógica real de envío (ejecutada en hilo separado)."""
+    def _enviar_lote_sync(destinatarios, asunto, template, contexto):
+        """Envía emails a una lista de usuarios en una sola conexión SMTP."""
+        from django.core.mail import get_connection
+
+        ctx = {**contexto, "site_url": EmailNotificationService.SITE_URL}
         try:
-            ctx = {**contexto, "site_url": EmailNotificationService.SITE_URL}
             html = render_to_string(template, ctx)
+        except Exception as e:
+            logger.error("Error renderizando template %s: %s", template, e)
+            return
+
+        mensajes = []
+        for usuario in destinatarios:
+            if not usuario.email:
+                continue
+            if not getattr(usuario, "recibir_notif_email", True):
+                continue
             msg = EmailMessage(
                 subject=asunto,
                 body=html,
@@ -947,16 +1051,35 @@ class EmailNotificationService:
                 reply_to=[settings.DEFAULT_FROM_EMAIL],
             )
             msg.content_subtype = "html"
-            # Headers que mejoran la entregabilidad en Outlook/Hotmail
-            msg.extra_headers = {
-                "X-Priority": "1",
-                "X-Mailer": "SST-CentroMinero/1.0",
-                "Precedence": "bulk",
-                "Auto-Submitted": "auto-generated",
-            }
-            msg.send(fail_silently=False)
+            mensajes.append(msg)
+
+        if not mensajes:
+            return
+
+        try:
+            connection = get_connection()
+            connection.send_messages(mensajes)
+            logger.info("Emails enviados: %d/%d destinatarios", len(mensajes), len(destinatarios))
         except Exception as e:
-            logger.warning("Email fallido para %s (%s): %s", usuario.username, usuario.email, e)
+            logger.error("Error enviando lote de emails: %s", e)
+            print(f"[EMAIL ERROR] Lote de {len(mensajes)} emails: {e}")
+
+    @staticmethod
+    def _enviar_lote(destinatarios, asunto, template, contexto):
+        """Envía emails a múltiples usuarios en un único hilo de fondo (una sola conexión SMTP)."""
+        import threading
+
+        t = threading.Thread(
+            target=EmailNotificationService._enviar_lote_sync,
+            args=(destinatarios, asunto, template, contexto),
+            daemon=True,
+        )
+        t.start()
+
+    @staticmethod
+    def _enviar_sync(usuario, asunto, template, contexto):
+        """Envía un email a un único usuario (reutiliza _enviar_lote_sync)."""
+        EmailNotificationService._enviar_lote_sync([usuario], asunto, template, contexto)
 
     @staticmethod
     def _enviar(usuario, asunto, template, contexto):
@@ -965,14 +1088,7 @@ class EmailNotificationService:
             return
         if not getattr(usuario, "recibir_notif_email", True):
             return
-        import threading
-
-        t = threading.Thread(
-            target=EmailNotificationService._enviar_sync,
-            args=(usuario, asunto, template, contexto),
-            daemon=True,
-        )
-        t.start()
+        EmailNotificationService._enviar_lote([usuario], asunto, template, contexto)
 
     @staticmethod
     def notificar_emergencia(emergencia, destinatarios):
@@ -990,8 +1106,7 @@ class EmailNotificationService:
             else "—",
             "estado": getattr(emergencia, "estado", "ACTIVA"),
         }
-        for usuario in destinatarios:
-            EmailNotificationService._enviar(usuario, asunto, "emails/emergencia_alerta.html", contexto)
+        EmailNotificationService._enviar_lote(destinatarios, asunto, "emails/emergencia_alerta.html", contexto)
 
     @staticmethod
     def notificar_incidente(incidente, destinatarios):
@@ -1016,98 +1131,4 @@ class EmailNotificationService:
             if hasattr(incidente, "fecha_reporte")
             else "—",
         }
-        for usuario in destinatarios:
-            EmailNotificationService._enviar(usuario, asunto, "emails/incidente_alerta.html", contexto)
-
-
-# ============================================================
-# SERVICIO DE WHATSAPP (Twilio)
-# ============================================================
-
-
-class WhatsAppNotificationService:
-    """Envía mensajes de WhatsApp usando la API de Twilio."""
-
-    @staticmethod
-    def _disponible():
-        return bool(getattr(settings, "TWILIO_ACCOUNT_SID", "") and getattr(settings, "TWILIO_AUTH_TOKEN", ""))
-
-    @staticmethod
-    def _formatear_numero(telefono):
-        """Normaliza el número al formato whatsapp:+57XXXXXXXXXX."""
-        numero = telefono.strip().replace(" ", "").replace("-", "")
-        if numero.startswith("whatsapp:"):
-            return numero
-        if not numero.startswith("+"):
-            # Asume Colombia si no tiene prefijo internacional
-            numero = "+57" + numero.lstrip("0")
-        return f"whatsapp:{numero}"
-
-    @staticmethod
-    def _enviar_sync(usuario, mensaje):
-        """Lógica real de envío WhatsApp (ejecutada en hilo separado)."""
-        try:
-            from twilio.rest import Client
-
-            client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
-            client.messages.create(
-                from_=settings.TWILIO_WHATSAPP_FROM,
-                to=WhatsAppNotificationService._formatear_numero(usuario.telefono),
-                body=mensaje,
-            )
-        except Exception as e:
-            logger.warning("WhatsApp fallido para %s: %s", usuario.username, e)
-
-    @staticmethod
-    def enviar_mensaje(usuario, mensaje):
-        """Envía un mensaje de WhatsApp en un hilo de fondo para no bloquear el request."""
-        if not WhatsAppNotificationService._disponible():
-            logger.debug("WhatsApp no configurado (Twilio sin credenciales).")
-            return
-        if not getattr(usuario, "recibir_notif_whatsapp", False):
-            return
-        telefono = getattr(usuario, "telefono", "")
-        if not telefono:
-            return
-        import threading
-
-        t = threading.Thread(
-            target=WhatsAppNotificationService._enviar_sync,
-            args=(usuario, mensaje),
-            daemon=True,
-        )
-        t.start()
-
-    @staticmethod
-    def notificar_emergencia(emergencia, destinatarios):
-        """Envía alerta de emergencia por WhatsApp."""
-        tipo_nombre = emergencia.tipo.nombre if hasattr(emergencia.tipo, "nombre") else str(emergencia.tipo)
-        reportante = emergencia.reportada_por.get_full_name() if emergencia.reportada_por else "Anónimo"
-        ubicacion = getattr(emergencia, "descripcion_ubicacion", None) or "No especificada"
-        mensaje = (
-            f"🚨 *EMERGENCIA – Centro Minero SENA*\n\n"
-            f"*Tipo:* {tipo_nombre}\n"
-            f"*Descripción:* {(emergencia.descripcion or '')[:120]}\n"
-            f"*Ubicación:* {ubicacion}\n"
-            f"*Reportada por:* {reportante}\n\n"
-            f"Ingresa al sistema para más detalles."
-        )
-        for usuario in destinatarios:
-            WhatsAppNotificationService.enviar_mensaje(usuario, mensaje)
-
-    @staticmethod
-    def notificar_incidente(incidente, destinatarios):
-        """Envía alerta de incidente crítico por WhatsApp."""
-        gravedad = getattr(incidente, "gravedad", "ALTA")
-        titulo_inc = getattr(incidente, "titulo", "Incidente reportado")
-        reportante = incidente.reportado_por.get_full_name() if incidente.reportado_por else "Anónimo"
-        mensaje = (
-            f"⚠️ *INCIDENTE {gravedad} – Centro Minero SENA*\n\n"
-            f"*{titulo_inc}*\n"
-            f"*Tipo:* {incidente.get_tipo_display() if hasattr(incidente, 'get_tipo_display') else incidente.tipo}\n"
-            f"*Ubicación:* {incidente.ubicacion or 'No especificada'}\n"
-            f"*Reportado por:* {reportante}\n\n"
-            f"Ingresa al sistema para más detalles."
-        )
-        for usuario in destinatarios:
-            WhatsAppNotificationService.enviar_mensaje(usuario, mensaje)
+        EmailNotificationService._enviar_lote(destinatarios, asunto, "emails/incidente_alerta.html", contexto)

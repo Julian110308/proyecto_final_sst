@@ -345,7 +345,7 @@
     <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
 
-            <div class="modal-header border-0 pb-0" style="background: linear-gradient(135deg, #16a34a 0%, #166534 100%); padding: 1.25rem 1.5rem 1rem;">
+            <div class="modal-header border-0 pb-0" style="background: linear-gradient(135deg, #39A900 0%, #2d8200 100%); padding: 1.25rem 1.5rem 1rem;">
                 <div class="d-flex align-items-center gap-3">
                     <div style="width: 42px; height: 42px; background: rgba(255,255,255,0.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                         <i class="bi bi-check-circle-fill text-white" style="font-size: 1.2rem;"></i>
@@ -373,7 +373,7 @@
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" style="border-radius: 8px; font-size: 0.88rem;">
                     <i class="bi bi-x-lg me-1"></i>Cancelar
                 </button>
-                <button type="button" class="btn btn-success px-4" id="btnConfirmarResolver" style="border-radius: 8px; font-size: 0.88rem; font-weight: 600;">
+                <button type="button" class="btn btn-sena px-4" id="btnConfirmarResolver" style="border-radius: 8px; font-size: 0.88rem; font-weight: 600;">
                     <i class="bi bi-check-circle-fill me-2"></i>Confirmar Resolución
                 </button>
             </div>
@@ -609,7 +609,7 @@ async function cargarEmergencias() {
                                     <i class="bi bi-hand-index me-1"></i>Atender
                                 </button>` : ''}
                                 ${e.estado === 'EN_ATENCION' ? `
-                                <button class="btn btn-sm btn-success fw-semibold" onclick="abrirModalResolver(${e.id})">
+                                <button class="btn btn-sm btn-sena fw-semibold" onclick="abrirModalResolver(${e.id})">
                                     <i class="bi bi-check-circle me-1"></i>Resolver
                                 </button>` : ''}
                                 ${['REPORTADA','EN_ATENCION'].includes(e.estado) ? `

@@ -140,10 +140,28 @@
             <div class="card-header" style="background: rgba(111, 66, 193, 0.1);">
                 <h5 class="mb-0"><i class="bi bi-people me-2" style="color: #6f42c1;"></i>Testigos del Incidente</h5>
             </div>
-            <div class="card-body">
-                <p class="mb-0" style="white-space: pre-line;">{{ incidente.testigos }}</p>
+            <div class="card-body p-0" id="testigos-detalle-container" data-raw="{{ incidente.testigos|escapejs }}">
+                <!-- Renderizado vía JS -->
+                <p class="mb-0 p-3" style="white-space: pre-line;">{{ incidente.testigos }}</p>
             </div>
         </div>
+        <script>
+        (function() {
+            const c = document.getElementById('testigos-detalle-container');
+            if (!c) return;
+            try {
+                const lista = JSON.parse(c.dataset.raw);
+                if (!Array.isArray(lista) || lista.length === 0) return;
+                const ROLES = {APRENDIZ:'Aprendiz',INSTRUCTOR:'Instructor',ADMINISTRATIVO:'Administrativo',VIGILANCIA:'Vigilancia',BRIGADA:'Brigada',VISITANTE:'Visitante',OTRO:'Otro'};
+                let html = '<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>#</th><th>Nombre</th><th>Tipo Doc.</th><th>N° Documento</th><th>Rol</th></tr></thead><tbody>';
+                lista.forEach((t, i) => {
+                    html += `<tr><td>${i+1}</td><td>${t.nombre||'-'}</td><td>${t.tipo_doc||'-'}</td><td>${t.numero_doc||'-'}</td><td>${ROLES[t.rol]||t.rol||'-'}</td></tr>`;
+                });
+                html += '</tbody></table></div>';
+                c.innerHTML = html;
+            } catch(e) {}
+        })();
+        </script>
         {% endif %}
 
         <!-- Foto de Evidencia -->
@@ -395,32 +413,29 @@
 </div>
 {% endblock %}
 
-{% if incidente.latitud and incidente.longitud %}
-{% block extra_css %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-{% endblock %}
-
 {% block extra_js %}
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% if incidente.latitud and incidente.longitud %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const lat = {{ incidente.latitud }};
-    const lng = {{ incidente.longitud }};
+setTimeout(function() {
+    var lat = {{ incidente.latitud }};
+    var lng = {{ incidente.longitud }};
+    var div = document.getElementById('mapaDetalle');
+    if (!div) return;
+    if (typeof L === 'undefined') { console.error('Leaflet no cargado'); return; }
 
-    const mapa = L.map('mapaDetalle').setView([lat, lng], 18);
+    var mapa = L.map('mapaDetalle').setView([lat, lng], 16);
 
-    L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-        attribution: '© Google', maxZoom: 20
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 20
     }).addTo(mapa);
 
-    L.marker([lat, lng], {
-        icon: L.icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
-        })
-    }).addTo(mapa).bindPopup('<strong>Lugar del incidente</strong><br>{{ incidente.ubicacion|default:"" }}').openPopup();
-});
+    L.marker([lat, lng]).addTo(mapa)
+        .bindPopup('<strong>Lugar del incidente</strong><br>{{ incidente.ubicacion|default:"" }}')
+        .openPopup();
+
+    mapa.invalidateSize();
+}, 200);
 </script>
-{% endblock %}
 {% endif %}
+{% endblock %}
