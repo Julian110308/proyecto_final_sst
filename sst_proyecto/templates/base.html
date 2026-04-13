@@ -551,37 +551,37 @@
                 <!-- OPCIONES PARA COORDINADOR SST -->
                 {% if user.rol == 'COORDINADOR_SST' %}
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'gestion_usuarios' %}">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'gestion_usuarios' %}active{% endif %}" href="{% url 'gestion_usuarios' %}">
                             <i class="bi bi-people me-2"></i>Gestión Usuarios
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'programas_formacion' %}">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'programas_formacion' %}active{% endif %}" href="{% url 'programas_formacion' %}">
                             <i class="bi bi-mortarboard me-2"></i>Programas de Formación
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'fichas_formacion' %}">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'fichas_formacion' %}active{% endif %}" href="{% url 'fichas_formacion' %}">
                             <i class="bi bi-journal-bookmark me-2"></i>Fichas de Formación
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="/reportes/">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'reportes' %}active{% endif %}" href="/reportes/">
                             <i class="bi bi-graph-up me-2"></i>Reportes
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="/reportes/incidentes/">
+                        <a class="nav-link {% if '/reportes/incidentes' in request.path %}active{% endif %}" href="/reportes/incidentes/">
                             <i class="bi bi-exclamation-triangle me-2"></i>Incidentes
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="/mapas/">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'mapas' %}active{% endif %}" href="/mapas/">
                             <i class="bi bi-map me-2"></i>Mapa Interactivo
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'mis_alertas' %}">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'mis_alertas' %}active{% endif %}" href="{% url 'mis_alertas' %}">
                             <i class="bi bi-bell me-2"></i>Mis Alertas
                         </a>
                     </li>
@@ -589,47 +589,47 @@
                 <!-- OPCIONES PARA ADMINISTRATIVO - Acceso completo -->
                 {% elif user.rol == 'ADMINISTRATIVO' %}
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="/acceso/">
+                        <a class="nav-link {% if '/acceso' in request.path %}active{% endif %}" href="/acceso/">
                             <i class="bi bi-person-check me-2"></i>Control Acceso
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="/mapas/">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'mapas' %}active{% endif %}" href="/mapas/">
                             <i class="bi bi-map me-2"></i>Mapa Interactivo
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="/emergencias/">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'emergencias' %}active{% endif %}" href="/emergencias/">
                             <i class="bi bi-exclamation-octagon me-2"></i>Emergencias
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="/reportes/">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'reportes' %}active{% endif %}" href="/reportes/">
                             <i class="bi bi-graph-up me-2"></i>Reportes
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="/reportes/incidentes/">
+                        <a class="nav-link {% if '/reportes/incidentes' in request.path %}active{% endif %}" href="/reportes/incidentes/">
                             <i class="bi bi-exclamation-triangle me-2"></i>Incidentes
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'gestion_visitantes' %}">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'gestion_visitantes' %}active{% endif %}" href="{% url 'gestion_visitantes' %}">
                             <i class="bi bi-person-badge me-2"></i>Visitantes
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'gestion_usuarios' %}">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'gestion_usuarios' %}active{% endif %}" href="{% url 'gestion_usuarios' %}">
                             <i class="bi bi-people me-2"></i>Gestión Usuarios
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'configuracion_sistema' %}">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'configuracion_sistema' %}active{% endif %}" href="{% url 'configuracion_sistema' %}">
                             <i class="bi bi-gear me-2"></i>Configuración
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'mis_alertas' %}">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'mis_alertas' %}active{% endif %}" href="{% url 'mis_alertas' %}">
                             <i class="bi bi-bell me-2"></i>Mis Alertas
                         </a>
                     </li>
@@ -637,27 +637,27 @@
                 <!-- OPCIONES PARA INSTRUCTOR -->
                 {% elif user.rol == 'INSTRUCTOR' %}
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'mis_aprendices' %}">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'mis_aprendices' %}active{% endif %}" href="{% url 'mis_aprendices' %}">
                             <i class="bi bi-people me-2"></i>Mis Aprendices
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="/mapas/">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'mapas' %}active{% endif %}" href="/mapas/">
                             <i class="bi bi-map me-2"></i>Mapa del Centro
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="/reportes/">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'reportes' %}active{% endif %}" href="/reportes/">
                             <i class="bi bi-graph-up me-2"></i>Reportes
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="/reportes/incidentes/">
+                        <a class="nav-link {% if '/reportes/incidentes' in request.path %}active{% endif %}" href="/reportes/incidentes/">
                             <i class="bi bi-exclamation-triangle me-2"></i>Incidentes
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'mis_alertas' %}">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'mis_alertas' %}active{% endif %}" href="{% url 'mis_alertas' %}">
                             <i class="bi bi-bell me-2"></i>Mis Alertas
                         </a>
                     </li>
@@ -665,32 +665,32 @@
                 <!-- OPCIONES PARA VIGILANCIA -->
                 {% elif user.rol == 'VIGILANCIA' %}
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="/acceso/">
+                        <a class="nav-link {% if '/acceso' in request.path %}active{% endif %}" href="/acceso/">
                             <i class="bi bi-door-open me-2"></i>Control Acceso
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'gestion_visitantes' %}">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'gestion_visitantes' %}active{% endif %}" href="{% url 'gestion_visitantes' %}">
                             <i class="bi bi-person-badge me-2"></i>Gestionar Visitantes
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="/mapas/">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'mapas' %}active{% endif %}" href="/mapas/">
                             <i class="bi bi-map me-2"></i>Mapa de Seguridad
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'reportes_general' %}">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'reportes_general' %}active{% endif %}" href="{% url 'reportes_general' %}">
                             <i class="bi bi-file-text me-2"></i>Reportes
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'listar_incidentes' %}">
+                        <a class="nav-link {% if '/reportes/incidentes' in request.path %}active{% endif %}" href="{% url 'listar_incidentes' %}">
                             <i class="bi bi-exclamation-triangle me-2"></i>Incidentes
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'mis_alertas' %}">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'mis_alertas' %}active{% endif %}" href="{% url 'mis_alertas' %}">
                             <i class="bi bi-bell me-2"></i>Mis Alertas
                         </a>
                     </li>
@@ -698,37 +698,37 @@
                 <!-- OPCIONES PARA BRIGADA -->
                 {% elif user.rol == 'BRIGADA' %}
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="/emergencias/">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'emergencias' %}active{% endif %}" href="/emergencias/">
                             <i class="bi bi-exclamation-octagon me-2"></i>Emergencias
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="/mapas/">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'mapas' %}active{% endif %}" href="/mapas/">
                             <i class="bi bi-map me-2"></i>Mapa de Evacuación
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'equipos_brigada' %}">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'equipos_brigada' %}active{% endif %}" href="{% url 'equipos_brigada' %}">
                             <i class="bi bi-tools me-2"></i>Equipos
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'mi_brigada' %}">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'mi_brigada' %}active{% endif %}" href="{% url 'mi_brigada' %}">
                             <i class="bi bi-people me-2"></i>Mi Brigada
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                    <a class="nav-link" href="{% url 'reportes_general' %}">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'reportes_general' %}active{% endif %}" href="{% url 'reportes_general' %}">
                             <i class="bi bi-file-medical me-2"></i>Reportes
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                    <a class="nav-link" href="{% url 'listar_incidentes' %}">
+                        <a class="nav-link {% if '/reportes/incidentes' in request.path %}active{% endif %}" href="{% url 'listar_incidentes' %}">
                             <i class="bi bi-exclamation-triangle me-2"></i>Incidentes
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'mis_alertas' %}">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'mis_alertas' %}active{% endif %}" href="{% url 'mis_alertas' %}">
                             <i class="bi bi-bell me-2"></i>Mis Alertas
                         </a>
                     </li>
@@ -736,22 +736,22 @@
                 <!-- OPCIONES PARA APRENDIZ -->
                 {% elif user.rol == 'APRENDIZ' %}
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'mi_asistencia' %}">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'mi_asistencia' %}active{% endif %}" href="{% url 'mi_asistencia' %}">
                             <i class="bi bi-clock-history me-2"></i>Mis Accesos
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="/mapas/">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'mapas' %}active{% endif %}" href="/mapas/">
                             <i class="bi bi-map me-2"></i>Mapa del Centro
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'mis_alertas' %}">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'mis_alertas' %}active{% endif %}" href="{% url 'mis_alertas' %}">
                             <i class="bi bi-bell me-2"></i>Mis Alertas
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="/reportes/incidentes/">
+                        <a class="nav-link {% if '/reportes/incidentes' in request.path %}active{% endif %}" href="/reportes/incidentes/">
                             <i class="bi bi-exclamation-triangle me-2"></i>Mis Incidentes
                         </a>
                     </li>
@@ -759,7 +759,7 @@
                 <!-- OPCIONES PARA VISITANTE -->
                 {% elif user.rol == 'VISITANTE' %}
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="/mapas/">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'mapas' %}active{% endif %}" href="/mapas/">
                             <i class="bi bi-map me-2"></i>Mapa del Centro
                         </a>
                     </li>
@@ -1131,28 +1131,7 @@
             });
         });
 
-        // Marcar enlace activo en el sidebar según la URL actual
-        // (El link de Inicio ya recibe la clase active desde el servidor vía Django)
-        (function() {
-            const path = window.location.pathname;
-            const links = document.querySelectorAll('#sidebar .nav-link');
-            let matched = null;
-            let matchLen = 0;
-
-            links.forEach(function(link) {
-                const href = link.getAttribute('href');
-                if (!href || href === '/') return; // Inicio lo maneja Django server-side
-                if (path.startsWith(href) && href.length > matchLen) {
-                    matched = link;
-                    matchLen = href.length;
-                }
-            });
-
-            if (matched) {
-                matched.classList.add('active');
-                matched.setAttribute('aria-current', 'page');
-            }
-        })();
+        // Sidebar: enlace activo marcado server-side por Django (request.resolver_match.url_name)
 
         // ============================================================
         // TIPOS DE EMERGENCIA - Cargar ANTES de usar en el botón
