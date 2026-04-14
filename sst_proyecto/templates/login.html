@@ -1102,6 +1102,7 @@
                                 <select name="rol_solicitado" id="reg_rol_solicitado">
                                     <option value="">Selecciona tu rol...</option>
                                     <option value="INSTRUCTOR">Instructor</option>
+                                    <option value="ADMINISTRATIVO">Administrativo / Funcionario</option>
                                     <option value="VIGILANCIA">Vigilancia</option>
                                 </select>
                             </div>
@@ -1695,7 +1696,7 @@
             if (rolDetectado === 'SENA_STAFF') {
                 const rolSel = document.getElementById('reg_rol_solicitado').value;
                 if (!rolSel) {
-                    showAlert(alertDiv, 'Debes seleccionar tu rol dentro del SENA (Instructor o Vigilancia)');
+                    showAlert(alertDiv, 'Debes seleccionar tu rol dentro del SENA (Instructor, Administrativo o Vigilancia)');
                     document.getElementById('reg_rol_solicitado').focus();
                     return;
                 }

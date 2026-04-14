@@ -19,7 +19,7 @@
         <p class="text-muted mb-0">Detalles del incidente reportado</p>
     </div>
     <div class="d-flex gap-2 flex-shrink-0 flex-wrap">
-        {% if user.rol == 'COORDINADOR_SST' or user.rol == 'BRIGADA' %}
+        {% if user.rol == 'ADMINISTRATIVO' or user.rol == 'BRIGADA' %}
         <a href="{% url 'actualizar_incidente' incidente.pk %}" class="btn btn-primary">
             <i class="bi bi-pencil-square me-1"></i>
             Actualizar Estado
@@ -152,7 +152,7 @@
             try {
                 const lista = JSON.parse(c.dataset.raw);
                 if (!Array.isArray(lista) || lista.length === 0) return;
-                const ROLES = {APRENDIZ:'Aprendiz',INSTRUCTOR:'Instructor',COORDINADOR_SST:'Coordinador SST',VIGILANCIA:'Vigilancia',BRIGADA:'Brigada',VISITANTE:'Visitante',OTRO:'Otro'};
+                const ROLES = {APRENDIZ:'Aprendiz',INSTRUCTOR:'Instructor',ADMINISTRATIVO:'Administrativo',VIGILANCIA:'Vigilancia',BRIGADA:'Brigada',VISITANTE:'Visitante',OTRO:'Otro'};
                 let html = '<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>#</th><th>Nombre</th><th>Tipo Doc.</th><th>N° Documento</th><th>Rol</th></tr></thead><tbody>';
                 lista.forEach((t, i) => {
                     html += `<tr><td>${i+1}</td><td>${t.nombre||'-'}</td><td>${t.tipo_doc||'-'}</td><td>${t.numero_doc||'-'}</td><td>${ROLES[t.rol]||t.rol||'-'}</td></tr>`;

@@ -85,13 +85,13 @@ class EsCoordinador(BasePermission):
 
 class EsAdministrativo(BasePermission):
     """
-    Permiso: Solo usuarios con rol COORDINADOR_SST (anteriormente ADMINISTRATIVO)
+    Permiso: Solo usuarios con rol ADMINISTRATIVO
     """
 
-    message = "Solo el coordinador SST puede realizar esta acción."
+    message = "Solo el personal administrativo puede realizar esta acción."
 
     def has_permission(self, request, view):
-        return request.user and request.user.is_authenticated and request.user.rol in ["COORDINADOR_SST", "ADMINISTRATIVO"]
+        return request.user and request.user.is_authenticated and request.user.rol == "ADMINISTRATIVO"
 
 
 class EsAdministrativoOInstructor(BasePermission):
@@ -161,5 +161,5 @@ class PuedeGestionarUsuarios(BasePermission):
             return request.user and request.user.is_authenticated
 
         return (
-            request.user and request.user.is_authenticated and request.user.rol in ["COORDINADOR_SST", "ADMINISTRATIVO"]
+            request.user and request.user.is_authenticated and request.user.rol in ["ADMINISTRATIVO", "COORDINADOR_SST"]
         )

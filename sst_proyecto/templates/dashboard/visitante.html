@@ -23,6 +23,9 @@
         <span class="badge bg-primary px-3 py-2">
             <i class="bi bi-person-badge me-1"></i>Visitante
         </span>
+        <span class="badge bg-light text-dark border px-3 py-2" id="badgeEstado">
+            <i class="bi bi-hourglass-split me-1"></i>Verificando...
+        </span>
     </div>
 </div>
 
@@ -52,11 +55,38 @@
             <div class="card-header-modern d-flex justify-content-between align-items-center">
                 <h6 class="mb-0">
                     <i class="bi bi-geo-alt-fill me-2"></i>
-                    Mapa Centro Minero
+                    Mapa del Centro - Generar Ruta
                 </h6>
                 <a href="/mapas/" class="btn btn-sm btn-outline-primary">Ver Completo</a>
             </div>
             <div class="card-body">
+                <!-- Selector de destino y boton de ruta -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">
+                            <i class="bi bi-signpost-2 me-1"></i>Seleccione su destino
+                        </label>
+                        <select id="selectDestino" class="form-select">
+                            <option value="">-- Seleccione una zona --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">&nbsp;</label>
+                        <button id="btnGenerarRuta" class="btn btn-sena w-100" disabled>
+                            <i class="bi bi-arrow-right-circle me-1"></i>Generar Ruta
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">&nbsp;</label>
+                        <button id="btnLimpiarRutaVisitante" class="btn btn-outline-secondary w-100">
+                            <i class="bi bi-trash me-1"></i>Limpiar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Info de la ruta -->
+                <div id="infoRutaVisitante" class="d-none mb-3"></div>
+
                 <!-- Mapa -->
                 <div id="visitanteMap" style="height: clamp(250px, 45vw, 400px); border-radius: 8px;"></div>
             </div>
@@ -148,7 +178,7 @@
                         <div class="col-md-3 col-6">
                             <div class="p-3 bg-light rounded">
                                 <i class="bi bi-2-circle-fill text-danger fs-3 mb-1 d-block"></i>
-                                <strong class="small">Siga la señalización</strong>
+                                <strong class="small">Siga senalizacion</strong>
                             </div>
                         </div>
                         <div class="col-md-3 col-6">
@@ -173,6 +203,86 @@
     </div>
 </div>
 
+<!-- Cargar info de visita del usuario -->
+<script>
+document.addEventListener('DOMContentLoaded', async function() {
+    const cont = document.getElementById('infoVisita');
+    const badge = document.getElementById('badgeEstado');
+
+    try {
+        const r = await fetch('/api/acceso/registros/registros_recientes/?limite=50');
+        const data = await r.json();
+        const miDoc = '{{ user.numero_documento }}';
+        const miRegistro = data.find(d => d.usuario && d.usuario.documento === miDoc && !d.fecha_hora_egreso);
+
+        if (miRegistro) {
+            const ingreso = new Date(miRegistro.fecha_hora_ingreso);
+            const ahora = new Date();
+            const diffMin = Math.floor((ahora - ingreso) / 60000);
+            const horas = Math.floor(diffMin / 60);
+            const mins = diffMin % 60;
+
+            badge.className = 'badge bg-success px-3 py-2';
+            badge.innerHTML = '<i class="bi bi-check-circle me-1"></i>En el Centro';
+
+            cont.innerHTML = `
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-3 p-2 bg-success bg-opacity-10 me-3">
+                                <i class="bi bi-clock-history fs-4 text-success"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted">Hora de Ingreso</small>
+                                <h5 class="mb-0">${ingreso.toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit', hour12:true})}</h5>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-3 p-2 bg-info bg-opacity-10 me-3">
+                                <i class="bi bi-hourglass-split fs-4 text-info"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted">Tiempo en Centro</small>
+                                <h5 class="mb-0">${horas > 0 ? horas + 'h ' : ''}${mins}min</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="alert alert-info mt-3 mb-0 small">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Mantenga visible su identificacion de visitante. Si necesita asistencia, dirijase a recepcion.
+                </div>`;
+        } else {
+            badge.className = 'badge bg-secondary px-3 py-2';
+            badge.innerHTML = '<i class="bi bi-x-circle me-1"></i>Sin ingreso activo';
+
+            cont.innerHTML = `
+                <div class="text-center py-3">
+                    <i class="bi bi-info-circle fs-3 text-muted d-block mb-2"></i>
+                    <p class="text-muted mb-0">No tiene un ingreso activo registrado hoy.</p>
+                    <small class="text-muted">Dirijase a recepcion para registrar su ingreso.</small>
+                </div>`;
+        }
+    } catch(e) {
+        cont.innerHTML = `
+            <div class="text-center py-3">
+                <i class="bi bi-building fs-3 text-muted d-block mb-2"></i>
+                <p class="text-muted mb-1">Bienvenido al Centro Minero SENA</p>
+                <small class="text-muted">Si necesita asistencia, dirijase a recepcion o contacte al personal de vigilancia.</small>
+            </div>`;
+        badge.className = 'badge bg-primary px-3 py-2';
+        badge.innerHTML = '<i class="bi bi-person-badge me-1"></i>Visitante';
+    }
+});
+
+function reportarEmergencia() {
+    showConfirm('¿Desea reportar una emergencia? Se notificará al personal de seguridad.', () => {
+        window.location.href = '/emergencias/';
+    }, { title: 'Reportar Emergencia', type: 'danger', confirmText: 'Sí, reportar' });
+}
+</script>
 {% endblock %}
 
 {% block extra_js %}
@@ -186,13 +296,23 @@ L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
     attribution: '© Google', maxZoom: 20
 }).addTo(mapVisitante);
 
+// Variables para ruta
+let rutaVisitante = null;
+let marcadorDestino = null;
 let miMarcadorVisitante = null;
+let edificiosVisitante = [];
 
 // Iconos
 const peIcon = L.divIcon({
     className: 'custom-div-icon',
     html: '<div style="background:#4CAF50;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,.3);font-size:11px;">PE</div>',
     iconSize: [30, 30]
+});
+
+const destIcon = L.divIcon({
+    className: 'custom-div-icon',
+    html: '<div style="background:#FF6600;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4);font-size:14px;"><i class="bi bi-flag-fill"></i></div>',
+    iconSize: [36, 36], iconAnchor: [18, 36]
 });
 
 // Cargar puntos de encuentro
@@ -207,6 +327,59 @@ fetch('/api/mapas/api/puntos-encuentro/')
             }
         });
     }).catch(() => {});
+
+// Cargar edificios para el selector de destino
+function cargarEdificiosFallback(select) {
+    const ejemplos = [
+        { nombre: 'Edificio Administrativo', latitud: 5.73047, longitud: -72.89440 },
+        { nombre: 'Bloque de Aulas', latitud: 5.73062, longitud: -72.89425 },
+        { nombre: 'Talleres de Mineria', latitud: 5.73012, longitud: -72.89432 },
+        { nombre: 'Laboratorios de Geologia', latitud: 5.73044, longitud: -72.89392 },
+        { nombre: 'Cafeteria y Bienestar', latitud: 5.73033, longitud: -72.89394 },
+        { nombre: 'Biblioteca', latitud: 5.73059, longitud: -72.89399 },
+        { nombre: 'Mina Didactica', latitud: 5.72980, longitud: -72.89464 },
+    ];
+    ejemplos.forEach(function(e, i) {
+        const opt = document.createElement('option');
+        opt.value = 'ej_' + i;
+        opt.textContent = e.nombre;
+        opt.dataset.lat = e.latitud;
+        opt.dataset.lng = e.longitud;
+        select.appendChild(opt);
+    });
+    edificiosVisitante = ejemplos;
+}
+
+fetch('/api/mapas/api/edificios/')
+    .then(r => r.ok ? r.json() : Promise.reject(r.status))
+    .then(data => {
+        const lista = Array.isArray(data.results) ? data.results : (Array.isArray(data) ? data : []);
+        const select = document.getElementById('selectDestino');
+        let added = 0;
+        lista.forEach(e => {
+            const lat = parseFloat(e.latitud);
+            const lng = parseFloat(e.longitud);
+            if (isNaN(lat) || isNaN(lng)) return;
+            const opt = document.createElement('option');
+            opt.value = e.id;
+            opt.textContent = e.nombre + (e.tipo ? ' (' + e.tipo + ')' : '');
+            opt.dataset.lat = lat;
+            opt.dataset.lng = lng;
+            select.appendChild(opt);
+            added++;
+        });
+        edificiosVisitante = lista;
+        if (added === 0) {
+            cargarEdificiosFallback(select);
+        }
+    }).catch(() => {
+        cargarEdificiosFallback(document.getElementById('selectDestino'));
+    });
+
+// Habilitar boton cuando se selecciona destino
+document.getElementById('selectDestino').addEventListener('change', function() {
+    document.getElementById('btnGenerarRuta').disabled = !this.value;
+});
 
 // Obtener ubicacion del visitante
 if (navigator.geolocation) {
@@ -229,5 +402,91 @@ if (navigator.geolocation) {
     }, function() {}, { enableHighAccuracy: true, timeout: 10000 });
 }
 
+// Generar ruta
+document.getElementById('btnGenerarRuta').addEventListener('click', function() {
+    const select = document.getElementById('selectDestino');
+    const selectedOpt = select.options[select.selectedIndex];
+
+    if (!selectedOpt || !selectedOpt.value) return;
+
+    const destLat = parseFloat(selectedOpt.dataset.lat);
+    const destLng = parseFloat(selectedOpt.dataset.lng);
+
+    if (isNaN(destLat) || isNaN(destLng)) {
+        showAlert('Este destino no tiene coordenadas válidas.', 'warning');
+        return;
+    }
+
+    const destNombre = selectedOpt.textContent.trim();
+
+    // Punto de origen: ubicacion del visitante o centro del mapa
+    let origenLat, origenLng;
+    if (miMarcadorVisitante) {
+        const ll = miMarcadorVisitante.getLatLng();
+        origenLat = ll.lat;
+        origenLng = ll.lng;
+    } else {
+        origenLat = centroMineroV.lat;
+        origenLng = centroMineroV.lng;
+    }
+
+    // Limpiar ruta anterior
+    if (rutaVisitante) mapVisitante.removeLayer(rutaVisitante);
+    if (marcadorDestino) mapVisitante.removeLayer(marcadorDestino);
+
+    // Dibujar ruta
+    rutaVisitante = L.polyline([
+        [origenLat, origenLng],
+        [destLat, destLng]
+    ], {
+        color: '#FF6600',
+        weight: 5,
+        opacity: 0.85,
+        dashArray: '12, 8',
+        lineCap: 'round'
+    }).addTo(mapVisitante);
+
+    // Marcador de destino
+    marcadorDestino = L.marker([destLat, destLng], { icon: destIcon })
+        .addTo(mapVisitante)
+        .bindPopup('<strong>Destino: ' + destNombre + '</strong>')
+        .openPopup();
+
+    // Calcular distancia
+    const distancia = mapVisitante.distance([origenLat, origenLng], [destLat, destLng]);
+    const tiempoMin = (distancia / 5000) * 60; // 5 km/h a pie
+
+    // Mostrar info de ruta
+    const infoDiv = document.getElementById('infoRutaVisitante');
+    infoDiv.classList.remove('d-none');
+    infoDiv.innerHTML = `
+        <div class="alert alert-success mb-0">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-arrow-right-circle-fill fs-3 me-3 text-success"></i>
+                <div>
+                    <h6 class="mb-1">Ruta hacia: ${destNombre}</h6>
+                    <span class="me-3"><i class="bi bi-rulers me-1"></i><strong>${distancia.toFixed(0)}</strong> metros</span>
+                    <span><i class="bi bi-clock me-1"></i><strong>${tiempoMin < 1 ? '< 1' : tiempoMin.toFixed(0)}</strong> min a pie</span>
+                </div>
+            </div>
+            <small class="text-muted d-block mt-2">
+                <i class="bi bi-info-circle me-1"></i>Siga la linea naranja en el mapa para llegar a su destino.
+            </small>
+        </div>`;
+
+    // Ajustar vista
+    const bounds = L.latLngBounds([[origenLat, origenLng], [destLat, destLng]]);
+    mapVisitante.fitBounds(bounds, { padding: [80, 80] });
+});
+
+// Limpiar ruta
+document.getElementById('btnLimpiarRutaVisitante').addEventListener('click', function() {
+    if (rutaVisitante) { mapVisitante.removeLayer(rutaVisitante); rutaVisitante = null; }
+    if (marcadorDestino) { mapVisitante.removeLayer(marcadorDestino); marcadorDestino = null; }
+    document.getElementById('infoRutaVisitante').classList.add('d-none');
+    document.getElementById('selectDestino').value = '';
+    document.getElementById('btnGenerarRuta').disabled = true;
+    mapVisitante.setView([centroMineroV.lat, centroMineroV.lng], 17);
+});
 </script>
 {% endblock %}

@@ -183,6 +183,20 @@
             </div>
         </div>
 
+        <!-- Notificaciones externas -->
+        <div class="card shadow-sm border-0 rounded-4 mt-3">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-3"><i class="bi bi-bell me-2"></i>Notificaciones externas</h6>
+                <div class="d-flex flex-wrap gap-2">
+                    <span class="badge px-3 py-2 {% if usuario.recibir_notif_email %}bg-success{% else %}bg-secondary{% endif %} bg-opacity-10 {% if usuario.recibir_notif_email %}text-success{% else %}text-secondary{% endif %}" style="font-size:.82rem; border-radius:20px;">
+                        <i class="bi bi-envelope me-1"></i>
+                        Email {% if usuario.recibir_notif_email %}activado{% else %}desactivado{% endif %}
+                    </span>
+                </div>
+                <p class="text-muted small mt-2 mb-0">Edita tu perfil para cambiar estas preferencias.</p>
+            </div>
+        </div>
+
         <!-- Seguridad -->
         <div class="card shadow-sm border-0 rounded-4 mt-3">
             <div class="card-body p-4 d-flex align-items-center justify-content-between">
@@ -343,6 +357,26 @@
                         </div>
                     </div>
 
+                </div>
+
+                <!-- Preferencias de notificaciones externas -->
+                <div class="px-4 pb-2 pt-3">
+                    <h6 class="fw-bold small text-muted text-uppercase mb-3" style="letter-spacing:.06em;">
+                        <i class="bi bi-bell me-1"></i>Notificaciones externas
+                    </h6>
+                    <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:14px 16px;">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <div>
+                                <div class="fw-semibold small">Correo electrónico</div>
+                                <div class="text-muted" style="font-size:.78rem;">Recibir alertas de emergencias e incidentes críticos por email</div>
+                            </div>
+                            <div class="form-check form-switch mb-0 ms-3">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       name="recibir_notif_email" id="switchNotifEmail"
+                                       {% if usuario.recibir_notif_email %}checked{% endif %}>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="modal-footer border-top px-4 pb-4 pt-3">

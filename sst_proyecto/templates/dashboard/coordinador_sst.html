@@ -154,6 +154,7 @@
                         <option value="">Todos los roles</option>
                         <option value="COORDINADOR_SST">Coordinador SST</option>
                         <option value="INSTRUCTOR">Instructor</option>
+                        <option value="ADMINISTRATIVO">Administrativo</option>
                         <option value="VIGILANCIA">Vigilancia</option>
                         <option value="BRIGADA">Brigada</option>
                         <option value="APRENDIZ">Aprendiz</option>
@@ -243,7 +244,7 @@ function showToast(msg, ok = true) {
 
 function rolBadge(rol) {
     const mapa = {
-        COORDINADOR_SST: 'dark', INSTRUCTOR: 'primary',
+        COORDINADOR_SST: 'dark', ADMINISTRATIVO: 'secondary', INSTRUCTOR: 'primary',
         BRIGADA: 'info', VIGILANCIA: 'warning', APRENDIZ: 'success', VISITANTE: 'secondary'
     };
     const color = mapa[rol] || 'secondary';

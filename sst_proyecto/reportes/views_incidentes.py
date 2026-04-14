@@ -35,7 +35,7 @@ def listar_incidentes(request):
     Muestra todos los incidentes con filtros avanzados y SLA.
     Administradores y brigada ven todos; los demás solo los suyos.
     """
-    if request.user.rol in ["COORDINADOR_SST", "BRIGADA"]:
+    if request.user.rol in ["ADMINISTRATIVO", "BRIGADA"]:
         incidentes = Incidente.objects.select_related("reportado_por", "asignado_a").all()
     else:
         incidentes = Incidente.objects.select_related("reportado_por", "asignado_a").filter(reportado_por=request.user)
@@ -157,7 +157,7 @@ def crear_incidente(request):
             if incidente.gravedad == "CRITICA":
                 from usuarios.models import Usuario
 
-                admin = Usuario.objects.filter(rol="COORDINADOR_SST").first()
+                admin = Usuario.objects.filter(rol="ADMINISTRATIVO").first()
                 if admin:
                     incidente.asignado_a = admin
 
@@ -193,7 +193,7 @@ def detalle_incidente(request, pk):
     incidente = get_object_or_404(Incidente, pk=pk)
 
     # Verificar permisos: solo el que reportó, admin o brigada pueden ver
-    if request.user.rol not in ["COORDINADOR_SST", "BRIGADA"] and incidente.reportado_por != request.user:
+    if request.user.rol not in ["ADMINISTRATIVO", "BRIGADA"] and incidente.reportado_por != request.user:
         messages.error(request, "No tienes permiso para ver este incidente.")
         return redirect("listar_incidentes")
 
@@ -232,7 +232,7 @@ def actualizar_incidente(request, pk):
     Permite al administrador o a la brigada actualizar el estado y acciones del incidente.
     Notifica automáticamente al usuario que reportó cuando el estado cambia.
     """
-    if request.user.rol not in ["COORDINADOR_SST", "BRIGADA"]:
+    if request.user.rol not in ["ADMINISTRATIVO", "BRIGADA"]:
         messages.error(request, "No tienes permiso para actualizar incidentes.")
         return redirect("listar_incidentes")
 
@@ -261,7 +261,7 @@ def actualizar_incidente(request, pk):
         incidente.modificado_por = request.user
 
         # Asignar a usuario (solo ADMINISTRATIVO puede reasignar)
-        if request.user.rol == "COORDINADOR_SST":
+        if request.user.rol == "ADMINISTRATIVO":
             if asignado_a_id:
                 from usuarios.models import Usuario
 
@@ -319,15 +319,15 @@ def actualizar_incidente(request, pk):
 
     # Obtener usuarios disponibles para asignar (solo ADMINISTRATIVO puede ver/cambiar asignación)
     usuarios_disponibles = []
-    if request.user.rol == "COORDINADOR_SST":
+    if request.user.rol == "ADMINISTRATIVO":
         from usuarios.models import Usuario
 
-        usuarios_disponibles = Usuario.objects.filter(activo=True, rol__in=["COORDINADOR_SST", "INSTRUCTOR", "BRIGADA"])
+        usuarios_disponibles = Usuario.objects.filter(activo=True, rol__in=["ADMINISTRATIVO", "INSTRUCTOR", "BRIGADA"])
 
     context = {
         "incidente": incidente,
         "usuarios_disponibles": usuarios_disponibles,
-        "puede_reasignar": request.user.rol == "COORDINADOR_SST",
+        "puede_reasignar": request.user.rol == "ADMINISTRATIVO",
     }
 
     return render(request, "reportes/incidente_actualizar.html", context)
@@ -337,7 +337,7 @@ def actualizar_incidente(request, pk):
 @login_required
 def exportar_incidentes_excel(request):
     """Exporta la lista de incidentes (con filtros activos) a Excel."""
-    if request.user.rol in ["COORDINADOR_SST", "BRIGADA"]:
+    if request.user.rol in ["ADMINISTRATIVO", "BRIGADA"]:
         incidentes = Incidente.objects.select_related("reportado_por", "asignado_a").all()
     else:
         incidentes = Incidente.objects.select_related("reportado_por", "asignado_a").filter(reportado_por=request.user)

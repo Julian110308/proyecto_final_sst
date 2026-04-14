@@ -262,7 +262,7 @@ class NotificacionService:
 
         # WebSocket a todos los roles activos incluido VISITANTE
         _ws_dispatch_roles(
-            roles=["COORDINADOR_SST", "BRIGADA", "VIGILANCIA", "INSTRUCTOR", "APRENDIZ", "VISITANTE"],
+            roles=["COORDINADOR_SST", "BRIGADA", "ADMINISTRATIVO", "VIGILANCIA", "INSTRUCTOR", "APRENDIZ", "VISITANTE"],
             tipo="EMERGENCIA",
             titulo=titulo,
             mensaje=mensaje,
@@ -272,7 +272,7 @@ class NotificacionService:
 
         # Web Push a todos incluido VISITANTE
         WebPushService.enviar_a_roles(
-            roles=["COORDINADOR_SST", "BRIGADA", "VIGILANCIA", "INSTRUCTOR", "APRENDIZ", "VISITANTE"],
+            roles=["COORDINADOR_SST", "BRIGADA", "ADMINISTRATIVO", "VIGILANCIA", "INSTRUCTOR", "APRENDIZ", "VISITANTE"],
             titulo=titulo,
             cuerpo=mensaje[:100],
             url=url,
@@ -302,7 +302,7 @@ class NotificacionService:
         if emergencia.reportada_por:
             # Usar dashboard para roles sin acceso a emergencias
             url_reportante = "/dashboard/"
-            if emergencia.reportada_por.rol in ["BRIGADA", "COORDINADOR_SST", "VIGILANCIA", "INSTRUCTOR"]:
+            if emergencia.reportada_por.rol in ["BRIGADA", "ADMINISTRATIVO", "VIGILANCIA", "INSTRUCTOR"]:
                 url_reportante = "/emergencias/"
 
             Notificacion.crear_notificacion(
@@ -345,7 +345,7 @@ class NotificacionService:
                 Notificacion.objects.bulk_create(notificaciones)
 
             _ws_dispatch_roles(
-                roles=["COORDINADOR_SST", "BRIGADA", "VIGILANCIA", "INSTRUCTOR", "APRENDIZ"],
+                roles=["COORDINADOR_SST", "BRIGADA", "ADMINISTRATIVO", "VIGILANCIA", "INSTRUCTOR", "APRENDIZ"],
                 tipo="EMERGENCIA",
                 titulo=titulo,
                 mensaje=mensaje,
@@ -357,7 +357,7 @@ class NotificacionService:
         # Emergencia normal → solo administrativos y quien reportó
         titulo = "Emergencia resuelta"
         mensaje = f"La emergencia ha sido resuelta.\nTipo: {tipo_nombre}"
-        administradores = list(Usuario.objects.filter(rol="COORDINADOR_SST", activo=True))
+        administradores = list(Usuario.objects.filter(rol="ADMINISTRATIVO", activo=True))
 
         notificaciones = []
         for admin in administradores:
@@ -375,7 +375,7 @@ class NotificacionService:
         # Notificar al reportante con URL según su rol
         if emergencia.reportada_por and emergencia.reportada_por not in administradores:
             url_reportante = "/dashboard/"
-            if emergencia.reportada_por.rol in ["BRIGADA", "COORDINADOR_SST", "VIGILANCIA", "INSTRUCTOR"]:
+            if emergencia.reportada_por.rol in ["BRIGADA", "ADMINISTRATIVO", "VIGILANCIA", "INSTRUCTOR"]:
                 url_reportante = "/emergencias/"
             notificaciones.append(
                 Notificacion(
@@ -413,7 +413,7 @@ class NotificacionService:
         if emergencia.reportada_por:
             # Usar dashboard como URL para roles sin acceso a emergencias
             url_reportante = "/dashboard/"
-            if emergencia.reportada_por.rol in ["BRIGADA", "COORDINADOR_SST", "VIGILANCIA", "INSTRUCTOR"]:
+            if emergencia.reportada_por.rol in ["BRIGADA", "ADMINISTRATIVO", "VIGILANCIA", "INSTRUCTOR"]:
                 url_reportante = "/emergencias/"
 
             Notificacion.crear_notificacion(
@@ -434,7 +434,7 @@ class NotificacionService:
         # Notificar a administrativos con datos del responsable
         reincidente_texto = f" (REINCIDENTE: {total_falsas} falsas alarmas)" if total_falsas > 1 else ""
         notificaciones = []
-        administradores = Usuario.objects.filter(rol="COORDINADOR_SST", activo=True)
+        administradores = Usuario.objects.filter(rol="ADMINISTRATIVO", activo=True)
 
         for admin in administradores:
             notificaciones.append(
@@ -491,7 +491,7 @@ class NotificacionService:
 
         # Notificar a Administrativos e Instructores
         notificaciones = []
-        usuarios = Usuario.objects.filter(rol__in=["COORDINADOR_SST", "INSTRUCTOR"], activo=True)
+        usuarios = Usuario.objects.filter(rol__in=["ADMINISTRATIVO", "INSTRUCTOR"], activo=True)
 
         for usuario in usuarios:
             notificaciones.append(
@@ -510,7 +510,7 @@ class NotificacionService:
 
         # WebSocket — incidente crítico visible al instante
         _ws_dispatch_roles(
-            roles=["COORDINADOR_SST", "INSTRUCTOR"],
+            roles=["ADMINISTRATIVO", "INSTRUCTOR"],
             tipo="INCIDENTE",
             titulo=titulo,
             mensaje=mensaje,
@@ -560,9 +560,9 @@ class NotificacionService:
 
         # Brigada siempre recibe la notificacion; Instructores solo en incidentes graves
         if gravedad in ["ALTA", "CRITICA"]:
-            roles = ["COORDINADOR_SST", "INSTRUCTOR", "BRIGADA"]
+            roles = ["ADMINISTRATIVO", "INSTRUCTOR", "BRIGADA"]
         else:
-            roles = ["COORDINADOR_SST", "BRIGADA"]
+            roles = ["ADMINISTRATIVO", "BRIGADA"]
 
         notificaciones = []
         usuarios = Usuario.objects.filter(rol__in=roles, activo=True)
@@ -869,7 +869,7 @@ class NotificacionService:
 
         # Notificar a Vigilancia y Administrativos
         notificaciones = []
-        usuarios = Usuario.objects.filter(rol__in=["VIGILANCIA", "COORDINADOR_SST"], activo=True)
+        usuarios = Usuario.objects.filter(rol__in=["VIGILANCIA", "ADMINISTRATIVO"], activo=True)
 
         for usuario in usuarios:
             notificaciones.append(
@@ -888,7 +888,7 @@ class NotificacionService:
 
         # WebSocket — alerta de aforo al instante en la pantalla de vigilancia
         _ws_dispatch_roles(
-            roles=["VIGILANCIA", "COORDINADOR_SST"],
+            roles=["VIGILANCIA", "ADMINISTRATIVO"],
             tipo="SISTEMA",
             titulo=titulo,
             mensaje=mensaje,

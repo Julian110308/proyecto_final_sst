@@ -72,14 +72,14 @@ def dashboard_view(request):
         "COORDINADOR_SST": "dashboard/coordinador_sst.html",
         "APRENDIZ": "dashboard/aprendiz.html",
         "INSTRUCTOR": "dashboard/instructor.html",
-        "ADMINISTRATIVO": "dashboard/coordinador_sst.html",
+        "ADMINISTRATIVO": "dashboard/administrativo.html",
         "VIGILANCIA": "dashboard/vigilancia.html",
         "BRIGADA": "dashboard/brigada.html",
         "VISITANTE": "dashboard/visitante.html",
     }
 
-    # Si es COORDINADOR_SST o ADMINISTRATIVO (redirigido), construir contexto específico y retornar
-    if usuario.rol in ("COORDINADOR_SST", "ADMINISTRATIVO"):
+    # Si es COORDINADOR_SST, construir contexto específico y retornar
+    if usuario.rol == "COORDINADOR_SST":
         from django.db.models import Count
 
         pendientes = Usuario.objects.filter(estado_cuenta="PENDIENTE").count()
@@ -308,8 +308,8 @@ def dashboard_view(request):
         context["incidentes_total_mes"] = incidentes_total_mes
         context["incidentes_criticos_sla"] = incidentes_criticos_sla
 
-    # Datos adicionales para ADMINISTRATIVO (redirigido a dashboard coordinador, bloque obsoleto)
-    if False and usuario.rol == "ADMINISTRATIVO":
+    # Datos adicionales para ADMINISTRATIVO
+    if usuario.rol == "ADMINISTRATIVO":
         from reportes.models import Incidente
         from django.utils import timezone as tz
         from django.db.models import Count
@@ -765,7 +765,7 @@ def evacuacion_instructor_view(request):
 
 
 @login_required
-@rol_requerido("COORDINADOR_SST")
+@rol_requerido("ADMINISTRATIVO", "COORDINADOR_SST")
 def gestion_usuarios_view(request):
     """
     Vista para gestión de usuarios (Administrativo) con paginación
@@ -793,7 +793,7 @@ def gestion_usuarios_view(request):
 
 
 @login_required
-@rol_requerido("COORDINADOR_SST")
+@rol_requerido("ADMINISTRATIVO", "COORDINADOR_SST")
 def configuracion_view(request):
     """
     Vista de configuración del sistema
@@ -848,7 +848,7 @@ def configuracion_view(request):
 
 
 @login_required
-@rol_requerido("VIGILANCIA", "COORDINADOR_SST")
+@rol_requerido("VIGILANCIA", "ADMINISTRATIVO")
 def gestion_visitantes_view(request):
     """
     Vista para gestión de visitantes
@@ -1324,7 +1324,7 @@ def mi_brigada_view(request):
 
 
 # Vistas para usuarios autenticados (usan base.html)
-@rol_requerido("COORDINADOR_SST", "VIGILANCIA")
+@rol_requerido("ADMINISTRATIVO", "VIGILANCIA")
 def control_acceso_view(request):
     """
     Vista de Control de Acceso
@@ -1337,7 +1337,7 @@ def control_acceso_view(request):
 from mapas.views import mapa_interactivo, plano_centro as plano_centro_view
 
 
-@rol_requerido("COORDINADOR_SST", "BRIGADA")
+@rol_requerido("ADMINISTRATIVO", "BRIGADA")
 def emergencias_view(request):
     """
     Vista de Emergencias
@@ -1361,7 +1361,7 @@ def reportes_view(request):
 
 
 @login_required
-@rol_requerido("COORDINADOR_SST", "VIGILANCIA", "INSTRUCTOR")
+@rol_requerido("ADMINISTRATIVO", "VIGILANCIA", "INSTRUCTOR")
 def exportar_accesos_excel(request):
     """
     Exporta los registros de acceso del día (o rango indicado) a Excel.
@@ -1483,7 +1483,7 @@ def exportar_accesos_excel(request):
 
 
 @login_required
-@rol_requerido("COORDINADOR_SST", "VIGILANCIA", "INSTRUCTOR")
+@rol_requerido("ADMINISTRATIVO", "VIGILANCIA", "INSTRUCTOR")
 def historial_accesos_view(request):
     """
     Vista HTML con historial de accesos filtrable + exportación Excel.

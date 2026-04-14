@@ -162,7 +162,7 @@ class IncidenteForm(forms.ModelForm):
             raise forms.ValidationError("Formato de testigos inválido.")
 
         TIPOS_DOC = {"CC", "TI", "CE", "PAS"}
-        ROLES = {"APRENDIZ", "INSTRUCTOR", "COORDINADOR_SST", "VIGILANCIA", "BRIGADA", "VISITANTE", "OTRO"}
+        ROLES = {"APRENDIZ", "INSTRUCTOR", "ADMINISTRATIVO", "VIGILANCIA", "BRIGADA", "VISITANTE", "OTRO"}
         REGLAS_DOC = {
             "CC": {"min": 8, "max": 10, "solo_numeros": True},
             "TI": {"min": 8, "max": 10, "solo_numeros": True},
@@ -215,7 +215,7 @@ class IncidenteForm(forms.ModelForm):
             raise forms.ValidationError("Formato de personas afectadas inválido.")
 
         TIPOS_DOC = {"CC", "TI", "CE", "PAS"}
-        ROLES = {"APRENDIZ", "INSTRUCTOR", "COORDINADOR_SST", "VIGILANCIA", "BRIGADA", "VISITANTE", "OTRO"}
+        ROLES = {"APRENDIZ", "INSTRUCTOR", "ADMINISTRATIVO", "VIGILANCIA", "BRIGADA", "VISITANTE", "OTRO"}
         REGLAS_DOC = {
             "CC": {"min": 8, "max": 10, "solo_numeros": True},
             "TI": {"min": 8, "max": 10, "solo_numeros": True},

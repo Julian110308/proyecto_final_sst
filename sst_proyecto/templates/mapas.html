@@ -59,7 +59,7 @@
         <div class="card card-modern">
             <div class="card-header-modern">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0">Centro Minero SENA</h6>
+                    <h6 class="mb-0">Centro Minero SENA - Boyacá</h6>
                     <div class="d-flex gap-2 flex-wrap">
                         <button id="btnLimpiarRuta" class="btn btn-sm btn-outline-secondary d-none" title="Limpiar ruta">
                             <i class="bi bi-x-circle"></i>
@@ -899,14 +899,14 @@ function inicializarControles() {
 
     // ============================================================
     // MONITOREO EN TIEMPO REAL - Personas en el Centro
-    // Solo para VIGILANCIA y COORDINADOR_SST
+    // Solo para VIGILANCIA y ADMINISTRATIVO
     // ============================================================
-    if (userRol === 'VIGILANCIA' || userRol === 'COORDINADOR_SST' || userRol === 'INSTRUCTOR' || userRol === 'BRIGADA') {
+    if (userRol === 'VIGILANCIA' || userRol === 'ADMINISTRATIVO' || userRol === 'INSTRUCTOR' || userRol === 'BRIGADA') {
 
         const coloresRol = {
             'APRENDIZ': '#4CAF50',
             'INSTRUCTOR': '#2196F3',
-            'COORDINADOR_SST': '#9C27B0',
+            'ADMINISTRATIVO': '#9C27B0',
             'VIGILANCIA': '#FF9800',
             'BRIGADA': '#F44336',
             'VISITANTE': '#607D8B'
@@ -915,7 +915,7 @@ function inicializarControles() {
         const iconosRol = {
             'APRENDIZ': 'bi-mortarboard',
             'INSTRUCTOR': 'bi-person-badge',
-            'COORDINADOR_SST': 'bi-briefcase',
+            'ADMINISTRATIVO': 'bi-briefcase',
             'VIGILANCIA': 'bi-shield-check',
             'BRIGADA': 'bi-heart-pulse',
             'VISITANTE': 'bi-person'

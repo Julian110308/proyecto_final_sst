@@ -70,7 +70,7 @@ def generar_reportes_programados(self):
             # Guardar en BD
             usuario = Usuario.objects.filter(is_superuser=True).first()
             if not usuario:
-                usuario = Usuario.objects.filter(rol="COORDINADOR_SST").first()
+                usuario = Usuario.objects.filter(rol="ADMINISTRATIVO").first()
 
             if usuario:
                 ReporteGenerado.objects.create(
