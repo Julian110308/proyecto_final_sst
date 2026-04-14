@@ -78,7 +78,7 @@
                             <th>Entidad</th>
                             <th>Motivo</th>
                             <th>Hora Ingreso</th>
-                            <th>Estado</th>
+                            <th>Hora Egreso</th>
                             <th class="text-end pe-4">Acciones</th>
                         </tr>
                     </thead>
@@ -94,9 +94,9 @@
                             <td>{{ visitante.hora_ingreso|time:"H:i" }}</td>
                             <td>
                                 {% if visitante.hora_salida %}
-                                    <span class="badge bg-secondary">Salida: {{ visitante.hora_salida|time:"H:i" }}</span>
+                                    {{ visitante.hora_salida|time:"H:i" }}
                                 {% else %}
-                                    <span class="badge bg-success">En Instalaciones</span>
+                                    <span class="text-muted">—</span>
                                 {% endif %}
                             </td>
                             <td class="text-end pe-4">
