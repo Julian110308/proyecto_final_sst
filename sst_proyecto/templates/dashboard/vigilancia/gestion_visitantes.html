@@ -91,10 +91,10 @@
                             <td>
                                 <div class="small">{{ visitante.motivo_visita }}</div>
                             </td>
-                            <td>{{ visitante.hora_ingreso|time:"H:i" }}</td>
+                            <td>{{ visitante.hora_ingreso|time:"g:i A" }}</td>
                             <td>
                                 {% if visitante.hora_salida %}
-                                    {{ visitante.hora_salida|time:"H:i" }}
+                                    {{ visitante.hora_salida|time:"g:i A" }}
                                 {% else %}
                                     <span class="text-muted">—</span>
                                 {% endif %}
