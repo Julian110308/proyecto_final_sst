@@ -346,8 +346,8 @@ async function cargarDistribucion() {
         const cont = document.getElementById('distribucionRoles');
 
         const roles = {};
-        const colores = {APRENDIZ:'success', INSTRUCTOR:'primary', ADMINISTRATIVO:'info', VIGILANCIA:'warning', BRIGADA:'danger'};
-        const nombres = {APRENDIZ:'Aprendices', INSTRUCTOR:'Instructores', ADMINISTRATIVO:'Administrativos', VIGILANCIA:'Vigilancia', BRIGADA:'Brigada'};
+        const colores = {APRENDIZ:'success', INSTRUCTOR:'primary', COORDINADOR_SST:'dark', VIGILANCIA:'warning', BRIGADA:'danger'};
+        const nombres = {APRENDIZ:'Aprendices', INSTRUCTOR:'Instructores', COORDINADOR_SST:'Coordinador SST', VIGILANCIA:'Vigilancia', BRIGADA:'Brigada'};
         (data.personas || []).forEach(p => { roles[p.rol_code] = (roles[p.rol_code] || 0) + 1; });
 
         if (!Object.keys(roles).length) {

@@ -44,7 +44,7 @@ class ReporteViewSet(viewsets.ModelViewSet):
             return ReporteGenerado.objects.none()
 
         # ADMINISTRATIVO / COORDINADOR_SST: Ve todos los reportes
-        if user.rol in ("ADMINISTRATIVO", "COORDINADOR_SST") or user.is_superuser:
+        if user.rol in ("COORDINADOR_SST",) or user.is_superuser:
             return super().get_queryset()
 
         # INSTRUCTOR: Solo ve reportes de asistencia que generó
@@ -76,7 +76,7 @@ class ReporteViewSet(viewsets.ModelViewSet):
     def aforo(self, request):
         """Genera reporte de aforo"""
         # Verificar permisos
-        if request.user.rol not in ["ADMINISTRATIVO", "COORDINADOR_SST", "VIGILANCIA"]:
+        if request.user.rol not in ["COORDINADOR_SST", "VIGILANCIA"]:
             return Response(
                 {"error": "No tienes permisos para generar reportes de aforo."}, status=status.HTTP_403_FORBIDDEN
             )
@@ -148,7 +148,7 @@ class ReporteViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def incidentes(self, request):
         """Genera reporte de incidentes"""
-        if request.user.rol not in ["ADMINISTRATIVO", "COORDINADOR_SST", "BRIGADA", "INSTRUCTOR"]:
+        if request.user.rol not in ["COORDINADOR_SST", "BRIGADA", "INSTRUCTOR"]:
             return Response(
                 {"error": "No tienes permisos para generar reportes de incidentes."}, status=status.HTTP_403_FORBIDDEN
             )
@@ -205,7 +205,7 @@ class ReporteViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def asistencia(self, request):
         """Genera reporte de asistencia"""
-        if request.user.rol not in ["INSTRUCTOR", "ADMINISTRATIVO", "COORDINADOR_SST", "VIGILANCIA"]:
+        if request.user.rol not in ["INSTRUCTOR", "COORDINADOR_SST", "VIGILANCIA"]:
             return Response(
                 {"error": "No tienes permisos para generar reportes de asistencia."}, status=status.HTTP_403_FORBIDDEN
             )
@@ -262,7 +262,7 @@ class ReporteViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def seguridad(self, request):
         """Genera reporte de seguridad"""
-        if request.user.rol not in ["ADMINISTRATIVO", "COORDINADOR_SST", "BRIGADA", "VIGILANCIA"]:
+        if request.user.rol not in ["COORDINADOR_SST", "BRIGADA", "VIGILANCIA"]:
             return Response(
                 {"error": "No tienes permisos para generar reportes de seguridad."}, status=status.HTTP_403_FORBIDDEN
             )

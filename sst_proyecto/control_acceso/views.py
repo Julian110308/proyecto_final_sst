@@ -65,7 +65,7 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
         Usuarios sin rol privilegiado solo ven sus propios registros.
         """
         user = self.request.user
-        ROLES_PRIVILEGIADOS = {"VIGILANCIA", "ADMINISTRATIVO", "COORDINADOR_SST", "INSTRUCTOR"}
+        ROLES_PRIVILEGIADOS = {"VIGILANCIA", "COORDINADOR_SST", "INSTRUCTOR"}
 
         if user.is_superuser or user.rol in ROLES_PRIVILEGIADOS:
             queryset = RegistroAcceso.objects.all()
@@ -216,7 +216,7 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
         Solo accesible por roles privilegiados (VIGILANCIA, ADMINISTRATIVO, INSTRUCTOR).
         Soporta filtros: ?limite=, ?ficha=, ?programa=, ?rol=, ?estado=dentro|fuera
         """
-        ROLES_PRIVILEGIADOS = {"VIGILANCIA", "ADMINISTRATIVO", "COORDINADOR_SST", "INSTRUCTOR"}
+        ROLES_PRIVILEGIADOS = {"VIGILANCIA", "COORDINADOR_SST", "INSTRUCTOR"}
         if not request.user.is_superuser and request.user.rol not in ROLES_PRIVILEGIADOS:
             return Response(
                 {"error": "No tiene permisos para ver registros de acceso de otros usuarios."},
@@ -315,7 +315,7 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
         Registra la asistencia manual de un aprendiz (para instructores)
         PERMISOS: INSTRUCTOR, VIGILANCIA, ADMINISTRATIVO
         """
-        if request.user.rol not in ["INSTRUCTOR", "VIGILANCIA", "ADMINISTRATIVO"]:
+        if request.user.rol not in ["INSTRUCTOR", "VIGILANCIA", "COORDINADOR_SST"]:
             return Response(
                 {"success": False, "error": "No tiene permisos para registrar asistencia"},
                 status=status.HTTP_403_FORBIDDEN,
@@ -365,7 +365,7 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
         Registra la asistencia manual de multiples aprendices
         PERMISOS: INSTRUCTOR, VIGILANCIA, ADMINISTRATIVO
         """
-        if request.user.rol not in ["INSTRUCTOR", "VIGILANCIA", "ADMINISTRATIVO"]:
+        if request.user.rol not in ["INSTRUCTOR", "VIGILANCIA", "COORDINADOR_SST"]:
             return Response(
                 {"success": False, "error": "No tiene permisos para registrar asistencia"},
                 status=status.HTTP_403_FORBIDDEN,
@@ -591,7 +591,7 @@ class RegistroAccesoViewSet(viewsets.ModelViewSet):
         Body: { "token": "SST-..." }
         Requiere rol VIGILANCIA o ADMINISTRATIVO.
         """
-        if request.user.rol not in {"VIGILANCIA", "ADMINISTRATIVO", "COORDINADOR_SST"}:
+        if request.user.rol not in {"VIGILANCIA", "COORDINADOR_SST"}:
             return Response({"error": "Sin permiso."}, status=status.HTTP_403_FORBIDDEN)
 
         token = (request.data.get("token") or "").strip()

@@ -25,7 +25,7 @@ class UsuarioViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        ROLES_ADMIN = {"ADMINISTRATIVO", "COORDINADOR_SST"}
+        ROLES_ADMIN = {"COORDINADOR_SST"}
 
         # Solo admins y superuser pueden ver/listar todos los usuarios
         if user.is_superuser or user.rol in ROLES_ADMIN:
@@ -97,11 +97,11 @@ class UsuarioViewSet(viewsets.ModelViewSet):
             elif email_lower.endswith("@sena.edu.co"):
                 # El usuario elige su rol; si no lo envía, default INSTRUCTOR
                 rol = request.data.get("rol_solicitado", "").upper()
-                roles_sena = ["INSTRUCTOR", "ADMINISTRATIVO", "VIGILANCIA"]
+                roles_sena = ["INSTRUCTOR", "VIGILANCIA"]
                 if rol not in roles_sena:
                     return Response(
                         {
-                            "error": "Para correos @sena.edu.co debes seleccionar tu rol: INSTRUCTOR, ADMINISTRATIVO o VIGILANCIA"
+                            "error": "Para correos @sena.edu.co debes seleccionar tu rol: INSTRUCTOR o VIGILANCIA"
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
@@ -281,7 +281,7 @@ class UsuarioViewSet(viewsets.ModelViewSet):
 
         # El coordinador puede confirmar o cambiar el rol antes de aprobar
         nuevo_rol = request.data.get("rol", usuario.rol).upper()
-        roles_validos = ["INSTRUCTOR", "ADMINISTRATIVO", "VIGILANCIA", "BRIGADA"]
+        roles_validos = ["INSTRUCTOR", "VIGILANCIA", "BRIGADA"]
         if nuevo_rol not in roles_validos:
             return Response({"error": f"Rol inválido. Opciones: {roles_validos}"}, status=status.HTTP_400_BAD_REQUEST)
 

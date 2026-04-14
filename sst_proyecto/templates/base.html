@@ -505,14 +505,6 @@
                             </a>
                         </li>
                         {% endif %}
-                        {% if user.rol == 'ADMINISTRATIVO' %}
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center" href="{% url 'configuracion_sistema' %}">
-                                <i class="bi bi-gear me-3 fs-5 text-secondary"></i>
-                                <span>Configuracion</span>
-                            </a>
-                        </li>
-                        {% endif %}
 
                         <li><hr class="dropdown-divider my-2"></li>
 
@@ -578,54 +570,6 @@
                     <li class="nav-item mb-2">
                         <a class="nav-link {% if request.resolver_match.url_name == 'mapas' %}active{% endif %}" href="/mapas/">
                             <i class="bi bi-map me-2"></i>Mapa Interactivo
-                        </a>
-                    </li>
-                    <li class="nav-item mb-2">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'mis_alertas' %}active{% endif %}" href="{% url 'mis_alertas' %}">
-                            <i class="bi bi-bell me-2"></i>Mis Alertas
-                        </a>
-                    </li>
-
-                <!-- OPCIONES PARA ADMINISTRATIVO - Acceso completo -->
-                {% elif user.rol == 'ADMINISTRATIVO' %}
-                    <li class="nav-item mb-2">
-                        <a class="nav-link {% if '/acceso' in request.path %}active{% endif %}" href="/acceso/">
-                            <i class="bi bi-person-check me-2"></i>Control Acceso
-                        </a>
-                    </li>
-                    <li class="nav-item mb-2">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'mapas' %}active{% endif %}" href="/mapas/">
-                            <i class="bi bi-map me-2"></i>Mapa Interactivo
-                        </a>
-                    </li>
-                    <li class="nav-item mb-2">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'emergencias' %}active{% endif %}" href="/emergencias/">
-                            <i class="bi bi-exclamation-octagon me-2"></i>Emergencias
-                        </a>
-                    </li>
-                    <li class="nav-item mb-2">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'reportes' %}active{% endif %}" href="/reportes/">
-                            <i class="bi bi-graph-up me-2"></i>Reportes
-                        </a>
-                    </li>
-                    <li class="nav-item mb-2">
-                        <a class="nav-link {% if '/reportes/incidentes' in request.path %}active{% endif %}" href="/reportes/incidentes/">
-                            <i class="bi bi-exclamation-triangle me-2"></i>Incidentes
-                        </a>
-                    </li>
-                    <li class="nav-item mb-2">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'gestion_visitantes' %}active{% endif %}" href="{% url 'gestion_visitantes' %}">
-                            <i class="bi bi-person-badge me-2"></i>Visitantes
-                        </a>
-                    </li>
-                    <li class="nav-item mb-2">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'gestion_usuarios' %}active{% endif %}" href="{% url 'gestion_usuarios' %}">
-                            <i class="bi bi-people me-2"></i>Gestión Usuarios
-                        </a>
-                    </li>
-                    <li class="nav-item mb-2">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'configuracion_sistema' %}active{% endif %}" href="{% url 'configuracion_sistema' %}">
-                            <i class="bi bi-gear me-2"></i>Configuración
                         </a>
                     </li>
                     <li class="nav-item mb-2">
@@ -1714,7 +1658,7 @@
         navigator.serviceWorker.register('/sw.js')
             .then(async function(reg) {
                 // Suscribir a notificaciones push para roles que reciben alertas de emergencia
-                {% if user.is_authenticated and user.rol in 'BRIGADA ADMINISTRATIVO VIGILANCIA INSTRUCTOR' %}
+                {% if user.is_authenticated and user.rol in 'BRIGADA COORDINADOR_SST VIGILANCIA INSTRUCTOR' %}
                 if ('PushManager' in window) {
                     try {
                         const existing = await reg.pushManager.getSubscription();

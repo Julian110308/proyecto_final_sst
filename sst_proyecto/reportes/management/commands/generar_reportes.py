@@ -256,7 +256,7 @@ class Command(BaseCommand):
             # Obtener usuario sistema o admin
             usuario = Usuario.objects.filter(is_superuser=True).first()
             if not usuario:
-                usuario = Usuario.objects.filter(rol="ADMINISTRATIVO").first()
+                usuario = Usuario.objects.filter(rol="COORDINADOR_SST").first()
 
             if usuario:
                 reporte = ReporteGenerado.objects.create(

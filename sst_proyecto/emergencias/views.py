@@ -278,7 +278,7 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
         """Permite a BRIGADA o ADMINISTRATIVO marcar un incidente como falsa alarma."""
         from reportes.models import Incidente
 
-        if request.user.rol not in {"BRIGADA", "ADMINISTRATIVO", "COORDINADOR_SST"}:
+        if request.user.rol not in {"BRIGADA", "COORDINADOR_SST"}:
             return Response({"error": "Sin permiso."}, status=status.HTTP_403_FORBIDDEN)
 
         incidente_id = request.data.get("incidente_id")
@@ -458,7 +458,7 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
             )
         )
 
-        ROLES_ESPERADOS = ["APRENDIZ", "INSTRUCTOR", "ADMINISTRATIVO", "VIGILANCIA", "BRIGADA", "COORDINADOR_SST"]
+        ROLES_ESPERADOS = ["APRENDIZ", "INSTRUCTOR", "COORDINADOR_SST", "VIGILANCIA", "BRIGADA"]
         usuarios_esperados = Usuario.objects.filter(rol__in=ROLES_ESPERADOS, activo=True).filter(con_asistencia_hoy)
         total = usuarios_esperados.count()
 
@@ -474,7 +474,7 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
         LABELS_ROL = {
             "APRENDIZ": "Aprendices",
             "INSTRUCTOR": "Instructores",
-            "ADMINISTRATIVO": "Administrativos",
+            "COORDINADOR_SST": "Coordinador SST",
             "VIGILANCIA": "Vigilancia",
             "BRIGADA": "Brigada",
             "COORDINADOR_SST": "Coordinadores SST",
@@ -586,7 +586,7 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
             return Response({"error": "Emergencia no encontrada."}, status=status.HTTP_404_NOT_FOUND)
 
         rol = request.user.rol
-        es_privilegiado = rol in {"BRIGADA", "COORDINADOR_SST", "ADMINISTRATIVO"}
+        es_privilegiado = rol in {"BRIGADA", "COORDINADOR_SST"}
         es_self = len(usuario_ids) == 1 and usuario_ids[0] == request.user.id
 
         if es_self:
@@ -640,7 +640,7 @@ class EmergenciaViewSet(viewsets.ModelViewSet):
         """
         from usuarios.models import Usuario
 
-        if request.user.rol not in {"INSTRUCTOR", "BRIGADA", "COORDINADOR_SST", "ADMINISTRATIVO"}:
+        if request.user.rol not in {"INSTRUCTOR", "BRIGADA", "COORDINADOR_SST"}:
             return Response({"error": "Sin permiso."}, status=status.HTTP_403_FORBIDDEN)
 
         emergencia_id = request.data.get("emergencia_id")

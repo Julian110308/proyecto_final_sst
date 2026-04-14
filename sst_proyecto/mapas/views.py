@@ -40,7 +40,7 @@ def campus_svg(request):
     context = {
         "edificios": edificios,
         "puntos_encuentro": puntos,
-        "es_brigada": request.user.rol in ("BRIGADA", "ADMINISTRATIVO"),
+        "es_brigada": request.user.rol in ("BRIGADA", "COORDINADOR_SST"),
     }
     return render(request, "mapas/campus_svg.html", context)
 
@@ -614,7 +614,7 @@ class EquipamientoSeguridadViewSet(viewsets.ModelViewSet):
         from datetime import timedelta
 
         # Verificar permisos
-        if request.user.rol not in ["BRIGADA", "ADMINISTRATIVO"]:
+        if request.user.rol not in ["BRIGADA", "COORDINADOR_SST"]:
             return Response({"success": False, "error": "No tiene permisos para verificar equipos"}, status=403)
 
         try:
@@ -651,7 +651,7 @@ class EquipamientoSeguridadViewSet(viewsets.ModelViewSet):
         PERMISOS: BRIGADA y ADMINISTRATIVO
         """
         # Verificar permisos
-        if request.user.rol not in ["BRIGADA", "ADMINISTRATIVO"]:
+        if request.user.rol not in ["BRIGADA", "COORDINADOR_SST"]:
             return Response(
                 {"success": False, "error": "No tiene permisos para cambiar el estado de equipos"}, status=403
             )
@@ -696,7 +696,7 @@ class EquipamientoSeguridadViewSet(viewsets.ModelViewSet):
         from datetime import timedelta
 
         # Verificar permisos
-        if request.user.rol not in ["BRIGADA", "ADMINISTRATIVO"]:
+        if request.user.rol not in ["BRIGADA", "COORDINADOR_SST"]:
             return Response(
                 {"success": False, "error": "No tiene permisos para realizar verificación general"}, status=403
             )
@@ -780,7 +780,7 @@ def grafo_caminos(request):
 @permission_classes([IsAuthenticated])
 def guardar_nodo(request):
     """Crea o actualiza un nodo del grafo."""
-    if request.user.rol not in ("ADMINISTRATIVO", "COORDINADOR_SST"):
+    if request.user.rol not in ("COORDINADOR_SST",):
         return Response({"error": "Solo administradores pueden editar el grafo."}, status=403)
 
     data = request.data
@@ -804,7 +804,7 @@ def guardar_nodo(request):
 @permission_classes([IsAuthenticated])
 def eliminar_nodo(request, nodo_id):
     """Elimina un nodo del grafo."""
-    if request.user.rol not in ("ADMINISTRATIVO", "COORDINADOR_SST"):
+    if request.user.rol not in ("COORDINADOR_SST",):
         return Response({"error": "Sin permiso."}, status=403)
     nodo = get_object_or_404(NodoCamino, id=nodo_id)
     nodo.delete()
@@ -815,7 +815,7 @@ def eliminar_nodo(request, nodo_id):
 @permission_classes([IsAuthenticated])
 def guardar_tramo(request):
     """Crea un tramo entre dos nodos existentes."""
-    if request.user.rol not in ("ADMINISTRATIVO", "COORDINADOR_SST"):
+    if request.user.rol not in ("COORDINADOR_SST",):
         return Response({"error": "Solo administradores pueden editar el grafo."}, status=403)
 
     data = request.data
@@ -850,7 +850,7 @@ def guardar_tramo(request):
 @permission_classes([IsAuthenticated])
 def eliminar_tramo(request, tramo_id):
     """Elimina un tramo del grafo."""
-    if request.user.rol not in ("ADMINISTRATIVO", "COORDINADOR_SST"):
+    if request.user.rol not in ("COORDINADOR_SST",):
         return Response({"error": "Sin permiso."}, status=403)
     tramo = get_object_or_404(TramoCamino, id=tramo_id)
     tramo.delete()
@@ -861,7 +861,7 @@ def eliminar_tramo(request, tramo_id):
 @permission_classes([IsAuthenticated])
 def guardar_poligono_edificio(request, edificio_id):
     """Guarda el polígono de un edificio desde el editor visual."""
-    if request.user.rol not in ("ADMINISTRATIVO", "COORDINADOR_SST"):
+    if request.user.rol not in ("COORDINADOR_SST",):
         return Response({"error": "Sin permiso."}, status=403)
 
     edificio = get_object_or_404(EdificioBloque, id=edificio_id)
