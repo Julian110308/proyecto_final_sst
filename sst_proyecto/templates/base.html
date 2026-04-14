@@ -643,7 +643,7 @@
                     </li>
                     <li class="nav-item mb-2">
                         <a class="nav-link {% if request.resolver_match.url_name == 'mapas' %}active{% endif %}" href="/mapas/">
-                            <i class="bi bi-map me-2"></i>Mapa del Centro
+                            <i class="bi bi-map me-2"></i>Mapa Interactivo
                         </a>
                     </li>
                     <li class="nav-item mb-2">
@@ -676,7 +676,7 @@
                     </li>
                     <li class="nav-item mb-2">
                         <a class="nav-link {% if request.resolver_match.url_name == 'mapas' %}active{% endif %}" href="/mapas/">
-                            <i class="bi bi-map me-2"></i>Mapa de Seguridad
+                            <i class="bi bi-map me-2"></i>Mapa Interactivo
                         </a>
                     </li>
                     <li class="nav-item mb-2">
@@ -704,7 +704,7 @@
                     </li>
                     <li class="nav-item mb-2">
                         <a class="nav-link {% if request.resolver_match.url_name == 'mapas' %}active{% endif %}" href="/mapas/">
-                            <i class="bi bi-map me-2"></i>Mapa de Evacuación
+                            <i class="bi bi-map me-2"></i>Mapa Interactivo
                         </a>
                     </li>
                     <li class="nav-item mb-2">
@@ -742,7 +742,7 @@
                     </li>
                     <li class="nav-item mb-2">
                         <a class="nav-link {% if request.resolver_match.url_name == 'mapas' %}active{% endif %}" href="/mapas/">
-                            <i class="bi bi-map me-2"></i>Mapa del Centro
+                            <i class="bi bi-map me-2"></i>Mapa Interactivo
                         </a>
                     </li>
                     <li class="nav-item mb-2">
@@ -760,7 +760,7 @@
                 {% elif user.rol == 'VISITANTE' %}
                     <li class="nav-item mb-2">
                         <a class="nav-link {% if request.resolver_match.url_name == 'mapas' %}active{% endif %}" href="/mapas/">
-                            <i class="bi bi-map me-2"></i>Mapa del Centro
+                            <i class="bi bi-map me-2"></i>Mapa Interactivo
                         </a>
                     </li>
                 {% endif %}
@@ -789,7 +789,7 @@
                 <li class="breadcrumb-item"><a href="{% url 'dashboard' %}"><i class="bi bi-house-door"></i></a></li>
                 {% block breadcrumb %}
                     {% if '/mapas/' in request.path %}
-                    <li class="breadcrumb-item active" aria-current="page">Mapa del Centro</li>
+                    <li class="breadcrumb-item active" aria-current="page">Mapa Interactivo</li>
                     {% endif %}
                 {% endblock %}
             </ol>
