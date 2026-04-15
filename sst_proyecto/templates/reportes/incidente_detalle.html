@@ -84,12 +84,12 @@
                 </div>
                 {% endif %}
 
-                {% if incidente.latitud and incidente.longitud %}
                 <div class="mb-0">
                     <small class="text-muted d-block mb-1">Ubicacion en el Mapa</small>
-                    <div id="mapaDetalle" style="height: 250px; border-radius: 8px;"></div>
+                    <div id="mapaDetalle" style="height: 280px; border-radius: 8px;"
+                         data-lat="{{ incidente.latitud|default:'' }}"
+                         data-lng="{{ incidente.longitud|default:'' }}"></div>
                 </div>
-                {% endif %}
             </div>
         </div>
 
@@ -414,28 +414,43 @@
 {% endblock %}
 
 {% block extra_js %}
-{% if incidente.latitud and incidente.longitud %}
 <script>
-setTimeout(function() {
-    var lat = {{ incidente.latitud }};
-    var lng = {{ incidente.longitud }};
+window.addEventListener('load', function () {
     var div = document.getElementById('mapaDetalle');
-    if (!div) return;
-    if (typeof L === 'undefined') { console.error('Leaflet no cargado'); return; }
+    if (!div || typeof L === 'undefined') return;
 
-    var mapa = L.map('mapaDetalle').setView([lat, lng], 16);
+    // Coordenadas del Centro Minero SENA (por defecto)
+    var defaultLat = 5.7303596;
+    var defaultLng = -72.8943613;
+
+    var lat = parseFloat(div.dataset.lat);
+    var lng = parseFloat(div.dataset.lng);
+    var tieneUbicacion = !isNaN(lat) && !isNaN(lng);
+
+    var centerLat = tieneUbicacion ? lat : defaultLat;
+    var centerLng = tieneUbicacion ? lng : defaultLng;
+    var zoom = tieneUbicacion ? 18 : 17;
+
+    var mapa = L.map('mapaDetalle').setView([centerLat, centerLng], zoom);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors',
         maxZoom: 20
     }).addTo(mapa);
 
-    L.marker([lat, lng]).addTo(mapa)
-        .bindPopup('<strong>Lugar del incidente</strong><br>{{ incidente.ubicacion|default:"" }}')
-        .openPopup();
+    if (tieneUbicacion) {
+        var icono = L.icon({
+            iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+        });
+        L.marker([lat, lng], { icon: icono }).addTo(mapa)
+            .bindPopup('<strong>Lugar del incidente</strong><br>{{ incidente.ubicacion|default:"Sin descripción" }}')
+            .openPopup();
+    }
 
-    mapa.invalidateSize();
-}, 200);
+    setTimeout(function () { mapa.invalidateSize(); }, 300);
+});
 </script>
-{% endif %}
 {% endblock %}
