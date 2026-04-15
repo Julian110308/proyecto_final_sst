@@ -60,15 +60,6 @@
                         <span><i class="bi bi-telephone me-1"></i>{{ miembro.telefono }}</span>
                         {% endif %}
                     </div>
-                    <hr>
-                    <div class="d-flex justify-content-around">
-                        <a href="tel:{{ miembro.telefono }}" class="btn btn-outline-success btn-sm">
-                            <i class="bi bi-telephone-fill me-1"></i> Llamar
-                        </a>
-                        <a href="mailto:{{ miembro.email }}" class="btn btn-outline-primary btn-sm">
-                            <i class="bi bi-envelope-fill me-1"></i> Correo
-                        </a>
-                    </div>
                 </div>
                 <div class="card-footer bg-light">
                     <small class="text-muted">Contacto de Emergencia: {{ miembro.telefono_emergencia|default:"No registrado" }}</small>
