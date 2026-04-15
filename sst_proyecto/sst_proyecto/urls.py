@@ -1555,6 +1555,11 @@ handler404 = "sst_proyecto.error_views.error_404"
 handler500 = "sst_proyecto.error_views.error_500"
 
 urlpatterns = [
+    # Chrome DevTools auto-discovery (silenciar 404 en logs)
+    path(
+        ".well-known/appspecific/com.chrome.devtools.json",
+        lambda r: HttpResponse("{}", content_type="application/json"),
+    ),
     # PWA: Service Worker y Manifest servidos desde la raíz
     path("sw.js", sw_view, name="sw"),
     path("manifest.json", manifest_view, name="manifest"),

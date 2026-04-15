@@ -726,7 +726,7 @@ class BrigadaEmergenciaViewSet(viewsets.ModelViewSet):
         try:
             brigadista = BrigadaEmergencia.objects.get(usuario=request.user)
         except BrigadaEmergencia.DoesNotExist:
-            return Response({"error": "No eres miembro de la brigada de emergencia"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"registrado": False, "disponible": False}, status=status.HTTP_200_OK)
 
         if request.method == "GET":
             return Response(

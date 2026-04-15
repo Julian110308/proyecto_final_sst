@@ -45,24 +45,55 @@
 
         {% for miembro in miembros %}
         <div class="col-md-6 col-lg-4 mb-4">
-            <div class="card card-modern text-center h-100">
-                <div class="card-body">
-                    <div class="avatar-initials bg-light border rounded-circle p-3 mx-auto mb-3 fw-bold text-secondary-green" style="width: 80px; height: 80px; font-size: 2rem; display: flex; align-items: center; justify-content: center;">
-                        {{ miembro.first_name|slice:":1" }}{{ miembro.last_name|slice:":1" }}
+            <div class="card card-modern h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="flex-shrink-0 rounded-circle fw-bold d-flex align-items-center justify-content-center"
+                             style="width:56px; height:56px; font-size:1.4rem; background:#e8f5e1; color:#39A900; border: 2px solid #c3e6a0;">
+                            {{ miembro.first_name|slice:":1" }}{{ miembro.last_name|slice:":1" }}
+                        </div>
+                        <div class="flex-grow-1 min-width-0">
+                            <h6 class="fw-bold mb-0 text-truncate">{{ miembro.get_full_name }}</h6>
+                            <small class="text-muted text-truncate d-block">{{ miembro.email }}</small>
+                        </div>
                     </div>
-                    <h5 class="card-title fw-bold">{{ miembro.get_full_name }}</h5>
-                    <p class="card-text text-muted small">{{ miembro.email }}</p>
-                    <div class="d-flex flex-column gap-1 mb-3 text-start" style="font-size:0.82rem; color:#6c757d;">
+                    <div class="d-flex flex-column gap-2" style="font-size:0.82rem;">
                         {% if miembro.numero_documento %}
-                        <span><i class="bi bi-person-vcard me-1"></i>{{ miembro.tipo_documento }} {{ miembro.numero_documento }}</span>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted d-flex align-items-center gap-1">
+                                <i class="bi bi-person-vcard" style="width:14px;"></i> Tipo documento
+                            </span>
+                            <span class="fw-semibold text-dark">{{ miembro.tipo_documento|default:"—" }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted d-flex align-items-center gap-1">
+                                <i class="bi bi-hash" style="width:14px;"></i> Número
+                            </span>
+                            <span class="fw-semibold text-dark">{{ miembro.numero_documento }}</span>
+                        </div>
                         {% endif %}
                         {% if miembro.telefono %}
-                        <span><i class="bi bi-telephone me-1"></i>{{ miembro.telefono }}</span>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted d-flex align-items-center gap-1">
+                                <i class="bi bi-telephone" style="width:14px;"></i> Teléfono
+                            </span>
+                            <span class="fw-semibold text-dark">{{ miembro.telefono }}</span>
+                        </div>
                         {% endif %}
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted d-flex align-items-center gap-1">
+                                <i class="bi bi-telephone-outbound text-danger" style="width:14px;"></i> T. Emergencia
+                            </span>
+                            <span class="fw-semibold {% if miembro.telefono_emergencia %}text-dark{% else %}text-muted fst-italic{% endif %}">
+                                {{ miembro.telefono_emergencia|default:"No registrado" }}
+                            </span>
+                        </div>
                     </div>
                 </div>
-                <div class="card-footer bg-light">
-                    <small class="text-muted">Contacto de Emergencia: {{ miembro.telefono_emergencia|default:"No registrado" }}</small>
+                <div class="card-footer px-4 py-2" style="background:#f8fdf5; border-top: 1px solid #e8f5e1;">
+                    <span class="badge rounded-pill fw-normal px-3 py-1" style="background:#e8f5e1; color:#39A900; font-size:0.75rem;">
+                        <i class="bi bi-shield-fill-check me-1"></i>Brigadista
+                    </span>
                 </div>
             </div>
         </div>

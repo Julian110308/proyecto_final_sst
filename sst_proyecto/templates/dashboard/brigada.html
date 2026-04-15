@@ -554,11 +554,11 @@ let emergenciaFalsaId = null;
 async function cargarDisponibilidad() {
     try {
         const r = await fetch('/api/emergencias/brigada/mi-disponibilidad/');
-        if (!r.ok) {
+        const data = await r.json();
+        if (!r.ok || data.registrado === false) {
             document.getElementById('toggleDisponibilidad').style.display = 'none';
             return;
         }
-        const data = await r.json();
         const sw = document.getElementById('switchDisponible');
         const txt = document.getElementById('textoDisponibilidad');
         const container = document.getElementById('toggleDisponibilidad');

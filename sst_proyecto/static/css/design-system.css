@@ -721,6 +721,6 @@ html {
 
 /* Nav link active sena */
 .nav-link.active {
-    color: #39A900 !important;
-    background-color: rgba(57, 169, 0, 0.1) !important;
+    color: white !important;
+    background-color: #39A900 !important;
 }
