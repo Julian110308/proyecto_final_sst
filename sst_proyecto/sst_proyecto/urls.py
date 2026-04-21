@@ -1020,15 +1020,20 @@ def equipos_brigada_view(request):
 
         if accion == "crear":
             tipo = request.POST.get("tipo", "").strip()
+            tipo_otro = request.POST.get("tipo_otro", "").strip()
             codigo = request.POST.get("codigo", "").strip()
             descripcion = request.POST.get("descripcion", "").strip()
             estado = request.POST.get("estado", "OPERATIVO")
             edificio_id = request.POST.get("edificio_id") or None
             piso = request.POST.get("piso", 1)
             proxima_revision = request.POST.get("proxima_revision") or None
+            lat_form = request.POST.get("latitud", "").strip()
+            lng_form = request.POST.get("longitud", "").strip()
 
             if not tipo or not codigo:
                 django_messages.error(request, "El tipo y el código son obligatorios.")
+            elif tipo == "OTRO" and not tipo_otro:
+                django_messages.error(request, "Debe especificar el tipo de equipo.")
             elif EquipamientoSeguridad.objects.filter(codigo__iexact=codigo).exists():
                 django_messages.error(request, f'Ya existe un equipo con el código "{codigo}".')
             else:
@@ -1038,12 +1043,20 @@ def equipos_brigada_view(request):
                         edificio = EdificioBloque.objects.get(pk=edificio_id)
                     except EdificioBloque.DoesNotExist:
                         pass
-                lat = edificio.latitud if edificio else 5.8520
-                lng = edificio.longitud if edificio else -73.0318
+                if lat_form and lng_form:
+                    lat = float(lat_form)
+                    lng = float(lng_form)
+                elif edificio:
+                    lat = edificio.latitud
+                    lng = edificio.longitud
+                else:
+                    lat = 5.7302
+                    lng = -72.8941
+                nombre = tipo_otro if tipo == "OTRO" and tipo_otro else (descripcion or codigo)
                 EquipamientoSeguridad.objects.create(
                     tipo=tipo,
                     codigo=codigo,
-                    nombre=descripcion or codigo,
+                    nombre=nombre,
                     descripcion=descripcion,
                     estado=estado,
                     edificio=edificio,
@@ -1073,15 +1086,22 @@ def equipos_brigada_view(request):
                         except EdificioBloque.DoesNotExist:
                             pass
                     descripcion = request.POST.get("descripcion", "").strip()
-                    equipo.tipo = request.POST.get("tipo", equipo.tipo)
+                    tipo_nuevo = request.POST.get("tipo", equipo.tipo)
+                    tipo_otro = request.POST.get("tipo_otro", "").strip()
+                    lat_form = request.POST.get("latitud", "").strip()
+                    lng_form = request.POST.get("longitud", "").strip()
+                    equipo.tipo = tipo_nuevo
                     equipo.codigo = codigo_nuevo
-                    equipo.nombre = descripcion or codigo_nuevo
+                    equipo.nombre = tipo_otro if tipo_nuevo == "OTRO" and tipo_otro else (descripcion or codigo_nuevo)
                     equipo.descripcion = descripcion
                     equipo.estado = request.POST.get("estado", equipo.estado)
                     equipo.edificio = edificio
                     equipo.piso = int(request.POST.get("piso", equipo.piso))
                     equipo.proxima_revision = request.POST.get("proxima_revision") or None
-                    if edificio:
+                    if lat_form and lng_form:
+                        equipo.latitud = float(lat_form)
+                        equipo.longitud = float(lng_form)
+                    elif edificio:
                         equipo.latitud = edificio.latitud
                         equipo.longitud = edificio.longitud
                     equipo.save()

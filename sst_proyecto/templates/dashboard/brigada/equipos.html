@@ -233,7 +233,7 @@
                                         <i class="bi bi-pencil"></i>
                                     </button>
                                     <button class="btn btn-sm btn-outline-dark"
-                                            onclick="abrirEditar({{ equipo.id }}, '{{ equipo.codigo|escapejs }}', '{{ equipo.tipo }}', '{{ equipo.descripcion|default:''|escapejs }}', '{{ equipo.estado }}', '{{ equipo.edificio.id|default:'' }}', {{ equipo.piso }}, '{% if equipo.proxima_revision %}{{ equipo.proxima_revision|date:"Y-m-d" }}{% endif %}')"
+                                            onclick="abrirEditar({{ equipo.id }}, '{{ equipo.codigo|escapejs }}', '{{ equipo.tipo }}', '{{ equipo.descripcion|default:''|escapejs }}', '{{ equipo.estado }}', '{{ equipo.edificio.id|default:'' }}', {{ equipo.piso }}, '{% if equipo.proxima_revision %}{{ equipo.proxima_revision|date:"Y-m-d" }}{% endif %}', '{% if equipo.tipo == "OTRO" %}{{ equipo.nombre|escapejs }}{% endif %}', {{ equipo.latitud|stringformat:".7f" }}, {{ equipo.longitud|stringformat:".7f" }})"
                                             title="Editar equipo">
                                         <i class="bi bi-pencil-square"></i>
                                     </button>
@@ -295,12 +295,15 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">Tipo <span class="text-danger">*</span></label>
-                            <select class="form-select" name="tipo" required>
+                            <select class="form-select" name="tipo" id="agregarTipo" required>
                                 <option value="">Selecciona un tipo...</option>
                                 {% for val, label in tipos_equipamiento %}
                                 <option value="{{ val }}">{{ label }}</option>
                                 {% endfor %}
                             </select>
+                            <div id="agregarTipoOtroWrap" class="mt-2 d-none">
+                                <input type="text" class="form-control" name="tipo_otro" id="agregarTipoOtro" maxlength="50" placeholder="Especifique el tipo de equipo">
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Código <span class="text-danger">*</span></label>
@@ -319,22 +322,23 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Edificio / Bloque</label>
-                            <select class="form-select" name="edificio_id">
-                                <option value="">Sin ubicación específica</option>
-                                {% for ed in edificios %}
-                                <option value="{{ ed.id }}">{{ ed.nombre }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Piso</label>
-                            <input type="number" class="form-control" name="piso" value="1" min="1" max="10">
-                        </div>
                         <div class="col-md-6">
                             <label class="form-label">Próxima revisión</label>
                             <input type="date" class="form-control" name="proxima_revision">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-geo-alt me-1 text-success"></i>Ubicación en el mapa
+                            </label>
+                            <p class="form-text mt-0 mb-1">Haga clic en el mapa para marcar la ubicación exacta del equipo.</p>
+                            <div id="mapaCrear" style="height:220px;border-radius:8px;border:1.5px solid #dee2e6;cursor:crosshair;"></div>
+                            <input type="hidden" name="latitud" id="crearLat">
+                            <input type="hidden" name="longitud" id="crearLng">
+                            <div id="crearCoordsDisplay" class="d-none mt-1">
+                                <small class="text-success fw-semibold">
+                                    <i class="bi bi-geo-alt-fill me-1"></i><span id="crearCoordsText"></span>
+                                </small>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -378,6 +382,9 @@
                                 <option value="{{ val }}">{{ label }}</option>
                                 {% endfor %}
                             </select>
+                            <div id="editarTipoOtroWrap" class="mt-2 d-none">
+                                <input type="text" class="form-control" name="tipo_otro" id="editarTipoOtro" maxlength="50" placeholder="Especifique el tipo de equipo">
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Código <span class="text-danger">*</span></label>
@@ -395,22 +402,23 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Edificio / Bloque</label>
-                            <select class="form-select" name="edificio_id" id="editarEdificio">
-                                <option value="">Sin ubicación específica</option>
-                                {% for ed in edificios %}
-                                <option value="{{ ed.id }}">{{ ed.nombre }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Piso</label>
-                            <input type="number" class="form-control" name="piso" id="editarPiso" min="1" max="10">
-                        </div>
                         <div class="col-md-6">
                             <label class="form-label">Próxima revisión</label>
                             <input type="date" class="form-control" name="proxima_revision" id="editarRevision">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-geo-alt me-1 text-success"></i>Ubicación en el mapa
+                            </label>
+                            <p class="form-text mt-0 mb-1">Haga clic en el mapa para actualizar la ubicación del equipo.</p>
+                            <div id="mapaEditar" style="height:220px;border-radius:8px;border:1.5px solid #dee2e6;cursor:crosshair;"></div>
+                            <input type="hidden" name="latitud" id="editarLat">
+                            <input type="hidden" name="longitud" id="editarLng">
+                            <div id="editarCoordsDisplay" class="d-none mt-1">
+                                <small class="text-success fw-semibold">
+                                    <i class="bi bi-geo-alt-fill me-1"></i><span id="editarCoordsText"></span>
+                                </small>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -609,16 +617,113 @@ function guardarCambioEstado() {
     .catch(() => showAlert('Error al conectar con el servidor', 'danger'));
 }
 
-function abrirEditar(id, codigo, tipo, descripcion, estado, edificioId, piso, revision) {
+function toggleTipoOtro(selectEl, wrapId, inputId) {
+    const wrap = document.getElementById(wrapId);
+    const input = document.getElementById(inputId);
+    if (selectEl.value === 'OTRO') {
+        wrap.classList.remove('d-none');
+        input.required = true;
+    } else {
+        wrap.classList.add('d-none');
+        input.required = false;
+        input.value = '';
+    }
+}
+
+document.getElementById('agregarTipo').addEventListener('change', function () {
+    toggleTipoOtro(this, 'agregarTipoOtroWrap', 'agregarTipoOtro');
+});
+
+document.getElementById('editarTipo').addEventListener('change', function () {
+    toggleTipoOtro(this, 'editarTipoOtroWrap', 'editarTipoOtro');
+});
+
+// ── Mapas Leaflet para ubicación de equipos ──
+const CAMPUS_LAT = 5.7302;
+const CAMPUS_LNG = -72.8941;
+
+let _mapaCrear = null, _markerCrear = null;
+let _mapaEditar = null, _markerEditar = null;
+
+function _setMarker(mapa, markerRef, lat, lng, latInputId, lngInputId, displayId, textId) {
+    if (markerRef) mapa.removeLayer(markerRef);
+    const m = L.marker([lat, lng]).addTo(mapa);
+    document.getElementById(latInputId).value = lat.toFixed(7);
+    document.getElementById(lngInputId).value = lng.toFixed(7);
+    document.getElementById(displayId).classList.remove('d-none');
+    document.getElementById(textId).textContent = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+    return m;
+}
+
+function _initMapa(divId, lat, lng) {
+    const mapa = L.map(divId, { zoomControl: true, attributionControl: false }).setView([lat, lng], 19);
+    L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        maxZoom: 21
+    }).addTo(mapa);
+    return mapa;
+}
+
+document.getElementById('modalCrear').addEventListener('shown.bs.modal', function () {
+    if (!_mapaCrear) {
+        _mapaCrear = _initMapa('mapaCrear', CAMPUS_LAT, CAMPUS_LNG);
+        _mapaCrear.on('click', function (e) {
+            _markerCrear = _setMarker(_mapaCrear, _markerCrear, e.latlng.lat, e.latlng.lng,
+                'crearLat', 'crearLng', 'crearCoordsDisplay', 'crearCoordsText');
+        });
+    } else {
+        _mapaCrear.invalidateSize();
+    }
+});
+
+document.getElementById('modalCrear').addEventListener('hidden.bs.modal', function () {
+    if (_markerCrear) { _mapaCrear.removeLayer(_markerCrear); _markerCrear = null; }
+    document.getElementById('crearLat').value = '';
+    document.getElementById('crearLng').value = '';
+    document.getElementById('crearCoordsDisplay').classList.add('d-none');
+});
+
+document.getElementById('modalEditar').addEventListener('shown.bs.modal', function () {
+    const latVal = document.getElementById('editarLat').value;
+    const lngVal = document.getElementById('editarLng').value;
+    const lat = parseFloat(latVal) || CAMPUS_LAT;
+    const lng = parseFloat(lngVal) || CAMPUS_LNG;
+
+    if (!_mapaEditar) {
+        _mapaEditar = _initMapa('mapaEditar', lat, lng);
+        _mapaEditar.on('click', function (e) {
+            _markerEditar = _setMarker(_mapaEditar, _markerEditar, e.latlng.lat, e.latlng.lng,
+                'editarLat', 'editarLng', 'editarCoordsDisplay', 'editarCoordsText');
+        });
+    } else {
+        _mapaEditar.invalidateSize();
+        _mapaEditar.setView([lat, lng], 19);
+    }
+
+    // Si hay coordenadas guardadas, mostrar el marcador sin sobreescribir los inputs
+    if (latVal && lngVal) {
+        if (_markerEditar) _mapaEditar.removeLayer(_markerEditar);
+        _markerEditar = L.marker([lat, lng]).addTo(_mapaEditar);
+        document.getElementById('editarCoordsDisplay').classList.remove('d-none');
+        document.getElementById('editarCoordsText').textContent =
+            `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+    }
+});
+
+function abrirEditar(id, codigo, tipo, descripcion, estado, edificioId, piso, revision, tipoOtro, lat, lng) {
     document.getElementById('editarId').value = id;
     document.getElementById('editarCodigo').value = codigo;
     document.getElementById('editarTipo').value = tipo;
     document.getElementById('editarDescripcion').value = descripcion;
     document.getElementById('editarEstado').value = estado;
-    document.getElementById('editarEdificio').value = edificioId;
-    document.getElementById('editarPiso').value = piso;
     document.getElementById('editarRevision').value = revision;
-    new bootstrap.Modal(document.getElementById('modalEditar')).show();
+    document.getElementById('editarLat').value = lat || '';
+    document.getElementById('editarLng').value = lng || '';
+    const editarTipoSel = document.getElementById('editarTipo');
+    toggleTipoOtro(editarTipoSel, 'editarTipoOtroWrap', 'editarTipoOtro');
+    if (tipo === 'OTRO' && tipoOtro) {
+        document.getElementById('editarTipoOtro').value = tipoOtro;
+    }
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEditar')).show();
 }
 
 function abrirEliminar(id, codigo) {

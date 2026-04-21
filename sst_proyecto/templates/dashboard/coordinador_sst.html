@@ -190,25 +190,44 @@
 </div>
 
 <!-- Modal aprobar con cambio de rol -->
-<div class="modal fade" id="modalAprobar" tabindex="-1">
-    <div class="modal-dialog modal-sm">
+<div class="modal fade modal-sena" id="modalAprobar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header" style="background:linear-gradient(135deg,#1a4d2e,#39A900);color:#fff;">
-                <h6 class="modal-title"><i class="bi bi-check-circle me-2"></i>Aprobar cuenta</h6>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            <div class="modal-header">
+                <div class="modal-sena-header w-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="modal-icon-box">
+                            <i class="bi bi-person-check-fill text-white" style="font-size:1.3rem;"></i>
+                        </div>
+                        <div>
+                            <h5 class="text-white fw-bold mb-0" style="font-size:1rem;">Aprobar cuenta</h5>
+                            <small style="color:rgba(255,255,255,0.75);font-size:0.78rem;">Confirme el rol antes de activar</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white position-absolute" data-bs-dismiss="modal" style="top:1rem;right:1rem;"></button>
+                </div>
             </div>
             <div class="modal-body">
-                <p class="small mb-2">Confirma el rol para <strong id="aprobar-nombre"></strong>:</p>
-                <select id="aprobar-rol" class="form-select form-select-sm">
-                    <option value="INSTRUCTOR">Instructor</option>
-                    <option value="ADMINISTRATIVO">Administrativo</option>
-                    <option value="VIGILANCIA">Vigilancia</option>
-                    <option value="BRIGADA">Brigada</option>
-                </select>
+                <div style="background:#e6f5d9;border:1.5px solid #b3e08a;border-left:4px solid #39A900;border-radius:10px;padding:0.875rem 1rem;" class="mb-3">
+                    <p class="mb-0 fw-semibold" style="font-size:0.9rem;">
+                        Confirma el rol para <strong id="aprobar-nombre"></strong>
+                    </p>
+                </div>
+                <div>
+                    <label class="form-label fw-semibold small">Rol asignado</label>
+                    <select id="aprobar-rol" class="form-select">
+                        <option value="INSTRUCTOR">Instructor</option>
+                        <option value="ADMINISTRATIVO">Administrativo</option>
+                        <option value="VIGILANCIA">Vigilancia</option>
+                        <option value="BRIGADA">Brigada</option>
+                    </select>
+                </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button class="btn btn-sm btn-aprobar" onclick="confirmarAprobacion()">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-sena px-4" onclick="confirmarAprobacion()">
                     <i class="bi bi-check-lg me-1"></i>Aprobar
                 </button>
             </div>

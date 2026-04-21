@@ -319,64 +319,13 @@ def mapa_interactivo(request):
                 },
             ]
 
-        if not equipamientos_data:
-            equipamientos_data = [
-                {
-                    "id": 1,
-                    "tipo": "EXTINTOR",
-                    "codigo": "EXT-001",
-                    "latitud": 5.730639,
-                    "longitud": -72.894389,
-                    "ultima_revision": "",
-                    "descripcion": "Extintor",
-                },
-                {
-                    "id": 2,
-                    "tipo": "BOTIQUIN",
-                    "codigo": "BOT-001",
-                    "latitud": 5.730639,
-                    "longitud": -72.894389,
-                    "ultima_revision": "",
-                    "descripcion": "Botiquín",
-                },
-                {
-                    "id": 3,
-                    "tipo": "CAMILLA",
-                    "codigo": "CAM-001",
-                    "latitud": 5.730639,
-                    "longitud": -72.894389,
-                    "ultima_revision": "",
-                    "descripcion": "Camilla",
-                },
-                {
-                    "id": 4,
-                    "tipo": "EXTINTOR",
-                    "codigo": "EXT-002",
-                    "latitud": 5.730667,
-                    "longitud": -72.894361,
-                    "ultima_revision": "",
-                    "descripcion": "Extintor",
-                },
-                {
-                    "id": 5,
-                    "tipo": "CAMILLA",
-                    "codigo": "CAM-002",
-                    "latitud": 5.730333,
-                    "longitud": -72.894528,
-                    "ultima_revision": "",
-                    "descripcion": "Camilla",
-                },
-            ]
+        # sin equipos registrados → lista vacía
 
-        # 5. GEOCERCA DESDE LA BASE DE DATOS
-        # Importamos aquí para evitar import circular (control_acceso.models → mapas.services)
-        from control_acceso.models import Geocerca as GeocercaConfig
-
-        geocerca_obj = GeocercaConfig.objects.filter(activo=True).first()
+        # 5. GEOCERCA - coordenadas del Centro Nacional Minero SENA
         geocerca_config = {
-            "lat": geocerca_obj.centro_latitud if geocerca_obj else 5.7303596,
-            "lng": geocerca_obj.centro_longitud if geocerca_obj else -72.8943613,
-            "radio": geocerca_obj.radio_metros if geocerca_obj else 400,
+            "lat": 5.7303596,
+            "lng": -72.8943613,
+            "radio": 400,
         }
 
         # 6. PREPARAR CONTEXTO
@@ -444,53 +393,7 @@ def mapa_interactivo(request):
                     "descripcion": "PRIORIDAD 2: Zona verde del centro - Área despejada para evacuación",
                 },
             ],
-            "equipamiento": [
-                {
-                    "id": 1,
-                    "tipo": "EXTINTOR",
-                    "codigo": "EXT-001",
-                    "latitud": 5.730639,
-                    "longitud": -72.894389,
-                    "ultima_revision": "",
-                    "descripcion": "Extintor",
-                },
-                {
-                    "id": 2,
-                    "tipo": "BOTIQUIN",
-                    "codigo": "BOT-001",
-                    "latitud": 5.730639,
-                    "longitud": -72.894389,
-                    "ultima_revision": "",
-                    "descripcion": "Botiquín",
-                },
-                {
-                    "id": 3,
-                    "tipo": "CAMILLA",
-                    "codigo": "CAM-001",
-                    "latitud": 5.730639,
-                    "longitud": -72.894389,
-                    "ultima_revision": "",
-                    "descripcion": "Camilla",
-                },
-                {
-                    "id": 4,
-                    "tipo": "EXTINTOR",
-                    "codigo": "EXT-002",
-                    "latitud": 5.730667,
-                    "longitud": -72.894361,
-                    "ultima_revision": "",
-                    "descripcion": "Extintor",
-                },
-                {
-                    "id": 5,
-                    "tipo": "CAMILLA",
-                    "codigo": "CAM-002",
-                    "latitud": 5.730333,
-                    "longitud": -72.894528,
-                    "ultima_revision": "",
-                    "descripcion": "Camilla",
-                },
-            ],
+            "equipamiento": [],
             "centro_minero": {
                 "lat": 5.7303596,
                 "lng": -72.8943613,
