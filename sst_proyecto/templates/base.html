@@ -2478,6 +2478,22 @@
             if (e.key === 'Escape' && panel.classList.contains('open')) closePanel();
         });
 
+        // Cerrar al tocar/clicar fuera del panel y del botón
+        document.addEventListener('click', function (e) {
+            if (panel.classList.contains('open') &&
+                !panel.contains(e.target) &&
+                !toggleBtn.contains(e.target)) {
+                closePanel();
+            }
+        });
+        document.addEventListener('touchstart', function (e) {
+            if (panel.classList.contains('open') &&
+                !panel.contains(e.target) &&
+                !toggleBtn.contains(e.target)) {
+                closePanel();
+            }
+        }, { passive: true });
+
         // Restablecer todo
         resetBtn.addEventListener('click', function () {
             state.fontScale  = 100;
