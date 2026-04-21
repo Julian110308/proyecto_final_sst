@@ -438,8 +438,7 @@
     #acc-toggle-btn {
         position: fixed;
         right: 0;
-        top: 50%;
-        transform: translateY(-50%);
+        bottom: 180px;
         z-index: 9998;
         background: #39A900;
         color: #fff;
@@ -461,8 +460,7 @@
     #acc-panel {
         position: fixed;
         right: -320px;
-        top: 50%;
-        transform: translateY(-50%);
+        bottom: 100px;
         z-index: 9997;
         width: 300px;
         background: #fff;
@@ -471,14 +469,14 @@
         padding: 0;
         transition: right 0.3s cubic-bezier(.4,0,.2,1);
         overflow: hidden;
-        max-height: 90vh;
+        max-height: 80vh;
         display: flex;
         flex-direction: column;
     }
     #acc-panel.open { right: 44px; }
 
     .acc-header {
-        background: linear-gradient(135deg, #39A900, #1a4d2e);
+        background: #39A900;
         color: #fff;
         padding: 14px 18px 12px;
         display: flex;
