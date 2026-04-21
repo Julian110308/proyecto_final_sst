@@ -429,6 +429,217 @@
     </style>
 
     {% block extra_css %}{% endblock %}
+
+    <style>
+    /* ============================================================
+       MENÚ DE ACCESIBILIDAD — SST Centro Minero SENA
+    ============================================================ */
+    #acc-toggle-btn {
+        position: fixed;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 9998;
+        background: #39A900;
+        color: #fff;
+        border: none;
+        border-radius: 10px 0 0 10px;
+        width: 44px;
+        height: 52px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        cursor: pointer;
+        box-shadow: -3px 2px 12px rgba(57,169,0,0.35);
+        transition: background 0.2s, width 0.2s;
+    }
+    #acc-toggle-btn:hover { background: #2d8200; }
+    #acc-toggle-btn:focus { outline: 3px solid #fff; outline-offset: 2px; }
+
+    #acc-panel {
+        position: fixed;
+        right: -320px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 9997;
+        width: 300px;
+        background: #fff;
+        border-radius: 14px 0 0 14px;
+        box-shadow: -6px 0 32px rgba(0,0,0,0.13);
+        padding: 0;
+        transition: right 0.3s cubic-bezier(.4,0,.2,1);
+        overflow: hidden;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+    }
+    #acc-panel.open { right: 44px; }
+
+    .acc-header {
+        background: linear-gradient(135deg, #39A900, #1a4d2e);
+        color: #fff;
+        padding: 14px 18px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-shrink: 0;
+    }
+    .acc-header h6 {
+        margin: 0;
+        font-weight: 700;
+        font-size: 0.95rem;
+        letter-spacing: 0.02em;
+    }
+    .acc-header small {
+        opacity: 0.82;
+        font-size: 0.73rem;
+        display: block;
+        margin-top: 2px;
+    }
+    .acc-close-btn {
+        background: rgba(255,255,255,0.18);
+        border: none;
+        color: #fff;
+        border-radius: 50%;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 0.85rem;
+        transition: background 0.2s;
+        flex-shrink: 0;
+    }
+    .acc-close-btn:hover { background: rgba(255,255,255,0.32); }
+
+    .acc-body {
+        padding: 14px 16px;
+        overflow-y: auto;
+        flex: 1;
+    }
+    .acc-section-label {
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #39A900;
+        margin: 10px 0 6px;
+    }
+    .acc-section-label:first-child { margin-top: 0; }
+
+    .acc-btn-row {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 6px;
+    }
+    .acc-btn {
+        flex: 1;
+        border: 1.5px solid #e0e0e0;
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 7px 6px;
+        font-size: 0.78rem;
+        color: #333;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        transition: all 0.18s;
+        font-weight: 500;
+        line-height: 1.2;
+        text-align: center;
+    }
+    .acc-btn i { font-size: 1.05rem; color: #39A900; }
+    .acc-btn:hover { border-color: #39A900; background: #f0fce8; color: #1a4d2e; }
+    .acc-btn.active {
+        border-color: #39A900;
+        background: #39A900;
+        color: #fff;
+    }
+    .acc-btn.active i { color: #fff; }
+    .acc-btn.danger { border-color: #dc3545; }
+    .acc-btn.danger i { color: #dc3545; }
+    .acc-btn.danger:hover { background: #fff0f0; border-color: #dc3545; }
+    .acc-btn.danger.active { background: #dc3545; color: #fff; border-color: #dc3545; }
+    .acc-btn.danger.active i { color: #fff; }
+
+    .acc-font-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+        background: #f8f9fa;
+        border: 1.5px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 6px 10px;
+    }
+    .acc-font-row span { flex: 1; font-size: 0.78rem; font-weight: 500; text-align: center; }
+    .acc-font-btn {
+        background: none;
+        border: 1.5px solid #ccc;
+        border-radius: 6px;
+        width: 30px;
+        height: 30px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        color: #1a4d2e;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+    }
+    .acc-font-btn:hover { background: #39A900; color: #fff; border-color: #39A900; }
+
+    .acc-reset-btn {
+        width: 100%;
+        margin-top: 10px;
+        background: none;
+        border: 1.5px solid #ccc;
+        border-radius: 8px;
+        padding: 7px;
+        font-size: 0.78rem;
+        color: #666;
+        cursor: pointer;
+        transition: all 0.18s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+    .acc-reset-btn:hover { border-color: #39A900; color: #39A900; background: #f0fce8; }
+
+    /* Estados globales de accesibilidad */
+    body.acc-high-contrast {
+        filter: contrast(150%) brightness(90%);
+    }
+    body.acc-grayscale { filter: grayscale(100%); }
+    body.acc-high-contrast.acc-grayscale { filter: contrast(150%) brightness(90%) grayscale(100%); }
+    body.acc-underline-links a { text-decoration: underline !important; }
+    body.acc-large-cursor, body.acc-large-cursor * { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M8 2 L8 26 L13 20 L18 30 L21 29 L16 19 L24 19 Z' fill='%2339A900' stroke='white' stroke-width='1.5'/%3E%3C/svg%3E") 8 2, auto !important; }
+    body.acc-stop-animations *, body.acc-stop-animations *::before, body.acc-stop-animations *::after {
+        animation-duration: 0.001ms !important;
+        transition-duration: 0.001ms !important;
+    }
+    body.acc-text-spacing { letter-spacing: 0.12em !important; line-height: 1.9 !important; word-spacing: 0.18em !important; }
+    body.acc-dark-bg {
+        background: #111 !important;
+        color: #f0f0f0 !important;
+    }
+    body.acc-dark-bg .card, body.acc-dark-bg .sidebar, body.acc-dark-bg .navbar,
+    body.acc-dark-bg .main-content, body.acc-dark-bg footer {
+        background: #1a1a1a !important;
+        color: #f0f0f0 !important;
+        border-color: #333 !important;
+    }
+    body.acc-dark-bg .card-header { background: #222 !important; color: #fff !important; }
+    body.acc-dark-bg p, body.acc-dark-bg span, body.acc-dark-bg div,
+    body.acc-dark-bg td, body.acc-dark-bg th, body.acc-dark-bg li { color: #e0e0e0 !important; }
+    body.acc-dyslexia { font-family: 'Arial', sans-serif !important; word-spacing: 0.25em !important; line-height: 2 !important; }
+    </style>
 </head>
 <body>
     <!-- Navbar -->
@@ -823,6 +1034,81 @@
             &nbsp;|&nbsp; Sistema de Gestión de Seguridad y Salud en el Trabajo
         </small>
     </footer>
+
+    <!-- ============================================================ -->
+    <!-- MENÚ DE ACCESIBILIDAD                                       -->
+    <!-- ============================================================ -->
+    <button id="acc-toggle-btn" aria-label="Abrir menú de accesibilidad" title="Accesibilidad" aria-expanded="false" aria-controls="acc-panel">
+        <i class="bi bi-universal-access"></i>
+    </button>
+
+    <div id="acc-panel" role="dialog" aria-label="Opciones de accesibilidad" aria-hidden="true">
+        <div class="acc-header">
+            <div>
+                <h6><i class="bi bi-universal-access me-2"></i>Accesibilidad</h6>
+                <small>Centro Minero SENA &mdash; SalvamentoSST</small>
+            </div>
+            <button class="acc-close-btn" id="acc-close-btn" aria-label="Cerrar menú de accesibilidad">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="acc-body">
+
+            <!-- TAMAÑO DE FUENTE -->
+            <div class="acc-section-label"><i class="bi bi-type me-1"></i>Tamaño de texto</div>
+            <div class="acc-font-row">
+                <button class="acc-font-btn" id="acc-font-dec" aria-label="Reducir texto" title="Reducir">A−</button>
+                <span id="acc-font-label">100%</span>
+                <button class="acc-font-btn" id="acc-font-inc" aria-label="Aumentar texto" title="Aumentar">A+</button>
+            </div>
+
+            <!-- VISIÓN -->
+            <div class="acc-section-label"><i class="bi bi-eye me-1"></i>Visión</div>
+            <div class="acc-btn-row">
+                <button class="acc-btn" id="acc-btn-contrast" aria-pressed="false">
+                    <i class="bi bi-circle-half"></i>Alto contraste
+                </button>
+                <button class="acc-btn" id="acc-btn-grayscale" aria-pressed="false">
+                    <i class="bi bi-droplet-half"></i>Escala de grises
+                </button>
+            </div>
+            <div class="acc-btn-row">
+                <button class="acc-btn" id="acc-btn-darkbg" aria-pressed="false">
+                    <i class="bi bi-moon-stars"></i>Modo oscuro
+                </button>
+                <button class="acc-btn" id="acc-btn-links" aria-pressed="false">
+                    <i class="bi bi-link-45deg"></i>Subrayar enlaces
+                </button>
+            </div>
+
+            <!-- LECTURA -->
+            <div class="acc-section-label"><i class="bi bi-book me-1"></i>Lectura</div>
+            <div class="acc-btn-row">
+                <button class="acc-btn" id="acc-btn-spacing" aria-pressed="false">
+                    <i class="bi bi-text-paragraph"></i>Espaciado de texto
+                </button>
+                <button class="acc-btn" id="acc-btn-dyslexia" aria-pressed="false">
+                    <i class="bi bi-fonts"></i>Fuente dislexia
+                </button>
+            </div>
+
+            <!-- INTERACCIÓN -->
+            <div class="acc-section-label"><i class="bi bi-mouse me-1"></i>Interacción</div>
+            <div class="acc-btn-row">
+                <button class="acc-btn" id="acc-btn-cursor" aria-pressed="false">
+                    <i class="bi bi-cursor"></i>Cursor grande
+                </button>
+                <button class="acc-btn" id="acc-btn-animations" aria-pressed="false">
+                    <i class="bi bi-pause-circle"></i>Sin animaciones
+                </button>
+            </div>
+
+            <!-- RESTABLECER -->
+            <button class="acc-reset-btn" id="acc-reset-btn" aria-label="Restablecer todas las opciones">
+                <i class="bi bi-arrow-counterclockwise"></i> Restablecer todo
+            </button>
+        </div>
+    </div>
 
     <!-- Modal Mi QR de Acceso -->
     {% if user.rol != 'VISITANTE' %}
@@ -2063,6 +2349,147 @@
             }
             deferredPrompt = null;
         });
+    })();
+    </script>
+
+    <!-- ============================================================ -->
+    <!-- SCRIPT MENÚ DE ACCESIBILIDAD                                 -->
+    <!-- ============================================================ -->
+    <script>
+    (function () {
+        const STORAGE_KEY = 'sst_acc_prefs';
+        const body = document.body;
+
+        // Estado inicial
+        const state = {
+            fontScale: 100,
+            contrast: false,
+            grayscale: false,
+            darkbg: false,
+            links: false,
+            spacing: false,
+            dyslexia: false,
+            cursor: false,
+            animations: false,
+        };
+
+        // Cargar preferencias guardadas
+        try {
+            const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+            Object.assign(state, saved);
+        } catch (_) {}
+
+        // Referencias DOM
+        const panel      = document.getElementById('acc-panel');
+        const toggleBtn  = document.getElementById('acc-toggle-btn');
+        const closeBtn   = document.getElementById('acc-close-btn');
+        const resetBtn   = document.getElementById('acc-reset-btn');
+        const fontLabel  = document.getElementById('acc-font-label');
+        const fontInc    = document.getElementById('acc-font-inc');
+        const fontDec    = document.getElementById('acc-font-dec');
+
+        const btns = {
+            contrast:   document.getElementById('acc-btn-contrast'),
+            grayscale:  document.getElementById('acc-btn-grayscale'),
+            darkbg:     document.getElementById('acc-btn-darkbg'),
+            links:      document.getElementById('acc-btn-links'),
+            spacing:    document.getElementById('acc-btn-spacing'),
+            dyslexia:   document.getElementById('acc-btn-dyslexia'),
+            cursor:     document.getElementById('acc-btn-cursor'),
+            animations: document.getElementById('acc-btn-animations'),
+        };
+
+        const classMap = {
+            contrast:   'acc-high-contrast',
+            grayscale:  'acc-grayscale',
+            darkbg:     'acc-dark-bg',
+            links:      'acc-underline-links',
+            spacing:    'acc-text-spacing',
+            dyslexia:   'acc-dyslexia',
+            cursor:     'acc-large-cursor',
+            animations: 'acc-stop-animations',
+        };
+
+        function save() {
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) {}
+        }
+
+        function applyAll() {
+            // Fuente
+            document.documentElement.style.fontSize = (state.fontScale / 100) + 'rem';
+            fontLabel.textContent = state.fontScale + '%';
+
+            // Clases booleanas
+            Object.keys(classMap).forEach(key => {
+                body.classList.toggle(classMap[key], !!state[key]);
+                const btn = btns[key];
+                if (btn) {
+                    btn.classList.toggle('active', !!state[key]);
+                    btn.setAttribute('aria-pressed', String(!!state[key]));
+                }
+            });
+        }
+
+        function toggleOption(key) {
+            state[key] = !state[key];
+            applyAll();
+            save();
+        }
+
+        // Tamaño de fuente
+        fontInc.addEventListener('click', function () {
+            if (state.fontScale < 150) { state.fontScale += 10; applyAll(); save(); }
+        });
+        fontDec.addEventListener('click', function () {
+            if (state.fontScale > 70) { state.fontScale -= 10; applyAll(); save(); }
+        });
+
+        // Botones de opciones
+        Object.keys(btns).forEach(key => {
+            if (btns[key]) btns[key].addEventListener('click', () => toggleOption(key));
+        });
+
+        // Abrir / cerrar panel
+        function openPanel() {
+            panel.classList.add('open');
+            panel.setAttribute('aria-hidden', 'false');
+            toggleBtn.setAttribute('aria-expanded', 'true');
+            closeBtn.focus();
+        }
+        function closePanel() {
+            panel.classList.remove('open');
+            panel.setAttribute('aria-hidden', 'true');
+            toggleBtn.setAttribute('aria-expanded', 'false');
+            toggleBtn.focus();
+        }
+
+        toggleBtn.addEventListener('click', function () {
+            panel.classList.contains('open') ? closePanel() : openPanel();
+        });
+        closeBtn.addEventListener('click', closePanel);
+
+        // Cerrar con Escape
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && panel.classList.contains('open')) closePanel();
+        });
+
+        // Restablecer todo
+        resetBtn.addEventListener('click', function () {
+            state.fontScale  = 100;
+            state.contrast   = false;
+            state.grayscale  = false;
+            state.darkbg     = false;
+            state.links      = false;
+            state.spacing    = false;
+            state.dyslexia   = false;
+            state.cursor     = false;
+            state.animations = false;
+            applyAll();
+            save();
+        });
+
+        // Aplicar al cargar
+        applyAll();
     })();
     </script>
 </body>
