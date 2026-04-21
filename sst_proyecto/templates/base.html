@@ -437,30 +437,35 @@
     ============================================================ */
     #acc-toggle-btn {
         position: fixed;
-        right: 0;
+        right: 2rem;
         bottom: 130px;
         z-index: 9998;
         background: #39A900;
         color: #fff;
         border: none;
-        border-radius: 10px 0 0 10px;
-        width: 44px;
-        height: 52px;
+        border-radius: 50px;
+        padding: 0.85rem 1.3rem;
         display: flex;
         align-items: center;
-        justify-content: center;
-        font-size: 1.3rem;
+        gap: 0.5rem;
+        font-size: 1rem;
+        font-weight: 700;
         cursor: pointer;
-        box-shadow: -3px 2px 12px rgba(57,169,0,0.35);
-        transition: background 0.2s, width 0.2s;
+        box-shadow: 0 4px 20px rgba(57,169,0,0.45);
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        white-space: nowrap;
     }
-    #acc-toggle-btn:hover { background: #2d8200; }
+    #acc-toggle-btn:hover {
+        background: #2d8200;
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 10px 25px rgba(57,169,0,0.55);
+    }
     #acc-toggle-btn:focus { outline: 3px solid #fff; outline-offset: 2px; }
 
     #acc-panel {
         position: fixed;
         right: -320px;
-        bottom: 130px;
+        bottom: 195px;
         z-index: 9997;
         width: 300px;
         background: #fff;
@@ -473,7 +478,7 @@
         display: flex;
         flex-direction: column;
     }
-    #acc-panel.open { right: 44px; }
+    #acc-panel.open { right: 2rem; }
 
     .acc-header {
         background: #39A900;
@@ -1039,6 +1044,7 @@
     <!-- ============================================================ -->
     <button id="acc-toggle-btn" aria-label="Abrir menú de accesibilidad" title="Accesibilidad" aria-expanded="false" aria-controls="acc-panel">
         <i class="bi bi-universal-access"></i>
+        <span>ACCESIBILIDAD</span>
     </button>
 
     <div id="acc-panel" role="dialog" aria-label="Opciones de accesibilidad" aria-hidden="true">
