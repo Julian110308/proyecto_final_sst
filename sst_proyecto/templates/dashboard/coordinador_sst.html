@@ -516,7 +516,7 @@ function cargarBrigada() {
 // ── Auto-actualización de tarjetas del dashboard ─────────────────────────
 async function actualizarTarjetas() {
     try {
-        const r = await fetch('/api/estadisticas/dashboard/', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        const r = await fetch('/reportes/dashboard/', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
         if (!r.ok) return;
         const data = await r.json();
         const mapa = {
