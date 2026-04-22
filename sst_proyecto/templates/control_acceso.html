@@ -296,7 +296,6 @@ async function cargarAforo() {
         const pct = maximo > 0 ? Math.round((personas / maximo) * 100) : 0;
 
         document.getElementById('metPersonas').textContent = personas;
-        document.getElementById('metAforo').textContent = maximo;
         document.getElementById('metPorcentaje').textContent = pct + '%';
 
         const barra = document.getElementById('barraAforo');

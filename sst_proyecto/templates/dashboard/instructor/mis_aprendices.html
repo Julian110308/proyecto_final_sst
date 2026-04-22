@@ -118,8 +118,9 @@
                 <table class="table table-hover align-middle mb-0" id="tablaAprendices">
                     <thead class="bg-light">
                         <tr>
-                            <th class="ps-4" style="width: 40%;">Aprendiz</th>
-                            <th>Documento</th>
+                            <th class="ps-4" style="width: 35%;">Aprendiz</th>
+                            <th>Tipo Doc.</th>
+                            <th>Número</th>
                             <th class="text-center">Estado Hoy</th>
                             <th class="text-center">Hora Ingreso</th>
                             <th class="text-center">Asistencia</th>
@@ -140,7 +141,8 @@
                                     </div>
                                 </div>
                             </td>
-                            <td>{{ item.usuario.tipo_documento }} {{ item.usuario.numero_documento }}</td>
+                            <td>{{ item.usuario.tipo_documento }}</td>
+                            <td>{{ item.usuario.numero_documento }}</td>
                             <td class="text-center">
                                 {% if item.presente %}
                                     <span class="badge bg-success-subtle text-success border border-success-subtle">

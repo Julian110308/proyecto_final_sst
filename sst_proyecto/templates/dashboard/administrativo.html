@@ -29,7 +29,7 @@
 </div>
 
 <!-- Metricas Principales -->
-<div class="row g-3 mb-4">
+<div class="row g-3 mb-4" id="sec-metricas-adm">
     {% include 'components/metric-card.html' with label="Personas en Centro" value=personas_en_centro|default:0 sublabel=porcentaje_ocupacion|default:0|add:"% ocupacion" sublabel_icon="bi bi-building" sublabel_color="sena" icon="bi-people-fill" icon_color="sena" border_color="sena" %}
 
     {% include 'components/metric-card.html' with label="Ingresos Hoy" value=ingresos_hoy|default:0 sublabel="Registros de entrada" sublabel_color="muted" icon="bi-box-arrow-in-right" icon_color="secondary" border_color="secondary" %}
@@ -40,7 +40,7 @@
 </div>
 
 <!-- Resumen de Incidentes del Mes (Admin) -->
-{% if incidentes_total_mes or incidentes_pendientes %}
+<div id="sec-incidentes-adm">{% if incidentes_total_mes or incidentes_pendientes %}
 <div class="row g-3 mb-4">
     <div class="col-md-8">
         <div class="card card-modern h-100">
@@ -91,7 +91,7 @@
     </div>
     {% endif %}
 </div>
-{% endif %}
+{% endif %}</div>
 
 <!-- Grafico + Accesos Recientes -->
 <div class="row g-4 mb-4">
@@ -119,7 +119,7 @@
                 <a href="/acceso/" class="btn btn-sm btn-outline-secondary">Ver todo</a>
             </div>
             <div class="card-body p-0">
-                <div class="list-group list-group-flush">
+                <div class="list-group list-group-flush" id="sec-accesos-rec">
                     {% for acceso in ultimos_accesos %}
                     <div class="list-group-item border-0 px-3 py-2">
                         <div class="d-flex align-items-center">
@@ -149,6 +149,36 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+// Auto-refresh de secciones dinámicas cada 30 s
+(function() {
+    var SECCIONES = ['sec-metricas-adm', 'sec-incidentes-adm', 'sec-accesos-rec'];
+    var _timer = null;
+
+    function refrescar() {
+        fetch(window.location.href)
+            .then(function(r) { return r.text(); })
+            .then(function(html) {
+                var doc = new DOMParser().parseFromString(html, 'text/html');
+                SECCIONES.forEach(function(id) {
+                    var fresh = doc.getElementById(id);
+                    var current = document.getElementById(id);
+                    if (fresh && current) current.innerHTML = fresh.innerHTML;
+                });
+            })
+            .catch(function() {});
+    }
+
+    _timer = setInterval(refrescar, 30000);
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            clearInterval(_timer); _timer = null;
+        } else {
+            refrescar();
+            _timer = setInterval(refrescar, 30000);
+        }
+    });
+})();
+
 document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('ingresosChart');
     if (ctx) {

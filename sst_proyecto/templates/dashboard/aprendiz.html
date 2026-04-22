@@ -22,7 +22,7 @@
 </div>
 
 <!-- Tarjetas de Informacion Rapida -->
-<div class="row g-3 mb-4">
+<div class="row g-3 mb-4" id="sec-metricas-apr">
     {% include 'components/metric-card.html' with label="Mis Ingresos Este Mes" value=mis_ingresos_mes|default:0 sublabel="Dias con acceso registrado" sublabel_icon="bi bi-calendar-check" sublabel_color="sena" icon="bi-calendar-check" icon_color="sena" border_color="sena" %}
 
     <div class="col-xl-3 col-md-6">
@@ -144,7 +144,7 @@
                             <th>Estado</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="sec-tbody-historial">
                         {% for registro in mis_accesos %}
                         <tr>
                             <td class="ps-4 fw-bold">{{ registro.fecha_hora_ingreso|date:"d/m/Y" }}</td>
@@ -210,6 +210,36 @@
 
 {% block extra_js %}
 <script>
+// Auto-refresh de secciones dinámicas cada 30 s
+(function() {
+    var SECCIONES = ['sec-metricas-apr', 'sec-tbody-historial'];
+    var _timer = null;
+
+    function refrescar() {
+        fetch(window.location.href)
+            .then(function(r) { return r.text(); })
+            .then(function(html) {
+                var doc = new DOMParser().parseFromString(html, 'text/html');
+                SECCIONES.forEach(function(id) {
+                    var fresh = doc.getElementById(id);
+                    var current = document.getElementById(id);
+                    if (fresh && current) current.innerHTML = fresh.innerHTML;
+                });
+            })
+            .catch(function() {});
+    }
+
+    _timer = setInterval(refrescar, 30000);
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            clearInterval(_timer); _timer = null;
+        } else {
+            refrescar();
+            _timer = setInterval(refrescar, 30000);
+        }
+    });
+})();
+
 // Estado de acceso basado en registros QR/Manual
 (function() {
     function setEstado(enCentro, sub) {
@@ -239,9 +269,9 @@
             });
     }
 
-    // Verificar al cargar y cada 2 minutos
+    // Verificar al cargar y cada 15 segundos
     consultarEstadoBD();
-    setInterval(consultarEstadoBD, 120000);
+    setInterval(consultarEstadoBD, 15000);
 })();
 
 document.addEventListener('DOMContentLoaded', function() {

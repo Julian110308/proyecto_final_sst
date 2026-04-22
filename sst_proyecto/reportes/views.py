@@ -415,6 +415,22 @@ def dashboard_estadisticas(request):
     if user.rol == "VISITANTE":
         return Response({"mensaje": "Bienvenido al sistema SST", "rol_usuario": "VISITANTE"})
 
+    # Estadísticas adicionales para el coordinador SST
+    if user.rol == "COORDINADOR_SST":
+        from usuarios.models import Usuario
+        respuesta["total_usuarios_activos"] = Usuario.objects.filter(
+            estado_cuenta="ACTIVO", activo=True
+        ).count()
+        respuesta["usuarios_pendientes"] = Usuario.objects.filter(
+            estado_cuenta="PENDIENTE"
+        ).count()
+        respuesta["usuarios_bloqueados"] = Usuario.objects.filter(
+            estado_cuenta="BLOQUEADO"
+        ).count()
+        respuesta["brigada_activa"] = Usuario.objects.filter(
+            Q(es_brigada=True) | Q(rol="BRIGADA"), activo=True
+        ).count()
+
     return Response(respuesta)
 
 

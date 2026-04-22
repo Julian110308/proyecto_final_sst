@@ -91,7 +91,7 @@
         <i class="bi bi-bar-chart-fill text-success me-2"></i>Usuarios activos por rol
     </div>
     <div class="card-body p-3">
-        <div class="d-flex flex-wrap gap-2">
+        <div class="d-flex flex-wrap gap-2" id="sec-por-rol">
             {% for item in por_rol %}
             <span class="badge rounded-pill px-3 py-2 fs-6"
                 style="background-color:{% if item.rol == 'COORDINADOR_SST' %}#212529{% else %}#6c757d{% endif %};">
@@ -476,7 +476,7 @@ function cargarBrigada() {
     .then(r => r.json())
     .then(data => {
         const lista = (Array.isArray(data) ? data : (data.results || []))
-            .filter(u => u.es_brigada);
+            .filter(u => u.es_brigada || u.rol === 'BRIGADA');
         const c = document.getElementById('brigada-container');
         if (!lista.length) {
             c.innerHTML = `<div class="text-center py-5 text-muted">
@@ -529,6 +529,16 @@ async function actualizarTarjetas() {
             const el = document.getElementById(id);
             if (el && val !== null) el.textContent = val;
         });
+        // Refrescar distribución por rol (sección server-rendered)
+        fetch(window.location.href)
+            .then(r => r.text())
+            .then(html => {
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                const fresh = doc.getElementById('sec-por-rol');
+                const current = document.getElementById('sec-por-rol');
+                if (fresh && current) current.innerHTML = fresh.innerHTML;
+            })
+            .catch(() => {});
     } catch (_) {}
 }
 
@@ -544,8 +554,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Actualizar tarjetas cada 30 segundos
-    setInterval(actualizarTarjetas, 30000);
+    // Actualizar tarjetas y pendientes cada 20 segundos
+    setInterval(() => {
+        actualizarTarjetas();
+        cargarPendientes();
+    }, 10000);
 });
 </script>
 {% endblock %}

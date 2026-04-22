@@ -80,12 +80,14 @@ def dashboard_view(request):
 
     # Si es COORDINADOR_SST, construir contexto específico y retornar
     if usuario.rol == "COORDINADOR_SST":
-        from django.db.models import Count
+        from django.db.models import Count, Q
 
         pendientes = Usuario.objects.filter(estado_cuenta="PENDIENTE").count()
         total_activos = Usuario.objects.filter(estado_cuenta="ACTIVO", activo=True).count()
         total_bloqueados = Usuario.objects.filter(estado_cuenta="BLOQUEADO").count()
-        brigada_activa = Usuario.objects.filter(es_brigada=True, activo=True).count()
+        brigada_activa = Usuario.objects.filter(
+            Q(es_brigada=True) | Q(rol="BRIGADA"), activo=True
+        ).count()
         por_rol = list(Usuario.objects.filter(activo=True).values("rol").annotate(total=Count("id")).order_by("rol"))
         return render(
             request,
@@ -484,23 +486,20 @@ def mi_perfil_view(request):
 
     # Para instructores: cargar fichas disponibles por programa para el selector dinámico
     if usuario.rol == "INSTRUCTOR":
-        from usuarios.models import Usuario as Usr
+        from usuarios.models import FichaFormacion
         import json
 
         fichas_qs = (
-            Usr.objects.filter(rol="APRENDIZ", activo=True, ficha__isnull=False)
-            .exclude(ficha="")
-            .values("programa_formacion", "ficha")
-            .distinct()
-            .order_by("programa_formacion", "ficha")
+            FichaFormacion.objects.filter(activo=True)
+            .select_related("programa")
+            .order_by("programa__nombre", "numero")
         )
         fichas_por_programa = {}
-        for item in fichas_qs:
-            prog = item["programa_formacion"] or ""
-            ficha = item["ficha"]
+        for ficha in fichas_qs:
+            prog = ficha.programa.nombre if ficha.programa else ""
             fichas_por_programa.setdefault(prog, [])
-            if ficha not in fichas_por_programa[prog]:
-                fichas_por_programa[prog].append(ficha)
+            if ficha.numero not in fichas_por_programa[prog]:
+                fichas_por_programa[prog].append(ficha.numero)
         context["fichas_por_programa_json"] = json.dumps(fichas_por_programa)
 
     return render(request, "perfil.html", context)

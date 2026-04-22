@@ -45,7 +45,7 @@
 {% endif %}
 
 <!-- Metricas Principales -->
-<div class="row g-3 mb-4">
+<div class="row g-3 mb-4" id="sec-metricas-inst">
     {% include 'components/metric-card.html' with label="Aprendices Activos" value=total_aprendices|default:0 sublabel=sublabel_aprendices sublabel_icon="bi bi-people" sublabel_color="sena" icon="bi-people-fill" icon_color="sena" border_color="sena" %}
     {% include 'components/metric-card.html' with label="Presentes Hoy" value=aprendices_presentes|default:0 sublabel=sublabel_presentes sublabel_icon="bi bi-check-circle" sublabel_color="muted" icon="bi-person-check-fill" icon_color="secondary" border_color="secondary" %}
 
@@ -96,7 +96,7 @@
                     Accesos de Aprendices Hoy
                 </h6>
             </div>
-            <div class="card-body p-0">
+            <div class="card-body p-0" id="sec-accesos-hoy">
                 {% if ultimos_accesos_aprendices %}
                 <div class="list-group list-group-flush">
                     {% for acceso in ultimos_accesos_aprendices %}
@@ -137,7 +137,7 @@
         <i class="bi bi-chevron-down"></i>
     </div>
     <div class="collapse show" id="collapseAsistenciaFicha">
-        <div class="card-body">
+        <div class="card-body" id="sec-fichas-hoy">
             {% if fichas_stats %}
             <div class="row g-3">
                 {% for ficha in fichas_stats %}
@@ -186,7 +186,7 @@
                             <th>Hora de Ingreso</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="sec-tbody-accesos">
                         {% for acceso in ultimos_accesos %}
                         <tr>
                             <td class="ps-4">
@@ -239,9 +239,39 @@
             .catch(function() { setEstado(false, 'Sin ingreso activo hoy'); });
     }
 
-    // Verificar al cargar y cada 2 minutos
+    // Verificar al cargar y cada 15 segundos
     consultarEstadoBD();
-    setInterval(consultarEstadoBD, 120000);
+    setInterval(consultarEstadoBD, 15000);
+})();
+
+// Auto-refresh de secciones dinámicas cada 30 s
+(function() {
+    var SECCIONES = ['sec-metricas-inst', 'sec-accesos-hoy', 'sec-fichas-hoy', 'sec-tbody-accesos'];
+    var _timer = null;
+
+    function refrescar() {
+        fetch(window.location.href)
+            .then(function(r) { return r.text(); })
+            .then(function(html) {
+                var doc = new DOMParser().parseFromString(html, 'text/html');
+                SECCIONES.forEach(function(id) {
+                    var fresh = doc.getElementById(id);
+                    var current = document.getElementById(id);
+                    if (fresh && current) current.innerHTML = fresh.innerHTML;
+                });
+            })
+            .catch(function() {});
+    }
+
+    _timer = setInterval(refrescar, 30000);
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            clearInterval(_timer); _timer = null;
+        } else {
+            refrescar();
+            _timer = setInterval(refrescar, 30000);
+        }
+    });
 })();
 
 // Grafica de ingresos

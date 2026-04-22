@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.db.models import Q
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from drf_spectacular.utils import extend_schema, OpenApiResponse
@@ -36,7 +37,10 @@ class UsuarioViewSet(viewsets.ModelViewSet):
 
         es_brigada = self.request.query_params.get("es_brigada")
         if es_brigada is not None:
-            qs = qs.filter(es_brigada=es_brigada.lower() == "true")
+            if es_brigada.lower() == "true":
+                qs = qs.filter(Q(es_brigada=True) | Q(rol="BRIGADA"))
+            else:
+                qs = qs.filter(es_brigada=False).exclude(rol="BRIGADA")
         return qs
 
     def get_permissions(self):

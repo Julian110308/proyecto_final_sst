@@ -126,6 +126,7 @@ def obtener_estadisticas_hoy():
     fin_dia = timezone.make_aware(datetime.combine(hoy, time.max))
 
     ingresos_hoy = RegistroAcceso.objects.filter(fecha_hora_ingreso__range=(inicio_dia, fin_dia)).count()
+    egresos_hoy = RegistroAcceso.objects.filter(fecha_hora_egreso__range=(inicio_dia, fin_dia)).count()
     personas_dentro = RegistroAcceso.objects.filter(
         fecha_hora_egreso__isnull=True, fecha_hora_ingreso__date=hoy
     ).count()
@@ -134,6 +135,7 @@ def obtener_estadisticas_hoy():
 
     resultado = {
         "ingresos_hoy": ingresos_hoy,
+        "egresos_hoy": egresos_hoy,
         "personas_dentro": personas_dentro,
         "visitantes_activos": visitantes_activos,
         "aforo": aforo_info,
