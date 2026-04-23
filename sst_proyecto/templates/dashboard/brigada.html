@@ -16,17 +16,6 @@
         </h1>
         <p class="text-muted mb-0 small">{{ user.get_full_name|default:user.username }} — Brigada de Emergencia</p>
     </div>
-    <div class="d-flex align-items-center gap-2 flex-wrap">
-        <div id="toggleDisponibilidad" class="d-flex align-items-center border rounded-pill px-3 py-2">
-            <span id="textoDisponibilidad" class="me-2 small fw-bold text-secondary">Cargando...</span>
-            <div class="form-check form-switch mb-0">
-                <input class="form-check-input" type="checkbox" id="switchDisponible" onchange="toggleDisponibilidad()" role="switch">
-            </div>
-        </div>
-        <button class="btn btn-danger btn-sm" onclick="mostrarModalEmergencia()">
-            <i class="bi bi-megaphone-fill me-1"></i>Reportar Emergencia
-        </button>
-    </div>
 </div>
 
 <!-- Metricas -->
@@ -551,53 +540,6 @@ let emergenciaResolviendoId = null;
 let emergenciaFalsaId = null;
 
 // === DISPONIBILIDAD DEL BRIGADISTA ===
-async function cargarDisponibilidad() {
-    try {
-        const r = await fetch('/api/emergencias/brigada/mi-disponibilidad/');
-        const data = await r.json();
-        if (!r.ok || data.registrado === false) {
-            document.getElementById('toggleDisponibilidad').style.display = 'none';
-            return;
-        }
-        const sw = document.getElementById('switchDisponible');
-        const txt = document.getElementById('textoDisponibilidad');
-        const container = document.getElementById('toggleDisponibilidad');
-        sw.checked = data.disponible;
-        txt.textContent = data.disponible ? 'Disponible' : 'No disponible';
-        txt.className = `me-2 small fw-bold text-${data.disponible ? 'success' : 'secondary'}`;
-        container.className = `d-flex align-items-center border rounded-pill px-3 py-2 border-${data.disponible ? 'success' : 'secondary'}`;
-    } catch(e) {
-        document.getElementById('toggleDisponibilidad').style.display = 'none';
-    }
-}
-
-async function toggleDisponibilidad() {
-    const sw = document.getElementById('switchDisponible');
-    try {
-        const r = await fetch('/api/emergencias/brigada/mi-disponibilidad/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
-            body: JSON.stringify({ disponible: sw.checked })
-        });
-        if (r.ok) {
-            const data = await r.json();
-            const txt = document.getElementById('textoDisponibilidad');
-            const container = document.getElementById('toggleDisponibilidad');
-            txt.textContent = data.disponible ? 'Disponible' : 'No disponible';
-            txt.className = `me-2 small fw-bold text-${data.disponible ? 'success' : 'secondary'}`;
-            container.className = `d-flex align-items-center border rounded-pill px-3 py-2 border-${data.disponible ? 'success' : 'secondary'}`;
-            mostrarToast(data.mensaje, 'success');
-            cargarBrigadistas();
-        } else {
-            sw.checked = !sw.checked;
-            mostrarToast('Error al cambiar disponibilidad', 'danger');
-        }
-    } catch(e) {
-        sw.checked = !sw.checked;
-        mostrarToast('Error de conexion', 'danger');
-    }
-}
-
 // === EMERGENCIAS ===
 async function cargarEmergencias() {
     try {
@@ -1068,7 +1010,6 @@ function refrescarTodo() {
         cargarEmergencias(),
         cargarBrigadistas(),
         cargarEstadoEquipos(),
-        cargarDisponibilidad()
     ]).then(() => {
         actualizarIndicadorTiempo();
         icon.classList.remove('spin-animation');
@@ -1084,7 +1025,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('btnConfirmarResolver').addEventListener('click', resolverEmergencia);
     document.getElementById('btnConfirmarFalsa').addEventListener('click', marcarFalsaAlarma);
 
-    cargarDisponibilidad();
     cargarEmergencias();
     cargarBrigadistas();
     cargarEstadoEquipos();
@@ -1100,7 +1040,6 @@ document.addEventListener('visibilitychange', function() {
     } else {
         cargarEmergencias();
         cargarBrigadistas();
-        cargarDisponibilidad();
         actualizarIndicadorTiempo();
         iniciarAutoRefresh();
     }
