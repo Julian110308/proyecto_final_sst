@@ -1332,12 +1332,19 @@ def mi_brigada_view(request):
     from usuarios.models import Usuario
     from django.db.models import Q
 
-    miembros = (
+    miembros_qs = (
         Usuario.objects
         .filter(Q(rol="BRIGADA") | Q(es_brigada=True), activo=True)
         .exclude(id=request.user.id)
         .select_related("brigada")
     )
+
+    # Anotar disponibilidad con fallback a True si no tiene registro BrigadaEmergencia
+    for m in miembros_qs:
+        try:
+            m.disp = m.brigada.disponible
+        except Exception:
+            m.disp = True
 
     # Disponibilidad del usuario actual
     try:
@@ -1346,8 +1353,8 @@ def mi_brigada_view(request):
         yo_disponible = True
 
     context = {
-        "miembros": miembros,
-        "total_miembros": miembros.count() + 1,
+        "miembros": miembros_qs,
+        "total_miembros": miembros_qs.count() + 1,
         "yo_disponible": yo_disponible,
     }
     return render(request, "dashboard/brigada/mi_brigada.html", context)
