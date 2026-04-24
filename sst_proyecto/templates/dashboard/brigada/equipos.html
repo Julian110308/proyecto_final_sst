@@ -169,16 +169,14 @@
                             <td><code>{{ equipo.codigo }}</code></td>
                             <td>
                                 <div class="d-flex align-items-center gap-2">
+                                    {% if equipo.edificio %}
                                     <div>
-                                        {% if equipo.edificio %}
-                                            {{ equipo.edificio.nombre }}
-                                            {% if equipo.piso %}
-                                                <br><small class="text-muted">Piso {{ equipo.piso }}</small>
-                                            {% endif %}
-                                        {% else %}
-                                            <span class="text-muted small">Sin ubicación</span>
+                                        {{ equipo.edificio.nombre }}
+                                        {% if equipo.piso %}
+                                            <br><small class="text-muted">Piso {{ equipo.piso }}</small>
                                         {% endif %}
                                     </div>
+                                    {% endif %}
                                     <button type="button"
                                             class="btn btn-sm btn-outline-success flex-shrink-0"
                                             title="Ver en mapa"
