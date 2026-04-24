@@ -58,15 +58,11 @@
                             <h6 class="fw-bold mb-0 text-truncate">{{ miembro.get_full_name }}</h6>
                             <small class="text-muted text-truncate d-block">{{ miembro.email }}</small>
                             <div class="mt-1">
-                                {% if miembro.disp %}
-                                    <span class="badge rounded-pill" style="background:#d1fae5; color:#065f46; font-size:0.72rem;">
-                                        <i class="bi bi-circle-fill me-1" style="font-size:0.5rem;"></i>Disponible
-                                    </span>
-                                {% else %}
-                                    <span class="badge rounded-pill" style="background:#fee2e2; color:#991b1b; font-size:0.72rem;">
-                                        <i class="bi bi-circle-fill me-1" style="font-size:0.5rem;"></i>No disponible
-                                    </span>
-                                {% endif %}
+                                <span id="badge-uid-{{ miembro.id }}" data-uid="{{ miembro.id }}"
+                                      class="badge rounded-pill"
+                                      style="{% if miembro.disp %}background:#d1fae5;color:#065f46;{% else %}background:#fee2e2;color:#991b1b;{% endif %}font-size:0.72rem;">
+                                    <i class="bi bi-circle-fill me-1" style="font-size:0.5rem;"></i>{% if miembro.disp %}Disponible{% else %}No disponible{% endif %}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -183,7 +179,20 @@
 <script>
 const CSRF_BRIGADA = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
 
-// Toggle disponibilidad del usuario actual
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function aplicarBadge(el, disponible) {
+    if (disponible) {
+        el.style.background = '#d1fae5';
+        el.style.color = '#065f46';
+        el.innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size:0.5rem;"></i>Disponible';
+    } else {
+        el.style.background = '#fee2e2';
+        el.style.color = '#991b1b';
+        el.innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size:0.5rem;"></i>No disponible';
+    }
+}
+
+// ── Toggle del usuario actual ────────────────────────────────────────────────
 document.getElementById('switchDisponibilidad').addEventListener('change', async function () {
     const disponible = this.checked;
     const label = document.getElementById('labelDisponibilidad');
@@ -196,6 +205,26 @@ document.getElementById('switchDisponibilidad').addEventListener('change', async
             body: JSON.stringify({ disponible }),
         });
     } catch (e) { /* silencioso */ }
+});
+
+// ── Polling: actualizar badges de otros miembros cada 10 s ──────────────────
+async function actualizarBadgesDisponibilidad() {
+    try {
+        const r = await fetch('/api/emergencias/brigada/', { credentials: 'same-origin' });
+        if (!r.ok) return;
+        const data = await r.json();
+        const lista = data.results || data;
+        lista.forEach(b => {
+            const badge = document.getElementById('badge-uid-' + b.usuario);
+            if (badge) aplicarBadge(badge, b.disponible);
+        });
+    } catch (e) { /* silencioso */ }
+}
+
+actualizarBadgesDisponibilidad();
+const _dispTimer = setInterval(actualizarBadgesDisponibilidad, 10000);
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) actualizarBadgesDisponibilidad();
 });
 
 const ICONOS_NATURALES = {
