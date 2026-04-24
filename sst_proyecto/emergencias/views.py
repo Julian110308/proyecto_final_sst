@@ -723,10 +723,20 @@ class BrigadaEmergenciaViewSet(viewsets.ModelViewSet):
         POST body (opcional):
         - disponible: boolean (si no se envía, hace toggle)
         """
-        try:
-            brigadista = BrigadaEmergencia.objects.get(usuario=request.user)
-        except BrigadaEmergencia.DoesNotExist:
-            return Response({"registrado": False, "disponible": False}, status=status.HTTP_200_OK)
+        from django.utils import timezone as _tz
+        from datetime import timedelta as _td
+        brigadista, _ = BrigadaEmergencia.objects.get_or_create(
+            usuario=request.user,
+            defaults={
+                "especializacion": "GENERAL",
+                "nivel_certificacion": "BASICO",
+                "fecha_certificacion": _tz.now().date(),
+                "fecha_vencimiento": _tz.now().date() + _td(days=365),
+                "telefono_emergencia": request.user.telefono or "",
+                "disponible": True,
+                "activo": True,
+            },
+        )
 
         if request.method == "GET":
             return Response(

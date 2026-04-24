@@ -214,9 +214,17 @@ async function actualizarBadgesDisponibilidad() {
         if (!r.ok) return;
         const data = await r.json();
         const lista = data.results || data;
-        lista.forEach(b => {
-            const badge = document.getElementById('badge-uid-' + b.usuario);
-            if (badge) aplicarBadge(badge, b.disponible);
+
+        // Mapa uid → disponible de los que tienen registro
+        const mapa = {};
+        lista.forEach(b => { mapa[b.usuario] = b.disponible; });
+
+        // Actualizar todos los badges del DOM
+        document.querySelectorAll('[data-uid]').forEach(badge => {
+            const uid = badge.dataset.uid;
+            // Si no tiene registro en BD, asumimos disponible (default=True)
+            const disponible = uid in mapa ? mapa[uid] : true;
+            aplicarBadge(badge, disponible);
         });
     } catch (e) { /* silencioso */ }
 }
