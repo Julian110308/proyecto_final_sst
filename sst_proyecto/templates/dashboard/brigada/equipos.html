@@ -550,20 +550,24 @@
 </div>
 
 <!-- ── Modal Ver en Mapa ── -->
-<div class="modal fade" id="modalVerMapa" tabindex="-1" aria-hidden="true">
+<div class="modal fade modal-sena" id="modalVerMapa" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
-            <div class="modal-header" style="background:linear-gradient(135deg,#39A900 0%,#2d8200 100%);">
-                <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-map text-white fs-5"></i>
-                    <div>
-                        <h5 class="text-white fw-bold mb-0" style="font-size:1rem;" id="mapaModalTitulo">Ubicación del Equipo</h5>
-                        <small style="color:rgba(255,255,255,0.8);font-size:0.78rem;" id="mapaModalSubtitulo"></small>
+            <div class="modal-header">
+                <div class="modal-sena-header w-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="modal-icon-box">
+                            <i class="bi bi-map text-white" style="font-size:1.3rem;"></i>
+                        </div>
+                        <div>
+                            <h5 class="text-white fw-bold mb-0" style="font-size:1rem;" id="mapaModalTitulo">Ubicación del Equipo</h5>
+                            <small style="color:rgba(255,255,255,0.75);font-size:0.78rem;" id="mapaModalSubtitulo"></small>
+                        </div>
                     </div>
+                    <button type="button" class="btn-close btn-close-white position-absolute" data-bs-dismiss="modal" style="top:1rem;right:1rem;"></button>
                 </div>
-                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body p-0" style="height:420px;">
+            <div class="modal-body p-0" style="height:420px; border-radius:0 0 12px 12px; overflow:hidden;">
                 <div id="mapaVisualizacion" style="height:100%;width:100%;"></div>
             </div>
         </div>
