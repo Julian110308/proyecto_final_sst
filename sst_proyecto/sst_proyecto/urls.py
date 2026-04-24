@@ -1132,8 +1132,27 @@ def equipos_brigada_view(request):
     if estado_filtro:
         equipos = equipos.filter(estado=estado_filtro)
     if busqueda:
+        # Incluir tipos cuyo nombre visible coincida con la búsqueda
+        tipos_match = [
+            code for code, label in EquipamientoSeguridad.TIPO_EQUIPAMIENTO
+            if busqueda.lower() in label.lower()
+        ]
+        # Incluir estados cuyo nombre visible coincida con la búsqueda
+        estados_match = [
+            code for code, label in [
+                ("OPERATIVO", "Operativo"),
+                ("MANTENIMIENTO", "En mantenimiento"),
+                ("FUERA_SERVICIO", "Fuera de servicio"),
+            ]
+            if busqueda.lower() in label.lower()
+        ]
         equipos = equipos.filter(
-            Q(nombre__icontains=busqueda) | Q(codigo__icontains=busqueda) | Q(edificio__nombre__icontains=busqueda)
+            Q(nombre__icontains=busqueda)
+            | Q(codigo__icontains=busqueda)
+            | Q(descripcion__icontains=busqueda)
+            | Q(edificio__nombre__icontains=busqueda)
+            | Q(tipo__in=tipos_match)
+            | Q(estado__in=estados_match)
         )
 
     equipos = equipos.order_by("-fecha_creacion")
