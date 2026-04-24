@@ -168,14 +168,25 @@
                             </td>
                             <td><code>{{ equipo.codigo }}</code></td>
                             <td>
-                                {% if equipo.edificio %}
-                                    {{ equipo.edificio.nombre }}
-                                    {% if equipo.piso %}
-                                        <br><small class="text-muted">Piso {{ equipo.piso }}</small>
-                                    {% endif %}
-                                {% else %}
-                                    <span class="text-muted">Sin ubicación</span>
-                                {% endif %}
+                                <div class="d-flex align-items-center gap-2">
+                                    <div>
+                                        {% if equipo.edificio %}
+                                            {{ equipo.edificio.nombre }}
+                                            {% if equipo.piso %}
+                                                <br><small class="text-muted">Piso {{ equipo.piso }}</small>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted small">Sin ubicación</span>
+                                        {% endif %}
+                                    </div>
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-success flex-shrink-0"
+                                            title="Ver en mapa"
+                                            style="padding:2px 6px;"
+                                            onclick="verEnMapa({{ equipo.latitud|stringformat:'.7f' }}, {{ equipo.longitud|stringformat:'.7f' }}, '{{ equipo.get_tipo_display|escapejs }}', '{{ equipo.codigo|escapejs }}', '{{ equipo.nombre|escapejs }}')">
+                                        <i class="bi bi-map" style="font-size:0.8rem;"></i>
+                                    </button>
+                                </div>
                             </td>
                             <td>
                                 {% if equipo.estado == 'OPERATIVO' %}
@@ -540,6 +551,27 @@
     </div>
 </div>
 
+<!-- ── Modal Ver en Mapa ── -->
+<div class="modal fade" id="modalVerMapa" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background:linear-gradient(135deg,#39A900 0%,#2d8200 100%);">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-map text-white fs-5"></i>
+                    <div>
+                        <h5 class="text-white fw-bold mb-0" style="font-size:1rem;" id="mapaModalTitulo">Ubicación del Equipo</h5>
+                        <small style="color:rgba(255,255,255,0.8);font-size:0.78rem;" id="mapaModalSubtitulo"></small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0" style="height:420px;">
+                <div id="mapaVisualizacion" style="height:100%;width:100%;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -730,6 +762,33 @@ function abrirEliminar(id, codigo) {
     document.getElementById('eliminarId').value = id;
     document.getElementById('eliminarCodigo').textContent = '"' + codigo + '"';
     new bootstrap.Modal(document.getElementById('modalEliminar')).show();
+}
+
+// ── Ver ubicación del equipo en mapa ──────────────────────────────────────────
+let _mapaVer = null, _markerVer = null;
+
+function verEnMapa(lat, lng, tipo, codigo, nombre) {
+    document.getElementById('mapaModalTitulo').textContent = tipo + ' — ' + codigo;
+    document.getElementById('mapaModalSubtitulo').textContent = nombre;
+
+    const modalEl = document.getElementById('modalVerMapa');
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modal.show();
+
+    modalEl.addEventListener('shown.bs.modal', function iniciar() {
+        modalEl.removeEventListener('shown.bs.modal', iniciar);
+        if (!_mapaVer) {
+            _mapaVer = L.map('mapaVisualizacion', { attributionControl: false }).setView([lat, lng], 20);
+            L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 22 }).addTo(_mapaVer);
+        } else {
+            _mapaVer.invalidateSize();
+            _mapaVer.setView([lat, lng], 20);
+            if (_markerVer) _mapaVer.removeLayer(_markerVer);
+        }
+        _markerVer = L.marker([lat, lng]).addTo(_mapaVer)
+            .bindPopup(`<strong>${tipo}</strong><br><code>${codigo}</code><br><small>${nombre}</small>`, { maxWidth: 200 })
+            .openPopup();
+    }, { once: true });
 }
 
 function iniciarVerificacionGeneral() {
