@@ -870,7 +870,7 @@ async function cargarBrigadistas() {
 // === EQUIPOS ===
 async function cargarEstadoEquipos() {
     try {
-        const r = await fetch('/api/mapas/equipamientos/');
+        const r = await fetch('/api/mapas/api/equipamientos/');
         const data = await r.json();
         const lista = data.results || data;
         const cont = document.getElementById('estadoEquipos');
