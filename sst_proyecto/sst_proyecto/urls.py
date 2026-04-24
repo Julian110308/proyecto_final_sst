@@ -1330,11 +1330,25 @@ def mi_brigada_view(request):
     Vista para ver los miembros de la brigada
     """
     from usuarios.models import Usuario
+    from django.db.models import Q
 
-    miembros = Usuario.objects.filter(rol="BRIGADA", activo=True).exclude(id=request.user.id)
+    miembros = (
+        Usuario.objects
+        .filter(Q(rol="BRIGADA") | Q(es_brigada=True), activo=True)
+        .exclude(id=request.user.id)
+        .select_related("brigada")
+    )
+
+    # Disponibilidad del usuario actual
+    try:
+        yo_disponible = request.user.brigada.disponible
+    except Exception:
+        yo_disponible = True
+
     context = {
         "miembros": miembros,
-        "total_miembros": miembros.count() + 1,  # Contando al usuario actual
+        "total_miembros": miembros.count() + 1,
+        "yo_disponible": yo_disponible,
     }
     return render(request, "dashboard/brigada/mi_brigada.html", context)
 
