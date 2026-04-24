@@ -1833,9 +1833,9 @@
                     // Agregar boton "Ver todas" si hay notificaciones
                     list.innerHTML += `
                         <div class="border-top pt-2 mt-2">
-                            <a href="#" class="dropdown-item text-center small" style="color:#39A900;" onclick="marcarTodasLeidas()">
+                            <button type="button" class="dropdown-item text-center small border-0 bg-transparent w-100" style="color:#39A900;" onclick="marcarTodasLeidas()">
                                 <i class="bi bi-check2-all me-1"></i>Marcar todas como leidas
-                            </a>
+                            </button>
                         </div>`;
                 } else {
                     badge.classList.add('d-none');
