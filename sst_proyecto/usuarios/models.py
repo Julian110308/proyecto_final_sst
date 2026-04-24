@@ -587,6 +587,16 @@ class Notificacion(models.Model):
             fecha_vencimiento=vencimiento,
         )
 
+    @classmethod
+    def notificar_usuarios_por_rol(cls, rol, titulo, mensaje, tipo="INFO", prioridad="MEDIA"):
+        """Crea notificaciones masivas para todos los usuarios de un rol"""
+        usuarios = Usuario.objects.filter(rol=rol, activo=True)
+        notificaciones = [
+            cls(destinatario=u, titulo=titulo, mensaje=mensaje, tipo=tipo, prioridad=prioridad)
+            for u in usuarios
+        ]
+        return cls.objects.bulk_create(notificaciones)
+
 
 class PushSubscripcion(models.Model):
     """
